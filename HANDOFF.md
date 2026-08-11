@@ -41,8 +41,8 @@ el proveedor** (Stripe / Mercado Pago / otro).
 | **7** | **Producción y lanzamiento** (SEO, analytics, deploy, dominio) | 🚧 **EN PROGRESO** — ver sección Fase 7 abajo |
 | 7.1 | SEO técnico (metadataBase, robots, sitemap, OG, manifest) | ✅ Aprobada |
 | 7.2 | Analytics (Vercel Web Analytics) | ✅ Aprobada |
-| 7.3 | Deploy a Vercel (config + env vars) | ⏳ **SIGUIENTE** |
-| 7.4 | Dominio + post-deploy (Auth/OAuth/`SITE_URL`) | ⏳ Pendiente |
+| 7.3 | Deploy a Vercel (LIVE en `invitaflow-lemon.vercel.app`) | ✅ Aprobada |
+| 7.4 | Post-deploy (Auth/OAuth) — **sin dominio propio, se queda la URL de Vercel** | 🚧 **SIGUIENTE** |
 | 7.5 | Go-live pagos reales (checklist) | ⏳ Pendiente |
 
 ---
@@ -451,6 +451,28 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
 - ⚠️ En el deploy (7.3) hay que **activar Analytics** una vez en el panel de
   Vercel (proyecto → pestaña Analytics). Sin env vars.
 
+## 7.3 — Deploy a Vercel (hecho) — LIVE
+- **URL de producción:** `https://invitaflow-lemon.vercel.app` (definitiva; NO se
+  usará dominio propio). Deploy desde `main` (merge de `feat/invitaflow-project`).
+- **Env vars en Vercel** (Production+Preview): las 14 que usa el código. Ojo:
+  `NEXT_PUBLIC_*` se hornean en build → cambiarlas exige **redeploy**. NO se usa
+  `NEXT_PUBLIC_MP_PUBLIC_KEY` (el código no lo referencia). `NODE_ENV` lo pone
+  Vercel. MP en credenciales de **PRUEBA** (cero cobros reales).
+- **Supabase Auth** (URL Configuration): Site URL = la de Vercel; Redirect URLs =
+  `https://invitaflow-lemon.vercel.app/**` (wildcard, para que `/auth/callback` y
+  los `redirectTo` matcheen). Google OAuth NO necesita cambios en Google Console
+  (su redirect va a `…supabase.co/auth/v1/callback`, ya configurado en Fase 1).
+- **Fix aplicado:** `NEXT_PUBLIC_SITE_URL` con `/` final generaba `//` en
+  robots/sitemap → se normalizó (`.replace(/\/+$/,"")`) en `robots.ts` y
+  `sitemap.ts`. Verificado en vivo: `/robots.txt`, `/sitemap.xml`, `/pricing`,
+  `/login`, `/opengraph-image`, `/manifest.webmanifest` → todos 200 y URLs limpias.
+- **Gotcha env var:** un typo en Vercel (`EXT_PUBLIC_...` sin la `N`) deja la var
+  "muerta" → el código cae al default. Verificar nombres exactos.
+- **Gotchas de hooks al pushear:** `secaudit_guard.py --mark` debe correr en un
+  comando SEPARADO del `git push` (mismo comando no registra a tiempo); y NO se
+  commitea directo en `main` (branch guard) → commit en `feat` + merge ff a `main`.
+  Push a `main` dispara auto-redeploy de Vercel.
+
 ## Prompt para continuar (pegar al retomar)
 
 > Retomo InvitaFlow en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
@@ -458,9 +480,11 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
 > (Monetización) está COMPLETA** (8.1–8.8, incl. prueba E2E sandbox cerrada).
 > Ahora estamos en la **Fase 7 (Producción y lanzamiento)**: hosting **Vercel**,
 > analytics **Vercel Web Analytics**, **sin dominio aún** (se arranca con
-> `*.vercel.app`). **7.1 (SEO) y 7.2 (Vercel Analytics) aprobadas**; la
-> **siguiente es la 7.3** (deploy a Vercel: config + env vars + conexión del
-> repo). Reglas: se trabaja por sub-bloques, uno a la
+> `*.vercel.app`). **7.1 (SEO), 7.2 (Analytics) y 7.3 (deploy) hechas**: la app
+> está **LIVE en `https://invitaflow-lemon.vercel.app`** (URL definitiva, SIN
+> dominio propio). La **siguiente es la 7.4** (post-deploy: verificar login/Google
+> en prod) y luego **7.5** (pasar MP a producción para cobrar en real). Reglas: se
+> trabaja por sub-bloques, uno a la
 > vez, y **cada uno requiere mi aprobación explícita** — NO avances solo; al
 > terminar muéstrame resumen, archivos, migraciones, env vars, cómo probar,
 > pendientes y riesgos, y pregúntame si apruebo. **Pendientes operativos ANTES de
