@@ -1,11 +1,19 @@
-# InvitaFlow — Handoff de sesión
+# Sobrely — Handoff de sesión
 
 > Documento de traspaso. Registra lo hecho, lo pendiente y lo que sigue.
 > No es memoria del agente ni se guarda en ningún brain — vive en el repo.
 
 ## Qué es el proyecto
 
-**InvitaFlow**: SaaS de invitaciones digitales dinámicas, modulares y
+> **Rename (2026-08-11):** el proyecto se llamaba **InvitaFlow** y se rebautizó a
+> **Sobrely** (invitaflow.com ya existía). El código/UI/README ya dicen Sobrely.
+> Lo que AÚN conserva el nombre viejo (infra, no urge): la carpeta local
+> `…/Personal projects/invitaflow`, la rama `feat/invitaflow-project`, la URL de
+> Vercel `invitaflow-lemon.vercel.app` y el repo GitHub `ArturoJCastilloZ/invitaflow`.
+> Dominio: `sobrely.com` verificado LIBRE por whois → se va a registrar y conectar
+> como dominio custom.
+
+**Sobrely**: SaaS de invitaciones digitales dinámicas, modulares y
 personalizables (bodas, XV, cumpleaños, baby shower, corporativo). Mobile-first.
 
 **Stack:** Next.js 16 (App Router) · React 19 · TypeScript estricto · Tailwind v4 ·
@@ -437,12 +445,12 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
   ni fuentes remotas). Las públicas conservan su OG propio.
 - `src/app/manifest.ts`: manifest PWA (mobile-first); íconos referencian el
   `favicon.ico` (cuando haya PNG 192/512 de marca se agregan).
-- `src/app/pricing/page.tsx`: fix del título (usaba `"… · InvitaFlow"` y el
+- `src/app/pricing/page.tsx`: fix del título (usaba `"… · Sobrely"` y el
   template raíz lo duplicaba) → ahora solo `"Planes y precios"`.
 - Verificado en vivo: `/robots.txt`, `/sitemap.xml` (XML válido), `/opengraph-image`
   (image/png 92KB). `tsc`/`lint`/`build` limpios.
 - Gotcha Next 16: un `title` string de página hijo se envuelve con el `template`
-  del root → no incluir "· InvitaFlow" en los títulos de página.
+  del root → no incluir "· Sobrely" en los títulos de página.
 
 ## 7.2 — Analytics (hecho)
 - `@vercel/analytics@2.0.1` + `<Analytics/>` (de `@vercel/analytics/next`) en el
@@ -452,8 +460,11 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
   Vercel (proyecto → pestaña Analytics). Sin env vars.
 
 ## 7.3 — Deploy a Vercel (hecho) — LIVE
-- **URL de producción:** `https://invitaflow-lemon.vercel.app` (definitiva; NO se
-  usará dominio propio). Deploy desde `main` (merge de `feat/invitaflow-project`).
+- **URL de producción actual:** `https://invitaflow-lemon.vercel.app`. Deploy desde
+  `main` (merge de `feat/invitaflow-project`). **Se conectará `sobrely.com` como
+  dominio custom** (decisión revisada tras el rename); al hacerlo hay que
+  actualizar `NEXT_PUBLIC_SITE_URL`/`MP_PUBLIC_BASE_URL` + Supabase redirect +
+  webhook MP al dominio nuevo.
 - **Env vars en Vercel** (Production+Preview): las 14 que usa el código. Ojo:
   `NEXT_PUBLIC_*` se hornean en build → cambiarlas exige **redeploy**. NO se usa
   `NEXT_PUBLIC_MP_PUBLIC_KEY` (el código no lo referencia). `NODE_ENV` lo pone
@@ -485,7 +496,7 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
 
 ## Prompt para continuar (pegar al retomar)
 
-> Retomo InvitaFlow en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
+> Retomo Sobrely en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
 > Lee primero HANDOFF.md (secciones "Fase 8" y "Fase 7") y README.md. La **Fase 8
 > (Monetización) está COMPLETA** (8.1–8.8, incl. prueba E2E sandbox cerrada).
 > Ahora estamos en la **Fase 7 (Producción y lanzamiento)**: hosting **Vercel**,
