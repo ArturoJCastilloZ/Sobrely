@@ -29,7 +29,7 @@ el proveedor** (Stripe / Mercado Pago / otro).
 | 4 | RSVP público + dashboard de invitados (stats, filtros, CSV) | ✅ Aprobada |
 | 5 | Personalización avanzada + módulos adicionales (11 módulos, Storage) | ✅ Aprobada |
 | 5.1–5.7 | Sistema de animaciones (arquitectura, catálogo, presets, editor, a11y) | ✅ Aprobadas |
-| **8** | **Monetización y lanzamiento comercial** (reemplaza a la vieja "Fase 6") | 🚧 **EN PROGRESO** — ver sección Fase 8 abajo |
+| **8** | **Monetización y lanzamiento comercial** (reemplaza a la vieja "Fase 6") | ✅ **COMPLETA** (8.1–8.8) — ver sección Fase 8 abajo |
 | 8.1 | Config central de planes + `/pricing` | ✅ Aprobada |
 | 8.2 | BD y entitlements (migración `0006`) | ✅ Aprobada |
 | 8.3 | Integración Mercado Pago (Checkout Pro) | ✅ Aprobada |
@@ -37,8 +37,8 @@ el proveedor** (Stripe / Mercado Pago / otro).
 | 8.5 | Flujo de compra (checkout, billing, CTA upgrade) | ✅ Aprobada |
 | 8.6 | Servicios manuales + referidos (migración `0008`) | ✅ Aprobada |
 | 8.7 | Admin y métricas (migración `0009`) | ✅ Aprobada |
-| 8.8 | Pruebas y validación comercial (incl. E2E sandbox) | ⏳ **SIGUIENTE** |
-| 7 (viejo) | Producción y lanzamiento (SEO, sitemap, analytics, deploy) | ⏳ Pendiente (se integra al cierre de Fase 8) |
+| 8.8 | Pruebas y validación comercial (Vitest + docs) | ✅ Aprobada |
+| 7 (viejo) | Producción y lanzamiento (SEO, sitemap, analytics, deploy) | ⏳ Pendiente (post Fase 8) |
 
 ---
 
@@ -303,6 +303,29 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
 - **Decisión**: reembolsos y gestión de usuarios/planes NO se ejecutan en 8.7
   (los `refunded` solo se muestran); candidatos a 8.8/posterior.
 
+### 8.8 — Pruebas y validación comercial (cierre de Fase 8)
+- **Infra de pruebas**: **Vitest** (MIT, comercializable, sin phone-home — 3
+  condiciones OSS ✅). `vitest.config.mts` (alias `@/→src`, entorno node),
+  scripts `test`/`test:watch` en `package.json`. Solo devDep, no toca producción.
+- **Suite unitaria (37 tests, verdes)** sobre lógica de dinero determinista:
+  `plans.test.ts` (`resolveExpiry` 3 ramas, `minimalPlanForModules`,
+  `premiumModulesFor`, `planAllowsModule`, precios de campaña), `config.test.ts`
+  (`formatPrice`, `isLaunchCampaignActive` con corte, parsing de crédito),
+  `mp-signature.test.ts` (9 casos: válida + tampering + fail-closed),
+  `mp-status.test.ts` (mapeo MP→estado), `referrals/codes.test.ts`.
+- **Refactor mínimo**: `mapStatus` + tipo se movieron a un módulo PURO
+  `src/lib/billing/mp-status.ts` (sin `server-only`, que lanzaría al importarse
+  en Vitest); `fulfillment.ts` lo reusa. Sin efecto en runtime.
+- **Docs en repo**: `docs/pruebas-sandbox.md` (E2E de pago: túnel, webhook,
+  tarjetas de prueba MP, verificación por caso, expiración, idempotencia) y
+  `docs/checklist-pagos-reales.md` (go-live: credenciales producción, dominio,
+  webhook, migraciones `0001`→`0009`, sembrar admin, secretos, smoke test).
+- **README** refrescado del "Fase 1" viejo al estado real de Fase 8 (stack,
+  rutas, migraciones, env vars, `pnpm test`, seguridad).
+- **Solo unit** (acordado): las invariantes de BD (idempotencia/RLS/expiración)
+  ya se verificaron en local en subfases previas y se documentan en la guía
+  sandbox; no se automatizó integración con BD (evita Supabase en el runner).
+
 ## Variables de entorno de la Fase 8 (todas en `.env.example`)
 - `NEXT_PUBLIC_DEFAULT_CURRENCY` (MXN), `NEXT_PUBLIC_PRICING_LAUNCH_ENABLED`,
   `NEXT_PUBLIC_LAUNCH_CAMPAIGN_END_DATE`, `PAYMENT_PROVIDER`.
@@ -339,12 +362,18 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
      UI para el primero): `insert into public.admin_users(user_id) values
      ('<TU_USER_UUID>');` (el UUID sale de Authentication → Users o
      `select id from auth.users where email='tu@email';`).
-3. **Prueba E2E sandbox pendiente de confirmar por el dev:** pagar en MP con
-   tarjeta de prueba → webhook (túnel) → orden `paid` + entitlement activo. (El
-   redirect a MP ya funciona; falta cerrar el loop del webhook con el dev.)
-4. **8.8 — SIGUIENTE:** suite de pruebas comerciales + guía de pruebas manuales sandbox +
-   checklist para activar pagos reales (cambiar a credenciales de producción,
-   `MP_PUBLIC_BASE_URL`=dominio, webhook en dominio, etc.).
+3. **✅ Prueba E2E sandbox CERRADA (2026-08-11).** Pago real de prueba con
+   comprador `TESTUSER…` + tarjeta `APRO` → orden `7542f923…` quedó `paid`
+   ($699 Premium, `provider_payment_id=172362178821`) y el entitlement de la
+   invitación `active` (`expires_at` = evento + 90d, `guest_limit=500`). El
+   webhook validó firma (200) tras corregir `MP_WEBHOOK_SECRET`. Gotchas
+   aprendidos abajo.
+4. **✅ 8.8 hecha:** suite Vitest (37 tests) + `docs/pruebas-sandbox.md` +
+   `docs/checklist-pagos-reales.md`. Fase 8 COMPLETA.
+5. **SIGUIENTE (post Fase 8):** puesta en producción / lanzamiento (deploy a
+   Vercel, dominio https, SEO/sitemap, analytics) — la vieja "Fase 7". Requiere
+   aprobación antes de empezar. El checklist de go-live de pagos está en
+   `docs/checklist-pagos-reales.md`.
 
 ## Gotchas nuevos de la Fase 8
 - **`auto_return` de MP exige `back_url` pública (https).** En localhost falla; por
@@ -358,20 +387,37 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
   (el `0006` reaplica con `on conflict do update`).
 - El webhook usa evento MP **"Pagos (legacy)"** (topic `payment`), NO "Order
   (Mercado Pago)" (API nueva, estructura distinta que el código no parsea).
+- **Sandbox "una de las partes es de prueba":** el comprador NO puede ser tu
+  cuenta MP real; hay que pagar con un **usuario de prueba comprador** (panel MP →
+  Cuentas de prueba). El login usa el campo **Usuario** (`TESTUSER…`), no un email
+  (MP no genera correo); si el form exige email, `TESTUSER…@testuser.com`. Usar
+  ventana de incógnito para no arrastrar la sesión real de MP.
+- **`MP_WEBHOOK_SECRET` debe ser el de la config del webhook del panel.** Si no
+  coincide → webhook responde **401 "firma inválida"** y la orden se queda
+  `pending` (el pago sí existe en MP). Verificar el pago real con
+  `GET /v1/payments/<id>` y, para re-disparar, usar **"Simular notificaciones"**
+  del panel (manda una notificación FIRMADA con el secreto; probar con el `data.id`
+  del pago real). El panel nuevo de MP no siempre tiene botón "Reenviar".
+- **`live_mode:true` en pagos de usuarios de prueba es NORMAL** (simulan
+  producción con dinero ficticio); no implica cobro real. Confirmar cuenta con
+  `GET /users/me` → tags incluye `test_user`.
+- **Túnel efímero:** cloudflared cambia de URL al reiniciar; hay que actualizar
+  `MP_PUBLIC_BASE_URL` + la URL del webhook en MP + `allowedDevOrigins` en
+  `next.config.ts` (Next 16 bloquea recursos dev cross-origin del túnel).
 
 ## Prompt para continuar (pegar al retomar)
 
 > Retomo InvitaFlow en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
-> Lee primero HANDOFF.md (sección "Fase 8") y README.md. Estamos en la **Fase 8
-> (Monetización, Mercado Pago, pago único por evento)**; las subfases **8.1–8.7
-> están aprobadas** y la **siguiente es la 8.8** (pruebas y validación comercial:
-> suite de pruebas + guía sandbox + checklist para activar pagos reales). Reglas:
-> se trabaja por subfases, una a la vez, y **cada subfase requiere mi aprobación
-> explícita** — NO avances solo; al terminar cada una muéstrame resumen, archivos,
-> migraciones, env vars, cómo probar, pendientes y riesgos, y pregúntame si
-> apruebo. Antes de la 8.8: recuérdame **aplicar las migraciones `0008` + `0009`
-> a mi Supabase REMOTO** (en la sesión pasada solo se verificaron en local;
-> `0006`+`0007` ya están confirmadas en remoto) y **sembrar el primer admin** por
-> SQL, y, si quiero, cerrar la prueba E2E de pago sandbox. Las credenciales MP son
-> de PRUEBA (no cobran real). NO guardes nada en tu cerebro/memoria ni en el
-> workflow Personal Projects.
+> Lee primero HANDOFF.md (sección "Fase 8") y README.md. La **Fase 8
+> (Monetización, Mercado Pago, pago único por evento) está COMPLETA** (subfases
+> 8.1–8.8 aprobadas). Lo que sigue es **puesta en producción / lanzamiento** (la
+> vieja "Fase 7": deploy a Vercel, dominio, SEO/sitemap, analytics) — pero NADA de
+> eso empieza sin que yo lo apruebe. Reglas: se trabaja por bloques, uno a la vez,
+> y **cada uno requiere mi aprobación explícita** — NO avances solo; al terminar
+> muéstrame resumen, archivos, migraciones, env vars, cómo probar, pendientes y
+> riesgos, y pregúntame si apruebo. **Pendientes operativos ANTES de cobrar en
+> real** (ver docs/checklist-pagos-reales.md): aplicar `0008` + `0009` al Supabase
+> REMOTO (`0006`+`0007` ya confirmadas) y **sembrar el primer admin** por SQL;
+> opcional cerrar la prueba E2E sandbox (docs/pruebas-sandbox.md). Las credenciales
+> MP siguen siendo de PRUEBA (no cobran real). NO guardes nada en tu
+> cerebro/memoria ni en el workflow Personal Projects.
