@@ -42,8 +42,8 @@ el proveedor** (Stripe / Mercado Pago / otro).
 | 7.1 | SEO técnico (metadataBase, robots, sitemap, OG, manifest) | ✅ Aprobada |
 | 7.2 | Analytics (Vercel Web Analytics) | ✅ Aprobada |
 | 7.3 | Deploy a Vercel (LIVE en `invitaflow-lemon.vercel.app`) | ✅ Aprobada |
-| 7.4 | Post-deploy (Auth/OAuth) — **sin dominio propio, se queda la URL de Vercel** | 🚧 **SIGUIENTE** |
-| 7.5 | Go-live pagos reales (checklist) | ⏳ Pendiente |
+| 7.4 | Post-deploy (Auth/OAuth verificado) + security headers | ✅ Aprobada |
+| 7.5 | Go-live pagos reales (checklist) | 🚧 **SIGUIENTE** |
 
 ---
 
@@ -473,6 +473,16 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
   commitea directo en `main` (branch guard) → commit en `feat` + merge ff a `main`.
   Push a `main` dispara auto-redeploy de Vercel.
 
+## 7.4 — Post-deploy + hardening (hecho)
+- **Smoke test en prod OK** (registro, login, Google) — confirmado por el dev.
+- **Sin dominio propio**: la URL de Vercel es definitiva.
+- **Security headers** en `next.config.ts` (`async headers()` sobre `/:path*`):
+  HSTS (2 años), `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`
+  (camera/mic/geo off). Verificados en vivo con `curl -I`.
+- **CSP completo DEFERIDO**: requiere allowlist de Supabase Storage, script de
+  Vercel Analytics, redirect de MP y fuentes + pruebas; no meter sin calibrar.
+
 ## Prompt para continuar (pegar al retomar)
 
 > Retomo InvitaFlow en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
@@ -480,10 +490,11 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
 > (Monetización) está COMPLETA** (8.1–8.8, incl. prueba E2E sandbox cerrada).
 > Ahora estamos en la **Fase 7 (Producción y lanzamiento)**: hosting **Vercel**,
 > analytics **Vercel Web Analytics**, **sin dominio aún** (se arranca con
-> `*.vercel.app`). **7.1 (SEO), 7.2 (Analytics) y 7.3 (deploy) hechas**: la app
-> está **LIVE en `https://invitaflow-lemon.vercel.app`** (URL definitiva, SIN
-> dominio propio). La **siguiente es la 7.4** (post-deploy: verificar login/Google
-> en prod) y luego **7.5** (pasar MP a producción para cobrar en real). Reglas: se
+> `*.vercel.app`). **7.1–7.4 hechas** (SEO, analytics, deploy, post-deploy +
+> security headers; smoke test de login OK): la app está **LIVE en
+> `https://invitaflow-lemon.vercel.app`** (URL definitiva, SIN dominio propio). La
+> **única pendiente es la 7.5** (pasar MP a PRODUCCIÓN para cobrar en real —
+> dominio crítico dinero; seguir `docs/checklist-pagos-reales.md`). Reglas: se
 > trabaja por sub-bloques, uno a la
 > vez, y **cada uno requiere mi aprobación explícita** — NO avances solo; al
 > terminar muéstrame resumen, archivos, migraciones, env vars, cómo probar,
