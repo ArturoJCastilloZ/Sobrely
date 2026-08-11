@@ -1,0 +1,220 @@
+/* ============================================================================
+   InvitaFlow — catálogo de animaciones (Fases 5.2–5.7)
+
+   Principios:
+   - Solo se animan transform / opacity / clip-path / filter (compositor).
+   - El estado oculto SOLO aplica cuando hay JS: se gatea con
+     `@media (scripting: enabled)`, así el contenido NUNCA queda invisible sin
+     JS (progressive enhancement) — sin necesidad de un <script>.
+   - Todo se apaga bajo prefers-reduced-motion.
+   ============================================================================ */
+
+/* ---- Motor de revelado (reveal) ------------------------------------------ */
+
+.anim {
+  transition:
+    opacity var(--anim-dur, 0.6s) var(--anim-ease, ease) var(--anim-delay, 0s),
+    transform var(--anim-dur, 0.6s) var(--anim-ease, ease) var(--anim-delay, 0s),
+    clip-path var(--anim-dur, 0.6s) var(--anim-ease, ease) var(--anim-delay, 0s),
+    filter var(--anim-dur, 0.6s) var(--anim-ease, ease) var(--anim-delay, 0s);
+}
+
+.anim-stagger-item {
+  transition:
+    opacity var(--anim-dur, 0.6s) var(--anim-ease, ease)
+      calc(var(--anim-delay, 0s) + var(--stagger-index, 0) * var(--stagger-step, 0.08s)),
+    transform var(--anim-dur, 0.6s) var(--anim-ease, ease)
+      calc(var(--anim-delay, 0s) + var(--stagger-index, 0) * var(--stagger-step, 0.08s));
+}
+
+/* Estados iniciales (ocultos) — solo cuando hay scripting disponible. */
+@media (scripting: enabled) {
+  .anim:not(.is-revealed) {
+    opacity: 0;
+    will-change: opacity, transform;
+  }
+  .anim--soft-reveal:not(.is-revealed),
+  .anim--fade-up:not(.is-revealed) {
+    transform: translate3d(0, var(--anim-dist, 24px), 0);
+  }
+  .anim--fade-down:not(.is-revealed) {
+    transform: translate3d(0, calc(-1 * var(--anim-dist, 24px)), 0);
+  }
+  .anim--slide-left:not(.is-revealed) {
+    transform: translate3d(var(--anim-dist, 24px), 0, 0);
+  }
+  .anim--slide-right:not(.is-revealed) {
+    transform: translate3d(calc(-1 * var(--anim-dist, 24px)), 0, 0);
+  }
+  .anim--soft-scale:not(.is-revealed) {
+    transform: scale(calc(1 - var(--anim-scale, 0.05)));
+  }
+  .anim--blur-focus:not(.is-revealed) {
+    filter: blur(var(--anim-blur, 6px));
+  }
+  .anim--rotate-in:not(.is-revealed) {
+    transform: rotate(-4deg) translate3d(0, var(--anim-dist, 24px), 0);
+    transform-origin: 50% 100%;
+  }
+  .anim--section-lift:not(.is-revealed) {
+    transform: translate3d(0, calc(1.6 * var(--anim-dist, 24px)), 0) scale(0.985);
+  }
+  .anim--editorial-reveal:not(.is-revealed) {
+    transform: translate3d(0, var(--anim-dist, 24px), 0) scale(1.015);
+  }
+  .anim--curtain-reveal:not(.is-revealed) {
+    opacity: 1;
+    clip-path: inset(0 0 100% 0);
+  }
+  .anim--image-clip:not(.is-revealed) {
+    opacity: 1;
+    clip-path: inset(0 100% 0 0);
+  }
+  .anim-stagger-item:not(.is-revealed) {
+    opacity: 0;
+    transform: translate3d(0, var(--anim-dist, 20px), 0);
+  }
+}
+
+/* Estado revelado (destino común). */
+.anim.is-revealed {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  clip-path: inset(0 0 0 0);
+}
+.anim-stagger-item.is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- Efectos continuos (hero / decoraciones) ----------------------------- */
+
+@keyframes inv-float {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, -16px, 0) rotate(8deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+@keyframes inv-sparkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+@keyframes inv-gradient-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+@keyframes inv-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+@keyframes inv-sweep {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(140%) skewX(-18deg);
+  }
+}
+
+.inv-kenburns {
+  animation: inv-kenburns 14s ease-in-out infinite alternate;
+}
+
+.inv-lightsweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.inv-lightsweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.28),
+    transparent
+  );
+  animation: inv-sweep 6s ease-in-out infinite;
+}
+
+.inv-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.inv-decor__item {
+  position: absolute;
+  color: var(--inv-primary, currentColor);
+  opacity: 0.75;
+  animation: inv-float var(--decor-dur, 6s) ease-in-out infinite;
+}
+.inv-decor__sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--inv-primary, currentColor);
+  animation: inv-sparkle var(--decor-dur, 3s) ease-in-out infinite;
+}
+.inv-ambient-gradient {
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--inv-primary, #7c6cf0) 16%, transparent) 0%,
+    transparent 45%,
+    color-mix(in srgb, var(--inv-secondary, #f0a6c6) 16%, transparent) 100%
+  );
+  background-size: 220% 220%;
+  animation: inv-gradient-pan 10s ease-in-out infinite;
+}
+
+/* ---- Reduced motion: todo estático y visible ----------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .anim,
+  .anim-stagger-item {
+    transition: none !important;
+  }
+  .anim:not(.is-revealed),
+  .anim-stagger-item:not(.is-revealed) {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    clip-path: none !important;
+    will-change: auto !important;
+  }
+  .inv-kenburns,
+  .inv-lightsweep::after,
+  .inv-decor__item,
+  .inv-decor__sparkle,
+  .inv-ambient-gradient {
+    animation: none !important;
+  }
+}

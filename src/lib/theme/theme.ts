@@ -1,0 +1,123 @@
+import { z } from "zod";
+import {
+  animationConfigSchema,
+  SYSTEM_DEFAULT_ANIMATION,
+} from "@/lib/animation/schema";
+
+/** Per-invitation theme configuration (stored in invitations.theme_config). */
+
+const hexColor = z
+  .string()
+  .regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "Color inválido.");
+
+export const FONT_KEYS = ["sans", "serif", "elegant", "script"] as const;
+export type FontKey = (typeof FONT_KEYS)[number];
+
+export const SPACING_KEYS = ["compact", "normal", "relaxed"] as const;
+export type SpacingKey = (typeof SPACING_KEYS)[number];
+
+export const DECORATION_VARIANTS = [
+  "floating",
+  "sparkle",
+  "ambient-gradient",
+] as const;
+export type DecorationVariantKey = (typeof DECORATION_VARIANTS)[number];
+
+export const decorationSchema = z.object({
+  enabled: z.boolean().default(false),
+  variant: z.enum(DECORATION_VARIANTS).default("floating"),
+  symbol: z.string().max(4).default("❀"),
+});
+export type DecorationConfig = z.infer<typeof decorationSchema>;
+
+export const DECORATION_LABELS: Record<DecorationVariantKey, string> = {
+  floating: "Flotantes",
+  sparkle: "Destellos",
+  "ambient-gradient": "Gradiente ambiental",
+};
+
+export const themeSchema = z.object({
+  colors: z
+    .object({
+      primary: hexColor.default("#8a6d3b"),
+      secondary: hexColor.default("#b08d57"),
+      background: hexColor.default("#ffffff"),
+      text: hexColor.default("#1f2937"),
+    })
+    .default({
+      primary: "#8a6d3b",
+      secondary: "#b08d57",
+      background: "#ffffff",
+      text: "#1f2937",
+    }),
+  font: z.enum(FONT_KEYS).default("sans"),
+  spacing: z.enum(SPACING_KEYS).default("normal"),
+  // Master on/off switch for all animations (invitation-level).
+  animations: z.boolean().default(true),
+  // Global default animation config; per-module overrides added in 5.4.
+  animation: animationConfigSchema.default(SYSTEM_DEFAULT_ANIMATION),
+  // Ambient decoration layer for the whole invitation (5.5).
+  decoration: decorationSchema.default({
+    enabled: false,
+    variant: "floating",
+    symbol: "❀",
+  }),
+  // Last applied style preset (for display in the editor). Stored as a plain
+  // string to avoid a circular import with the style-presets module.
+  stylePreset: z.string().optional(),
+});
+
+export type ThemeConfig = z.infer<typeof themeSchema>;
+
+export function defaultTheme(): ThemeConfig {
+  return themeSchema.parse({});
+}
+
+/** Normalizes stored theme_config, filling defaults for missing fields. */
+export function parseTheme(raw: unknown): ThemeConfig {
+  const result = themeSchema.safeParse(raw ?? {});
+  return result.success ? result.data : defaultTheme();
+}
+
+/** Font-family stacks. `elegant`/`script` map to fonts loaded in the layout. */
+export const FONT_STACKS: Record<FontKey, string> = {
+  sans: "var(--font-geist-sans), system-ui, sans-serif",
+  serif: 'Georgia, "Times New Roman", serif',
+  elegant: 'var(--font-playfair), Georgia, serif',
+  script: 'var(--font-dancing), "Segoe Script", cursive',
+};
+
+export const FONT_LABELS: Record<FontKey, string> = {
+  sans: "Moderna (Sans)",
+  serif: "Clásica (Serif)",
+  elegant: "Elegante (Playfair)",
+  script: "Manuscrita (Dancing)",
+};
+
+/** Vertical padding per section for each spacing option. */
+export const SPACING_VALUES: Record<SpacingKey, string> = {
+  compact: "1.75rem",
+  normal: "2.5rem",
+  relaxed: "3.5rem",
+};
+
+export const SPACING_LABELS: Record<SpacingKey, string> = {
+  compact: "Compacto",
+  normal: "Normal",
+  relaxed: "Amplio",
+};
+
+/** Builds the inline CSS variables that ThemeScope applies. */
+export function themeCssVars(theme: ThemeConfig): React.CSSProperties {
+  return {
+    // Custom properties consumed by the module previews.
+    ["--inv-primary" as string]: theme.colors.primary,
+    ["--inv-secondary" as string]: theme.colors.secondary,
+    ["--inv-bg" as string]: theme.colors.background,
+    ["--inv-text" as string]: theme.colors.text,
+    ["--inv-space" as string]: SPACING_VALUES[theme.spacing],
+    backgroundColor: theme.colors.background,
+    color: theme.colors.text,
+    fontFamily: FONT_STACKS[theme.font],
+  };
+}
