@@ -38,7 +38,12 @@ el proveedor** (Stripe / Mercado Pago / otro).
 | 8.6 | Servicios manuales + referidos (migración `0008`) | ✅ Aprobada |
 | 8.7 | Admin y métricas (migración `0009`) | ✅ Aprobada |
 | 8.8 | Pruebas y validación comercial (Vitest + docs) | ✅ Aprobada |
-| 7 (viejo) | Producción y lanzamiento (SEO, sitemap, analytics, deploy) | ⏳ Pendiente (post Fase 8) |
+| **7** | **Producción y lanzamiento** (SEO, analytics, deploy, dominio) | 🚧 **EN PROGRESO** — ver sección Fase 7 abajo |
+| 7.1 | SEO técnico (metadataBase, robots, sitemap, OG, manifest) | ✅ Aprobada |
+| 7.2 | Analytics (Vercel Web Analytics) | ✅ Aprobada |
+| 7.3 | Deploy a Vercel (config + env vars) | ⏳ **SIGUIENTE** |
+| 7.4 | Dominio + post-deploy (Auth/OAuth/`SITE_URL`) | ⏳ Pendiente |
+| 7.5 | Go-live pagos reales (checklist) | ⏳ Pendiente |
 
 ---
 
@@ -405,19 +410,61 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
   `MP_PUBLIC_BASE_URL` + la URL del webhook en MP + `allowedDevOrigins` en
   `next.config.ts` (Next 16 bloquea recursos dev cross-origin del túnel).
 
+---
+
+# Fase 7 — Producción y lanzamiento
+
+> Arranca tras cerrar la Fase 8. Decisiones tomadas: **hosting = Vercel**,
+> **analytics = Vercel Web Analytics**, **dominio = aún no** (se arranca con la
+> URL `*.vercel.app` y se conecta dominio en 7.4). Se trabaja por sub-bloques con
+> aprobación explícita.
+
+## Plan de sub-bloques
+- **7.1** SEO técnico ✅ — **7.2** Analytics (Vercel) — **7.3** Deploy a Vercel
+  (config + env vars) — **7.4** Dominio + post-deploy (Auth/OAuth/`SITE_URL`) —
+  **7.5** Go-live pagos reales (usar `docs/checklist-pagos-reales.md`).
+
+## 7.1 — SEO técnico (hecho)
+- `src/app/layout.tsx`: `metadataBase` derivado de `NEXT_PUBLIC_SITE_URL` (no se
+  hardcodea dominio; en Vercel/prod se vuelve absoluto solo) + defaults de
+  `openGraph`/`twitter` (siteName, `locale es_MX`, type website).
+- `src/app/robots.ts`: permite marketing, **bloquea** `/dashboard`, `/admin`,
+  `/editor`, `/billing`, `/api` y rutas de auth; apunta al sitemap.
+- `src/app/sitemap.ts`: solo marketing (`/`, `/pricing`). Las invitaciones
+  públicas NO van (contenido de usuario, ya tienen su propio OG desde Fase 3);
+  queda como opción indexarlas después.
+- `src/app/opengraph-image.tsx`: OG de marca 1200×630 con `next/og` (sin assets
+  ni fuentes remotas). Las públicas conservan su OG propio.
+- `src/app/manifest.ts`: manifest PWA (mobile-first); íconos referencian el
+  `favicon.ico` (cuando haya PNG 192/512 de marca se agregan).
+- `src/app/pricing/page.tsx`: fix del título (usaba `"… · InvitaFlow"` y el
+  template raíz lo duplicaba) → ahora solo `"Planes y precios"`.
+- Verificado en vivo: `/robots.txt`, `/sitemap.xml` (XML válido), `/opengraph-image`
+  (image/png 92KB). `tsc`/`lint`/`build` limpios.
+- Gotcha Next 16: un `title` string de página hijo se envuelve con el `template`
+  del root → no incluir "· InvitaFlow" en los títulos de página.
+
+## 7.2 — Analytics (hecho)
+- `@vercel/analytics@2.0.1` + `<Analytics/>` (de `@vercel/analytics/next`) en el
+  layout raíz. Cookieless, agregado; mide tráfico del sitio público, no datos de
+  cliente ni contenido de invitaciones. **No-op en local**; solo emite en Vercel.
+- ⚠️ En el deploy (7.3) hay que **activar Analytics** una vez en el panel de
+  Vercel (proyecto → pestaña Analytics). Sin env vars.
+
 ## Prompt para continuar (pegar al retomar)
 
 > Retomo InvitaFlow en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
-> Lee primero HANDOFF.md (sección "Fase 8") y README.md. La **Fase 8
-> (Monetización, Mercado Pago, pago único por evento) está COMPLETA** (subfases
-> 8.1–8.8 aprobadas). Lo que sigue es **puesta en producción / lanzamiento** (la
-> vieja "Fase 7": deploy a Vercel, dominio, SEO/sitemap, analytics) — pero NADA de
-> eso empieza sin que yo lo apruebe. Reglas: se trabaja por bloques, uno a la vez,
-> y **cada uno requiere mi aprobación explícita** — NO avances solo; al terminar
-> muéstrame resumen, archivos, migraciones, env vars, cómo probar, pendientes y
-> riesgos, y pregúntame si apruebo. **Pendientes operativos ANTES de cobrar en
-> real** (ver docs/checklist-pagos-reales.md): aplicar `0008` + `0009` al Supabase
-> REMOTO (`0006`+`0007` ya confirmadas) y **sembrar el primer admin** por SQL;
-> opcional cerrar la prueba E2E sandbox (docs/pruebas-sandbox.md). Las credenciales
-> MP siguen siendo de PRUEBA (no cobran real). NO guardes nada en tu
-> cerebro/memoria ni en el workflow Personal Projects.
+> Lee primero HANDOFF.md (secciones "Fase 8" y "Fase 7") y README.md. La **Fase 8
+> (Monetización) está COMPLETA** (8.1–8.8, incl. prueba E2E sandbox cerrada).
+> Ahora estamos en la **Fase 7 (Producción y lanzamiento)**: hosting **Vercel**,
+> analytics **Vercel Web Analytics**, **sin dominio aún** (se arranca con
+> `*.vercel.app`). **7.1 (SEO) y 7.2 (Vercel Analytics) aprobadas**; la
+> **siguiente es la 7.3** (deploy a Vercel: config + env vars + conexión del
+> repo). Reglas: se trabaja por sub-bloques, uno a la
+> vez, y **cada uno requiere mi aprobación explícita** — NO avances solo; al
+> terminar muéstrame resumen, archivos, migraciones, env vars, cómo probar,
+> pendientes y riesgos, y pregúntame si apruebo. **Pendientes operativos ANTES de
+> cobrar en real** (ver docs/checklist-pagos-reales.md): pasar MP a credenciales de
+> PRODUCCIÓN, webhook en el dominio, `MP_PUBLIC_BASE_URL`=dominio. Estado remoto:
+> migraciones `0001`–`0009` aplicadas y admin sembrado; credenciales MP siguen de
+> PRUEBA. NO guardes nada en tu cerebro/memoria ni en el workflow Personal Projects.

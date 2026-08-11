@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display, Dancing_Script } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import "./animations.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -25,13 +26,34 @@ const dancing = Dancing_Script({
   subsets: ["latin"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const SITE_TITLE = "InvitaFlow — Invitaciones digitales dinámicas";
+const SITE_DESCRIPTION =
+  "Crea invitaciones digitales dinámicas y personalizables para bodas, XV años, cumpleaños y más.";
+
 export const metadata: Metadata = {
+  // Base para resolver URLs relativas de OG/canónicas a absolutas. Lee de env
+  // para no hardcodear el dominio (en prod = dominio real; en local = localhost).
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "InvitaFlow — Invitaciones digitales dinámicas",
+    default: SITE_TITLE,
     template: "%s · InvitaFlow",
   },
-  description:
-    "Crea invitaciones digitales dinámicas y personalizables para bodas, XV años, cumpleaños y más.",
+  description: SITE_DESCRIPTION,
+  applicationName: "InvitaFlow",
+  openGraph: {
+    type: "website",
+    siteName: "InvitaFlow",
+    locale: "es_MX",
+    url: "/",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -43,6 +65,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster />
+        {/* Vercel Web Analytics: cookieless, agregado. Solo emite en Vercel;
+            en local/otros hosts es no-op. */}
+        <Analytics />
       </body>
     </html>
   );

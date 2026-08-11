@@ -8,9 +8,15 @@ import { createClient } from "@/lib/supabase/server";
 import { getActivePlans, isLaunchCampaignActive } from "@/lib/billing";
 
 export const metadata: Metadata = {
-  title: "Planes y precios · InvitaFlow",
+  // El layout raíz aplica el template "%s · InvitaFlow"; aquí solo el nombre.
+  title: "Planes y precios",
   description:
     "Crea gratis y paga solo cuando quieras publicar. Planes por evento en pesos mexicanos, sin cobros recurrentes.",
+  openGraph: {
+    title: "Planes y precios · InvitaFlow",
+    description:
+      "Crea gratis y paga solo cuando quieras publicar. Planes por evento en pesos mexicanos, sin cobros recurrentes.",
+  },
 };
 
 export default async function PricingPage() {
