@@ -8,12 +8,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getActivePlans, isLaunchCampaignActive } from "@/lib/billing";
 
 export const metadata: Metadata = {
-  // El layout raíz aplica el template "%s · InvitaFlow"; aquí solo el nombre.
+  // El layout raíz aplica el template "%s · Sobrely"; aquí solo el nombre.
   title: "Planes y precios",
   description:
     "Crea gratis y paga solo cuando quieras publicar. Planes por evento en pesos mexicanos, sin cobros recurrentes.",
   openGraph: {
-    title: "Planes y precios · InvitaFlow",
+    title: "Planes y precios · Sobrely",
     description:
       "Crea gratis y paga solo cuando quieras publicar. Planes por evento en pesos mexicanos, sin cobros recurrentes.",
   },
@@ -40,7 +40,7 @@ export default async function PricingPage() {
     <main className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
         <Link href="/" className="text-lg font-bold tracking-tight">
-          Invita<span className="text-primary">Flow</span>
+          Sobre<span className="text-primary">ly</span>
         </Link>
         <nav className="flex items-center gap-2">
           {user ? (
@@ -146,7 +146,7 @@ export default async function PricingPage() {
       </section>
 
       <footer className="mx-auto w-full max-w-6xl px-4 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} InvitaFlow · Sin apps para tus invitados
+        © {new Date().getFullYear()} Sobrely · Sin apps para tus invitados
       </footer>
     </main>
   );

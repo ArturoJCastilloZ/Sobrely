@@ -49,7 +49,7 @@ export default async function ReferralsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Referidos</h1>
         <p className="text-sm text-muted-foreground">
-          Invita a otros a InvitaFlow y gana crédito cuando hagan su primera
+          Invita a otros a Sobrely y gana crédito cuando hagan su primera
           compra.
         </p>
       </div>

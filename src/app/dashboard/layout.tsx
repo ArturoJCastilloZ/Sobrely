@@ -28,7 +28,7 @@ export default async function DashboardLayout({
       <header className="border-b">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
           <Link href="/dashboard" className="font-bold tracking-tight">
-            Invita<span className="text-primary">Flow</span>
+            Sobre<span className="text-primary">ly</span>
           </Link>
           <div className="flex items-center gap-3">
             {showAdmin ? (

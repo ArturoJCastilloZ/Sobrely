@@ -9,7 +9,7 @@ import {
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 
 export const metadata: Metadata = {
-  title: "Recuperar contraseña · InvitaFlow",
+  title: "Recuperar contraseña · Sobrely",
 };
 
 export default function ForgotPasswordPage() {

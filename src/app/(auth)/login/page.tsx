@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { LoginForm } from "@/components/auth/login-form";
 
-export const metadata: Metadata = { title: "Iniciar sesión · InvitaFlow" };
+export const metadata: Metadata = { title: "Iniciar sesión · Sobrely" };
 
 export default async function LoginPage({
   searchParams,

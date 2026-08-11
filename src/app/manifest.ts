@@ -7,8 +7,8 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "InvitaFlow — Invitaciones digitales",
-    short_name: "InvitaFlow",
+    name: "Sobrely — Invitaciones digitales",
+    short_name: "Sobrely",
     description:
       "Crea invitaciones digitales dinámicas y personalizables para bodas, XV años, cumpleaños y más.",
     start_url: "/",

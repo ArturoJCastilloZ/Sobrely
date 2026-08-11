@@ -27,7 +27,7 @@ const dancing = Dancing_Script({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-const SITE_TITLE = "InvitaFlow — Invitaciones digitales dinámicas";
+const SITE_TITLE = "Sobrely — Invitaciones digitales dinámicas";
 const SITE_DESCRIPTION =
   "Crea invitaciones digitales dinámicas y personalizables para bodas, XV años, cumpleaños y más.";
 
@@ -37,13 +37,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_TITLE,
-    template: "%s · InvitaFlow",
+    template: "%s · Sobrely",
   },
   description: SITE_DESCRIPTION,
-  applicationName: "InvitaFlow",
+  applicationName: "Sobrely",
   openGraph: {
     type: "website",
-    siteName: "InvitaFlow",
+    siteName: "Sobrely",
     locale: "es_MX",
     url: "/",
     title: SITE_TITLE,

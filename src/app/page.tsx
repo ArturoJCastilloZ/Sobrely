@@ -12,7 +12,7 @@ export default async function Home() {
     <main className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-5">
         <span className="text-lg font-bold tracking-tight">
-          Invita<span className="text-primary">Flow</span>
+          Sobre<span className="text-primary">ly</span>
         </span>
         <nav className="flex items-center gap-2">
           <Button
@@ -76,7 +76,7 @@ export default async function Home() {
       </section>
 
       <footer className="mx-auto w-full max-w-5xl px-4 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} InvitaFlow
+        © {new Date().getFullYear()} Sobrely
       </footer>
     </main>
   );

@@ -7,7 +7,7 @@ import { ImageResponse } from "next/og";
  *
  * Las invitaciones públicas tienen su propio OG (Fase 3); esta es la de marca.
  */
-export const alt = "InvitaFlow — Invitaciones digitales dinámicas";
+export const alt = "Sobrely — Invitaciones digitales dinámicas";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -30,7 +30,7 @@ export default function OpengraphImage() {
         }}
       >
         <div style={{ fontSize: 88, fontWeight: 800, letterSpacing: -2 }}>
-          InvitaFlow
+          Sobrely
         </div>
         <div
           style={{

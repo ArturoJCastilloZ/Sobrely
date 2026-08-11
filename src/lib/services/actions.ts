@@ -91,7 +91,7 @@ function buildWhatsappUrl(serviceName: string, email?: string): string | undefin
   const digits = SUPPORT_WHATSAPP.replace(/[^\d]/g, "");
   if (!digits) return undefined;
   const text = encodeURIComponent(
-    `Hola, quiero solicitar el servicio "${serviceName}" en InvitaFlow` +
+    `Hola, quiero solicitar el servicio "${serviceName}" en Sobrely` +
       (email ? ` (cuenta: ${email}).` : "."),
   );
   return `https://wa.me/${digits}?text=${text}`;

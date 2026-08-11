@@ -147,7 +147,7 @@ export async function createPlanCheckout(
         items: [
           {
             id: plan.code,
-            title: `InvitaFlow — Plan ${plan.name}`,
+            title: `Sobrely — Plan ${plan.name}`,
             quantity: 1,
             unit_price: amount,
             currency_id: plan.currency,

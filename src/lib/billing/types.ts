@@ -13,7 +13,7 @@ import type { ModuleType } from "@/lib/modules/types";
 export type PlanCode = "free" | "esencial" | "celebracion" | "premium";
 
 /**
- * Modelo de cobro. InvitaFlow arranca con pago único por evento; `free` no
+ * Modelo de cobro. Sobrely arranca con pago único por evento; `free` no
  * cobra. La arquitectura deja la puerta abierta a `subscription` a futuro sin
  * rehacer el sistema (no se usa en esta fase).
  */
@@ -23,7 +23,7 @@ export type BillingType = "free" | "per_event";
 export type Currency = "MXN" | "USD" | "EUR" | "COP" | "CLP" | "PEN" | "ARS";
 
 /**
- * Nivel de branding "Hecho con InvitaFlow" en la invitación pública.
+ * Nivel de branding "Hecho con Sobrely" en la invitación pública.
  * - `full`: marca completa (Free).
  * - `reduced`: marca discreta (Esencial).
  * - `none`: sin marca (Celebración / Premium).

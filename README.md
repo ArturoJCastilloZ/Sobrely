@@ -1,4 +1,4 @@
-# InvitaFlow
+# Sobrely
 
 Plataforma SaaS para crear **invitaciones digitales dinámicas, modulares y
 personalizables** con templates prearmados. Bodas, XV años, cumpleaños, baby

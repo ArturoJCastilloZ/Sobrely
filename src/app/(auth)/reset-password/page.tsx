@@ -9,7 +9,7 @@ import {
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 
 export const metadata: Metadata = {
-  title: "Nueva contraseña · InvitaFlow",
+  title: "Nueva contraseña · Sobrely",
 };
 
 export default function ResetPasswordPage() {

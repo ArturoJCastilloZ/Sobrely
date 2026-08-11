@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { RegisterForm } from "@/components/auth/register-form";
 
-export const metadata: Metadata = { title: "Crear cuenta · InvitaFlow" };
+export const metadata: Metadata = { title: "Crear cuenta · Sobrely" };
 
 export default function RegisterPage() {
   return (

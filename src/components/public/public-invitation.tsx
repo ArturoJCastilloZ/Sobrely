@@ -64,7 +64,7 @@ export function PublicInvitationView({
         })}
 
         <footer className="px-6 py-8 text-center text-xs opacity-60">
-          Hecho con Invita<span style={{ color: "var(--inv-primary)" }}>Flow</span>
+          Hecho con Sobre<span style={{ color: "var(--inv-primary)" }}>ly</span>
         </footer>
       </div>
     </ThemeScope>

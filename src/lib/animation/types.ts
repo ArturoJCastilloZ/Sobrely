@@ -1,5 +1,5 @@
 /**
- * Core types for the InvitaFlow animation system.
+ * Core types for the Sobrely animation system.
  *
  * Vocabulary is defined here (design). Which presets are actually implemented
  * as visual variants is tracked by the registry (registry.ts) and grows over

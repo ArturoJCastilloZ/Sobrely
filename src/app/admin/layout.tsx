@@ -19,7 +19,7 @@ export default async function AdminLayout({
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <Link href="/admin" className="font-bold tracking-tight">
-              Invita<span className="text-primary">Flow</span>
+              Sobre<span className="text-primary">ly</span>
             </Link>
             <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
               Admin
