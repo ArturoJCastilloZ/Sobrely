@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoLockup } from "@/components/brand/logo-lockup";
 import { requireAdmin } from "@/lib/auth/admin";
 import { Button } from "@/components/ui/button";
 
@@ -18,8 +19,8 @@ export default async function AdminLayout({
       <header className="border-b bg-muted/30">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <Link href="/admin" className="font-bold tracking-tight">
-              Sobre<span className="text-primary">ly</span>
+            <Link href="/admin" aria-label="Sobrely — inicio">
+              <LogoLockup markClassName="h-7 w-7" wordClassName="text-lg" />
             </Link>
             <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
               Admin

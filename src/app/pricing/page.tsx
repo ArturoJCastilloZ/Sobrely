@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LogoLockup } from "@/components/brand/logo-lockup";
 
 import { Button } from "@/components/ui/button";
 import { PlanCard } from "@/components/billing/plan-card";
@@ -39,8 +40,8 @@ export default async function PricingPage() {
   return (
     <main className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
-        <Link href="/" className="font-display text-xl font-bold tracking-tight">
-          Sobre<span className="text-brand-gold">ly</span>
+        <Link href="/" aria-label="Sobrely — inicio">
+          <LogoLockup />
         </Link>
         <nav className="flex items-center gap-2">
           {user ? (

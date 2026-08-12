@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoLockup } from "@/components/brand/logo-lockup";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/auth/actions";
@@ -27,8 +28,8 @@ export default async function DashboardLayout({
     <div className="flex min-h-svh flex-col">
       <header className="border-b">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
-          <Link href="/dashboard" className="font-bold tracking-tight">
-            Sobre<span className="text-primary">ly</span>
+          <Link href="/dashboard" aria-label="Sobrely — inicio">
+            <LogoLockup markClassName="h-7 w-7" wordClassName="text-lg" />
           </Link>
           <div className="flex items-center gap-3">
             {showAdmin ? (
