@@ -80,7 +80,7 @@ export function InvitationCard({
             variant="outline"
             render={
               <a
-                href={`/public/${username}/${invitation.slug}`}
+                href={`/${username}/${invitation.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
               />

@@ -24,7 +24,7 @@ export function PublishControls({
     );
   }
 
-  const path = `/public/${username}/${slug}`;
+  const path = `/${username}/${slug}`;
 
   async function copy() {
     const fullUrl = `${window.location.origin}${path}`;

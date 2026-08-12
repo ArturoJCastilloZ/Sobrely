@@ -32,6 +32,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async redirects() {
+    return [
+      // Compat: las invitaciones públicas se movieron de /public/<u>/<slug> a
+      // /<u>/<slug>. 301 para no romper links ya compartidos/indexados.
+      {
+        source: "/public/:username/:invitationSlug",
+        destination: "/:username/:invitationSlug",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
