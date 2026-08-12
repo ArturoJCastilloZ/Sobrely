@@ -507,23 +507,61 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
   UI `VanitySlugCard` en el editor (solo Premium publicado). `/<usuario>/<slug>`
   sigue funcionando (es alias). **Falta aplicar `0010` al remoto.**
 
+## Temas temáticos (MVP) — SIGUIENTE bloque (planeado, NO implementado)
+- **Origen:** exploración hecha por un agente en background (chip). Docs traídos al
+  repo: `docs/temas-tematicos-exploracion.md` (contexto + análisis legal + catálogo
+  de 20 temas) y `docs/temas-tematicos-plan-mvp.md` (plan por fases). **Plan
+  revisado y aprobado** por el dev; supuestos verificados contra el código.
+- **Alcance MVP:** aplicar un "theme pack" a una invitación existente con **1 clic**
+  desde el tab "Tema" del editor. Reusa `applyStylePreset`, `saveEditor`,
+  `updateTheme` y el gate premium (patrón commit `c33390e`). Fases:
+  1. `src/lib/theme/theme-packs.ts` (catálogo tipado + `applyThemePack()` puro) + tests.
+  2. `themeSchema.themePack: z.string().optional()` (retro-compat, como `stylePreset`).
+  3. Gate: `minimalPlanForFeature('advanced_personalization')` (Celebración+); sumar
+     el themePack premium al enforcement de `canPublishInvitation`.
+  4. UI `theme-pack-picker.tsx` dentro de `theme-panel.tsx`.
+- **Decisiones tomadas:** gate = **Celebración+** (`advanced_personalization`);
+  **fondos de imagen = V2** (MVP solo paleta/fuente/decoración/animación).
+- **LEGAL (duro):** cero IP de terceros. Nada de "tema Spiderman/anime/Pokémon" ni
+  arte que evoque un personaje protegido. Solo temas genéricos "inspirados"
+  (Superhéroe, Kawaii, Galaxia…) + (V2) el usuario sube su propio arte con ToS de
+  indemnización. Sobrely NUNCA distribuye la IP. Revisión humana del arte antes de
+  publicar cualquier catálogo.
+- **Matiz de diseño:** el plan MVP eligió "config en código aplicada a `theme_config`"
+  (no la ruta de `templates` que sugería la exploración) — correcto para el caso
+  "re-tematizar en el editor con 1 clic".
+
 ## Prompt para continuar (pegar al retomar)
 
-> Retomo Sobrely en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
-> Lee primero HANDOFF.md (secciones "Fase 8" y "Fase 7") y README.md. La **Fase 8
-> (Monetización) está COMPLETA** (8.1–8.8, incl. prueba E2E sandbox cerrada).
-> Ahora estamos en la **Fase 7 (Producción y lanzamiento)**: hosting **Vercel**,
-> analytics **Vercel Web Analytics**, **sin dominio aún** (se arranca con
-> `*.vercel.app`). **7.1–7.4 hechas** (SEO, analytics, deploy, post-deploy +
-> security headers; smoke test de login OK): la app está **LIVE en
-> `https://invitaflow-lemon.vercel.app`** (URL definitiva, SIN dominio propio). La
-> **única pendiente es la 7.5** (pasar MP a PRODUCCIÓN para cobrar en real —
-> dominio crítico dinero; seguir `docs/checklist-pagos-reales.md`). Reglas: se
-> trabaja por sub-bloques, uno a la
-> vez, y **cada uno requiere mi aprobación explícita** — NO avances solo; al
-> terminar muéstrame resumen, archivos, migraciones, env vars, cómo probar,
-> pendientes y riesgos, y pregúntame si apruebo. **Pendientes operativos ANTES de
-> cobrar en real** (ver docs/checklist-pagos-reales.md): pasar MP a credenciales de
-> PRODUCCIÓN, webhook en el dominio, `MP_PUBLIC_BASE_URL`=dominio. Estado remoto:
-> migraciones `0001`–`0009` aplicadas y admin sembrado; credenciales MP siguen de
-> PRUEBA. NO guardes nada en tu cerebro/memoria ni en el workflow Personal Projects.
+> Retomo **Sobrely** en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
+> Lee primero HANDOFF.md (secciones "Temas temáticos (MVP)", "URL de invitaciones",
+> "Fase 7", "Fase 8") y README.md.
+>
+> **Estado:** el proyecto se rebautizó de InvitaFlow a **Sobrely** y está **LIVE en
+> `https://sobrely.com`** (dominio propio, SSL, retheme oro/champán + Playfair).
+> Fase 8 (Monetización) COMPLETA. Fase 7 (Producción): **7.1–7.4 hechas**; **7.5
+> (pagos reales) pendiente**. URL de invitaciones: **Fase A hecha** (`/<usuario>/<slug>`,
+> sin `/public/`) y **Fase B hecha** (vanity premium `/<slug>` alias). Markers de
+> módulos premium en el editor: hechos.
+>
+> **LO SIGUIENTE (arranca aquí): implementar el MVP de "invitaciones con temática".**
+> PRIMER PASO: leer `docs/temas-tematicos-plan-mvp.md` (plan aprobado) y
+> `docs/temas-tematicos-exploracion.md` (contexto + legal). Analízalo, verifica sus
+> supuestos contra el código actual (el plan ramificó ANTES de la Fase B; implementa
+> sobre `main` actual), y arranca por fases. Decisiones YA tomadas: gate premium de
+> temas = feature **`advanced_personalization` (Celebración+)**; **fondos de imagen =
+> V2** (el MVP hace paleta/fuente/decoración/animación, no fondos). LEGAL (duro):
+> **cero IP de terceros** — nada de "tema Spiderman/anime/Pokémon"; solo genéricos
+> "inspirados" + (V2) subir arte propio con ToS.
+>
+> **Reglas:** se trabaja por sub-bloques/fases, una a la vez, **cada una requiere mi
+> aprobación explícita** — NO avances solo; al terminar cada fase muéstrame resumen,
+> archivos, migraciones, env vars, cómo probar, pendientes y riesgos, y pregúntame si
+> apruebo.
+>
+> **Pendientes operativos:** (1) aplicar `0010_vanity_slugs.sql` al Supabase REMOTO
+> (`0001`–`0009` ya aplicadas + admin sembrado); (2) **7.5** pasar MP a credenciales
+> de PRODUCCIÓN + webhook en `sobrely.com` (ver `docs/checklist-pagos-reales.md`) —
+> hoy MP sigue en PRUEBA. NO guardes nada en tu cerebro/memoria ni en el workflow
+> Personal Projects. Convención git: commit en `feat/invitaflow-project`, merge ff a
+> `main`; `secaudit_guard.py --mark` en comando SEPARADO del push.
