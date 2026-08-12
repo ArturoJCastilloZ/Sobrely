@@ -19,6 +19,8 @@ import {
   applyStylePreset,
   type StylePresetKey,
 } from "@/lib/animation/style-presets";
+import { applyThemePack } from "@/lib/theme/theme-packs";
+import { ThemePackPicker } from "./theme-pack-picker";
 import { SYSTEM_DEFAULT_ANIMATION } from "@/lib/animation/schema";
 import { AnimationFields } from "@/components/editor/animation-fields";
 import { cn } from "@/lib/utils";
@@ -124,10 +126,27 @@ export function ThemePanel({
     });
   }
 
+  function applyPack(key: string) {
+    const next = applyThemePack(theme, key);
+    // Patch con solo los campos que la temática impone (updateTheme mergea).
+    onChange({
+      colors: next.colors,
+      font: next.font,
+      spacing: next.spacing,
+      stylePreset: next.stylePreset,
+      animation: next.animation,
+      decoration: next.decoration,
+      themePack: next.themePack,
+    });
+  }
+
   const styleValue = (theme.stylePreset ?? "") as string;
 
   return (
     <div className="space-y-4">
+      {/* Theme packs (temáticas de 1 clic) */}
+      <ThemePackPicker value={theme.themePack} onSelect={applyPack} />
+
       {/* Style presets */}
       <div className="space-y-1.5">
         <Label>Estilo de animación</Label>
