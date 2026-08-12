@@ -65,6 +65,11 @@ export const themeSchema = z.object({
   // Last applied style preset (for display in the editor). Stored as a plain
   // string to avoid a circular import with the style-presets module.
   stylePreset: z.string().optional(),
+  // Last applied theme pack (for display/highlight in the editor). Optional and
+  // retro-compatible: a theme_config saved before theme packs existed parses
+  // fine (the field is simply absent). Stored as a plain string, same rationale
+  // as stylePreset, to avoid a circular import with the theme-packs module.
+  themePack: z.string().optional(),
 });
 
 export type ThemeConfig = z.infer<typeof themeSchema>;
