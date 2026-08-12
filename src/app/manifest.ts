@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 /**
  * Web App Manifest (Fase 7.1). Mejora la experiencia mobile-first (añadir a
- * pantalla de inicio). Íconos: se referencia el favicon existente; cuando haya
- * arte de marca en PNG (192/512) se agregan aquí.
+ * pantalla de inicio). Íconos de marca: monograma "S" oro/champán en PNG
+ * 192/512 (public/) + el favicon.ico e icon.svg que el App Router auto-detecta.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -21,6 +21,18 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/favicon.ico",
         sizes: "any",
         type: "image/x-icon",
+      },
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
       },
     ],
   };

@@ -1,0 +1,14 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e7c968"/>
+      <stop offset="0.55" stop-color="#d4af37"/>
+      <stop offset="1" stop-color="#b8912e"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#gold)"/>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="none" stroke="#a67c22" stroke-width="6" opacity="0.35"/>
+  <text x="256" y="352" text-anchor="middle"
+        font-family="Playfair Display, Georgia, 'Times New Roman', serif"
+        font-size="360" font-weight="700" fill="#fdf9f0">S</text>
+</svg>
