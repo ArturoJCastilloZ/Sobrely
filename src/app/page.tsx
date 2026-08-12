@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { LogoLockup } from "@/components/brand/logo-lockup";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home() {
@@ -11,9 +12,9 @@ export default async function Home() {
   return (
     <main className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-5">
-        <span className="font-display text-xl font-bold tracking-tight">
-          Sobre<span className="text-brand-gold">ly</span>
-        </span>
+        <Link href="/" aria-label="Sobrely — inicio">
+          <LogoLockup />
+        </Link>
         <nav className="flex items-center gap-2">
           <Button
             render={<Link href="/pricing" />}
