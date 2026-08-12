@@ -26,9 +26,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Permite servir recursos de `next dev` a través del túnel público
-  // (cloudflared) usado para probar el webhook de Mercado Pago en local.
-  allowedDevOrigins: ["recipient-covered-appeals-filme.trycloudflare.com"],
+  // Para probar el webhook de MP en local vía un túnel (cloudflared), agrega su
+  // host aquí temporalmente (solo afecta a `next dev`). En producción no aplica.
+  // allowedDevOrigins: ["<tu-tunel>.trycloudflare.com"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
