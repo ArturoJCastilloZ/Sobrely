@@ -79,7 +79,15 @@ export default async function Home() {
       </section>
 
       <footer className="mx-auto w-full max-w-5xl px-4 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Sobrely
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+          <Link href="/privacidad" className="hover:text-foreground">
+            Aviso de Privacidad
+          </Link>
+          <Link href="/terminos" className="hover:text-foreground">
+            Términos y Condiciones
+          </Link>
+        </div>
+        <p className="mt-2">© {new Date().getFullYear()} Sobrely</p>
       </footer>
     </main>
   );
