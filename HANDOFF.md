@@ -596,32 +596,82 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
 - **¿Pagar publica?** Solo si el checkout salió del botón "Publicar" (ver auto-publish). Si
   no, el entitlement queda activo y el usuario publica manualmente.
 
-## PENDIENTE al cerrar
-1. **Aplicar `0010_vanity_slugs.sql` al Supabase REMOTO** (sigue pendiente). Es idempotente
-   salvo `create policy` (correr UNA vez). Vía SQL Editor de Supabase.
-2. (Opcional) Aplicar el `LogoLockup` a los demás headers para consistencia de marca.
-3. (Opcional) Smoke test del auto-publish desde el botón "Publicar".
+## Lockup en TODOS los headers + páginas legales — ✅ HECHO y en `main`
+- **Lockup en todos los headers** (`8ae9e53`): `LogoLockup` (isotipo + wordmark) reemplaza
+  el wordmark de texto en dashboard, admin, auth, pricing y el 404 público (antes solo el
+  landing). Todo el "ly" en oro (`text-brand-gold`) — antes dashboard/admin usaban `text-primary`.
+- **Páginas legales** (`75c76e8`): `/privacidad` (Aviso de Privacidad) y `/terminos`
+  (Términos y Condiciones), shell `LegalPage` con el lockup. Contenido base para SaaS de
+  invitaciones (Supabase/Mercado Pago/Vercel/Google, derechos ARCO, **contenido del usuario
+  con declaración de derechos + indemnización** que amarra el legal de los theme packs).
+  Enlaces en el footer del landing + en `sitemap.ts`. Correo de contacto usado:
+  `soporte@sobrely.com` (⚠️ confirmar que el buzón exista o cambiarlo).
+- **SEO del landing** (`3c0a4ae`): el hero ahora nombra "Sobrely" + su propósito explícito
+  (para la verificación de marca de Google — ver abajo).
+
+## Branding OAuth de Google (login con Google) — 🚧 EN REVISIÓN DE GOOGLE (no bloquea)
+- **Problema:** el login con Google mostraba `ncxglanrfeepzenrfvoh.supabase.co` en vez de
+  "Sobrely". Causa: para mostrar el nombre/logo, Google exige **verificación de marca** del
+  OAuth consent screen (Google Auth Platform del proyecto GCP cuyo Client ID usa Supabase).
+- **Hecho por el dev + agente (los 3 requisitos ya cumplen, verificado en el HTML vivo):**
+  1. ✅ Dominio `sobrely.com` **verificado** en Search Console (TXT en DNS de Vercel).
+  2. ✅ Nombre de la app = **"Sobrely"** (coincide con `<title>`, `application-name`,
+     `og:site_name`, header y body del landing).
+  3. ✅ Landing describe el propósito + nombra Sobrely (desplegado, `3c0a4ae`).
+- **Gotcha clave:** el panel "Problemas… del intento ANTERIOR" **no se re-evalúa al reabrirlo**;
+  Google re-checa contra su **caché/índice** de la home. Palancas: **Search Console → Inspección
+  de URLs → Solicitar indexación** de `https://sobrely.com/`, y/o **apelar** ("los problemas
+  son incorrectos → revisión adicional").
+- **Estado actual:** el dev **envió la apelación** con la evidencia; el **Branding status = "en
+  proceso de revisión"** (revisión humana de Google Trust & Safety). Google pide **responder al
+  hilo de correo** de Confianza y Seguridad. **Tarda días.** El login **YA FUNCIONA**; esto es
+  cosmético. Alternativa definitiva si se quiere el callback en el propio dominio: **Supabase
+  Custom Domain** (de pago, ~$10/mes → `auth.sobrely.com`). NO se hizo.
+
+## Plantillas de correo (Supabase) + Resend — ⬜ PENDIENTE (no hecho)
+- El dev quiso brandear el correo de **confirmación de registro**. **Supabase ahora exige
+  configurar SMTP propio para editar las plantillas** (con el SMTP compartido los campos
+  Subject/Body están BLOQUEADOS). Además el SMTP compartido tiene límite bajo (~3-4/hora) y
+  cae en spam → **para producción hace falta SMTP propio de todas formas.**
+- **Recomendado:** **Resend** (3,000 correos/mes gratis). Pasos: crear cuenta → verificar
+  `sobrely.com` (registros DNS en Vercel) → API Key → Supabase **Authentication → Emails →
+  SMTP Settings** (Host `smtp.resend.com`, Port 465, User `resend`, Pass = API Key, Sender
+  `noreply@sobrely.com` / "Sobrely") → guardar → se desbloquean las plantillas.
+- **Ya se redactó** una **plantilla HTML brandeada** (email-safe, tablas + inline styles, logo
+  vía `https://sobrely.com/icon-192.png`) para "Confirm signup" — está en el historial de esta
+  sesión (chat), lista para pegar cuando el SMTP esté configurado.
+
+## PENDIENTE al cerrar (para la próxima sesión)
+1. **Branding OAuth de Google:** esperar la respuesta de Google (revisión en curso) y **responder
+   el hilo de correo** de Confianza y Seguridad. Nada más que hacer en código.
+2. **Email propio + plantillas:** configurar **Resend** (SMTP) → pegar la plantilla brandeada de
+   "Confirm signup" (+ opcional: reset password, magic link). Requiere DNS en Vercel.
+3. **Correo de soporte:** confirmar/crear `soporte@sobrely.com` (usado en /privacidad y /terminos).
+4. (Opcional) Smoke test del auto-publish desde el botón "Publicar" — **el dev dijo que YA lo probó
+   y funciona** (Boda elegante quedó Publicada tras pagar). ✅
+5. (Ya NO pendiente) `0010` aplicada al remoto ✅; lockup en todos los headers ✅.
 
 ---
 
 ## Prompt para continuar (pegar al retomar)
 
 > Retomo **Sobrely** en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
-> Lee primero HANDOFF.md (la sección **"Sesión 2026-08-11 (continuación)"** arriba, que
-> es el estado más reciente) y README.md.
+> Lee primero HANDOFF.md (la sección **"Sesión 2026-08-11 (continuación)"** arriba, que es el
+> estado más reciente) y README.md.
 >
-> **Estado:** LIVE en `https://sobrely.com`. Fase 8 (Monetización) COMPLETA. **Fase 7
-> COMPLETA incl. 7.5** (pagos reales en PRODUCCIÓN, verificados end-to-end con pago +
-> reembolso reales). Temas temáticos MVP (Fases 1–4) HECHO. Marca (favicon/isotipo sobre+
-> corazón en oro + lockup en el header del landing) HECHO. Fix de reembolso + auto-publish
-> desde "Publicar" HECHO.
+> **Estado:** LIVE en `https://sobrely.com`. Fase 8 COMPLETA. **Fase 7 COMPLETA incl. 7.5**
+> (pagos reales en PRODUCCIÓN, verificados end-to-end con pago + reembolso reales). Temas
+> temáticos MVP (Fases 1–4) HECHO. Marca completa (favicon/isotipo sobre+corazón en oro +
+> lockup en TODOS los headers) HECHO. Fix de reembolso + auto-publish desde "Publicar" HECHO
+> (probado). Páginas /privacidad y /terminos HECHAS. `0010_vanity_slugs` aplicada al remoto.
 >
-> **Pendientes:** (1) aplicar `0010_vanity_slugs.sql` al Supabase REMOTO (`0001`–`0009`
-> aplicadas + admin sembrado); (2) opcional: lockup en los demás headers; (3) opcional:
-> smoke test del auto-publish desde el botón Publicar.
+> **Pendientes:** (1) **Branding OAuth de Google** en revisión de Google — esperar su correo y
+> responder el hilo de Confianza y Seguridad (login ya funciona; es cosmético); (2) configurar
+> **Resend (SMTP propio)** para brandear los correos de Supabase (plantilla ya redactada en el
+> chat) + confirmar buzón `soporte@sobrely.com`.
 >
-> **Reglas:** trabajo por fases, cada una requiere mi aprobación explícita — NO avances
-> solo; al cerrar muéstrame resumen, archivos, migraciones, env vars, cómo probar,
-> pendientes y riesgos. NO guardes nada en cerebro/memoria ni en el workflow Personal
-> Projects. Git: commit en `feat/invitaflow-project`, merge ff a `main`;
-> `secaudit_guard.py --mark` en comando SEPARADO del push.
+> **Reglas:** trabajo por fases, cada una requiere mi aprobación explícita — NO avances solo; al
+> cerrar muéstrame resumen, archivos, migraciones, env vars, cómo probar, pendientes y riesgos.
+> NO guardes nada en cerebro/memoria ni en el workflow Personal Projects. Git: commit en
+> `feat/invitaflow-project`, merge ff a `main`; `secaudit_guard.py --mark` en comando SEPARADO
+> del push.
