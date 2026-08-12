@@ -1,8 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 132" width="128" height="132"><defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 150" width="560" height="150"><defs>
   <linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d4af37"/><stop offset="100%" stop-color="#a9822f"/></linearGradient>
   <linearGradient id="flap" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f0d488"/><stop offset="100%" stop-color="#d4af37"/></linearGradient>
 </defs>
+  <g transform="translate(8 8) scale(.92)">
   <path d="M18 42 L18 118 Q18 126 26 130 L102 130 Q110 130 110 122 L110 74 L67 98 L18 118 Z" fill="url(#body)"/>
   <path d="M18 42 Q18 35 24 31 L92 4 Q99 1 99 9 L99 62 L110 74 L67 98 L18 74 Z" fill="url(#flap)"/>
   <path d="M18 74 L67 98 L110 74" fill="none" stroke="#8a6522" stroke-width="1.4" opacity=".55"/>
-  <path d="M58 50 C53 42 39 42 35 52 C31 62 38 70 58 84 C78 70 85 62 81 52 C77 42 63 42 58 50 Z" fill="#211d17"/></svg>
+  <path d="M58 50 C53 42 39 42 35 52 C31 62 38 70 58 84 C78 70 85 62 81 52 C77 42 63 42 58 50 Z" fill="#211d17"/></g>
+  <text x="150" y="84" font-family="'Playfair Display', Georgia, serif" font-size="64" font-weight="700" fill="#211d17">Sobre<tspan fill="#c69a33">ly</tspan></text>
+  <text x="153" y="114" font-family="Inter, Arial, sans-serif" font-size="18" fill="#a9822f">Invitaciones que crean momentos</text>
+</svg>
