@@ -32,6 +32,7 @@ import type {
 import { saveEditor, setPublished } from "@/lib/invitations/actions";
 import { slugify } from "@/lib/invitations/schemas";
 import { PublishControls } from "./publish-controls";
+import { VanitySlugCard } from "./vanity-slug-card";
 import { CheckoutButton } from "@/components/billing/checkout-button";
 import {
   formatPrice,
@@ -351,6 +352,9 @@ export function InvitationEditor({
             isPublished={invitation.is_published}
             dirty={dirty}
           />
+          {invitation.is_published && (
+            <VanitySlugCard invitationId={invitation.id} />
+          )}
         </div>
       </header>
 
