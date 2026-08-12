@@ -531,37 +531,97 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
   (no la ruta de `templates` que sugería la exploración) — correcto para el caso
   "re-tematizar en el editor con 1 clic".
 
+# Sesión 2026-08-11 (continuación) — Temas, marca y go-live de pagos
+
+## Temas temáticos (MVP) — ✅ HECHO (Fases 1–4) y en `main`
+- **Fase 1+2** (`27582f0`): `src/lib/theme/theme-packs.ts` (catálogo `THEME_PACKS`,
+  10 packs genéricos sin IP: 2 free + 8 premium) + `applyThemePack()` puro (gemelo de
+  `applyStylePreset`, no pisa `theme.animations`) + campo `themeSchema.themePack`
+  opcional (retro-compat). Tests `theme-packs.test.ts`.
+- **Fase 3** (`905aca1`): `minimalPlanForFeature()` en `plans.ts` + gate en
+  `canPublishInvitation` (ahora lee `theme_config`; bloquea al publicar un pack ⭐ sin
+  `advanced_personalization`; plan requerido = el más alto entre módulos y temática).
+- **Fase 4** (`8ed0e9e`): `src/components/editor/theme-pack-picker.tsx` en `theme-panel.tsx`
+  (galería con swatch de paleta+fuente, badge ⭐ estático como el ModulePalette).
+- **Verificado en vivo** (editor de prod local): aplicar pack cambia preview + persiste;
+  gate al publicar. **Fase 5 (previews imagen) = V2.** Sin migración (vive en el JSON
+  `theme_config`).
+
+## Marca: favicon/isotipo + lockup — ✅ HECHO y en `main`
+- El dev entregó los SVG reales (`~/Downloads/sobrely_web_svgs/`): **sobre + corazón**.
+  Se **recolorearon a oro/champán** (solapa `#f0d488`, cuerpo `#d4af37→#a9822f`, corazón
+  tinta `#211d17`) con `sharp`. Reemplaza el favicon default de create-next-app.
+- Archivos (`8446ab6`): `src/app/icon.svg` (vector), `favicon.ico` (48px PNG-in-ICO),
+  `apple-icon.png` (180, tile tinta `#14110b`), `public/icon-192.png`/`icon-512.png`,
+  `public/sobrely-logo-horizontal.{svg,png}` (lockup con wordmark Sobre+ly serif + tagline).
+- **Lockup en el header del landing** (`dda6473`): `src/components/brand/logo-lockup.tsx`
+  (`BrandMark` SVG inline + `LogoLockup`), usado en `page.tsx`. Los otros headers
+  (dashboard/admin/auth/pricing) siguen con wordmark de texto — pendiente opcional.
+
+## Fase 7.5 — Go-live de pagos reales — ✅ COMPLETA y VERIFICADA en producción
+- MP pasó a **credenciales de PRODUCCIÓN** (Access Token `APP_USR-…`) + webhook en
+  `https://sobrely.com/api/webhooks/mercadopago`, evento **"Pagos (legacy)"** (topic
+  `payment`). `MP_PUBLIC_BASE_URL`/`NEXT_PUBLIC_SITE_URL` = `https://sobrely.com`.
+- **Verificado end-to-end con dinero real:** pago real ($199 Esencial) → orden `paid` +
+  entitlement activo (en `/admin`). **Reembolso** desde MP → orden `refunded` +
+  Reembolsos $199 + bucket "Reembolsadas 1" en `/admin`.
+- Limpieza (`b83d5ea`): se quitó el `allowedDevOrigins` del túnel muerto en `next.config.ts`.
+- **Gotchas confirmados:**
+  - La URL del webhook DEBE ser la ruta completa `/api/webhooks/mercadopago` (no solo el
+    dominio: `POST /` da 200 falso-positivo y la orden se queda `pending`). Sin `/` final.
+  - "Simular notificación" del panel: **500 = éxito** (firma OK; el pago simulado 123456
+    no existe). **401 = secreto no coincide.**
+  - **No puedes pagarte a ti mismo** (comprador = cuenta vendedora): usar tarjeta de otra
+    persona / checkout como invitado en incógnito.
+  - El panel **Webhooks → "Notificaciones entregadas 0%"** es LAGGY/incompleto: no refleja
+    entregas reales. Prueba de que el webhook entregó = la orden quedó `paid`/`refunded`
+    (solo el webhook lo hace; `/billing/success` solo LEE, no reconcilia).
+
+## Fix de reembolso + auto-publicación — ✅ HECHO y en `main`
+- **Reembolso revoca acceso** (`a561567`): el guard de idempotencia (`order.status==='paid'
+  → return`) cortaba también los reembolsos. Se reemplazó por `isRedundantTransition()`
+  en `mp-status.ts` (ignora duplicados exactos y no degrada un `paid` por notificaciones
+  tardías, PERO deja pasar `refunded`/`charged_back`). En `fulfillment.ts`, al reembolsar
+  un plan: entitlement→`revoked` + `is_published=false`. **Probado en vivo** (ver 7.5).
+- **Auto-publicar al pagar SOLO desde el botón "Publicar"** (`0f500ee`): la intención se
+  guarda en `orders.metadata.publish_on_paid` (sin migración; la columna ya existía).
+  `CheckoutButton` propaga `publishOnPaid`; **solo el modal de upgrade del editor** lo
+  pasa (`/pricing` y `/billing/checkout` no). En `fulfillment`, al pagar auto-publica solo
+  si `publish_on_paid` **y** `canPublishInvitation` lo permite. **No ejercitado en vivo**
+  (el pago de prueba no vino del botón Publicar) — validar con un pago desde "Publicar".
+
+## Análisis confirmado (para futuras dudas)
+- **¿Pagar habilita los módulos del plan?** Sí, funcional: el pago activa el entitlement →
+  el plan efectivo de la invitación = el pagado → `canPublishInvitation` permite esos módulos.
+- **¿Pagar publica?** Solo si el checkout salió del botón "Publicar" (ver auto-publish). Si
+  no, el entitlement queda activo y el usuario publica manualmente.
+
+## PENDIENTE al cerrar
+1. **Aplicar `0010_vanity_slugs.sql` al Supabase REMOTO** (sigue pendiente). Es idempotente
+   salvo `create policy` (correr UNA vez). Vía SQL Editor de Supabase.
+2. (Opcional) Aplicar el `LogoLockup` a los demás headers para consistencia de marca.
+3. (Opcional) Smoke test del auto-publish desde el botón "Publicar".
+
+---
+
 ## Prompt para continuar (pegar al retomar)
 
 > Retomo **Sobrely** en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
-> Lee primero HANDOFF.md (secciones "Temas temáticos (MVP)", "URL de invitaciones",
-> "Fase 7", "Fase 8") y README.md.
+> Lee primero HANDOFF.md (la sección **"Sesión 2026-08-11 (continuación)"** arriba, que
+> es el estado más reciente) y README.md.
 >
-> **Estado:** el proyecto se rebautizó de InvitaFlow a **Sobrely** y está **LIVE en
-> `https://sobrely.com`** (dominio propio, SSL, retheme oro/champán + Playfair).
-> Fase 8 (Monetización) COMPLETA. Fase 7 (Producción): **7.1–7.4 hechas**; **7.5
-> (pagos reales) pendiente**. URL de invitaciones: **Fase A hecha** (`/<usuario>/<slug>`,
-> sin `/public/`) y **Fase B hecha** (vanity premium `/<slug>` alias). Markers de
-> módulos premium en el editor: hechos.
+> **Estado:** LIVE en `https://sobrely.com`. Fase 8 (Monetización) COMPLETA. **Fase 7
+> COMPLETA incl. 7.5** (pagos reales en PRODUCCIÓN, verificados end-to-end con pago +
+> reembolso reales). Temas temáticos MVP (Fases 1–4) HECHO. Marca (favicon/isotipo sobre+
+> corazón en oro + lockup en el header del landing) HECHO. Fix de reembolso + auto-publish
+> desde "Publicar" HECHO.
 >
-> **LO SIGUIENTE (arranca aquí): implementar el MVP de "invitaciones con temática".**
-> PRIMER PASO: leer `docs/temas-tematicos-plan-mvp.md` (plan aprobado) y
-> `docs/temas-tematicos-exploracion.md` (contexto + legal). Analízalo, verifica sus
-> supuestos contra el código actual (el plan ramificó ANTES de la Fase B; implementa
-> sobre `main` actual), y arranca por fases. Decisiones YA tomadas: gate premium de
-> temas = feature **`advanced_personalization` (Celebración+)**; **fondos de imagen =
-> V2** (el MVP hace paleta/fuente/decoración/animación, no fondos). LEGAL (duro):
-> **cero IP de terceros** — nada de "tema Spiderman/anime/Pokémon"; solo genéricos
-> "inspirados" + (V2) subir arte propio con ToS.
+> **Pendientes:** (1) aplicar `0010_vanity_slugs.sql` al Supabase REMOTO (`0001`–`0009`
+> aplicadas + admin sembrado); (2) opcional: lockup en los demás headers; (3) opcional:
+> smoke test del auto-publish desde el botón Publicar.
 >
-> **Reglas:** se trabaja por sub-bloques/fases, una a la vez, **cada una requiere mi
-> aprobación explícita** — NO avances solo; al terminar cada fase muéstrame resumen,
-> archivos, migraciones, env vars, cómo probar, pendientes y riesgos, y pregúntame si
-> apruebo.
->
-> **Pendientes operativos:** (1) aplicar `0010_vanity_slugs.sql` al Supabase REMOTO
-> (`0001`–`0009` ya aplicadas + admin sembrado); (2) **7.5** pasar MP a credenciales
-> de PRODUCCIÓN + webhook en `sobrely.com` (ver `docs/checklist-pagos-reales.md`) —
-> hoy MP sigue en PRUEBA. NO guardes nada en tu cerebro/memoria ni en el workflow
-> Personal Projects. Convención git: commit en `feat/invitaflow-project`, merge ff a
-> `main`; `secaudit_guard.py --mark` en comando SEPARADO del push.
+> **Reglas:** trabajo por fases, cada una requiere mi aprobación explícita — NO avances
+> solo; al cerrar muéstrame resumen, archivos, migraciones, env vars, cómo probar,
+> pendientes y riesgos. NO guardes nada en cerebro/memoria ni en el workflow Personal
+> Projects. Git: commit en `feat/invitaflow-project`, merge ff a `main`;
+> `secaudit_guard.py --mark` en comando SEPARADO del push.
