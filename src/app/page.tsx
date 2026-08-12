@@ -11,8 +11,8 @@ export default async function Home() {
   return (
     <main className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-5">
-        <span className="text-lg font-bold tracking-tight">
-          Sobre<span className="text-primary">ly</span>
+        <span className="font-display text-xl font-bold tracking-tight">
+          Sobre<span className="text-brand-gold">ly</span>
         </span>
         <nav className="flex items-center gap-2">
           <Button
@@ -46,11 +46,12 @@ export default async function Home() {
       </header>
 
       <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-4 py-20 text-center">
-        <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
+        <span className="rounded-full border border-brand-gold/30 bg-brand-cream/50 px-3 py-1 text-xs font-medium text-brand-gold-deep">
           Invitaciones digitales, sin complicaciones
         </span>
-        <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl">
-          Crea invitaciones digitales dinámicas y personalizables
+        <h1 className="font-display text-balance text-4xl font-bold tracking-tight sm:text-6xl">
+          Crea invitaciones digitales dinámicas y{" "}
+          <span className="text-brand-gold-deep italic">personalizables</span>
         </h1>
         <p className="max-w-xl text-balance text-muted-foreground">
           Bodas, XV años, cumpleaños, baby showers y eventos corporativos.
@@ -61,6 +62,7 @@ export default async function Home() {
             render={<Link href={user ? "/dashboard" : "/register"} />}
             nativeButton={false}
             size="lg"
+            className="bg-brand-gold text-brand-ink hover:bg-brand-gold-deep hover:text-white"
           >
             {user ? "Ir al dashboard" : "Empieza gratis"}
           </Button>

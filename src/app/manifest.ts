@@ -13,8 +13,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Crea invitaciones digitales dinámicas y personalizables para bodas, XV años, cumpleaños y más.",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#7c3aed",
+    background_color: "#faf6ec",
+    theme_color: "#d4af37",
     lang: "es-MX",
     icons: [
       {

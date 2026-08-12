@@ -39,8 +39,8 @@ export default async function PricingPage() {
   return (
     <main className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
-        <Link href="/" className="text-lg font-bold tracking-tight">
-          Sobre<span className="text-primary">ly</span>
+        <Link href="/" className="font-display text-xl font-bold tracking-tight">
+          Sobre<span className="text-brand-gold">ly</span>
         </Link>
         <nav className="flex items-center gap-2">
           {user ? (
@@ -66,7 +66,7 @@ export default async function PricingPage() {
       </header>
 
       <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-4 pt-10 pb-6 text-center">
-        <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="font-display text-balance text-3xl font-bold tracking-tight sm:text-5xl">
           Crea gratis y paga solo cuando quieras publicar
         </h1>
         <p className="max-w-xl text-balance text-muted-foreground">

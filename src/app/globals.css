@@ -46,6 +46,15 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Marca "Champán & Oro" (Fase 7 · retheme de marketing). Aditivo: NO
+     sobrescribe los tokens shadcn, así el chrome de dashboard/admin sigue
+     neutro. Se usan solo en superficies públicas/marketing. */
+  --color-brand-gold: #d4af37;
+  --color-brand-gold-deep: #aa8c2c;
+  --color-brand-cream: #f5eedb;
+  --color-brand-ink: #111827;
+  --font-display: var(--font-playfair);
 }
 
 :root {

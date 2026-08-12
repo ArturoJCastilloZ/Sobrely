@@ -22,15 +22,15 @@ export default function OpengraphImage() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #1e1b4b 0%, #4c1d95 55%, #7c3aed 100%)",
-          color: "white",
-          fontFamily: "sans-serif",
+          background: "linear-gradient(135deg, #faf6ec 0%, #f0e6c8 55%, #e6d3a3 100%)",
+          color: "#111827",
+          fontFamily: "serif",
           padding: "80px",
           textAlign: "center",
         }}
       >
-        <div style={{ fontSize: 88, fontWeight: 800, letterSpacing: -2 }}>
-          Sobrely
+        <div style={{ display: "flex", fontSize: 96, fontWeight: 800, letterSpacing: -2 }}>
+          Sobre<span style={{ color: "#aa8c2c" }}>ly</span>
         </div>
         <div
           style={{
