@@ -55,8 +55,11 @@ export default async function Home() {
           <span className="text-brand-gold-deep italic">personalizables</span>
         </h1>
         <p className="max-w-xl text-balance text-muted-foreground">
-          Bodas, XV años, cumpleaños, baby showers y eventos corporativos.
-          Elige un template, personaliza módulos y publica en una URL única.
+          <strong className="font-semibold text-foreground">Sobrely</strong> es
+          la plataforma para crear invitaciones digitales para bodas, XV años,
+          cumpleaños, baby showers y eventos corporativos: elige un template,
+          personaliza módulos y publica tu invitación en una URL única para
+          compartirla y recibir confirmaciones de tus invitados.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button
