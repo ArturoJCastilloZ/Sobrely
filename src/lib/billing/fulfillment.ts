@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPlan, resolveExpiry } from "@/lib/billing/plans";
+import { canPublishInvitation } from "@/lib/billing/entitlements";
 import { DEFAULT_CURRENCY, REFERRAL_CREDIT_AMOUNT } from "@/lib/billing/config";
 import {
   mapStatus,
@@ -25,6 +26,8 @@ export interface FulfillmentResult {
   idempotent?: boolean;
   orderStatus?: string;
   entitlementActivated?: boolean;
+  /** true si se auto-publicó la invitación (checkout desde "Publicar"). */
+  published?: boolean;
   reason?: string;
 }
 
@@ -46,7 +49,7 @@ export async function applyMercadoPagoPayment(params: {
 
   const { data: order, error: orderErr } = await admin
     .from("orders")
-    .select("id, user_id, status, product_type, invitation_id, plan_id")
+    .select("id, user_id, status, product_type, invitation_id, plan_id, metadata")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -165,7 +168,31 @@ export async function applyMercadoPagoPayment(params: {
     };
   }
 
-  return { ok: true, orderStatus: "paid", entitlementActivated: true };
+  // Auto-publicación: SOLO si el checkout salió del botón "Publicar"
+  // (metadata.publish_on_paid) y los módulos visibles caben en el plan recién
+  // activado. Si el usuario agregó módulos ⭐ extra después de pagar, el gate
+  // falla y se deja como borrador (no se auto-publica algo no cubierto).
+  const publishOnPaid =
+    (order.metadata as { publish_on_paid?: boolean } | null)?.publish_on_paid ===
+    true;
+  let published = false;
+  if (publishOnPaid) {
+    const check = await canPublishInvitation(admin, order.invitation_id);
+    if (check.allowed) {
+      const { error: pubErr } = await admin
+        .from("invitations")
+        .update({ is_published: true, status: "published" })
+        .eq("id", order.invitation_id);
+      published = !pubErr;
+    }
+  }
+
+  return {
+    ok: true,
+    orderStatus: "paid",
+    entitlementActivated: true,
+    published,
+  };
 }
 
 /**

@@ -18,6 +18,7 @@ export function CheckoutButton({
   className,
   variant = "default",
   disabled,
+  publishOnPaid = false,
 }: {
   planCode: PlanCode;
   invitationId: string;
@@ -25,12 +26,16 @@ export function CheckoutButton({
   className?: string;
   variant?: "default" | "outline" | "secondary" | "ghost";
   disabled?: boolean;
+  /** Si el checkout salió del botón "Publicar": auto-publica al pagar. */
+  publishOnPaid?: boolean;
 }) {
   const [pending, start] = useTransition();
 
   function go() {
     start(async () => {
-      const res = await createPlanCheckout(planCode, invitationId);
+      const res = await createPlanCheckout(planCode, invitationId, {
+        publishOnPaid,
+      });
       if (!res.ok || !res.url) {
         toast.error(res.error ?? "No se pudo iniciar el pago.");
         return;

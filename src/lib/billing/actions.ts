@@ -71,6 +71,7 @@ export async function checkUploadQuota(
 export async function createPlanCheckout(
   planCode: PlanCode,
   invitationId: string,
+  opts?: { publishOnPaid?: boolean },
 ): Promise<CheckoutResult> {
   const plan = getPlan(planCode);
   if (!plan || !plan.isActive) {
@@ -133,7 +134,13 @@ export async function createPlanCheckout(
       currency: plan.currency,
       status: "pending",
       payment_provider: "mercadopago",
-      metadata: { plan_code: plan.code, invitation_title: invitation.title },
+      metadata: {
+        plan_code: plan.code,
+        invitation_title: invitation.title,
+        // Intención de publicar: solo cuando el checkout salió del botón
+        // "Publicar" (gate de módulos). El fulfillment auto-publica al pagar.
+        publish_on_paid: opts?.publishOnPaid === true,
+      },
     })
     .select("id")
     .single();

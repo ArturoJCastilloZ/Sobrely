@@ -293,6 +293,7 @@ export function InvitationEditor({
                 <CheckoutButton
                   planCode={upgradePlanObj.code}
                   invitationId={invitation.id}
+                  publishOnPaid
                 >
                   Mejorar a {upgradePlanObj.name}
                 </CheckoutButton>
