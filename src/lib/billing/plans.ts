@@ -238,6 +238,18 @@ export function minimalPlanForModules(
     .sort((a, b) => a.priceRegular - b.priceRegular)[0];
 }
 
+/**
+ * Plan activo más barato que incluye una capacidad dada. Simétrico a
+ * `minimalPlanForModules`; sirve para el CTA "esta temática requiere el plan X"
+ * al publicar un theme pack premium. Devuelve `undefined` si ningún plan la
+ * ofrece.
+ */
+export function minimalPlanForFeature(feature: PlanFeature): Plan | undefined {
+  return getActivePlans()
+    .filter((p) => p.features.includes(feature))
+    .sort((a, b) => a.priceRegular - b.priceRegular)[0];
+}
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**

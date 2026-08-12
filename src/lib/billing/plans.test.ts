@@ -7,6 +7,7 @@ import {
   planAllowsModule,
   premiumModulesFor,
   minimalPlanForModules,
+  minimalPlanForFeature,
   resolveExpiry,
 } from "@/lib/billing/plans";
 
@@ -77,6 +78,22 @@ describe("minimalPlanForModules", () => {
 
   it("video → Premium", () => {
     expect(minimalPlanForModules(["video"])?.code).toBe("premium");
+  });
+});
+
+describe("minimalPlanForFeature", () => {
+  it("advanced_personalization → Celebración (el más barato que la incluye)", () => {
+    expect(minimalPlanForFeature("advanced_personalization")?.code).toBe(
+      "celebracion",
+    );
+  });
+
+  it("csv_export → Esencial (el más barato que la incluye)", () => {
+    expect(minimalPlanForFeature("csv_export")?.code).toBe("esencial");
+  });
+
+  it("priority_support → Premium", () => {
+    expect(minimalPlanForFeature("priority_support")?.code).toBe("premium");
   });
 });
 

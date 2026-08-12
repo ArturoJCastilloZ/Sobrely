@@ -5,9 +5,12 @@ import type { Plan, PlanCode, PlanFeature } from "@/lib/billing/types";
 import {
   getPlan,
   minimalPlanForModules,
+  minimalPlanForFeature,
   planAllowsModule,
   planHasFeature,
 } from "@/lib/billing/plans";
+import { parseTheme } from "@/lib/theme/theme";
+import { isThemePackPremium } from "@/lib/theme/theme-packs";
 
 /**
  * Helpers de ENTITLEMENTS (Subfase 8.4).
@@ -124,6 +127,8 @@ export interface PublishCheck {
   effectivePlanCode: PlanCode;
   /** Módulos usados que el plan efectivo no cubre (⭐ premium). */
   premiumModulesUsed: ModuleType[];
+  /** Key del theme pack premium aplicado que el plan no desbloquea (o undefined). */
+  premiumThemePackUsed?: string;
   /** Plan más barato que desbloquearía todo lo usado (CTA de upgrade). */
   requiredPlanCode?: PlanCode;
   reason?: string;
@@ -132,10 +137,12 @@ export interface PublishCheck {
 /**
  * ¿Se puede publicar la invitación con su plan efectivo?
  *
- * Regla: todos los módulos VISIBLES deben estar cubiertos por el plan efectivo.
- * Si usa módulos ⭐ que el plan no cubre, se bloquea y se indica qué plan los
- * desbloquea. NUNCA se borran los módulos bloqueados (se conservan para que el
- * usuario pueda actualizar y publicar después).
+ * Regla: todos los módulos VISIBLES deben estar cubiertos por el plan efectivo,
+ * y si la invitación tiene aplicado un theme pack ⭐ premium, el plan debe
+ * incluir `advanced_personalization`. Si algo excede el plan se bloquea y se
+ * indica el plan mínimo que lo desbloquea (el más alto que cubra módulos Y
+ * temática). NUNCA se borran los módulos ni el tema bloqueados (se conservan
+ * para que el usuario pueda actualizar y publicar después).
  */
 export async function canPublishInvitation(
   supabase: AnyClient,
@@ -154,19 +161,51 @@ export async function canPublishInvitation(
 
   const premiumModulesUsed = visible.filter((m) => !planAllowsModule(plan, m));
 
-  if (premiumModulesUsed.length === 0) {
+  // Gate de temática: un theme pack ⭐ premium exige advanced_personalization.
+  const { data: inv } = await supabase
+    .from("invitations")
+    .select("theme_config")
+    .eq("id", invitationId)
+    .maybeSingle();
+  const themePackKey = parseTheme(inv?.theme_config).themePack;
+  const themePackGated =
+    isThemePackPremium(themePackKey) &&
+    !planHasFeature(plan, "advanced_personalization");
+  const premiumThemePackUsed = themePackGated ? themePackKey : undefined;
+
+  if (premiumModulesUsed.length === 0 && !themePackGated) {
     return { allowed: true, effectivePlanCode: plan.code, premiumModulesUsed: [] };
   }
 
-  const required = minimalPlanForModules(visible);
+  // Plan requerido = el más alto entre el que cubre los módulos y el que
+  // desbloquea la temática premium (si aplica cada uno).
+  const requiredForModules =
+    premiumModulesUsed.length > 0 ? minimalPlanForModules(visible) : undefined;
+  const requiredForTheme = themePackGated
+    ? minimalPlanForFeature("advanced_personalization")
+    : undefined;
+  const candidates = [requiredForModules, requiredForTheme].filter(
+    (p): p is Plan => Boolean(p),
+  );
+  const required =
+    candidates.length > 0
+      ? candidates.sort((a, b) => b.displayOrder - a.displayOrder)[0]
+      : undefined;
+
+  const reasonParts: string[] = [];
+  if (premiumModulesUsed.length > 0) reasonParts.push("módulos");
+  if (themePackGated) reasonParts.push("una temática");
+  const what = reasonParts.join(" y ");
+
   return {
     allowed: false,
     effectivePlanCode: plan.code,
     premiumModulesUsed,
+    premiumThemePackUsed,
     requiredPlanCode: required?.code,
     reason: required
-      ? `Tu invitación usa módulos que requieren el plan ${required.name}.`
-      : "Tu invitación usa módulos no disponibles en ningún plan activo.",
+      ? `Tu invitación usa ${what} que requieren el plan ${required.name}.`
+      : `Tu invitación usa ${what} no disponibles en ningún plan activo.`,
   };
 }
 
