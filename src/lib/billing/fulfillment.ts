@@ -3,7 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPlan, resolveExpiry } from "@/lib/billing/plans";
 import { DEFAULT_CURRENCY, REFERRAL_CREDIT_AMOUNT } from "@/lib/billing/config";
-import { mapStatus, type MpPaymentStatus } from "@/lib/billing/mp-status";
+import {
+  mapStatus,
+  isRedundantTransition,
+  type MpPaymentStatus,
+} from "@/lib/billing/mp-status";
 import type { PlanCode } from "@/lib/billing/types";
 
 /**
@@ -53,12 +57,14 @@ export async function applyMercadoPagoPayment(params: {
     return { ok: false, reason: "order_not_found" };
   }
 
-  // Idempotencia: una orden ya pagada no se reprocesa (webhook duplicado).
-  if (order.status === "paid") {
-    return { ok: true, idempotent: true, orderStatus: "paid" };
-  }
-
   const newStatus = mapStatus(mpStatus);
+
+  // Idempotencia: ignora duplicados exactos y no degrada una orden ya `paid`
+  // por notificaciones tardías — PERO deja pasar un `refunded` (reembolso o
+  // contracargo) para revocar el acceso.
+  if (isRedundantTransition(order.status ?? "", newStatus)) {
+    return { ok: true, idempotent: true, orderStatus: order.status };
+  }
 
   const { error: updErr } = await admin
     .from("orders")
@@ -69,6 +75,25 @@ export async function applyMercadoPagoPayment(params: {
     // El índice único (payment_provider, provider_payment_id) puede rechazar un
     // pago ya registrado en otra orden: se trata como duplicado benigno.
     return { ok: true, idempotent: true, reason: `order_update: ${updErr.message}` };
+  }
+
+  // Reembolso / contracargo de un plan: revoca el entitlement (el gate público
+  // lo oculta) y despublica la invitación. El dinero ya se devolvió en MP; aquí
+  // solo se refleja el estado y se retira el acceso.
+  if (
+    newStatus === "refunded" &&
+    order.product_type === "plan" &&
+    order.invitation_id
+  ) {
+    await admin
+      .from("invitation_entitlements")
+      .update({ status: "revoked" })
+      .eq("invitation_id", order.invitation_id);
+    await admin
+      .from("invitations")
+      .update({ is_published: false, status: "draft" })
+      .eq("id", order.invitation_id);
+    return { ok: true, orderStatus: "refunded", entitlementActivated: false };
   }
 
   // Programa de referidos: cualquier compra PAGADA (plan o servicio) del
