@@ -368,13 +368,10 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
    vía query de diagnóstico read-only contra `pg_*`: tablas, funciones, índice
    único, RLS, 3 policies, seed de planes y el gate de `get_public_invitation`
    todos presentes). Ya no hay pendiente ahí.
-2. **⚠️ Aplicar `0008` + `0009` al Supabase REMOTO** antes de usar
-   servicios/referidos y el panel admin en real. En esta sesión solo se
-   aplicaron/verificaron en LOCAL. Vía SQL Editor o `supabase db push`.
-   - Tras aplicar `0009`, **sembrar el primer admin** por SQL (bootstrap, no hay
-     UI para el primero): `insert into public.admin_users(user_id) values
-     ('<TU_USER_UUID>');` (el UUID sale de Authentication → Users o
-     `select id from auth.users where email='tu@email';`).
+2. **✅ `0008` + `0009` CONFIRMADAS en el REMOTO** + **admin sembrado** (count=1).
+   Ya no hay pendiente ahí.
+   **⚠️ Nuevo pendiente: aplicar `0010_vanity_slugs.sql` al REMOTO** (URL
+   personalizada premium; solo verificada en LOCAL). Vía SQL Editor o `db push`.
 3. **✅ Prueba E2E sandbox CERRADA (2026-08-11).** Pago real de prueba con
    comprador `TESTUSER…` + tarjeta `APRO` → orden `7542f923…` quedó `paid`
    ($699 Premium, `provider_payment_id=172362178821`) y el entitlement de la
@@ -493,6 +490,22 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
   (camera/mic/geo off). Verificados en vivo con `curl -I`.
 - **CSP completo DEFERIDO**: requiere allowlist de Supabase Storage, script de
   Vercel Analytics, redirect de MP y fuentes + pruebas; no meter sin calibrar.
+
+## URL de invitaciones públicas (rebranding · post-Fase 7)
+- **Fase A (hecha):** las públicas se movieron de `/public/<u>/<slug>` a
+  `/<u>/<slug>` (ruta `app/[username]/[invitationSlug]`). Redirect 301/308 de
+  `/public/...` en `next.config.ts`. Las estáticas (pricing/login/dashboard…)
+  tienen prioridad sobre el dinámico; no hay edición de username (autogenerado)
+  así que el riesgo de colisión con reservadas es nulo.
+- **Fase B (hecha) — vanity URL premium `/<slug>` (ALIAS):** solo Premium puede
+  reclamar un slug **global único** → migración `0010_vanity_slugs.sql` (tabla
+  `vanity_slugs`, RLS dueño-lee, `vanity_slug_available()`,
+  `get_public_invitation_by_vanity()`). `src/lib/vanity/` (validación con
+  reservadas + acciones claim/release/check/state con gate Premium). Ruta
+  `app/[username]/page.tsx` (1 segmento = vanity; Next NO permite dos nombres de
+  slug dinámico distintos en el mismo nivel, por eso vive bajo `[username]`).
+  UI `VanitySlugCard` en el editor (solo Premium publicado). `/<usuario>/<slug>`
+  sigue funcionando (es alias). **Falta aplicar `0010` al remoto.**
 
 ## Prompt para continuar (pegar al retomar)
 
