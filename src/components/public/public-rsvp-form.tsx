@@ -88,9 +88,9 @@ export function PublicRsvpForm({
   }
 
   return (
-    <section className="flex flex-col items-center gap-4 bg-muted/40 px-6 py-10">
+    <section className="flex flex-col items-center gap-4 bg-muted/40 px-6 py-10 @2xl/inv:py-16">
       <div className="text-center">
-        <h3 className="text-lg font-semibold">
+        <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
           {config.title || "Confirma tu asistencia"}
         </h3>
         {config.description && (
@@ -114,7 +114,10 @@ export function PublicRsvpForm({
           Las confirmaciones están cerradas.
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-3">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-sm space-y-3 @2xl/inv:max-w-md"
+        >
           <div className="space-y-1.5">
             <Label htmlFor="guestName">Nombre *</Label>
             <Input id="guestName" name="guestName" required maxLength={120} />

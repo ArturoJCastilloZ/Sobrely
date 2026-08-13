@@ -223,16 +223,20 @@ export function MapPreview({ config }: { config: MapConfig }) {
     : "";
   return (
     <Section className="flex flex-col items-center gap-2 text-center">
-      <h3 className="text-lg font-semibold">{config.title || "Ubicación"}</h3>
-      {config.venueName && <p className="font-medium">{config.venueName}</p>}
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+        {config.title || "Ubicación"}
+      </h3>
+      {config.venueName && (
+        <p className="font-medium @2xl/inv:text-lg">{config.venueName}</p>
+      )}
       {config.address ? (
         <>
-          <p className="text-sm opacity-70">{config.address}</p>
+          <p className="text-sm opacity-70 @2xl/inv:text-base">{config.address}</p>
           <a
             href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm underline underline-offset-4"
+            className="text-sm underline underline-offset-4 @2xl/inv:text-base"
             style={{ color: PRIMARY }}
           >
             Ver en Google Maps
@@ -374,12 +378,12 @@ export function DresscodePreview({ config }: { config: DresscodeConfig }) {
   const level = config.level;
   return (
     <Section className="flex flex-col items-center gap-3 text-center">
-      <h3 className="text-lg font-semibold">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
         {config.title || "Código de vestimenta"}
       </h3>
       {level !== "custom" && (
         <span
-          className="rounded-full px-3 py-1 text-sm font-medium text-white"
+          className="rounded-full px-3 py-1 text-sm font-medium text-white @2xl/inv:px-4 @2xl/inv:py-1.5 @2xl/inv:text-base"
           style={{ backgroundColor: PRIMARY }}
         >
           {DRESSCODE_LABELS[level]}
@@ -391,7 +395,7 @@ export function DresscodePreview({ config }: { config: DresscodeConfig }) {
           src={config.imageUrl}
           alt="Código de vestimenta"
           loading="lazy"
-          className="max-h-96 w-full rounded-lg object-contain"
+          className="max-h-96 w-full rounded-lg object-contain @2xl/inv:max-h-[32rem]"
         />
       ) : level !== "custom" ? (
         <DresscodeFigures level={level} />
@@ -417,14 +421,18 @@ export function GiftsPreview({
   const links = config.links.filter((l) => l.url);
   return (
     <Section tint className="flex flex-col items-center gap-3 text-center">
-      <h3 className="text-lg font-semibold">{config.title || "Mesa de regalos"}</h3>
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+        {config.title || "Mesa de regalos"}
+      </h3>
       {config.description && (
-        <p className="max-w-prose text-sm opacity-80">{config.description}</p>
+        <p className="max-w-prose text-sm opacity-80 @2xl/inv:text-base">
+          {config.description}
+        </p>
       )}
       {links.length > 0 && (
         <StaggerGroup
           enabled={animate}
-          className="flex flex-wrap justify-center gap-2"
+          className="flex flex-wrap justify-center gap-2 @2xl/inv:gap-3"
           step={0.06}
         >
           {links.map((l, i) => (
@@ -433,7 +441,7 @@ export function GiftsPreview({
               href={l.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full px-4 py-1.5 text-sm font-medium text-white"
+              className="rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2.5 @2xl/inv:text-base"
               style={{ backgroundColor: PRIMARY }}
             >
               {l.label || "Ver mesa"}
@@ -450,13 +458,15 @@ export function GiftsPreview({
 export function MusicPreview({ config }: { config: MusicConfig }) {
   return (
     <Section className="flex flex-col items-center gap-2 text-center">
-      <h3 className="text-lg font-semibold">{config.title || "Música"}</h3>
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+        {config.title || "Música"}
+      </h3>
       {config.url ? (
         <a
           href={config.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-full px-4 py-1.5 text-sm font-medium text-white"
+          className="rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2.5 @2xl/inv:text-base"
           style={{ backgroundColor: PRIMARY }}
         >
           ▶ Escuchar

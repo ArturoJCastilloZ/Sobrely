@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import type { EditorModule } from "@/lib/invitations/editor-types";
 import type { ThemeConfig } from "@/lib/theme/theme";
+import { cn } from "@/lib/utils";
 import { ModulePreview } from "@/components/modules/previews";
 import { ThemeScope } from "@/components/theme/theme-scope";
 import { AnimatedModule } from "@/components/animation/animated-module";
@@ -21,10 +23,43 @@ export function PreviewPane({
   eventDate?: string;
 }) {
   const visible = modules.filter((m) => m.is_visible);
+  const [view, setView] = useState<"mobile" | "desktop">("mobile");
+  const desktop = view === "desktop";
 
   return (
-    <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-2xl border shadow-sm">
-      <ThemeScope theme={theme} className="relative overflow-hidden">
+    <div>
+      <div className="mb-2 flex justify-center gap-1">
+        {(
+          [
+            ["mobile", "📱 Móvil"],
+            ["desktop", "🖥 Escritorio"],
+          ] as const
+        ).map(([v, label]) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setView(v)}
+            className={cn(
+              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              view === v
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/70",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div
+        className={cn(
+          "mx-auto overflow-hidden rounded-2xl border shadow-sm",
+          desktop ? "w-full" : "w-full max-w-[420px]",
+        )}
+      >
+        <ThemeScope
+          theme={theme}
+          className={cn("relative overflow-hidden", desktop && "@container/inv")}
+        >
         {theme.animations && theme.decoration.enabled && (
           <DecorationLayer
             variant={theme.decoration.variant}
@@ -63,6 +98,7 @@ export function PreviewPane({
           </div>
         )}
       </ThemeScope>
+      </div>
     </div>
   );
 }
