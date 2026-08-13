@@ -12,7 +12,6 @@ import { submitRsvp } from "@/lib/rsvp/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function formatDate(iso: string) {
@@ -159,20 +158,24 @@ export function PublicRsvpForm({
             <Label className={labelCls}>¿Asistirás? *</Label>
             <div className="grid grid-cols-3 gap-2">
               {ATTENDANCE_STATUSES.map((s) => (
-                <Button
+                <button
                   key={s}
                   type="button"
-                  variant={status === s ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "@4xl/inv:h-11 @4xl/inv:text-base",
-                    status !== s &&
-                      "border-[color-mix(in_srgb,var(--inv-text)_30%,transparent)]",
-                  )}
                   onClick={() => setStatus(s)}
+                  style={
+                    status === s
+                      ? { backgroundColor: "var(--inv-primary)" }
+                      : undefined
+                  }
+                  className={cn(
+                    "flex h-9 items-center justify-center rounded-md border px-2 text-sm font-medium transition-colors @4xl/inv:h-11 @4xl/inv:text-base",
+                    status === s
+                      ? "border-transparent text-white"
+                      : "border-[color-mix(in_srgb,var(--inv-text)_30%,transparent)] hover:bg-[var(--inv-card)]",
+                  )}
                 >
                   {ATTENDANCE_SHORT[s]}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
@@ -220,13 +223,14 @@ export function PublicRsvpForm({
             </p>
           )}
 
-          <Button
+          <button
             type="submit"
-            className="w-full @4xl/inv:h-12 @4xl/inv:text-base"
             disabled={pending}
+            style={{ backgroundColor: "var(--inv-primary)" }}
+            className="flex h-10 w-full items-center justify-center rounded-md px-4 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60 @4xl/inv:h-12 @4xl/inv:text-base"
           >
             {pending ? "Enviando…" : "Confirmar"}
-          </Button>
+          </button>
         </form>
       )}
     </section>
