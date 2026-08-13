@@ -1,18 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+const emptySubscribe = () => () => {};
+
+/** True only after client mount (no setState-in-effect). */
+function useMounted() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+}
+
 /** Light/dark switch for the app chrome. Icon reflects the resolved theme. */
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  // Avoid a hydration mismatch: the resolved theme is only known on the client.
-  useEffect(() => setMounted(true), []);
-
+  const mounted = useMounted();
   const isDark = resolvedTheme === "dark";
 
   return (
