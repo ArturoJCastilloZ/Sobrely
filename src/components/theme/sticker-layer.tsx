@@ -2,6 +2,13 @@ import type { ThemeConfig } from "@/lib/theme/theme";
 
 type Sticker = ThemeConfig["stickers"][number];
 
+/** Border-radius per rounding option (fraction of the sticker box). */
+export const STICKER_RADIUS: Record<Sticker["rounded"], string> = {
+  none: "0",
+  soft: "14%",
+  circle: "50%",
+};
+
 /**
  * Read-only decorative sticker layer for a published invitation. Stickers are
  * positioned by fraction (0–1) of the invitation box and sized by fraction of
@@ -25,6 +32,7 @@ export function StickerLayer({ stickers }: { stickers: Sticker[] }) {
             top: `${s.y * 100}%`,
             width: `${s.scale * 100}%`,
             transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`,
+            borderRadius: STICKER_RADIUS[s.rounded],
           }}
         />
       ))}

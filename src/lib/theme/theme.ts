@@ -76,6 +76,7 @@ export const themeSchema = z.object({
         y: z.number().min(0).max(1).default(0.3),
         scale: z.number().min(0.03).max(0.9).default(0.18),
         rotation: z.number().min(-180).max(180).default(0),
+        rounded: z.enum(["none", "soft", "circle"]).default("none"),
       }),
     )
     .default([]),

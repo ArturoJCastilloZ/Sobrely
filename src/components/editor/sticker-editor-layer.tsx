@@ -1,11 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Minus, Plus, RotateCcw, RotateCw, Trash2 } from "lucide-react";
+import { Circle, Minus, Plus, RotateCcw, RotateCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ThemeConfig } from "@/lib/theme/theme";
+import { STICKER_RADIUS } from "@/components/theme/sticker-layer";
 
 type Sticker = ThemeConfig["stickers"][number];
+
+const NEXT_ROUNDED: Record<Sticker["rounded"], Sticker["rounded"]> = {
+  none: "soft",
+  soft: "circle",
+  circle: "none",
+};
 
 const clamp = (n: number, min: number, max: number) =>
   Math.min(max, Math.max(min, n));
@@ -84,6 +91,7 @@ export function StickerEditorLayer({
             alt=""
             draggable={false}
             onPointerDown={(e) => onPointerDown(e, s)}
+            style={{ borderRadius: STICKER_RADIUS[s.rounded] }}
             className={cn(
               "w-full cursor-move touch-none select-none",
               selected === s.id && "outline outline-2 outline-primary",
@@ -91,7 +99,7 @@ export function StickerEditorLayer({
           />
           {selected === s.id && (
             <div
-              className="absolute -top-9 left-1/2 flex items-center gap-0.5 rounded-md border bg-background/95 p-0.5 shadow"
+              className="absolute -top-9 left-1/2 flex items-center gap-0.5 rounded-md bg-neutral-900/95 p-0.5 text-white shadow-lg ring-1 ring-white/10"
               style={{ transform: `translateX(-50%) rotate(${-s.rotation}deg)` }}
             >
               <ToolBtn
@@ -122,8 +130,14 @@ export function StickerEditorLayer({
               >
                 <RotateCw className="h-3.5 w-3.5" />
               </ToolBtn>
+              <ToolBtn
+                label="Redondear bordes"
+                onClick={() => patch(s.id, { rounded: NEXT_ROUNDED[s.rounded] })}
+              >
+                <Circle className="h-3.5 w-3.5" />
+              </ToolBtn>
               <ToolBtn label="Eliminar" onClick={() => remove(s.id)}>
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                <Trash2 className="h-3.5 w-3.5 text-red-400" />
               </ToolBtn>
             </div>
           )}
@@ -149,7 +163,7 @@ function ToolBtn({
       title={label}
       onClick={onClick}
       onPointerDown={(e) => e.stopPropagation()}
-      className="flex h-6 w-6 items-center justify-center rounded hover:bg-muted"
+      className="flex h-6 w-6 items-center justify-center rounded hover:bg-white/15"
     >
       {children}
     </button>

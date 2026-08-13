@@ -139,7 +139,15 @@ export function ThemePanel({
     onChange({
       stickers: [
         ...theme.stickers,
-        { id: crypto.randomUUID(), url, x: 0.5, y: 0.3, scale: 0.18, rotation: 0 },
+        {
+          id: crypto.randomUUID(),
+          url,
+          x: 0.5,
+          y: 0.3,
+          scale: 0.18,
+          rotation: 0,
+          rounded: "none",
+        },
       ],
     });
   }
