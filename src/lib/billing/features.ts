@@ -16,6 +16,7 @@ export interface ComparisonRow {
 const FEATURE_LABELS: Record<PlanFeature, string> = {
   csv_export: "Exportación CSV de RSVP",
   advanced_personalization: "Personalización avanzada",
+  custom_art: "Arte propio (fondo e imágenes)",
   basic_analytics: "Analytics básicos",
   advanced_analytics: "Analytics avanzados",
   custom_domain: "Dominio personalizado",

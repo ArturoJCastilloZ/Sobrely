@@ -167,13 +167,19 @@ export async function canPublishInvitation(
     .select("theme_config")
     .eq("id", invitationId)
     .maybeSingle();
-  const themePackKey = parseTheme(inv?.theme_config).themePack;
+  const parsedTheme = parseTheme(inv?.theme_config);
+  const themePackKey = parsedTheme.themePack;
   const themePackGated =
     isThemePackPremium(themePackKey) &&
     !planHasFeature(plan, "advanced_personalization");
   const premiumThemePackUsed = themePackGated ? themePackKey : undefined;
 
-  if (premiumModulesUsed.length === 0 && !themePackGated) {
+  // Gate de arte propio (B2, Premium): fondo de imagen (y stickers en B2.2).
+  const customArtGated =
+    Boolean(parsedTheme.backgroundImage?.url) &&
+    !planHasFeature(plan, "custom_art");
+
+  if (premiumModulesUsed.length === 0 && !themePackGated && !customArtGated) {
     return { allowed: true, effectivePlanCode: plan.code, premiumModulesUsed: [] };
   }
 
@@ -184,9 +190,14 @@ export async function canPublishInvitation(
   const requiredForTheme = themePackGated
     ? minimalPlanForFeature("advanced_personalization")
     : undefined;
-  const candidates = [requiredForModules, requiredForTheme].filter(
-    (p): p is Plan => Boolean(p),
-  );
+  const requiredForArt = customArtGated
+    ? minimalPlanForFeature("custom_art")
+    : undefined;
+  const candidates = [
+    requiredForModules,
+    requiredForTheme,
+    requiredForArt,
+  ].filter((p): p is Plan => Boolean(p));
   const required =
     candidates.length > 0
       ? candidates.sort((a, b) => b.displayOrder - a.displayOrder)[0]
@@ -195,6 +206,7 @@ export async function canPublishInvitation(
   const reasonParts: string[] = [];
   if (premiumModulesUsed.length > 0) reasonParts.push("módulos");
   if (themePackGated) reasonParts.push("una temática");
+  if (customArtGated) reasonParts.push("arte propio");
   const what = reasonParts.join(" y ");
 
   return {

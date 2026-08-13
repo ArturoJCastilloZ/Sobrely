@@ -473,6 +473,7 @@ export function InvitationEditor({
                       onChange={updateTheme}
                       warnings={detectAnimationConflicts(theme, modules)}
                       onApplyAnimationToAll={applyAnimationToAll}
+                      ctx={uploadCtx}
                     />
                   </CardContent>
                 </Card>

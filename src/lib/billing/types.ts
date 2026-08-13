@@ -38,6 +38,7 @@ export type BrandingLevel = "full" | "reduced" | "none";
 export type PlanFeature =
   | "csv_export"
   | "advanced_personalization"
+  | "custom_art"
   | "basic_analytics"
   | "advanced_analytics"
   | "custom_domain"

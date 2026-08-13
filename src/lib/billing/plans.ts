@@ -157,6 +157,7 @@ export const PLANS: readonly Plan[] = [
     features: [
       "csv_export",
       "advanced_personalization",
+      "custom_art",
       "priority_support",
       "visual_review",
     ],

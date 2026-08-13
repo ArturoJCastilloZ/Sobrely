@@ -55,6 +55,15 @@ export const themeSchema = z.object({
   // Light/dark surface of the invitation (independent of the viewer's app
   // theme). Retro-compatible: themes saved before this field parse as "light".
   mode: z.enum(["light", "dark"]).default("light"),
+  // Arte propio del usuario (B2, Premium): imagen de fondo de toda la
+  // invitación. `overlay` (0–1) es cuánto se atenúa con el color de fondo para
+  // mantener el texto legible. Retro-compat: vacío = sin fondo de imagen.
+  backgroundImage: z
+    .object({
+      url: z.string().default(""),
+      overlay: z.number().min(0).max(1).default(0.45),
+    })
+    .default({ url: "", overlay: 0.45 }),
   // Master on/off switch for all animations (invitation-level).
   animations: z.boolean().default(true),
   // Global default animation config; per-module overrides added in 5.4.

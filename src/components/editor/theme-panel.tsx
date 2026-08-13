@@ -25,6 +25,10 @@ import { ThemePackPicker } from "./theme-pack-picker";
 import { SYSTEM_DEFAULT_ANIMATION } from "@/lib/animation/schema";
 import { AnimationFields } from "@/components/editor/animation-fields";
 import { cn } from "@/lib/utils";
+import {
+  ImageUploader,
+  type UploadContext,
+} from "@/components/editor/image-uploader";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -108,11 +112,14 @@ export function ThemePanel({
   onChange,
   warnings = [],
   onApplyAnimationToAll,
+  ctx,
 }: {
   theme: ThemeConfig;
   onChange: (patch: Partial<ThemeConfig>) => void;
   warnings?: string[];
   onApplyAnimationToAll?: () => void;
+  /** Upload context for the custom background image (B2). */
+  ctx?: UploadContext;
 }) {
   function setColor(key: ColorKey, value: string) {
     onChange({ colors: { ...theme.colors, [key]: value } });
@@ -121,6 +128,10 @@ export function ThemePanel({
   function setMode(mode: "light" | "dark") {
     // Switching mode presets a legible surface (fondo/texto); accents stay.
     onChange({ mode, colors: { ...theme.colors, ...MODE_PRESETS[mode] } });
+  }
+
+  function setBg(patch: Partial<ThemeConfig["backgroundImage"]>) {
+    onChange({ backgroundImage: { ...theme.backgroundImage, ...patch } });
   }
 
   function applyStyle(key: StylePresetKey) {
@@ -218,6 +229,43 @@ export function ThemePanel({
           conservan.
         </p>
       </div>
+
+      {/* Custom background image (B2, Premium) */}
+      {ctx && (
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            Fondo de imagen
+            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+              Premium ⭐
+            </span>
+          </Label>
+          <ImageUploader
+            value={theme.backgroundImage.url}
+            onChange={(url) => setBg({ url })}
+            ctx={ctx}
+          />
+          {theme.backgroundImage.url && (
+            <div className="space-y-1">
+              <Label className="text-xs">
+                Atenuación ({Math.round(theme.backgroundImage.overlay * 100)}%)
+              </Label>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(theme.backgroundImage.overlay * 100)}
+                onChange={(e) => setBg({ overlay: Number(e.target.value) / 100 })}
+                className="w-full accent-primary"
+                aria-label="Atenuación del fondo"
+              />
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Sube tu propia imagen de fondo. Eres responsable de contar con los
+            derechos para usarla.
+          </p>
+        </div>
+      )}
 
       {/* Colors */}
       <div className="space-y-2">

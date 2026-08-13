@@ -16,14 +16,35 @@ export function ThemeScope({
   className?: string;
   children: React.ReactNode;
 }) {
+  const bgImage = theme.backgroundImage?.url;
+
   return (
     <div
       // `dark` here scopes the invitation to its own mode so the modules'
       // `dark:` niceties (card tints) match its surface — independent of the
-      // viewer's app theme.
-      className={cn(theme.mode === "dark" && "dark", className)}
+      // viewer's app theme. `relative` anchors the optional background-image
+      // layers below the content.
+      className={cn("relative", theme.mode === "dark" && "dark", className)}
       style={themeCssVars(theme)}
     >
+      {bgImage && (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url("${bgImage}")` }}
+          />
+          {/* Overlay of the surface color keeps text legible over the photo. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundColor: theme.colors.background,
+              opacity: theme.backgroundImage.overlay,
+            }}
+          />
+        </>
+      )}
       {children}
     </div>
   );
