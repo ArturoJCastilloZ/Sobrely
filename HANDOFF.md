@@ -3,6 +3,84 @@
 > Documento de traspaso. Registra lo hecho, lo pendiente y lo que sigue.
 > No es memoria del agente ni se guarda en ningún brain — vive en el repo.
 
+---
+
+# Sesión 2026-08-12 — Correo propio (Resend), confirmación branded y fixes de auth
+
+> **LO MÁS RECIENTE.** Todo desplegado en producción (`main`, commits `f88f508`→
+> `2105758`) y probado en vivo por el dev. Push vía **SSH sobre puerto 443**
+> (`ssh://git@ssh.github.com:443/…`) porque el puerto 22 estaba bloqueado en la
+> red del dev. **El repo se renombró en GitHub a `ArturoJCastilloZ/Sobrely`** (el
+> remote local aún dice `invitaflow`; funciona por el redirect de GitHub).
+
+## Resend (SMTP propio) para los correos de Supabase — ✅ HECHO
+- **Por qué:** el SMTP compartido de Supabase bloquea editar plantillas, tiene
+  límite bajo y cae en spam. Se migró a **Resend** (3,000/mes gratis) con dominio
+  propio → correos salen de `noreply@sobrely.com`.
+- **Config (la hizo el dev, guía en `docs/resend-smtp.md`):** dominio verificado en
+  Resend (SPF+DKIM en Vercel DNS), API Key como password SMTP en Supabase
+  (`smtp.resend.com:465`, user `resend`), Sender `noreply@sobrely.com`.
+  - Gotcha: el **Sender** NO necesita ser buzón real; solo el **dominio** debe estar
+    verificado en Resend. El `soporte@sobrely.com` del footer/legales SÍ necesita
+    buzón/forwarding real (Resend no recibe correo entrante) — **confirmar**.
+- **Plantillas brandeadas** en `docs/email-templates/` (`confirm-signup`,
+  `reset-password`, `magic-link`), email-safe (tablas + inline), logo desde
+  `https://sobrely.com/sobrely-logo-horizontal.png`. Pegar en Supabase → Auth →
+  Emails → Templates.
+
+## DMARC (anti-spam) — ✅ HECHO
+- Faltaba el registro DMARC → Gmail/Yahoo mandaban a spam (SPF+DKIM ya estaban).
+  Se agregó TXT `_dmarc` = `v=DMARC1; p=none;` en Vercel.
+- **Gotcha:** el dev lo pegó duplicado (`v=DMARC1; p=none;v=DMARC1; p=none;`) →
+  inválido; se corrigió a uno solo. (Medido con `dig +short TXT _dmarc.sobrely.com`.)
+
+## Confirmación de correo en dominio propio (`/auth/confirm`) — ✅ HECHO y PROBADO
+- **Objetivo:** que el enlace de los correos de auth se vea en `sobrely.com`, no en
+  `<project>.supabase.co`. Se eligió la vía gratis (token_hash + ruta propia) sobre
+  el Supabase Custom Domain (de pago).
+- **Ruta `src/app/auth/confirm/`** (page.tsx + actions.ts). Las plantillas apuntan a
+  `https://sobrely.com/auth/confirm?token_hash={{ .TokenHash }}&amp;type=…&amp;next=…`
+  (signup→`/dashboard`, recovery→`/reset-password`, magiclink→`/dashboard`).
+- **GOTCHA CLAVE — escáneres de correo:** la 1ª versión verificaba con `verifyOtp`
+  en el **GET** de la ruta. Los escáneres de correo (Safe Links/Defender)
+  **pre-visitan** el enlace y **consumen el token de un solo uso** antes del clic
+  del usuario → `verifyOtp` fallaba con *"Email link is invalid or has expired"*.
+  Se **midió**: un GET server-side a un token fresco SÍ funcionaba, pero el clic del
+  usuario fallaba → firma del pre-fetch. **Fix:** `/auth/confirm` ahora es una
+  **página con botón "Confirmar"** que verifica solo al **enviar el form (POST)**;
+  los escáneres hacen GET y no envían el form → el token sobrevive. Probado en vivo
+  (botón y enlace → dashboard). El GET a la ruta devuelve **200** (página), no 307.
+- **Otros gotchas medidos:**
+  - El token de signup es **PKCE** (prefijo `pkce_`); `verifyOtp({token_hash})` SÍ
+    lo acepta (probado). El `type` correcto en el flujo token_hash puede ser `email`
+    en vez de `signup` → el route/acción intenta el `type` dado y luego el
+    equivalente (`signup`↔`email`); un verify fallido NO consume el token.
+  - Ante fallo, la acción propaga el motivo real en `/login?error=auth&reason=…`
+    (sin exponer el token) para diagnóstico.
+  - Los `&` en los `href` de las plantillas van como `&amp;` (encoding HTML) para
+    que ningún cliente pierda `type`/`next`.
+
+## Fix: aviso de correo ya registrado — ✅ HECHO y PROBADO
+- **Bug reportado:** registrar un correo ya existente mostraba un falso "revisa tu
+  correo" y el correo nunca llegaba.
+- **Causa (medida en código):** la *email enumeration protection* de Supabase hace
+  que `signUp` de un correo existente **no** devuelva error (para no filtrar qué
+  correos tienen cuenta); regresa `user` con `identities` vacío y no manda correo.
+- **Fix** (`src/lib/auth/actions.ts`, `register`): se detecta
+  `data.user.identities?.length === 0` y se avisa *"Ese correo ya está registrado.
+  Inicia sesión o recupera tu contraseña."* **Decisión del dev:** mensaje **directo**
+  (revela existencia) en vez del neutro — mejor UX, acepta el tradeoff de enumeración.
+
+## PENDIENTE al cerrar
+1. **`soporte@sobrely.com`:** confirmar/crear buzón o forwarding real (Resend no
+   recibe entrante). Usado en /privacidad, /terminos y footers de correos.
+2. **Branding OAuth de Google:** sigue en revisión de Google (login ya funciona;
+   cosmético). Esperar correo de Confianza y Seguridad y responder el hilo.
+3. **(Opcional)** actualizar el remote git al nombre nuevo:
+   `git remote set-url origin git@github.com:ArturoJCastilloZ/Sobrely.git`.
+
+---
+
 ## Qué es el proyecto
 
 > **Rename (2026-08-11):** el proyecto se llamaba **InvitaFlow** y se rebautizó a
@@ -656,19 +734,24 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
 ## Prompt para continuar (pegar al retomar)
 
 > Retomo **Sobrely** en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
-> Lee primero HANDOFF.md (la sección **"Sesión 2026-08-11 (continuación)"** arriba, que es el
-> estado más reciente) y README.md.
+> Lee primero HANDOFF.md (la sección **"Sesión 2026-08-12"** arriba, que es el estado más
+> reciente) y README.md.
 >
-> **Estado:** LIVE en `https://sobrely.com`. Fase 8 COMPLETA. **Fase 7 COMPLETA incl. 7.5**
-> (pagos reales en PRODUCCIÓN, verificados end-to-end con pago + reembolso reales). Temas
-> temáticos MVP (Fases 1–4) HECHO. Marca completa (favicon/isotipo sobre+corazón en oro +
-> lockup en TODOS los headers) HECHO. Fix de reembolso + auto-publish desde "Publicar" HECHO
-> (probado). Páginas /privacidad y /terminos HECHAS. `0010_vanity_slugs` aplicada al remoto.
+> **Estado:** LIVE en `https://sobrely.com`. Fase 8 COMPLETA. Fase 7 COMPLETA incl. 7.5 (pagos
+> reales en PRODUCCIÓN, verificados). Temas temáticos MVP (1–4) HECHO. Marca completa HECHA.
+> **Correo propio (Resend) + DMARC HECHO**; correos salen de `noreply@sobrely.com`.
+> **Confirmación de correo en dominio propio `/auth/confirm` HECHA y PROBADA** — página con
+> botón (verifica por POST) **resistente a escáneres de correo** que consumían el token.
+> **Fix aviso de correo ya registrado HECHO y PROBADO.**
 >
-> **Pendientes:** (1) **Branding OAuth de Google** en revisión de Google — esperar su correo y
-> responder el hilo de Confianza y Seguridad (login ya funciona; es cosmético); (2) configurar
-> **Resend (SMTP propio)** para brandear los correos de Supabase (plantilla ya redactada en el
-> chat) + confirmar buzón `soporte@sobrely.com`.
+> **Pendientes:** (1) confirmar/crear buzón o forwarding real para `soporte@sobrely.com`
+> (Resend no recibe entrante); (2) **Branding OAuth de Google** sigue en revisión de Google
+> (login ya funciona; cosmético) — responder el hilo de Confianza y Seguridad; (3) opcional:
+> actualizar remote git a `ArturoJCastilloZ/Sobrely`.
+>
+> **Notas de entorno:** el push va por **SSH sobre 443**
+> (`ssh://git@ssh.github.com:443/ArturoJCastilloZ/invitaflow.git`) porque el puerto 22 estaba
+> bloqueado. El repo se renombró a `Sobrely` en GitHub (remote local aún dice `invitaflow`).
 >
 > **Reglas:** trabajo por fases, cada una requiere mi aprobación explícita — NO avances solo; al
 > cerrar muéstrame resumen, archivos, migraciones, env vars, cómo probar, pendientes y riesgos.
