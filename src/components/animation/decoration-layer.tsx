@@ -18,11 +18,14 @@ export function DecorationLayer({
   variant = "floating",
   count = 8,
   symbol = "❀",
+  imageUrl = "",
   enabled = true,
 }: {
   variant?: DecorationVariant;
   count?: number;
   symbol?: string;
+  /** Custom PNG for the floating particles; overrides `symbol` when set. */
+  imageUrl?: string;
   enabled?: boolean;
 }) {
   if (!enabled) return null;
@@ -50,6 +53,26 @@ export function DecorationLayer({
             />
           );
         }
+        const size = 18 + Math.round(rand(i, 9.7) * 16);
+        if (imageUrl) {
+          return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={i}
+              src={imageUrl}
+              alt=""
+              aria-hidden
+              className="inv-decor__item"
+              style={{
+                left,
+                top,
+                width: `${size}px`,
+                animationDuration: dur,
+                animationDelay: delay,
+              }}
+            />
+          );
+        }
         return (
           <span
             key={i}
@@ -57,7 +80,7 @@ export function DecorationLayer({
             style={{
               left,
               top,
-              fontSize: `${18 + Math.round(rand(i, 9.7) * 16)}px`,
+              fontSize: `${size}px`,
               animationDuration: dur,
               animationDelay: delay,
             }}

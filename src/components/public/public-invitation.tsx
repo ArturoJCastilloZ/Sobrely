@@ -34,6 +34,7 @@ export function PublicInvitationView({
         <DecorationLayer
           variant={theme.decoration.variant}
           symbol={theme.decoration.symbol}
+          imageUrl={theme.decoration.imageUrl}
           count={12}
         />
       )}

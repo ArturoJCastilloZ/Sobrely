@@ -449,12 +449,37 @@ export function ThemePanel({
               </SelectContent>
             </Select>
             {theme.decoration.variant === "floating" && (
-              <SymbolPicker
-                value={theme.decoration.symbol}
-                onChange={(symbol) =>
-                  onChange({ decoration: { ...theme.decoration, symbol } })
-                }
-              />
+              <>
+                <SymbolPicker
+                  value={theme.decoration.symbol}
+                  onChange={(symbol) =>
+                    onChange({ decoration: { ...theme.decoration, symbol } })
+                  }
+                />
+                {ctx && (
+                  <div className="space-y-1.5 border-t pt-2">
+                    <Label className="flex items-center gap-2 text-xs">
+                      O tu imagen (.png sin fondo)
+                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                        Premium ⭐
+                      </span>
+                    </Label>
+                    <ImageUploader
+                      value={theme.decoration.imageUrl}
+                      onChange={(url) =>
+                        onChange({
+                          decoration: { ...theme.decoration, imageUrl: url },
+                        })
+                      }
+                      ctx={ctx}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Si subes una imagen, reemplaza al emoji en las partículas
+                      flotantes. Eres responsable de tener derechos sobre ella.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

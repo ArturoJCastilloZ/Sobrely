@@ -119,6 +119,6 @@ export function applyStylePreset(
       trigger: "scroll",
       enabled: true,
     },
-    decoration: { ...p.decoration },
+    decoration: { imageUrl: "", ...p.decoration },
   };
 }

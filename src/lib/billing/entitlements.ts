@@ -174,10 +174,12 @@ export async function canPublishInvitation(
     !planHasFeature(plan, "advanced_personalization");
   const premiumThemePackUsed = themePackGated ? themePackKey : undefined;
 
-  // Gate de arte propio (B2, Premium): fondo de imagen o stickers colocados.
+  // Gate de arte propio (B2, Premium): fondo de imagen, stickers o imagen de
+  // decoración propia.
   const usesCustomArt =
     Boolean(parsedTheme.backgroundImage?.url) ||
-    (parsedTheme.stickers?.length ?? 0) > 0;
+    (parsedTheme.stickers?.length ?? 0) > 0 ||
+    Boolean(parsedTheme.decoration?.imageUrl);
   const customArtGated = usesCustomArt && !planHasFeature(plan, "custom_art");
 
   if (premiumModulesUsed.length === 0 && !themePackGated && !customArtGated) {

@@ -188,9 +188,10 @@
 .inv-ambient-gradient {
   background: linear-gradient(
     120deg,
-    color-mix(in srgb, var(--inv-primary, #7c6cf0) 16%, transparent) 0%,
-    transparent 45%,
-    color-mix(in srgb, var(--inv-secondary, #f0a6c6) 16%, transparent) 100%
+    color-mix(in srgb, var(--inv-primary, #7c6cf0) 34%, transparent) 0%,
+    color-mix(in srgb, var(--inv-primary, #7c6cf0) 8%, transparent) 38%,
+    transparent 52%,
+    color-mix(in srgb, var(--inv-secondary, #f0a6c6) 34%, transparent) 100%
   );
   background-size: 220% 220%;
   animation: inv-gradient-pan 10s ease-in-out infinite;

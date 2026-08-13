@@ -423,7 +423,7 @@ export function applyThemePack(theme: ThemeConfig, key: string): ThemeConfig {
     font: pack.theme.font,
     spacing: pack.theme.spacing,
     mode: pack.theme.mode ?? "light",
-    decoration: { ...pack.theme.decoration },
+    decoration: { imageUrl: "", ...pack.theme.decoration },
     themePack: pack.key,
   };
 }

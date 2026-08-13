@@ -27,6 +27,10 @@ export const decorationSchema = z.object({
   enabled: z.boolean().default(false),
   variant: z.enum(DECORATION_VARIANTS).default("floating"),
   symbol: z.string().max(4).default("❀"),
+  // Imagen propia (.png sin fondo) para las partículas flotantes (B2, Premium
+  // `custom_art`). Si está vacío, se usa el emoji `symbol`. Solo aplica al
+  // variant "floating".
+  imageUrl: z.string().default(""),
 });
 export type DecorationConfig = z.infer<typeof decorationSchema>;
 
@@ -89,6 +93,7 @@ export const themeSchema = z.object({
     enabled: false,
     variant: "floating",
     symbol: "❀",
+    imageUrl: "",
   }),
   // Last applied style preset (for display in the editor). Stored as a plain
   // string to avoid a circular import with the style-presets module.
