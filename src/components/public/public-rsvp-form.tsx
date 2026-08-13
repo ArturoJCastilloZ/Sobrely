@@ -41,6 +41,11 @@ export function PublicRsvpForm({
 
   const deadlineLabel = formatDate(config.deadline);
 
+  // Scale form labels/inputs up on wider containers so the RSVP reads well on
+  // desktop (kept small on mobile via the container-query breakpoints).
+  const labelCls = "@2xl/inv:text-base @4xl/inv:text-lg";
+  const inputCls = "@4xl/inv:h-11 @4xl/inv:text-base";
+
   // Evaluate the deadline on the client only (deferred), so we don't call an
   // impure Date.now() during render nor risk an SSR/client hydration mismatch.
   useEffect(() => {
@@ -88,18 +93,18 @@ export function PublicRsvpForm({
   }
 
   return (
-    <section className="flex flex-col items-center gap-4 bg-muted/40 px-6 py-10 @2xl/inv:py-16">
+    <section className="flex flex-col items-center gap-4 bg-[color-mix(in_srgb,var(--inv-text)_7%,transparent)] px-6 py-10 @2xl/inv:gap-6 @2xl/inv:py-16">
       <div className="text-center">
         <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
           {config.title || "Confirma tu asistencia"}
         </h3>
         {config.description && (
-          <p className="mt-1 text-sm text-muted-foreground @2xl/inv:text-base @4xl/inv:text-lg">
+          <p className="mt-1 text-sm opacity-70 @2xl/inv:text-base @4xl/inv:text-lg">
             {config.description}
           </p>
         )}
         {deadlineLabel && (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs opacity-60 @2xl/inv:text-sm">
             Fecha límite: {deadlineLabel}
           </p>
         )}
@@ -116,25 +121,36 @@ export function PublicRsvpForm({
       ) : (
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-sm space-y-3 @2xl/inv:max-w-md"
+          className="w-full max-w-sm space-y-3 @2xl/inv:max-w-md @2xl/inv:space-y-4 @4xl/inv:max-w-lg"
         >
           <div className="space-y-1.5">
-            <Label htmlFor="guestName">Nombre *</Label>
-            <Input id="guestName" name="guestName" required maxLength={120} />
+            <Label htmlFor="guestName" className={labelCls}>
+              Nombre *
+            </Label>
+            <Input
+              id="guestName"
+              name="guestName"
+              required
+              maxLength={120}
+              className={inputCls}
+            />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="guestEmail">Correo (opcional)</Label>
+            <Label htmlFor="guestEmail" className={labelCls}>
+              Correo (opcional)
+            </Label>
             <Input
               id="guestEmail"
               name="guestEmail"
               type="email"
               placeholder="tu@correo.com"
+              className={inputCls}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label>¿Asistirás? *</Label>
+            <Label className={labelCls}>¿Asistirás? *</Label>
             <div className="grid grid-cols-3 gap-2">
               {ATTENDANCE_STATUSES.map((s) => (
                 <Button
@@ -142,6 +158,7 @@ export function PublicRsvpForm({
                   type="button"
                   variant={status === s ? "default" : "outline"}
                   size="sm"
+                  className="@4xl/inv:h-11 @4xl/inv:text-base"
                   onClick={() => setStatus(s)}
                 >
                   {ATTENDANCE_SHORT[s]}
@@ -152,7 +169,9 @@ export function PublicRsvpForm({
 
           {config.allowGuestCount && status !== "no" && (
             <div className="space-y-1.5">
-              <Label htmlFor="guestCount">Número de invitados</Label>
+              <Label htmlFor="guestCount" className={labelCls}>
+                Número de invitados
+              </Label>
               <Input
                 id="guestCount"
                 name="guestCount"
@@ -160,6 +179,7 @@ export function PublicRsvpForm({
                 min={1}
                 max={MAX_GUEST_COUNT}
                 value={count}
+                className={inputCls}
                 onChange={(e) =>
                   setCount(
                     Math.min(
@@ -173,17 +193,28 @@ export function PublicRsvpForm({
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="message">Mensaje (opcional)</Label>
-            <Textarea id="message" name="message" maxLength={500} />
+            <Label htmlFor="message" className={labelCls}>
+              Mensaje (opcional)
+            </Label>
+            <Textarea
+              id="message"
+              name="message"
+              maxLength={500}
+              className="@4xl/inv:text-base"
+            />
           </div>
 
           {error && (
-            <p role="alert" className="text-sm text-destructive">
+            <p role="alert" className="text-sm text-destructive @4xl/inv:text-base">
               {error}
             </p>
           )}
 
-          <Button type="submit" className="w-full" disabled={pending}>
+          <Button
+            type="submit"
+            className="w-full @4xl/inv:h-12 @4xl/inv:text-base"
+            disabled={pending}
+          >
             {pending ? "Enviando…" : "Confirmar"}
           </Button>
         </form>

@@ -63,7 +63,7 @@ export function PublicInvitationView({
           );
         })}
 
-        <footer className="px-6 py-8 text-center text-xs opacity-60">
+        <footer className="px-6 py-8 text-center text-xs opacity-60 @2xl/inv:text-sm @4xl/inv:py-12 @4xl/inv:text-base">
           Hecho con Sobre<span style={{ color: "var(--inv-primary)" }}>ly</span>
         </footer>
       </div>
