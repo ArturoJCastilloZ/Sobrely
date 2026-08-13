@@ -64,6 +64,21 @@ export const themeSchema = z.object({
       overlay: z.number().min(0).max(1).default(0.45),
     })
     .default({ url: "", overlay: 0.45 }),
+  // Stickers/decoración colocable (B2.2, Premium `custom_art`). Posición y
+  // tamaño como fracción (0–1) del contenedor para ser responsive; el orden en
+  // el arreglo es el z-index (último = encima). Retro-compat: vacío = sin stickers.
+  stickers: z
+    .array(
+      z.object({
+        id: z.string(),
+        url: z.string(),
+        x: z.number().min(0).max(1).default(0.5),
+        y: z.number().min(0).max(1).default(0.3),
+        scale: z.number().min(0.03).max(0.9).default(0.18),
+        rotation: z.number().min(-180).max(180).default(0),
+      }),
+    )
+    .default([]),
   // Master on/off switch for all animations (invitation-level).
   animations: z.boolean().default(true),
   // Global default animation config; per-module overrides added in 5.4.

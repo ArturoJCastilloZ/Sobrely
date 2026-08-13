@@ -6,6 +6,7 @@ import type { ThemeConfig } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
 import { ModulePreview } from "@/components/modules/previews";
 import { ThemeScope } from "@/components/theme/theme-scope";
+import { StickerEditorLayer } from "@/components/editor/sticker-editor-layer";
 import { AnimatedModule } from "@/components/animation/animated-module";
 import { DecorationLayer } from "@/components/animation/decoration-layer";
 import {
@@ -17,10 +18,13 @@ export function PreviewPane({
   modules,
   theme,
   eventDate = "",
+  onStickersChange,
 }: {
   modules: EditorModule[];
   theme: ThemeConfig;
   eventDate?: string;
+  /** When provided, the preview shows an editable (draggable) sticker layer. */
+  onStickersChange?: (stickers: ThemeConfig["stickers"]) => void;
 }) {
   const visible = modules.filter((m) => m.is_visible);
   const [view, setView] = useState<"mobile" | "desktop">("mobile");
@@ -96,6 +100,12 @@ export function PreviewPane({
               );
             })}
           </div>
+        )}
+        {onStickersChange && (
+          <StickerEditorLayer
+            stickers={theme.stickers}
+            onChange={onStickersChange}
+          />
         )}
       </ThemeScope>
       </div>

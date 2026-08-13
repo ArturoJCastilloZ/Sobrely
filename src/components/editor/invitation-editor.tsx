@@ -480,7 +480,7 @@ export function InvitationEditor({
               </TabsContent>
 
               <TabsContent value="preview" className="lg:hidden">
-                <PreviewPane modules={modules} theme={theme} eventDate={invitation.event_date} />
+                <PreviewPane modules={modules} theme={theme} eventDate={invitation.event_date} onStickersChange={(stickers) => updateTheme({ stickers })} />
               </TabsContent>
             </Tabs>
           </div>
@@ -491,7 +491,7 @@ export function InvitationEditor({
               <p className="mb-2 text-center text-xs text-muted-foreground">
                 Vista previa en tiempo real
               </p>
-              <PreviewPane modules={modules} theme={theme} eventDate={invitation.event_date} />
+              <PreviewPane modules={modules} theme={theme} eventDate={invitation.event_date} onStickersChange={(stickers) => updateTheme({ stickers })} />
             </div>
           </div>
         </div>

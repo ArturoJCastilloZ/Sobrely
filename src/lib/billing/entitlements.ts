@@ -174,10 +174,11 @@ export async function canPublishInvitation(
     !planHasFeature(plan, "advanced_personalization");
   const premiumThemePackUsed = themePackGated ? themePackKey : undefined;
 
-  // Gate de arte propio (B2, Premium): fondo de imagen (y stickers en B2.2).
-  const customArtGated =
-    Boolean(parsedTheme.backgroundImage?.url) &&
-    !planHasFeature(plan, "custom_art");
+  // Gate de arte propio (B2, Premium): fondo de imagen o stickers colocados.
+  const usesCustomArt =
+    Boolean(parsedTheme.backgroundImage?.url) ||
+    (parsedTheme.stickers?.length ?? 0) > 0;
+  const customArtGated = usesCustomArt && !planHasFeature(plan, "custom_art");
 
   if (premiumModulesUsed.length === 0 && !themePackGated && !customArtGated) {
     return { allowed: true, effectivePlanCode: plan.code, premiumModulesUsed: [] };

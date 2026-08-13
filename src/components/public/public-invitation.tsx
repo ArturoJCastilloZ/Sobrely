@@ -6,6 +6,7 @@ import { PublicRsvpForm } from "@/components/public/public-rsvp-form";
 import { parseConfig, type RsvpConfig } from "@/lib/modules/types";
 import { parseTheme } from "@/lib/theme/theme";
 import { ThemeScope } from "@/components/theme/theme-scope";
+import { StickerLayer } from "@/components/theme/sticker-layer";
 import { AnimatedModule } from "@/components/animation/animated-module";
 import { DecorationLayer } from "@/components/animation/decoration-layer";
 import {
@@ -36,6 +37,7 @@ export function PublicInvitationView({
           count={12}
         />
       )}
+      <StickerLayer stickers={theme.stickers} />
       <div className="relative z-10">
         {modules.map((m, i) => {
           // Per-module override > invitation default > system default.

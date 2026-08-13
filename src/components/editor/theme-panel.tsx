@@ -134,6 +134,16 @@ export function ThemePanel({
     onChange({ backgroundImage: { ...theme.backgroundImage, ...patch } });
   }
 
+  function addSticker(url: string) {
+    if (!url) return;
+    onChange({
+      stickers: [
+        ...theme.stickers,
+        { id: crypto.randomUUID(), url, x: 0.5, y: 0.3, scale: 0.18, rotation: 0 },
+      ],
+    });
+  }
+
   function applyStyle(key: StylePresetKey) {
     const next = applyStylePreset(theme, key);
     onChange({
@@ -263,6 +273,26 @@ export function ThemePanel({
           <p className="text-xs text-muted-foreground">
             Sube tu propia imagen de fondo. Eres responsable de contar con los
             derechos para usarla.
+          </p>
+        </div>
+      )}
+
+      {/* Stickers (B2, Premium) */}
+      {ctx && (
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            Stickers
+            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+              Premium ⭐
+            </span>
+          </Label>
+          {/* value="" siempre → el uploader queda en modo "agregar": cada subida
+              añade un sticker nuevo al arreglo. */}
+          <ImageUploader value="" onChange={addSticker} ctx={ctx} />
+          <p className="text-xs text-muted-foreground">
+            Sube una imagen y arrástrala en la vista previa. Selecciónala para
+            escalar, rotar o eliminar. {theme.stickers.length} colocado(s). Eres
+            responsable de tener derechos sobre las imágenes.
           </p>
         </div>
       )}
