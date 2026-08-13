@@ -5,7 +5,91 @@
 
 ---
 
-# Sesión 2026-08-12 — Correo propio (Resend), confirmación branded y fixes de auth
+# Sesión 2026-08-12 (tarde) — Responsive web + Claro/Oscuro + Temáticas/arte propio
+
+> **LO MÁS RECIENTE.** TODO vive en la rama **`skarlette/feature-responsive-web-themes`**
+> (el guard del repo obliga el prefijo `skarlette/*` para ramas nuevas; `feat/…` lo
+> rechaza). **`main` está INTACTO, NADA pusheado.** 21 commits (`6ea9b0f`→`484926c`).
+> Calidad al cierre: `tsc`/`lint`/`build` limpios, **56/56 tests (Vitest) pasan**.
+> Todo verificado en navegador por **medición** (no solo screenshots).
+
+## Qué se construyó (3 features + pulido)
+
+### Feature A — Invitaciones responsive en web
+Antes la pública estaba fijada a `max-w-[480px]` (tira móvil en desktop). Ahora:
+- **Container queries** `@container/inv` scopeadas a la vista pública → el editor NO
+  se afecta (sin ese contenedor, las variantes no aplican). Arquitectura clave.
+- `Section` (en `modules/previews.tsx`) = banda full-width + contenido centrado.
+  Escala tipográfica hasta **ultra-wide** (`@4xl`/`@5xl`): hero 72px, headings 36px,
+  y **todo el texto secundario** (subtítulos, CTA, badges, etiquetas/desc del
+  dresscode, botones, footer) — se corrigió en 3 pasadas porque al inicio solo
+  escalaban los títulos.
+- Galería (4 col), video, itinerario (2 col) usan más ancho; dresscode figuras más
+  grandes; RSVP: form legible + **campos con superficie/borde de la paleta de la
+  invitación** (no tokens de app) + banda con tinte propio; botones del RSVP usan
+  `--inv-primary` (no `bg-primary` de app) → no se pierden con la app en oscuro.
+- **Toggle Móvil/Escritorio** en el `PreviewPane` del editor (paridad real).
+- **Lección aplicada:** cuando el dev señala elementos específicos, medir ESOS
+  exactos, no un subconjunto "representativo".
+
+### Feature C — Claro/oscuro (app + invitación)
+- **C1 (app):** `next-themes` (ya era dep) cableado en el layout raíz + toggle
+  Sol/Luna en el header del dashboard. `defaultTheme=light`, sin system (para no
+  voltear invitaciones públicas). Fix de hydration mismatch en el toggle
+  (`isDark` gateado con `mounted` vía `useSyncExternalStore`).
+- **C2 (invitación):** campo `theme.mode` (light/dark, retro-compat). Switch
+  Claro/Oscuro en el panel de Tema (ajusta fondo+texto a presets). **Blindado del
+  tema de la app**: las tarjetas usan `var(--inv-card)` → una invitación clara se ve
+  clara aunque el dashboard esté en oscuro, y viceversa (medido).
+
+### Feature B — Temáticas + arte propio
+- **B1:** 6 packs genéricos nuevos en `theme-packs.ts` (capibara [free], dinos,
+  tropical, futbol, terracota-otono, **noche-estelar** [oscuro, estrena `mode`]).
+  `ThemePackTheme.mode` opcional. Todos genéricos, **cero IP**.
+- **B2 (Premium `custom_art`, feature nueva en `plans.ts`/`types.ts`):**
+  - **B2.1 fondo de imagen** propio (`theme.backgroundImage {url, overlay}`),
+    render en `ThemeScope` con overlay para legibilidad. Uploader + slider en el panel.
+  - **B2.2 stickers colocables** (`theme.stickers[]`): **arrastrar libre**, capas
+    (z-index = orden del arreglo), toolbar (escala/rotar/**redondear**/eliminar),
+    barra oscura. `StickerLayer` (público) + `StickerEditorLayer` (editor).
+  - **Decoración con imagen propia** (`decoration.imageUrl`): tu `.png` sin fondo
+    reemplaza al emoji en las partículas flotantes.
+  - Gate en `canPublishInvitation`: fondo, stickers o imagen de decoración sin plan
+    Premium bloquean al publicar (mismo patrón que theme packs).
+
+### Pulido de animaciones (a raíz de feedback)
+- **Re-play automático** en el preview al cambiar animación (global o override por
+  módulo) — antes no se veía cambio porque los módulos ya se habían revelado.
+- **Rango de intensidad ampliado** (dist 8/30/72, antes 12/24/40) → Sutil/Moderada/
+  Llamativa se distinguen claro.
+- **Selector de Transición** (preset) en el panel global de animaciones (antes solo
+  vía "Estilo de animación"); evita duplicado con el "Animación de entrada" por módulo.
+- **Gradiente ambiental** de 16% → 34% de opacidad (antes casi invisible).
+- Aclaración de modelo (por diseño): **el override de animación por módulo gana sobre
+  el global**; "Aplicar a todos los módulos" limpia los overrides.
+
+## PENDIENTE / lo que sigue
+1. **Validar la rama** en el entorno del dev y, con su OK, **mergear a `main`** (ff) +
+   deploy. **OJO: dominio con gating de pago** (Premium `custom_art`) → pasar el
+   secaudit y revisión antes de publicar. Recordar: `secaudit_guard.py --mark` en
+   comando SEPARADO del push; push vía SSH-443.
+2. **(No hecho, quedó como idea a explorar) Quitar fondo de imagen de sticker**:
+   versión simple local (canvas, key de color sólido) para logos/pngs con fondo
+   plano — cero llamadas externas por soberanía de datos. Bg-removal de fotos reales
+   = modelo IA local, feature grande aparte.
+3. **⭐ NUEVA FEATURE A EXPLORAR — Invitados personalizados / registros con QR.**
+   Validar/estudiar esta invitación de referencia (competidor):
+   `https://invitio.events/es-MX/invitacion/19308aa3-ab9a-4678-8d8f-bba8cb8382cd/d9493ccb-39ac-4bd1-a49e-acadb027639a?v=8ebd8f87-6e44-482e-8cd4-b53909cd40cd`
+   — al final la invitación es **para alguien específico** ("Mara González", "2
+   adultos"), con **QR de acceso**, pases de **Apple/Google Wallet**, "Descargar pase",
+   "Añadir a calendario", y acciones "Cancelar asistencia / Confirmar para menos
+   invitados". Hipótesis: el organizador **genera N invitaciones personalizadas**
+   (un registro/guest por invitado con su cupo), cada una con **link único + QR**
+   para control de acceso en la puerta. Es un modelo distinto al RSVP abierto actual
+   de Sobrely (form público). Explorar: modelo de datos (guests con token/QR),
+   generación masiva, página personalizada por guest, escaneo/check-in, wallet passes.
+
+
 
 > **LO MÁS RECIENTE.** Todo desplegado en producción (`main`, commits `f88f508`→
 > `2105758`) y probado en vivo por el dev. Push vía **SSH sobre puerto 443**
