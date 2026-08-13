@@ -27,7 +27,7 @@ export function PublicInvitationView({
   return (
     <ThemeScope
       theme={theme}
-      className="relative mx-auto min-h-svh w-full max-w-[480px] overflow-hidden shadow-sm"
+      className="@container/inv relative min-h-svh w-full overflow-x-hidden"
     >
       {theme.animations && theme.decoration.enabled && (
         <DecorationLayer

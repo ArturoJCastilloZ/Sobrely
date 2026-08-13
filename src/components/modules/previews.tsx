@@ -29,7 +29,15 @@ import { DRESSCODE_LABELS } from "@/lib/modules/types";
 const PRIMARY = "var(--inv-primary, var(--primary))";
 const TINT = "color-mix(in srgb, var(--inv-primary, #888) 7%, transparent)";
 
-/** Section wrapper applying the theme's spacing (and optional accent tint). */
+/**
+ * Section wrapper applying the theme's spacing (and optional accent tint).
+ *
+ * The tint band spans the full width of the invitation; the content is centered
+ * with a readable max-width so on desktop the invitation fills the screen
+ * instead of looking like a mobile strip. Container-query variants (`@.../inv`)
+ * only fire under the public `@container/inv` context, so the editor preview
+ * (which has no such container) keeps its narrow mobile layout unchanged.
+ */
 function Section({
   children,
   tint = false,
@@ -41,13 +49,18 @@ function Section({
 }) {
   return (
     <section
-      className={cn("px-6", className)}
-      style={{
-        paddingBlock: "var(--inv-space, 2.5rem)",
-        ...(tint ? { backgroundColor: TINT } : {}),
-      }}
+      className="w-full"
+      style={tint ? { backgroundColor: TINT } : undefined}
     >
-      {children}
+      <div
+        className={cn(
+          "mx-auto w-full max-w-xl px-6 @2xl/inv:max-w-3xl @2xl/inv:px-10",
+          className,
+        )}
+        style={{ paddingBlock: "var(--inv-space, 2.5rem)" }}
+      >
+        {children}
+      </div>
     </section>
   );
 }
@@ -76,7 +89,7 @@ export function HeroPreview({
   const title = config.title || "Nuestra celebración";
   return (
     <section
-      className="relative flex min-h-[260px] flex-col items-center justify-center gap-3 overflow-hidden px-6 py-12 text-center"
+      className="relative flex min-h-[260px] flex-col items-center justify-center gap-3 overflow-hidden px-6 py-12 text-center @2xl/inv:min-h-[460px] @2xl/inv:py-20 @4xl/inv:min-h-[70svh]"
       style={config.imageUrl ? undefined : { backgroundColor: TINT }}
     >
       {config.imageUrl && (
@@ -89,21 +102,24 @@ export function HeroPreview({
           }}
         />
       )}
-      <div className="relative flex flex-col items-center gap-3">
+      <div className="relative flex max-w-3xl flex-col items-center gap-3 @2xl/inv:gap-5">
         <h2
-          className="text-3xl font-bold tracking-tight"
+          className="text-3xl font-bold tracking-tight @2xl/inv:text-5xl @4xl/inv:text-6xl"
           style={{ color: config.imageUrl ? "#fff" : "inherit" }}
         >
           {animate ? <TextReveal text={title} variant="text-rise" /> : title}
         </h2>
         {config.subtitle && (
-          <p style={{ color: config.imageUrl ? "rgba(255,255,255,.9)" : "inherit" }}>
+          <p
+            className="@2xl/inv:text-lg"
+            style={{ color: config.imageUrl ? "rgba(255,255,255,.9)" : "inherit" }}
+          >
             {config.subtitle}
           </p>
         )}
         {config.ctaLabel && (
           <span
-            className="mt-2 rounded-full px-4 py-1.5 text-sm font-medium text-white"
+            className="mt-2 rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2 @2xl/inv:text-base"
             style={{ backgroundColor: PRIMARY }}
           >
             {config.ctaLabel}
@@ -119,9 +135,11 @@ export function HeroPreview({
 export function WelcomePreview({ config }: { config: WelcomeConfig }) {
   return (
     <Section className="text-center">
-      <h3 className="text-lg font-semibold">{config.title || "Bienvenidos"}</h3>
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+        {config.title || "Bienvenidos"}
+      </h3>
       {config.message && (
-        <p className="mx-auto mt-2 max-w-prose whitespace-pre-line text-sm opacity-80">
+        <p className="mx-auto mt-2 max-w-prose whitespace-pre-line text-sm opacity-80 @2xl/inv:text-base">
           {config.message}
         </p>
       )}
@@ -161,19 +179,24 @@ export function CountdownPreview({
   const seconds = Math.floor((diff % 60_000) / 1000);
 
   const cell = (value: number, label: string) => (
-    <div className="flex min-w-[64px] flex-col items-center rounded-lg bg-white/70 px-3 py-2 shadow-sm dark:bg-black/20">
-      <span className="text-2xl font-bold tabular-nums" style={{ color: PRIMARY }}>
+    <div className="flex min-w-[64px] flex-col items-center rounded-lg bg-white/70 px-3 py-2 shadow-sm @2xl/inv:min-w-[92px] @2xl/inv:px-5 @2xl/inv:py-3 dark:bg-black/20">
+      <span
+        className="text-2xl font-bold tabular-nums @2xl/inv:text-4xl"
+        style={{ color: PRIMARY }}
+      >
         {String(value).padStart(2, "0")}
       </span>
-      <span className="text-xs opacity-70">{label}</span>
+      <span className="text-xs opacity-70 @2xl/inv:text-sm">{label}</span>
     </div>
   );
 
   return (
     <Section tint className="flex flex-col items-center gap-4 text-center">
-      <h3 className="text-lg font-semibold">{config.title || "Faltan"}</h3>
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+        {config.title || "Faltan"}
+      </h3>
       {valid ? (
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex flex-wrap justify-center gap-2 @2xl/inv:gap-4">
           {cell(days, "días")}
           {cell(hours, "hrs")}
           {cell(minutes, "min")}
