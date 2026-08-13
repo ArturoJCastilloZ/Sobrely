@@ -819,27 +819,33 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
 ## Prompt para continuar (pegar al retomar)
 
 > Retomo **Sobrely** en "/Users/arturocastillo/Documents/Personal projects/invitaflow".
-> Lee primero HANDOFF.md (la sección **"Sesión 2026-08-12"** arriba, que es el estado más
-> reciente) y README.md.
+> Lee primero HANDOFF.md (la sección **"Sesión 2026-08-12 (tarde) — Responsive web + Claro/
+> Oscuro + Temáticas/arte propio"** arriba, que es el estado más reciente) y README.md.
 >
 > **Estado:** LIVE en `https://sobrely.com`. Fase 8 COMPLETA. Fase 7 COMPLETA incl. 7.5 (pagos
-> reales en PRODUCCIÓN, verificados). Temas temáticos MVP (1–4) HECHO. Marca completa HECHA.
-> **Correo propio (Resend) + DMARC HECHO**; correos salen de `noreply@sobrely.com`.
-> **Confirmación de correo en dominio propio `/auth/confirm` HECHA y PROBADA** — página con
-> botón (verifica por POST) **resistente a escáneres de correo** que consumían el token.
-> **Fix aviso de correo ya registrado HECHO y PROBADO.**
+> reales en PRODUCCIÓN). Correo propio (Resend) + DMARC + confirmación en dominio propio
+> (`/auth/confirm`) HECHO. **Hay trabajo NUEVO sin mergear en la rama
+> `skarlette/feature-responsive-web-themes` (22 commits, `main` INTACTO, nada pusheado):**
+> A) invitaciones responsive en web; C) claro/oscuro (app + por invitación); B) temáticas
+> (6 packs nuevos) + arte propio Premium (fondo de imagen, stickers arrastrables, decoración
+> con imagen); + pulido de animaciones (re-play, intensidad, transición). `tsc`/`lint`/`build`
+> limpios, 56/56 tests. Todo verificado por medición en navegador.
 >
-> **Pendientes:** (1) confirmar/crear buzón o forwarding real para `soporte@sobrely.com`
-> (Resend no recibe entrante); (2) **Branding OAuth de Google** sigue en revisión de Google
-> (login ya funciona; cosmético) — responder el hilo de Confianza y Seguridad.
+> **Lo primero a hacer:** ayúdame a **validar la rama** (`git checkout
+> skarlette/feature-responsive-web-themes && pnpm dev`) y, con mi OK, **mergear a `main`** (ff)
+> + deploy. ⚠️ Toca **gating de pago** (Premium `custom_art`) → pasar secaudit y revisión antes.
 >
-> **Notas de entorno:** el push va por **SSH sobre 443**
-> (`ssh://git@ssh.github.com:443/ArturoJCastilloZ/invitaflow.git`) porque el puerto 22 estaba
-> bloqueado. El repo se renombró a `Sobrely` en GitHub y el remote local ya apunta ahí
-> vía 443 (`ssh://git@ssh.github.com:443/ArturoJCastilloZ/Sobrely.git`).
+> **Pendientes que ya venían:** (1) buzón/forwarding real para `soporte@sobrely.com`;
+> (2) Branding OAuth de Google en revisión (login ya funciona; cosmético).
+> **Ideas a explorar (en el HANDOFF):** quitar fondo de sticker (canvas local);
+> **⭐ Invitados personalizados con QR** (competidor invitio.events: N invitaciones
+> personalizadas, guest/registro con link único + QR + Apple/Google Wallet + check-in).
+>
+> **Notas de entorno:** push vía **SSH sobre 443**
+> (`ssh://git@ssh.github.com:443/ArturoJCastilloZ/Sobrely.git`) — puerto 22 bloqueado. El guard
+> del repo exige ramas con prefijo **`skarlette/*`** (rechaza `feat/…`).
 >
 > **Reglas:** trabajo por fases, cada una requiere mi aprobación explícita — NO avances solo; al
 > cerrar muéstrame resumen, archivos, migraciones, env vars, cómo probar, pendientes y riesgos.
-> NO guardes nada en cerebro/memoria ni en el workflow Personal Projects. Git: commit en
-> `feat/invitaflow-project`, merge ff a `main`; `secaudit_guard.py --mark` en comando SEPARADO
-> del push.
+> NO guardes nada en cerebro/memoria ni en el workflow Personal Projects. Git: rama
+> `skarlette/*` → merge ff a `main`; `secaudit_guard.py --mark` en comando SEPARADO del push.
