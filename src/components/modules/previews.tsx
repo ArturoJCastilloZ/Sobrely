@@ -116,7 +116,7 @@ export function HeroPreview({
         </h2>
         {config.subtitle && (
           <p
-            className="@2xl/inv:text-lg"
+            className="text-base @2xl/inv:text-xl @4xl/inv:text-2xl @5xl/inv:text-3xl"
             style={{ color: config.imageUrl ? "rgba(255,255,255,.9)" : "inherit" }}
           >
             {config.subtitle}
@@ -124,7 +124,7 @@ export function HeroPreview({
         )}
         {config.ctaLabel && (
           <span
-            className="mt-2 rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2 @2xl/inv:text-base"
+            className="mt-2 rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2.5 @2xl/inv:text-lg @4xl/inv:px-8 @4xl/inv:py-3 @4xl/inv:text-xl"
             style={{ backgroundColor: PRIMARY }}
           >
             {config.ctaLabel}
@@ -144,7 +144,7 @@ export function WelcomePreview({ config }: { config: WelcomeConfig }) {
         {config.title || "Bienvenidos"}
       </h3>
       {config.message && (
-        <p className="mx-auto mt-2 max-w-prose whitespace-pre-line text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg">
+        <p className="mx-auto mt-2 max-w-prose whitespace-pre-line text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg @5xl/inv:text-xl">
           {config.message}
         </p>
       )}
@@ -230,16 +230,20 @@ export function MapPreview({ config }: { config: MapConfig }) {
         {config.title || "Ubicación"}
       </h3>
       {config.venueName && (
-        <p className="font-medium @2xl/inv:text-lg">{config.venueName}</p>
+        <p className="font-medium @2xl/inv:text-lg @4xl/inv:text-xl @5xl/inv:text-2xl">
+          {config.venueName}
+        </p>
       )}
       {config.address ? (
         <>
-          <p className="text-sm opacity-70 @2xl/inv:text-base">{config.address}</p>
+          <p className="text-sm opacity-70 @2xl/inv:text-base @4xl/inv:text-lg">
+            {config.address}
+          </p>
           <a
             href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm underline underline-offset-4 @2xl/inv:text-base"
+            className="text-sm underline underline-offset-4 @2xl/inv:text-base @4xl/inv:text-lg"
             style={{ color: PRIMARY }}
           >
             Ver en Google Maps
@@ -361,12 +365,14 @@ export function ItineraryPreview({
               className="flex gap-3 rounded-md bg-white/60 p-2 @2xl/inv:p-3 dark:bg-black/20"
             >
               <span
-                className="min-w-[64px] font-semibold @2xl/inv:text-lg"
+                className="min-w-[64px] font-semibold @2xl/inv:text-lg @4xl/inv:text-xl"
                 style={{ color: PRIMARY }}
               >
                 {it.time || "—"}
               </span>
-              <span className="text-sm @2xl/inv:text-base">{it.label}</span>
+              <span className="text-sm @2xl/inv:text-base @4xl/inv:text-lg">
+                {it.label}
+              </span>
             </div>
           ))}
         </StaggerGroup>
@@ -386,7 +392,7 @@ export function DresscodePreview({ config }: { config: DresscodeConfig }) {
       </h3>
       {level !== "custom" && (
         <span
-          className="rounded-full px-3 py-1 text-sm font-medium text-white @2xl/inv:px-4 @2xl/inv:py-1.5 @2xl/inv:text-base"
+          className="rounded-full px-3 py-1 text-sm font-medium text-white @2xl/inv:px-4 @2xl/inv:py-1.5 @2xl/inv:text-base @4xl/inv:px-6 @4xl/inv:py-2 @4xl/inv:text-lg"
           style={{ backgroundColor: PRIMARY }}
         >
           {DRESSCODE_LABELS[level]}
@@ -428,7 +434,7 @@ export function GiftsPreview({
         {config.title || "Mesa de regalos"}
       </h3>
       {config.description && (
-        <p className="max-w-prose text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg">
+        <p className="max-w-prose text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg @5xl/inv:text-xl">
           {config.description}
         </p>
       )}
@@ -444,7 +450,7 @@ export function GiftsPreview({
               href={l.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2.5 @2xl/inv:text-base"
+              className="rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2.5 @2xl/inv:text-base @4xl/inv:px-8 @4xl/inv:py-3 @4xl/inv:text-lg"
               style={{ backgroundColor: PRIMARY }}
             >
               {l.label || "Ver mesa"}
@@ -469,7 +475,7 @@ export function MusicPreview({ config }: { config: MusicConfig }) {
           href={config.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2.5 @2xl/inv:text-base"
+          className="rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2.5 @2xl/inv:text-base @4xl/inv:px-8 @4xl/inv:py-3 @4xl/inv:text-lg"
           style={{ backgroundColor: PRIMARY }}
         >
           ▶ Escuchar

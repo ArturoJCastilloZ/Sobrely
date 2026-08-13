@@ -90,11 +90,11 @@ export function PublicRsvpForm({
   return (
     <section className="flex flex-col items-center gap-4 bg-muted/40 px-6 py-10 @2xl/inv:py-16">
       <div className="text-center">
-        <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+        <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
           {config.title || "Confirma tu asistencia"}
         </h3>
         {config.description && (
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground @2xl/inv:text-base @4xl/inv:text-lg">
             {config.description}
           </p>
         )}
