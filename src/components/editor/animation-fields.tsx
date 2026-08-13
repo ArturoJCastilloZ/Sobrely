@@ -5,12 +5,25 @@ import {
   ANIMATION_INTENSITIES,
   type AnimationConfig,
   type AnimationIntensity,
+  type AnimationPreset,
 } from "@/lib/animation/types";
 import {
   INTENSITY_LABELS,
   SPEED_OPTIONS,
   TRIGGER_LABELS,
 } from "@/lib/animation/tokens";
+import {
+  ANIMATION_REGISTRY,
+  CSS_REVEAL_PRESETS,
+  isImplemented,
+} from "@/lib/animation/registry";
+
+/** Transiciones de entrada disponibles (presets del motor CSS, implementados). */
+const TRANSITIONS: { key: AnimationPreset; label: string }[] = [
+  ...CSS_REVEAL_PRESETS,
+]
+  .filter(isImplemented)
+  .map((p) => ({ key: p, label: ANIMATION_REGISTRY[p].label }));
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -37,11 +50,12 @@ export function AnimationFields({
   onPatch: (patch: Partial<AnimationConfig>) => void;
   defaults: Pick<
     AnimationConfig,
-    "intensity" | "duration" | "trigger" | "delay" | "stagger"
+    "preset" | "intensity" | "duration" | "trigger" | "delay" | "stagger"
   >;
 }) {
   const [advanced, setAdvanced] = useState(false);
 
+  const preset = (value.preset ?? defaults.preset) as AnimationPreset;
   const intensity = (value.intensity ?? defaults.intensity) as AnimationIntensity;
   const duration = value.duration ?? defaults.duration;
   const trigger = value.trigger ?? defaults.trigger;
@@ -57,6 +71,30 @@ export function AnimationFields({
 
   return (
     <div className="space-y-3">
+      {/* Transition (reveal preset) */}
+      <div className="space-y-1.5">
+        <Label className="text-xs">Transición</Label>
+        <Select
+          value={preset}
+          onValueChange={(v) => onPatch({ preset: v as AnimationPreset })}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue>
+              {(v: string) =>
+                ANIMATION_REGISTRY[v as AnimationPreset]?.label ?? "Transición"
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {TRANSITIONS.map((t) => (
+              <SelectItem key={t.key} value={t.key}>
+                {t.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Intensity */}
       <div className="space-y-1.5">
         <Label className="text-xs">Intensidad</Label>

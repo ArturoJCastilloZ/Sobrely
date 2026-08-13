@@ -27,9 +27,9 @@ export const INTENSITY_SCALE: Record<
   AnimationIntensity,
   { distance: number; scale: number; blur: number }
 > = {
-  subtle: { distance: 12, scale: 0.02, blur: 3 },
-  moderate: { distance: 24, scale: 0.05, blur: 6 },
-  expressive: { distance: 40, scale: 0.1, blur: 12 },
+  subtle: { distance: 8, scale: 0.015, blur: 2 },
+  moderate: { distance: 30, scale: 0.06, blur: 8 },
+  expressive: { distance: 72, scale: 0.16, blur: 20 },
 };
 
 /** Stagger presets (seconds) between animated children. */
