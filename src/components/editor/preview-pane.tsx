@@ -30,6 +30,13 @@ export function PreviewPane({
   const [view, setView] = useState<"mobile" | "desktop">("mobile");
   const desktop = view === "desktop";
 
+  // Re-play the entrance animation in the preview when the animation settings
+  // change (intensity/speed/preset/on-off). Keying the module list by this
+  // remounts it, so the "load" reveal runs again — otherwise nothing replays
+  // once modules have already appeared. Other theme edits (colors, etc.) don't
+  // touch these fields, so they don't trigger a replay.
+  const replayKey = `${JSON.stringify(theme.animation)}|${theme.animations}`;
+
   return (
     <div>
       <div className="mb-2 flex justify-center gap-1">
@@ -76,7 +83,7 @@ export function PreviewPane({
             Agrega módulos para ver la vista previa.
           </div>
         ) : (
-          <div className="relative z-10">
+          <div key={replayKey} className="relative z-10">
             {visible.map((m, i) => {
               const resolved = resolveAnimation(
                 theme.animation,
