@@ -8,6 +8,7 @@ import {
   SPACING_LABELS,
   DECORATION_VARIANTS,
   DECORATION_LABELS,
+  MODE_PRESETS,
   type DecorationVariantKey,
   type FontKey,
   type SpacingKey,
@@ -117,6 +118,11 @@ export function ThemePanel({
     onChange({ colors: { ...theme.colors, [key]: value } });
   }
 
+  function setMode(mode: "light" | "dark") {
+    // Switching mode presets a legible surface (fondo/texto); accents stay.
+    onChange({ mode, colors: { ...theme.colors, ...MODE_PRESETS[mode] } });
+  }
+
   function applyStyle(key: StylePresetKey) {
     const next = applyStylePreset(theme, key);
     onChange({
@@ -186,6 +192,32 @@ export function ThemePanel({
           ))}
         </div>
       )}
+
+      {/* Mode (light/dark surface) */}
+      <div className="space-y-1.5">
+        <Label>Modo</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {(["light", "dark"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={cn(
+                "rounded-md border p-2 text-sm transition-colors",
+                theme.mode === m
+                  ? "border-primary bg-primary/10 font-medium"
+                  : "hover:bg-muted",
+              )}
+            >
+              {m === "light" ? "☀️ Claro" : "🌙 Oscuro"}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Ajusta fondo y texto para una superficie clara u oscura; los acentos se
+          conservan.
+        </p>
+      </div>
 
       {/* Colors */}
       <div className="space-y-2">

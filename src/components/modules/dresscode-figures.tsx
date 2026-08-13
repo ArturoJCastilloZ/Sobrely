@@ -203,7 +203,7 @@ function Figure({
 }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className="rounded-3xl bg-white/60 p-2 @2xl/inv:p-4 dark:bg-black/20">
+      <div className="rounded-3xl bg-[var(--inv-card)] p-2 @2xl/inv:p-4">
         {children}
       </div>
       <span className="text-xs font-medium @2xl/inv:text-lg @4xl/inv:text-xl @5xl/inv:text-2xl">

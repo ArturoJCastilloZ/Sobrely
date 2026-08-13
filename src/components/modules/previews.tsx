@@ -184,7 +184,7 @@ export function CountdownPreview({
   const seconds = Math.floor((diff % 60_000) / 1000);
 
   const cell = (value: number, label: string) => (
-    <div className="flex min-w-[64px] flex-col items-center rounded-lg bg-white/70 px-3 py-2 shadow-sm @2xl/inv:min-w-[92px] @2xl/inv:px-5 @2xl/inv:py-3 @4xl/inv:min-w-[120px] @4xl/inv:px-7 @4xl/inv:py-4 dark:bg-black/20">
+    <div className="flex min-w-[64px] flex-col items-center rounded-lg bg-[var(--inv-card)] px-3 py-2 shadow-sm @2xl/inv:min-w-[92px] @2xl/inv:px-5 @2xl/inv:py-3 @4xl/inv:min-w-[120px] @4xl/inv:px-7 @4xl/inv:py-4">
       <span
         className="text-2xl font-bold tabular-nums @2xl/inv:text-4xl @4xl/inv:text-5xl"
         style={{ color: PRIMARY }}
@@ -362,7 +362,7 @@ export function ItineraryPreview({
           {items.map((it, i) => (
             <div
               key={i}
-              className="flex gap-3 rounded-md bg-white/60 p-2 @2xl/inv:p-3 dark:bg-black/20"
+              className="flex gap-3 rounded-md bg-[var(--inv-card)] p-2 @2xl/inv:p-3"
             >
               <span
                 className="min-w-[64px] font-semibold @2xl/inv:text-lg @4xl/inv:text-xl"

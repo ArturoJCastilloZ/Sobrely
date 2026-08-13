@@ -52,6 +52,9 @@ export const themeSchema = z.object({
     }),
   font: z.enum(FONT_KEYS).default("sans"),
   spacing: z.enum(SPACING_KEYS).default("normal"),
+  // Light/dark surface of the invitation (independent of the viewer's app
+  // theme). Retro-compatible: themes saved before this field parse as "light".
+  mode: z.enum(["light", "dark"]).default("light"),
   // Master on/off switch for all animations (invitation-level).
   animations: z.boolean().default(true),
   // Global default animation config; per-module overrides added in 5.4.
@@ -112,6 +115,12 @@ export const SPACING_LABELS: Record<SpacingKey, string> = {
   relaxed: "Amplio",
 };
 
+/** Sensible background/text pair applied when switching the invitation mode. */
+export const MODE_PRESETS = {
+  light: { background: "#ffffff", text: "#1f2937" },
+  dark: { background: "#161310", text: "#f4efe6" },
+} as const;
+
 /** Builds the inline CSS variables that ThemeScope applies. */
 export function themeCssVars(theme: ThemeConfig): React.CSSProperties {
   return {
@@ -120,6 +129,11 @@ export function themeCssVars(theme: ThemeConfig): React.CSSProperties {
     ["--inv-secondary" as string]: theme.colors.secondary,
     ["--inv-bg" as string]: theme.colors.background,
     ["--inv-text" as string]: theme.colors.text,
+    // Card/tile tint that follows the invitation's own mode (not the viewer's
+    // app theme), so a light invitation keeps light cards even if the owner's
+    // dashboard is in dark mode.
+    ["--inv-card" as string]:
+      theme.mode === "dark" ? "rgba(0,0,0,0.22)" : "rgba(255,255,255,0.7)",
     ["--inv-space" as string]: SPACING_VALUES[theme.spacing],
     backgroundColor: theme.colors.background,
     color: theme.colors.text,
