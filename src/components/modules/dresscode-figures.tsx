@@ -87,7 +87,7 @@ function Hanger() {
 function Suit({ info }: { info: LevelInfo }) {
   const pant = info.neck === "none" ? info.accent : info.jacket;
   return (
-    <svg viewBox="0 0 160 240" className="h-44 w-auto" role="img" aria-label="Atuendo caballeros">
+    <svg viewBox="0 0 160 240" className="h-44 w-auto @2xl/inv:h-56 @4xl/inv:h-72" role="img" aria-label="Atuendo caballeros">
       <Hanger />
       {/* shoes */}
       <path d="M52 226 q-6 4 -14 3 q-2 -6 4 -9 l12 0 z" fill="#2a2620" />
@@ -148,7 +148,7 @@ function scallop(xL: number, xR: number, yTop: number, yBot: number, bumps: numb
 
 function Dress({ info }: { info: LevelInfo }) {
   return (
-    <svg viewBox="0 0 160 240" className="h-44 w-auto" role="img" aria-label="Atuendo damas">
+    <svg viewBox="0 0 160 240" className="h-44 w-auto @2xl/inv:h-56 @4xl/inv:h-72" role="img" aria-label="Atuendo damas">
       <Hanger />
       {/* heels for short dresses */}
       {!info.longDress && (
@@ -203,9 +203,15 @@ function Figure({
 }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className="rounded-3xl bg-white/60 p-2 dark:bg-black/20">{children}</div>
-      <span className="text-xs font-medium">{label}</span>
-      <span className="max-w-[150px] text-center text-xs opacity-70">{desc}</span>
+      <div className="rounded-3xl bg-white/60 p-2 @2xl/inv:p-4 dark:bg-black/20">
+        {children}
+      </div>
+      <span className="text-xs font-medium @2xl/inv:text-sm @4xl/inv:text-base">
+        {label}
+      </span>
+      <span className="max-w-[150px] text-center text-xs opacity-70 @2xl/inv:max-w-[200px] @2xl/inv:text-sm">
+        {desc}
+      </span>
     </div>
   );
 }
@@ -214,7 +220,7 @@ export function DresscodeFigures({ level }: { level: DresscodeLevel }) {
   if (level === "custom") return null;
   const info = DRESS_INFO[level];
   return (
-    <div className="flex flex-wrap justify-center gap-5">
+    <div className="flex flex-wrap justify-center gap-5 @2xl/inv:gap-12">
       <Figure label="Caballeros" desc={info.men}>
         <Suit info={info} />
       </Figure>

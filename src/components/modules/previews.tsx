@@ -57,11 +57,12 @@ function Section({
     >
       <div
         className={cn(
-          "mx-auto w-full max-w-xl px-6 @2xl/inv:px-10",
-          wide ? "@2xl/inv:max-w-5xl" : "@2xl/inv:max-w-3xl",
+          "mx-auto w-full max-w-xl px-6 [padding-block:var(--inv-space,2.5rem)] @2xl/inv:px-10 @4xl/inv:[padding-block:calc(var(--inv-space,2.5rem)*1.6)]",
+          wide
+            ? "@2xl/inv:max-w-5xl"
+            : "@2xl/inv:max-w-2xl @4xl/inv:max-w-3xl @5xl/inv:max-w-4xl",
           className,
         )}
-        style={{ paddingBlock: "var(--inv-space, 2.5rem)" }}
       >
         {children}
       </div>
@@ -108,7 +109,7 @@ export function HeroPreview({
       )}
       <div className="relative flex max-w-3xl flex-col items-center gap-3 @2xl/inv:gap-5">
         <h2
-          className="text-3xl font-bold tracking-tight @2xl/inv:text-5xl @4xl/inv:text-6xl"
+          className="text-3xl font-bold tracking-tight @2xl/inv:text-5xl @4xl/inv:text-6xl @5xl/inv:text-7xl"
           style={{ color: config.imageUrl ? "#fff" : "inherit" }}
         >
           {animate ? <TextReveal text={title} variant="text-rise" /> : title}
@@ -139,11 +140,11 @@ export function HeroPreview({
 export function WelcomePreview({ config }: { config: WelcomeConfig }) {
   return (
     <Section className="text-center">
-      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Bienvenidos"}
       </h3>
       {config.message && (
-        <p className="mx-auto mt-2 max-w-prose whitespace-pre-line text-sm opacity-80 @2xl/inv:text-base">
+        <p className="mx-auto mt-2 max-w-prose whitespace-pre-line text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg">
           {config.message}
         </p>
       )}
@@ -183,20 +184,22 @@ export function CountdownPreview({
   const seconds = Math.floor((diff % 60_000) / 1000);
 
   const cell = (value: number, label: string) => (
-    <div className="flex min-w-[64px] flex-col items-center rounded-lg bg-white/70 px-3 py-2 shadow-sm @2xl/inv:min-w-[92px] @2xl/inv:px-5 @2xl/inv:py-3 dark:bg-black/20">
+    <div className="flex min-w-[64px] flex-col items-center rounded-lg bg-white/70 px-3 py-2 shadow-sm @2xl/inv:min-w-[92px] @2xl/inv:px-5 @2xl/inv:py-3 @4xl/inv:min-w-[120px] @4xl/inv:px-7 @4xl/inv:py-4 dark:bg-black/20">
       <span
-        className="text-2xl font-bold tabular-nums @2xl/inv:text-4xl"
+        className="text-2xl font-bold tabular-nums @2xl/inv:text-4xl @4xl/inv:text-5xl"
         style={{ color: PRIMARY }}
       >
         {String(value).padStart(2, "0")}
       </span>
-      <span className="text-xs opacity-70 @2xl/inv:text-sm">{label}</span>
+      <span className="text-xs opacity-70 @2xl/inv:text-sm @4xl/inv:text-base">
+        {label}
+      </span>
     </div>
   );
 
   return (
     <Section tint className="flex flex-col items-center gap-4 text-center">
-      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Faltan"}
       </h3>
       {valid ? (
@@ -223,7 +226,7 @@ export function MapPreview({ config }: { config: MapConfig }) {
     : "";
   return (
     <Section className="flex flex-col items-center gap-2 text-center">
-      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Ubicación"}
       </h3>
       {config.venueName && (
@@ -260,7 +263,7 @@ export function GalleryPreview({
 }) {
   return (
     <Section wide className="flex flex-col items-center gap-3 text-center">
-      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Galería"}
       </h3>
       {config.images.length === 0 ? (
@@ -308,7 +311,7 @@ export function VideoPreview({ config }: { config: VideoConfig }) {
   const embed = toEmbedUrl(config.url);
   return (
     <Section wide className="flex flex-col items-center gap-3 text-center">
-      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Video"}
       </h3>
       {embed ? (
@@ -342,7 +345,7 @@ export function ItineraryPreview({
   const items = config.items.filter((i) => i.time || i.label);
   return (
     <Section tint className="flex flex-col items-center gap-3 text-center">
-      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Itinerario"}
       </h3>
       {items.length === 0 ? (
@@ -378,7 +381,7 @@ export function DresscodePreview({ config }: { config: DresscodeConfig }) {
   const level = config.level;
   return (
     <Section className="flex flex-col items-center gap-3 text-center">
-      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Código de vestimenta"}
       </h3>
       {level !== "custom" && (
@@ -421,11 +424,11 @@ export function GiftsPreview({
   const links = config.links.filter((l) => l.url);
   return (
     <Section tint className="flex flex-col items-center gap-3 text-center">
-      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Mesa de regalos"}
       </h3>
       {config.description && (
-        <p className="max-w-prose text-sm opacity-80 @2xl/inv:text-base">
+        <p className="max-w-prose text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg">
           {config.description}
         </p>
       )}
@@ -458,7 +461,7 @@ export function GiftsPreview({
 export function MusicPreview({ config }: { config: MusicConfig }) {
   return (
     <Section className="flex flex-col items-center gap-2 text-center">
-      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Música"}
       </h3>
       {config.url ? (
