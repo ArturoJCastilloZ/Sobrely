@@ -48,6 +48,8 @@ export type ThemePackTheme = {
   };
   font: FontKey;
   spacing: SpacingKey;
+  /** Superficie clara u oscura (C2). Opcional: por defecto "light". */
+  mode?: "light" | "dark";
   /** Reusa un preset de animación existente (setea animation + decoración base). */
   stylePreset: StylePresetKey;
   /** Decoración ambiental final (emoji en MVP; sobreescribe la del preset). */
@@ -270,6 +272,122 @@ export const THEME_PACKS: Record<string, ThemePack> = {
       decoration: { enabled: false, variant: "ambient-gradient", symbol: "❀" },
     },
   },
+  // ---- Genéricos adicionales (B1 · sin IP) ----------------------------------
+  capibara: {
+    key: "capibara",
+    label: "Capibara / Naturaleza tierna",
+    description: "Tonos tierra, olivo y crema. Cálido y relajado, con hojitas.",
+    category: "infantil",
+    isPremium: false,
+    theme: {
+      colors: {
+        primary: "#8a6d4b",
+        secondary: "#7d8b5a",
+        background: "#faf6ee",
+        text: "#4a3f30",
+      },
+      font: "script",
+      spacing: "normal",
+      stylePreset: "soft-floral",
+      decoration: { enabled: true, variant: "floating", symbol: "🌿" },
+    },
+  },
+  dinos: {
+    key: "dinos",
+    label: "Dinosaurios (genérico)",
+    description: "Verde selva y naranja con energía. Divertido, sin marca.",
+    category: "infantil",
+    isPremium: true,
+    theme: {
+      colors: {
+        primary: "#3f7d44",
+        secondary: "#e07a2c",
+        background: "#f6f9f2",
+        text: "#26331f",
+      },
+      font: "sans",
+      spacing: "normal",
+      stylePreset: "playful-birthday",
+      decoration: { enabled: true, variant: "floating", symbol: "🦕" },
+    },
+  },
+  tropical: {
+    key: "tropical",
+    label: "Tropical / Playa",
+    description: "Turquesa, coral y arena con palmeras. Fresco y veraniego.",
+    category: "boda",
+    isPremium: true,
+    theme: {
+      colors: {
+        primary: "#0e9baa",
+        secondary: "#ef7d57",
+        background: "#f4fbfb",
+        text: "#123b3f",
+      },
+      font: "script",
+      spacing: "normal",
+      stylePreset: "modern-celebration",
+      decoration: { enabled: true, variant: "floating", symbol: "🌴" },
+    },
+  },
+  futbol: {
+    key: "futbol",
+    label: "Fútbol (genérico)",
+    description: "Verde cancha y blanco con destellos. Deportivo, sin equipo.",
+    category: "infantil",
+    isPremium: true,
+    theme: {
+      colors: {
+        primary: "#1f8a4c",
+        secondary: "#1a1a1a",
+        background: "#f5faf6",
+        text: "#14261b",
+      },
+      font: "sans",
+      spacing: "normal",
+      stylePreset: "playful-birthday",
+      decoration: { enabled: true, variant: "sparkle", symbol: "⚽" },
+    },
+  },
+  "terracota-otono": {
+    key: "terracota-otono",
+    label: "Terracota / Otoño",
+    description: "Terracota, mostaza y salvia con hojas. Cálido y campestre.",
+    category: "boda",
+    isPremium: true,
+    theme: {
+      colors: {
+        primary: "#b5623a",
+        secondary: "#c79a3e",
+        background: "#faf4ea",
+        text: "#3d2c22",
+      },
+      font: "serif",
+      spacing: "normal",
+      stylePreset: "soft-floral",
+      decoration: { enabled: true, variant: "floating", symbol: "🍂" },
+    },
+  },
+  "noche-estelar": {
+    key: "noche-estelar",
+    label: "Noche Estelar (oscuro)",
+    description: "Superficie oscura con oro y destellos. Elegante y nocturno.",
+    category: "xv",
+    isPremium: true,
+    theme: {
+      colors: {
+        primary: "#d4af37",
+        secondary: "#c0c7d0",
+        background: "#0e1230",
+        text: "#eef1f7",
+      },
+      font: "elegant",
+      spacing: "relaxed",
+      mode: "dark",
+      stylePreset: "luxury-wedding",
+      decoration: { enabled: true, variant: "sparkle", symbol: "✦" },
+    },
+  },
 };
 
 export const THEME_PACK_LIST: readonly ThemePack[] = Object.values(THEME_PACKS);
@@ -304,6 +422,7 @@ export function applyThemePack(theme: ThemeConfig, key: string): ThemeConfig {
     colors: { ...pack.theme.colors },
     font: pack.theme.font,
     spacing: pack.theme.spacing,
+    mode: pack.theme.mode ?? "light",
     decoration: { ...pack.theme.decoration },
     themePack: pack.key,
   };
