@@ -47,7 +47,7 @@ function Coverflow({
   }
 
   return (
-    <div className="relative h-56 w-full overflow-hidden">
+    <div className="relative h-56 w-full overflow-hidden @2xl/inv:h-96">
       {images.map((src, i) => {
         const o = offset(i);
         const abs = Math.abs(o);
@@ -140,7 +140,7 @@ export function PhotoGallery({
     bodyEl = <Coverflow images={images} kb={kb} reduce={reduce} onOpen={setOpen} />;
   } else if (layout === "masonry") {
     bodyEl = (
-      <div className="w-full [column-gap:0.5rem] [columns:2]">
+      <div className="w-full [column-gap:0.5rem] [columns:2] @2xl/inv:[column-gap:0.75rem] @2xl/inv:[columns:3]">
         {images.map((src, i) => (
           <div key={`${src}-${i}`} className="mb-2 overflow-hidden rounded-md">
             <Thumb src={src} i={i} />
@@ -150,7 +150,7 @@ export function PhotoGallery({
     );
   } else if (layout === "collage") {
     bodyEl = (
-      <div className="grid w-full auto-rows-[64px] grid-cols-4 gap-2 [grid-auto-flow:dense]">
+      <div className="grid w-full auto-rows-[64px] grid-cols-4 gap-2 [grid-auto-flow:dense] @2xl/inv:auto-rows-[104px] @2xl/inv:gap-3">
         {images.map((src, i) => (
           <div
             key={`${src}-${i}`}
@@ -168,7 +168,7 @@ export function PhotoGallery({
     bodyEl = (
       <StaggerGroup
         enabled={animate}
-        className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3"
+        className="grid w-full grid-cols-2 gap-2 @lg/inv:grid-cols-3 @3xl/inv:grid-cols-4 @2xl/inv:gap-3"
       >
         {images.map((src, i) => (
           <div key={`${src}-${i}`} className="aspect-square overflow-hidden rounded-md">

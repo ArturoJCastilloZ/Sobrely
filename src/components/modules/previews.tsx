@@ -41,10 +41,13 @@ const TINT = "color-mix(in srgb, var(--inv-primary, #888) 7%, transparent)";
 function Section({
   children,
   tint = false,
+  wide = false,
   className,
 }: {
   children: React.ReactNode;
   tint?: boolean;
+  /** Media-heavy modules (gallery/video) use more of the desktop width. */
+  wide?: boolean;
   className?: string;
 }) {
   return (
@@ -54,7 +57,8 @@ function Section({
     >
       <div
         className={cn(
-          "mx-auto w-full max-w-xl px-6 @2xl/inv:max-w-3xl @2xl/inv:px-10",
+          "mx-auto w-full max-w-xl px-6 @2xl/inv:px-10",
+          wide ? "@2xl/inv:max-w-5xl" : "@2xl/inv:max-w-3xl",
           className,
         )}
         style={{ paddingBlock: "var(--inv-space, 2.5rem)" }}
@@ -251,8 +255,10 @@ export function GalleryPreview({
   animate?: boolean;
 }) {
   return (
-    <Section className="flex flex-col items-center gap-3 text-center">
-      <h3 className="text-lg font-semibold">{config.title || "Galería"}</h3>
+    <Section wide className="flex flex-col items-center gap-3 text-center">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+        {config.title || "Galería"}
+      </h3>
       {config.images.length === 0 ? (
         <p className="text-sm opacity-70">Agrega fotos a tu galería.</p>
       ) : (
@@ -297,10 +303,12 @@ export function toEmbedUrl(url: string): string {
 export function VideoPreview({ config }: { config: VideoConfig }) {
   const embed = toEmbedUrl(config.url);
   return (
-    <Section className="flex flex-col items-center gap-3 text-center">
-      <h3 className="text-lg font-semibold">{config.title || "Video"}</h3>
+    <Section wide className="flex flex-col items-center gap-3 text-center">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+        {config.title || "Video"}
+      </h3>
       {embed ? (
-        <div className="aspect-video w-full overflow-hidden rounded-lg">
+        <div className="aspect-video w-full overflow-hidden rounded-lg @2xl/inv:rounded-xl">
           <iframe
             src={embed}
             title={config.title || "Video"}
@@ -330,20 +338,28 @@ export function ItineraryPreview({
   const items = config.items.filter((i) => i.time || i.label);
   return (
     <Section tint className="flex flex-col items-center gap-3 text-center">
-      <h3 className="text-lg font-semibold">{config.title || "Itinerario"}</h3>
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl">
+        {config.title || "Itinerario"}
+      </h3>
       {items.length === 0 ? (
         <p className="text-sm opacity-70">Agrega los horarios del evento.</p>
       ) : (
         <StaggerGroup
           enabled={animate}
-          className="w-full max-w-sm space-y-2 text-left"
+          className="w-full max-w-sm space-y-2 text-left @2xl/inv:grid @2xl/inv:max-w-3xl @2xl/inv:grid-cols-2 @2xl/inv:gap-3 @2xl/inv:space-y-0"
         >
           {items.map((it, i) => (
-            <div key={i} className="flex gap-3 rounded-md bg-white/60 p-2 dark:bg-black/20">
-              <span className="min-w-[64px] font-semibold" style={{ color: PRIMARY }}>
+            <div
+              key={i}
+              className="flex gap-3 rounded-md bg-white/60 p-2 @2xl/inv:p-3 dark:bg-black/20"
+            >
+              <span
+                className="min-w-[64px] font-semibold @2xl/inv:text-lg"
+                style={{ color: PRIMARY }}
+              >
                 {it.time || "—"}
               </span>
-              <span className="text-sm">{it.label}</span>
+              <span className="text-sm @2xl/inv:text-base">{it.label}</span>
             </div>
           ))}
         </StaggerGroup>
