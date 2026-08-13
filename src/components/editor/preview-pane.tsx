@@ -30,12 +30,18 @@ export function PreviewPane({
   const [view, setView] = useState<"mobile" | "desktop">("mobile");
   const desktop = view === "desktop";
 
-  // Re-play the entrance animation in the preview when the animation settings
-  // change (intensity/speed/preset/on-off). Keying the module list by this
-  // remounts it, so the "load" reveal runs again — otherwise nothing replays
-  // once modules have already appeared. Other theme edits (colors, etc.) don't
-  // touch these fields, so they don't trigger a replay.
-  const replayKey = `${JSON.stringify(theme.animation)}|${theme.animations}`;
+  // Re-play the entrance animation in the preview when any animation setting
+  // changes — the global config (intensity/speed/preset/on-off) OR a per-module
+  // override. Keying the module list by this remounts it, so the "load" reveal
+  // runs again; otherwise nothing replays once modules have appeared. Non-anim
+  // edits (colors, module text) don't change this key, so they don't replay.
+  const replayKey = [
+    JSON.stringify(theme.animation),
+    String(theme.animations),
+    ...visible.map((m) =>
+      JSON.stringify(readModuleAnimationOverride(m.config) ?? null),
+    ),
+  ].join("|");
 
   return (
     <div>

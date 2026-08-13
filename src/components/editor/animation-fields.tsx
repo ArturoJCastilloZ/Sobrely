@@ -45,6 +45,7 @@ export function AnimationFields({
   value,
   onPatch,
   defaults,
+  showTransition = false,
 }: {
   value: Partial<AnimationConfig>;
   onPatch: (patch: Partial<AnimationConfig>) => void;
@@ -52,6 +53,9 @@ export function AnimationFields({
     AnimationConfig,
     "preset" | "intensity" | "duration" | "trigger" | "delay" | "stagger"
   >;
+  /** Show the transition (preset) selector. Off in the per-module panel, which
+   *  already has its own "Animación de entrada" preset picker. */
+  showTransition?: boolean;
 }) {
   const [advanced, setAdvanced] = useState(false);
 
@@ -71,7 +75,8 @@ export function AnimationFields({
 
   return (
     <div className="space-y-3">
-      {/* Transition (reveal preset) */}
+      {/* Transition (reveal preset) — global panel only */}
+      {showTransition && (
       <div className="space-y-1.5">
         <Label className="text-xs">Transición</Label>
         <Select
@@ -94,6 +99,7 @@ export function AnimationFields({
           </SelectContent>
         </Select>
       </div>
+      )}
 
       {/* Intensity */}
       <div className="space-y-1.5">

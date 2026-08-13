@@ -383,6 +383,7 @@ export function ThemePanel({
                 onChange({ animation: { ...theme.animation, ...patch } })
               }
               defaults={theme.animation}
+              showTransition
             />
             <div className="flex flex-wrap gap-2 pt-1">
               {onApplyAnimationToAll && (
