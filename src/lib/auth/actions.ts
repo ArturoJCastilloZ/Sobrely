@@ -61,7 +61,7 @@ export async function register(
   const supabase = await createClient();
   const origin = await getOrigin();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -72,6 +72,16 @@ export async function register(
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Con la protección anti-enumeración de Supabase, registrar un correo que ya
+  // tiene cuenta NO devuelve error: regresa un `user` con `identities` vacío y
+  // no envía correo. Lo detectamos para avisar en vez de mostrar un falso éxito.
+  if (data.user && (data.user.identities?.length ?? 0) === 0) {
+    return {
+      error:
+        "Ese correo ya está registrado. Inicia sesión o recupera tu contraseña.",
+    };
   }
 
   return {
