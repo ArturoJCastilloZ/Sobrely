@@ -20,7 +20,10 @@ function useMounted() {
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useMounted();
-  const isDark = resolvedTheme === "dark";
+  // Gate on `mounted` so the server render and the first client render agree
+  // (the resolved theme is only known on the client) — avoids a hydration
+  // mismatch on the aria-label. After mount it reflects the real theme.
+  const isDark = mounted && resolvedTheme === "dark";
 
   return (
     <Button
