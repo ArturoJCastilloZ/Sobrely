@@ -10,8 +10,10 @@
 > **LO MÁS RECIENTE.** Todo desplegado en producción (`main`, commits `f88f508`→
 > `2105758`) y probado en vivo por el dev. Push vía **SSH sobre puerto 443**
 > (`ssh://git@ssh.github.com:443/…`) porque el puerto 22 estaba bloqueado en la
-> red del dev. **El repo se renombró en GitHub a `ArturoJCastilloZ/Sobrely`** (el
-> remote local aún dice `invitaflow`; funciona por el redirect de GitHub).
+> red del dev. **El repo se renombró en GitHub a `ArturoJCastilloZ/Sobrely`** y el
+> remote local ya apunta ahí vía SSH-sobre-443
+> (`ssh://git@ssh.github.com:443/ArturoJCastilloZ/Sobrely.git`) — push/pull normales
+> funcionan sin redirect ni bloqueo del puerto 22.
 
 ## Resend (SMTP propio) para los correos de Supabase — ✅ HECHO
 - **Por qué:** el SMTP compartido de Supabase bloquea editar plantillas, tiene
@@ -76,8 +78,7 @@
    recibe entrante). Usado en /privacidad, /terminos y footers de correos.
 2. **Branding OAuth de Google:** sigue en revisión de Google (login ya funciona;
    cosmético). Esperar correo de Confianza y Seguridad y responder el hilo.
-3. **(Opcional)** actualizar el remote git al nombre nuevo:
-   `git remote set-url origin git@github.com:ArturoJCastilloZ/Sobrely.git`.
+3. ~~Actualizar el remote git al nombre nuevo~~ ✅ HECHO (apunta a `Sobrely` vía 443).
 
 ---
 
@@ -746,12 +747,12 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
 >
 > **Pendientes:** (1) confirmar/crear buzón o forwarding real para `soporte@sobrely.com`
 > (Resend no recibe entrante); (2) **Branding OAuth de Google** sigue en revisión de Google
-> (login ya funciona; cosmético) — responder el hilo de Confianza y Seguridad; (3) opcional:
-> actualizar remote git a `ArturoJCastilloZ/Sobrely`.
+> (login ya funciona; cosmético) — responder el hilo de Confianza y Seguridad.
 >
 > **Notas de entorno:** el push va por **SSH sobre 443**
 > (`ssh://git@ssh.github.com:443/ArturoJCastilloZ/invitaflow.git`) porque el puerto 22 estaba
-> bloqueado. El repo se renombró a `Sobrely` en GitHub (remote local aún dice `invitaflow`).
+> bloqueado. El repo se renombró a `Sobrely` en GitHub y el remote local ya apunta ahí
+> vía 443 (`ssh://git@ssh.github.com:443/ArturoJCastilloZ/Sobrely.git`).
 >
 > **Reglas:** trabajo por fases, cada una requiere mi aprobación explícita — NO avances solo; al
 > cerrar muéstrame resumen, archivos, migraciones, env vars, cómo probar, pendientes y riesgos.
