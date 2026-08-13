@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/auth/actions";
 import { isCurrentUserAdmin } from "@/lib/auth/admin";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export default async function DashboardLayout({
   children,
@@ -61,6 +62,7 @@ export default async function DashboardLayout({
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {user.email}
             </span>
+            <ThemeToggle />
             <form action={signOut}>
               <Button type="submit" variant="outline" size="sm">
                 Cerrar sesión
