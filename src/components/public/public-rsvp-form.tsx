@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function formatDate(iso: string) {
   if (!iso) return "";
@@ -44,7 +45,12 @@ export function PublicRsvpForm({
   // Scale form labels/inputs up on wider containers so the RSVP reads well on
   // desktop (kept small on mobile via the container-query breakpoints).
   const labelCls = "@2xl/inv:text-base @4xl/inv:text-lg";
-  const inputCls = "@4xl/inv:h-11 @4xl/inv:text-base";
+  // Give fields a surface + border from the invitation palette so they stand
+  // out against the RSVP band (the default Input is transparent with a faint
+  // app-token border that vanishes on a tinted background).
+  const fieldSurface =
+    "bg-[var(--inv-card)] dark:bg-[var(--inv-card)] border-[color-mix(in_srgb,var(--inv-text)_30%,transparent)]";
+  const inputCls = `@4xl/inv:h-11 @4xl/inv:text-base ${fieldSurface}`;
 
   // Evaluate the deadline on the client only (deferred), so we don't call an
   // impure Date.now() during render nor risk an SSR/client hydration mismatch.
@@ -158,7 +164,11 @@ export function PublicRsvpForm({
                   type="button"
                   variant={status === s ? "default" : "outline"}
                   size="sm"
-                  className="@4xl/inv:h-11 @4xl/inv:text-base"
+                  className={cn(
+                    "@4xl/inv:h-11 @4xl/inv:text-base",
+                    status !== s &&
+                      "border-[color-mix(in_srgb,var(--inv-text)_30%,transparent)]",
+                  )}
                   onClick={() => setStatus(s)}
                 >
                   {ATTENDANCE_SHORT[s]}
@@ -200,7 +210,7 @@ export function PublicRsvpForm({
               id="message"
               name="message"
               maxLength={500}
-              className="@4xl/inv:text-base"
+              className={`@4xl/inv:text-base ${fieldSurface}`}
             />
           </div>
 
