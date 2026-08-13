@@ -206,10 +206,10 @@ function Figure({
       <div className="rounded-3xl bg-white/60 p-2 @2xl/inv:p-4 dark:bg-black/20">
         {children}
       </div>
-      <span className="text-xs font-medium @2xl/inv:text-base @4xl/inv:text-lg @5xl/inv:text-xl">
+      <span className="text-xs font-medium @2xl/inv:text-lg @4xl/inv:text-xl @5xl/inv:text-2xl">
         {label}
       </span>
-      <span className="max-w-[150px] text-center text-xs opacity-70 @2xl/inv:max-w-[220px] @2xl/inv:text-sm @4xl/inv:max-w-[280px] @4xl/inv:text-base">
+      <span className="max-w-[150px] text-center text-xs opacity-70 @2xl/inv:max-w-[220px] @2xl/inv:text-base @4xl/inv:max-w-[320px] @4xl/inv:text-lg @5xl/inv:text-xl">
         {desc}
       </span>
     </div>

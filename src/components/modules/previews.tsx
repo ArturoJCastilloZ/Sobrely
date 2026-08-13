@@ -144,7 +144,7 @@ export function WelcomePreview({ config }: { config: WelcomeConfig }) {
         {config.title || "Bienvenidos"}
       </h3>
       {config.message && (
-        <p className="mx-auto mt-2 max-w-prose whitespace-pre-line text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg @5xl/inv:text-xl">
+        <p className="mx-auto mt-2 max-w-prose whitespace-pre-line text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg @5xl/inv:text-2xl">
           {config.message}
         </p>
       )}
@@ -412,7 +412,9 @@ export function DresscodePreview({ config }: { config: DresscodeConfig }) {
         <p className="text-sm opacity-70">Indica el código de vestimenta.</p>
       )}
       {config.description && (
-        <p className="max-w-prose text-sm opacity-80">{config.description}</p>
+        <p className="max-w-prose text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg @5xl/inv:text-2xl">
+          {config.description}
+        </p>
       )}
     </Section>
   );
@@ -434,7 +436,7 @@ export function GiftsPreview({
         {config.title || "Mesa de regalos"}
       </h3>
       {config.description && (
-        <p className="max-w-prose text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg @5xl/inv:text-xl">
+        <p className="max-w-prose text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg @5xl/inv:text-2xl">
           {config.description}
         </p>
       )}
