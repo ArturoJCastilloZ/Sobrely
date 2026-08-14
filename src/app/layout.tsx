@@ -56,6 +56,12 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
   },
+  // Verificación de propiedad para Google Search Console (método "HTML tag").
+  // El código lo da Search Console; se configura como env var (no se hardcodea).
+  // Si la var no está, Next omite el <meta> automáticamente.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
 };
 
 const ORGANIZATION_LD = {

@@ -50,6 +50,7 @@ Todas están documentadas en `.env.example`. Los **valores** viven solo en
 | `NEXT_PUBLIC_PRICING_LAUNCH_ENABLED` / `NEXT_PUBLIC_LAUNCH_CAMPAIGN_END_DATE` | Campaña de precios de lanzamiento. |
 | `NEXT_PUBLIC_REFERRAL_ENABLED` / `NEXT_PUBLIC_REFERRAL_CREDIT_MXN` | Programa de referidos (default $50). |
 | `NEXT_PUBLIC_SUPPORT_WHATSAPP` | Número de soporte para servicios asistidos. |
+| `GOOGLE_SITE_VERIFICATION` | Código de verificación de Google Search Console (método "HTML tag"). Opcional; si está, renderiza el `<meta name="google-site-verification">`. |
 
 > ⚠️ **Nunca** pongas la `service_role` / secret key ni el `MP_ACCESS_TOKEN` en
 > variables `NEXT_PUBLIC_*` ni en el cliente.
