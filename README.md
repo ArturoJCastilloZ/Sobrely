@@ -1,200 +1,70 @@
 # Sobrely
 
-Plataforma SaaS para crear **invitaciones digitales dinámicas, modulares y
-personalizables** con templates prearmados. Bodas, XV años, cumpleaños, baby
-showers y eventos corporativos. Mobile-first.
+**Sobrely** es una plataforma para crear **invitaciones digitales** — dinámicas,
+personalizables y pensadas para el celular. Sirve para bodas, XV años,
+cumpleaños, baby showers y eventos corporativos: armas tu invitación, la
+publicas con un enlace y recibes las confirmaciones de tus invitados en un solo
+lugar.
 
-> Estado: **Fase 8 — Monetización y lanzamiento comercial** (freemium con pago
-> ÚNICO por evento, Mercado Pago). Subfases 8.1–8.8 implementadas. El detalle de
-> estado por fase vive en [`HANDOFF.md`](./HANDOFF.md).
+## Qué puedes hacer
 
-## Formas de confirmar asistencia (RSVP)
+### Crear la invitación
+Empiezas desde una plantilla o desde cero y vas armando la invitación por
+bloques: portada, cuenta regresiva, ubicación con mapa, itinerario, galería de
+fotos, video, código de vestimenta, mesa de regalos, música y confirmación de
+asistencia. Ordenas los bloques como quieras y activas solo los que necesitas.
 
-Al crear una invitación eliges cómo van a confirmar tus invitados:
+### Personalizar el diseño
+Cambias colores, tipografías y temática con packs prediseñados, eliges entre
+modo claro u oscuro, y agregas animaciones de entrada. En los planes superiores
+puedes usar **arte propio**: fondo con tu imagen, stickers y decoración a tu
+gusto. La invitación se ve bien tanto en celular como en pantalla grande.
 
-### Confirmación abierta
-Compartes un solo enlace público. Cualquiera que lo reciba entra, escribe su
-nombre y confirma (y, si lo activas, cuántas personas lleva). Ideal cuando no
-tienes una lista cerrada de invitados.
+### Confirmación de asistencia (RSVP)
+Al crear la invitación eliges cómo van a confirmar tus invitados:
 
-### Lista de invitados (con enlace y QR por invitado)
-Tú armas la lista de invitados, uno por uno o pegando varios a la vez, y a cada
-quien le asignas cuántos lugares tiene (por ejemplo, "Mara González — 2
-lugares"). El sistema le crea a cada invitado **su propio enlace único**, que le
-compartes por WhatsApp o donde prefieras.
+**Confirmación abierta** — Compartes un solo enlace público. Cualquiera que lo
+reciba entra, escribe su nombre y confirma. Ideal cuando no tienes una lista
+cerrada de invitados.
 
-Cuando el invitado abre **su** enlace:
+**Lista de invitados (con enlace y QR por invitado)** — Tú armas la lista, uno
+por uno o pegando varios a la vez, y a cada quien le asignas cuántos lugares
+tiene (por ejemplo, "Mara González — 2 lugares"). A cada invitado se le crea
+**su propio enlace único**, que le compartes por WhatsApp o donde prefieras.
+Cuando abre **su** enlace:
 
 - Ve la invitación **con su nombre** y sus lugares reservados.
-- Confirma su asistencia o avisa que no podrá ir. Nadie ve la confirmación de
-  otro: cada enlace es personal.
+- Confirma o avisa que no podrá ir. Nadie ve la confirmación de otro: cada
+  enlace es personal.
 - Al confirmar, recibe su **pase de acceso con código QR**, que puede
   **descargar** como imagen, y un botón para **añadir el evento a su calendario**.
 
 El día del evento, desde tu panel puedes **escanear el QR de cada invitado en la
-entrada** (o marcar su ingreso a mano) para llevar el control de acceso. En todo
-momento ves quién confirmó, cuántas personas van y quién ya ingresó.
+entrada** (o marcar su ingreso a mano) para el control de acceso, y ves en todo
+momento quién confirmó, cuántas personas van y quién ya ingresó.
 
-> La cantidad de invitados que puedes agregar depende de tu plan. La lista de
-> invitados está disponible en todos los planes.
+### Seguir tus confirmaciones
+Un panel te muestra el estado de cada invitación: cuántos confirmaron, cuántas
+personas asistirán y sus mensajes. Puedes exportar las confirmaciones a un
+archivo para tenerlas aparte.
 
-## Stack
+### Compartir y publicar
+Publicas la invitación con un enlace listo para compartir. Con un plan superior
+puedes tener una dirección personalizada más bonita (por ejemplo,
+`sobrely.com/ana-y-carlos`).
 
-- **Next.js 16** (App Router) + **React 19** + **TypeScript** estricto
-- **Tailwind CSS v4** + **shadcn/ui** (sobre **Base UI**, no Radix)
-- **Supabase** (PostgreSQL, Auth, Storage, RLS) vía `@supabase/supabase-js` y
-  `@supabase/ssr`; auth SSR basada en cookies
-- **Mercado Pago** (Checkout Pro) para pagos
-- **dnd-kit**, **framer-motion**, **zod**, **Vitest** (pruebas unitarias)
+## Planes
 
-## Requisitos
+Sobrely es **gratis para empezar** y se paga **una sola vez por evento** (no es
+suscripción). Hay cuatro planes —Free, Esencial, Celebración y Premium— que se
+diferencian por la cantidad de invitados, los módulos y personalizaciones
+disponibles, el almacenamiento de imágenes y la vigencia de la invitación. La
+**lista de invitados con QR está disponible en todos los planes**; lo que cambia
+es cuántos invitados puedes agregar. Los precios y el detalle de cada plan están
+en la página de **Planes** dentro de la app.
 
-- Node.js 20+ (probado con v26)
-- pnpm 11+
-- Un proyecto en [Supabase](https://supabase.com)
-- Una cuenta de [Mercado Pago](https://www.mercadopago.com.mx) (credenciales de
-  prueba para desarrollo)
+## Documentación
 
----
-
-## 1. Instalación
-
-```bash
-pnpm install
-cp .env.example .env.local
-```
-
-Rellena `.env.local` (ver [Variables de entorno](#2-variables-de-entorno)).
-
-## 2. Variables de entorno
-
-Todas están documentadas en `.env.example`. Resumen:
-
-| Variable | Descripción |
-| --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL. |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (segura en el navegador). |
-| `NEXT_PUBLIC_SITE_URL` | Origen del sitio para los redirect de auth. |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Secreta, solo server-side.** Bypassa RLS (webhook, entitlements, admin). |
-| `PAYMENT_PROVIDER` | `mercadopago`. |
-| `MP_ACCESS_TOKEN` | **Secreto.** Access token de Mercado Pago. |
-| `NEXT_PUBLIC_MP_PUBLIC_KEY` | Public key de Mercado Pago. |
-| `MP_WEBHOOK_SECRET` | Secreto de firma del webhook. |
-| `MP_PUBLIC_BASE_URL` | URL pública (https) para back/notification URLs; en local = túnel. |
-| `NEXT_PUBLIC_DEFAULT_CURRENCY` | Moneda (MXN). |
-| `NEXT_PUBLIC_PRICING_LAUNCH_ENABLED` / `NEXT_PUBLIC_LAUNCH_CAMPAIGN_END_DATE` | Campaña de precios de lanzamiento. |
-| `NEXT_PUBLIC_REFERRAL_ENABLED` / `NEXT_PUBLIC_REFERRAL_CREDIT_MXN` | Programa de referidos (default $50). |
-| `NEXT_PUBLIC_SUPPORT_WHATSAPP` | Número de soporte para servicios asistidos. |
-
-> ⚠️ **Nunca** pongas la `service_role` / secret key ni el `MP_ACCESS_TOKEN` en
-> variables `NEXT_PUBLIC_*` ni en el cliente.
-
-## 3. Base de datos
-
-Aplica **todas** las migraciones de `supabase/migrations/` en orden (SQL Editor o
-`supabase db push`):
-
-- `0001` schema inicial (tablas, RLS, triggers, perfil automático)
-- `0002` fix del trigger de perfil
-- `0003` seed de templates · `0004` RPC pública `get_public_invitation`
-- `0005` Storage de imágenes (bucket `invitation-images`)
-- `0006` monetización (planes, órdenes, entitlements) · `0007` gate de entitlement
-  en la pública
-- `0008` servicios manuales + referidos
-- `0009` panel admin (rol no auto-asignable + métricas)
-
-Tras `0009`, siembra el primer admin por SQL:
-
-```sql
-insert into public.admin_users(user_id) values ('<TU_USER_UUID>');
-```
-
-## 4. Autenticación (Supabase)
-
-- **Email/contraseña**: activado por defecto (deja "Confirm email" activado).
-- **URL Configuration**: Site URL + Redirect URLs (`.../auth/callback`) para local
-  y producción.
-- **Google OAuth**: crea credenciales OAuth 2.0 y configúralas en Supabase →
-  Authentication → Providers → Google. El callback de la app es `/auth/callback`.
-
-## 5. Ejecutar
-
-```bash
-pnpm dev        # desarrollo en http://localhost:3000
-pnpm build      # build de producción
-pnpm start      # servir el build
-pnpm lint       # ESLint
-pnpm test       # pruebas unitarias (Vitest)
-pnpm test:watch # Vitest en watch
-```
-
-## 6. Pagos
-
-- Modelo: **pago único por evento** (no suscripción). Planes Free / Esencial /
-  Celebración / Premium (ver `src/lib/billing/plans.ts`).
-- Para probar el flujo completo en sandbox (túnel, webhook, tarjetas de prueba):
-  ver [`docs/pruebas-sandbox.md`](./docs/pruebas-sandbox.md).
-- Para activar pagos reales: ver
-  [`docs/checklist-pagos-reales.md`](./docs/checklist-pagos-reales.md).
-
----
-
-## Rutas principales
-
-| Ruta | Descripción |
-| --- | --- |
-| `/` | Landing. |
-| `/login`, `/register`, `/forgot-password`, `/reset-password` | Auth. |
-| `/pricing` | Planes y precios. |
-| `/dashboard` | Panel protegido (invitaciones). |
-| `/dashboard/templates` | Galería de plantillas. |
-| `/dashboard/invitations/[id]` | RSVP: stats, tabla, CSV. |
-| `/dashboard/animations` | Catálogo de animaciones. |
-| `/dashboard/billing` | Facturación + servicios adicionales. |
-| `/dashboard/referrals` | Programa de referidos. |
-| `/editor/[invitationId]` | Editor modular. |
-| `/admin` | Panel de administración (solo admins). |
-| `/billing/{checkout,success,pending,cancel}` | Flujo de compra. |
-| `/api/webhooks/mercadopago` | Webhook de pagos. |
-| `/public/[username]/[slug]` | Invitación pública publicada. |
-
-La protección de rutas y el refresco de sesión se hacen en `proxy.ts` (el antiguo
-`middleware`, renombrado en Next.js 16). El rol admin se valida en el layout de
-`/admin`.
-
----
-
-## Seguridad (resumen)
-
-- **RLS obligatorio** en todas las tablas. En las tablas de dinero
-  (`orders`, `invitation_entitlements`, `service_requests`, `referrals`,
-  `referral_credits`, `admin_users`) el dueño **solo LEE**; la escritura es
-  exclusivamente server-side (`service_role`): imposible auto-otorgarse premium o
-  rol admin desde el front.
-- **Webhook fail-closed**: valida la firma HMAC, consulta el pago real a MP (no
-  confía en el payload) y es idempotente.
-- **Rol admin no auto-asignable**: vive en `admin_users` (fuera de `profiles`);
-  el primer admin se siembra por SQL.
-
-## Estructura
-
-```
-src/
-  app/            rutas (auth, dashboard, admin, billing, editor, público, api)
-  components/     ui/, auth/, billing/, referrals/, admin/, animation/…
-  lib/
-    auth/         acciones de auth + guard admin
-    billing/      planes, precios, Mercado Pago, fulfillment, entitlements (+ tests)
-    referrals/    códigos y acciones de referidos (+ tests)
-    services/     solicitudes de servicios manuales
-    supabase/     clients (browser/server/admin) + guard de proxy
-proxy.ts          refresco de sesión y guardas de ruta
-supabase/migrations/  SQL (0001→0009)
-docs/             guía de pruebas sandbox + checklist de pagos reales
-```
-
-## Documentos
-
-- [`HANDOFF.md`](./HANDOFF.md) — estado por fase y detalle técnico de la Fase 8.
-- [`docs/pruebas-sandbox.md`](./docs/pruebas-sandbox.md) — E2E de pago en sandbox.
-- [`docs/checklist-pagos-reales.md`](./docs/checklist-pagos-reales.md) — go-live.
+- [`docs/desarrollo.md`](./docs/desarrollo.md) — instalación, configuración y
+  ejecución local (para desarrolladores).
+- [`HANDOFF.md`](./HANDOFF.md) — estado del proyecto y detalle técnico por fase.
