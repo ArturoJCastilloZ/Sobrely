@@ -6,13 +6,23 @@ import { Button } from "@/components/ui/button";
 import { PlanCard } from "@/components/billing/plan-card";
 import { ComparisonTable } from "@/components/billing/comparison-table";
 import { createClient } from "@/lib/supabase/server";
-import { getActivePlans, isLaunchCampaignActive } from "@/lib/billing";
+import {
+  getActivePlans,
+  isLaunchCampaignActive,
+  getEffectivePrice,
+} from "@/lib/billing";
+import { JsonLd } from "@/components/seo/json-ld";
+
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+).replace(/\/+$/, "");
 
 export const metadata: Metadata = {
   // El layout raíz aplica el template "%s · Sobrely"; aquí solo el nombre.
   title: "Planes y precios",
   description:
     "Crea gratis y paga solo cuando quieras publicar. Planes por evento en pesos mexicanos, sin cobros recurrentes.",
+  alternates: { canonical: "/pricing" },
   openGraph: {
     title: "Planes y precios · Sobrely",
     description:
@@ -29,6 +39,25 @@ export default async function PricingPage() {
   const plans = getActivePlans();
   const launch = isLaunchCampaignActive();
 
+  // Datos estructurados: producto con una oferta por plan (precio efectivo).
+  const productLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "Sobrely — Invitaciones digitales",
+    description:
+      "Invitaciones digitales para bodas, XV años, cumpleaños y eventos, con pago único por evento.",
+    brand: { "@type": "Brand", name: "Sobrely" },
+    offers: plans.map((p) => ({
+      "@type": "Offer",
+      name: p.name,
+      price: getEffectivePrice(p),
+      priceCurrency: p.currency,
+      url: `${SITE_URL}/pricing`,
+      availability: "https://schema.org/InStock",
+      category: p.billingType === "free" ? "free" : "per-event",
+    })),
+  };
+
   // CTA por plan: Free → crear cuenta / dashboard; planes de pago → checkout
   // (o registro si no hay sesión).
   function hrefFor(planCode: string, isFree: boolean): string {
@@ -39,6 +68,7 @@ export default async function PricingPage() {
 
   return (
     <main className="flex flex-1 flex-col">
+      <JsonLd data={productLd} />
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
         <Link href="/" aria-label="Sobrely — inicio">
           <LogoLockup />
