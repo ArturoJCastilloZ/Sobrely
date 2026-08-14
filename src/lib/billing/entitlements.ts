@@ -122,6 +122,19 @@ export function canCreateInvitation(): boolean {
   return true;
 }
 
+/**
+ * ¿La invitación puede usar el modo "lista de invitados" (invitados nominales
+ * con link/QR)? Feature Premium `guest_management`, gateada por el plan
+ * EFECTIVO de la invitación (no el del usuario). Server-side.
+ */
+export async function canUseGuestManagement(
+  supabase: AnyClient,
+  invitationId: string,
+): Promise<boolean> {
+  const plan = await getInvitationEffectivePlan(supabase, invitationId);
+  return planHasFeature(plan, "guest_management");
+}
+
 export interface PublishCheck {
   allowed: boolean;
   effectivePlanCode: PlanCode;
@@ -164,7 +177,7 @@ export async function canPublishInvitation(
   // Gate de temática: un theme pack ⭐ premium exige advanced_personalization.
   const { data: inv } = await supabase
     .from("invitations")
-    .select("theme_config")
+    .select("theme_config, rsvp_mode")
     .eq("id", invitationId)
     .maybeSingle();
   const parsedTheme = parseTheme(inv?.theme_config);
@@ -181,6 +194,10 @@ export async function canPublishInvitation(
     (parsedTheme.stickers?.length ?? 0) > 0 ||
     Boolean(parsedTheme.decoration?.imageUrl);
   const customArtGated = usesCustomArt && !planHasFeature(plan, "custom_art");
+
+  // El modo lista de invitados NO gatea la publicación: está disponible en
+  // todos los planes. El límite es el número de invitados (plan.maxGuests),
+  // que se aplica al crear/editar la lista (ver src/lib/guests/actions.ts).
 
   if (premiumModulesUsed.length === 0 && !themePackGated && !customArtGated) {
     return { allowed: true, effectivePlanCode: plan.code, premiumModulesUsed: [] };

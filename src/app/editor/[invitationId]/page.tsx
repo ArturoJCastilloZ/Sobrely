@@ -27,7 +27,9 @@ export default async function EditorPage({
   // RLS restricts this to the owner; a non-owned/unknown id returns no row.
   const { data: invitation } = await supabase
     .from("invitations")
-    .select("id, title, slug, event_type, event_date, is_published, theme_config")
+    .select(
+      "id, title, slug, event_type, event_date, is_published, theme_config, rsvp_mode",
+    )
     .eq("id", invitationId)
     .single();
 
@@ -52,6 +54,7 @@ export default async function EditorPage({
     event_type: invitation.event_type ?? "",
     event_date: invitation.event_date ?? "",
     is_published: invitation.is_published ?? false,
+    rsvp_mode: invitation.rsvp_mode === "guest_list" ? "guest_list" : "open",
   };
 
   const initialModules: EditorModule[] = (moduleRows ?? []).map((m) => {

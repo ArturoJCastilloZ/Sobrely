@@ -19,3 +19,20 @@ export type PublicInvitation = {
   owner_username: string;
   modules: PublicModule[];
 };
+
+/** Datos del invitado nominal expuestos en su página personalizada (modo lista). */
+export type GuestForInvitation = {
+  id: string;
+  name: string;
+  max_guests: number;
+  status: "pending" | "confirmed" | "declined";
+  confirmed_count: number | null;
+  message: string | null;
+  checked_in: boolean;
+};
+
+/** Payload de la RPC `get_guest_invitation`. */
+export type GuestInvitationBundle = {
+  invitation: PublicInvitation;
+  guest: GuestForInvitation;
+};

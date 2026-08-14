@@ -5,6 +5,7 @@ import {
   getEffectivePrice,
   isOnLaunchOffer,
   planAllowsModule,
+  planHasFeature,
   premiumModulesFor,
   minimalPlanForModules,
   minimalPlanForFeature,
@@ -12,6 +13,21 @@ import {
 } from "@/lib/billing/plans";
 
 const DAY = 24 * 60 * 60 * 1000;
+
+describe("guest_management (lista de invitados, todos los planes)", () => {
+  it("todos los planes incluyen guest_management (se diferencia por maxGuests)", () => {
+    expect(planHasFeature(getPlan("premium")!, "guest_management")).toBe(true);
+    expect(planHasFeature(getPlan("celebracion")!, "guest_management")).toBe(
+      true,
+    );
+    expect(planHasFeature(getPlan("esencial")!, "guest_management")).toBe(true);
+    expect(planHasFeature(getPlan("free")!, "guest_management")).toBe(true);
+  });
+
+  it("el plan mínimo que la ofrece es Free (está en todos)", () => {
+    expect(minimalPlanForFeature("guest_management")?.code).toBe("free");
+  });
+});
 
 describe("resolveExpiry", () => {
   const free = getPlan("free")!;

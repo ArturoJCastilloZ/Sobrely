@@ -1,8 +1,12 @@
 "use client";
 
-import type { PublicInvitation } from "@/lib/invitations/public-types";
+import type {
+  PublicInvitation,
+  GuestForInvitation,
+} from "@/lib/invitations/public-types";
 import { ModulePreview } from "@/components/modules/previews";
 import { PublicRsvpForm } from "@/components/public/public-rsvp-form";
+import { GuestResponsePanel } from "@/components/public/guest-response-panel";
 import { parseConfig, type RsvpConfig } from "@/lib/modules/types";
 import { parseTheme } from "@/lib/theme/theme";
 import { ThemeScope } from "@/components/theme/theme-scope";
@@ -16,8 +20,14 @@ import {
 
 export function PublicInvitationView({
   invitation,
+  guest,
+  guestToken,
 }: {
   invitation: PublicInvitation;
+  /** Si viene, la invitación es nominal (modo lista): el RSVP abierto se
+   * reemplaza por el panel del invitado (confirmar / menos / cancelar + pase). */
+  guest?: GuestForInvitation;
+  guestToken?: string;
 }) {
   const theme = parseTheme(invitation.theme_config);
 
@@ -50,10 +60,18 @@ export function PublicInvitationView({
           return (
             <AnimatedModule key={m.id} animation={animation} index={i}>
               {m.module_type === "rsvp" ? (
-                <PublicRsvpForm
-                  invitationId={invitation.id}
-                  config={parseConfig("rsvp", m.config) as RsvpConfig}
-                />
+                guest && guestToken ? (
+                  <GuestResponsePanel
+                    guest={guest}
+                    token={guestToken}
+                    config={parseConfig("rsvp", m.config) as RsvpConfig}
+                  />
+                ) : (
+                  <PublicRsvpForm
+                    invitationId={invitation.id}
+                    config={parseConfig("rsvp", m.config) as RsvpConfig}
+                  />
+                )
               ) : (
                 <ModulePreview
                   moduleType={m.module_type}

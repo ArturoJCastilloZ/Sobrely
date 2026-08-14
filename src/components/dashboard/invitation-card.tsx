@@ -21,6 +21,7 @@ export type InvitationSummary = {
   event_type: string | null;
   is_published: boolean;
   updated_at: string;
+  rsvp_mode: "open" | "guest_list";
 };
 
 export function InvitationCard({
@@ -72,7 +73,7 @@ export function InvitationCard({
           render={<Link href={`/dashboard/invitations/${invitation.id}`} />}
           nativeButton={false}
         >
-          Respuestas
+          {invitation.rsvp_mode === "guest_list" ? "Invitados" : "Respuestas"}
         </Button>
         {invitation.is_published && username && (
           <Button

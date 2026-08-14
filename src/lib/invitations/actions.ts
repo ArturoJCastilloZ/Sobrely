@@ -27,13 +27,16 @@ function randomSuffix() {
  * Creates a blank invitation (with a default Hero module) and redirects the
  * user into its editor.
  */
-export async function createInvitation() {
+export async function createInvitation(
+  mode: "open" | "guest_list" = "open",
+) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const rsvpMode = mode === "guest_list" ? "guest_list" : "open";
   const slug = `invitacion-${randomSuffix()}`;
 
   const { data: invitation, error } = await supabase
@@ -44,6 +47,7 @@ export async function createInvitation() {
       slug,
       status: "draft",
       is_published: false,
+      rsvp_mode: rsvpMode,
     })
     .select("id")
     .single();
@@ -53,13 +57,35 @@ export async function createInvitation() {
   }
 
   // Seed a default Hero module so the preview isn't empty.
-  await supabase.from("invitation_modules").insert({
-    invitation_id: invitation.id,
-    module_type: "hero",
-    sort_order: 0,
-    is_visible: true,
-    config: defaultConfigFor("hero"),
-  });
+  const modules: {
+    invitation_id: string;
+    module_type: ModuleType;
+    sort_order: number;
+    is_visible: boolean;
+    config: Record<string, unknown>;
+  }[] = [
+    {
+      invitation_id: invitation.id,
+      module_type: "hero",
+      sort_order: 0,
+      is_visible: true,
+      config: defaultConfigFor("hero"),
+    },
+  ];
+
+  // En modo lista de invitados el RSVP es obligatorio: se auto-agrega, y como
+  // el cupo lo asigna el organizador, se apaga "pedir número de invitados".
+  if (rsvpMode === "guest_list") {
+    modules.push({
+      invitation_id: invitation.id,
+      module_type: "rsvp",
+      sort_order: 1,
+      is_visible: true,
+      config: { ...defaultConfigFor("rsvp"), allowGuestCount: false },
+    });
+  }
+
+  await supabase.from("invitation_modules").insert(modules);
 
   revalidatePath("/dashboard");
   redirect(`/editor/${invitation.id}`);

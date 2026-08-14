@@ -39,6 +39,7 @@ export type PlanFeature =
   | "csv_export"
   | "advanced_personalization"
   | "custom_art"
+  | "guest_management"
   | "basic_analytics"
   | "advanced_analytics"
   | "custom_domain"

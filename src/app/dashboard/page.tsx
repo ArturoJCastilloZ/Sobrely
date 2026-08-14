@@ -26,7 +26,7 @@ export default async function DashboardPage() {
 
   const { data: invitations } = await supabase
     .from("invitations")
-    .select("id, title, slug, event_type, is_published, updated_at")
+    .select("id, title, slug, event_type, is_published, updated_at, rsvp_mode")
     .eq("user_id", user!.id)
     .order("updated_at", { ascending: false });
 

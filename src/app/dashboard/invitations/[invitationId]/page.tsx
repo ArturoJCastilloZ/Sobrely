@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { RsvpStats } from "@/components/dashboard/rsvp-stats";
 import { RsvpTable, type RsvpRow } from "@/components/dashboard/rsvp-table";
+import { GuestManager } from "@/components/dashboard/guest-manager";
 
 export const metadata: Metadata = { title: "Respuestas" };
 
@@ -24,11 +25,13 @@ export default async function InvitationRsvpsPage({
   // RLS restricts to the owner.
   const { data: invitation } = await supabase
     .from("invitations")
-    .select("id, title, slug, is_published")
+    .select("id, title, slug, is_published, rsvp_mode")
     .eq("id", invitationId)
     .single();
 
   if (!invitation) notFound();
+
+  const isGuestList = invitation.rsvp_mode === "guest_list";
 
   const { data: responses } = await supabase
     .from("rsvp_responses")
@@ -37,6 +40,8 @@ export default async function InvitationRsvpsPage({
     )
     .eq("invitation_id", invitationId)
     .order("created_at", { ascending: false });
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
 
   const rows = (responses ?? []) as RsvpRow[];
 
@@ -78,14 +83,19 @@ export default async function InvitationRsvpsPage({
         </div>
       </div>
 
-      <RsvpStats
-        confirmed={confirmed}
-        declined={declined}
-        maybe={maybe}
-        totalGuests={totalGuests}
-      />
-
-      <RsvpTable initialRows={rows} invitationSlug={invitation.slug} />
+      {isGuestList ? (
+        <GuestManager invitationId={invitation.id} siteUrl={siteUrl} />
+      ) : (
+        <>
+          <RsvpStats
+            confirmed={confirmed}
+            declined={declined}
+            maybe={maybe}
+            totalGuests={totalGuests}
+          />
+          <RsvpTable initialRows={rows} invitationSlug={invitation.slug} />
+        </>
+      )}
     </div>
   );
 }

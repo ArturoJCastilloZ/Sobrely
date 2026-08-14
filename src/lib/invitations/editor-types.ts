@@ -16,4 +16,5 @@ export type EditorInvitation = {
   event_type: string;
   event_date: string; // ISO or ""
   is_published: boolean;
+  rsvp_mode: "open" | "guest_list";
 };

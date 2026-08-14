@@ -17,6 +17,7 @@ const FEATURE_LABELS: Record<PlanFeature, string> = {
   csv_export: "Exportación CSV de RSVP",
   advanced_personalization: "Personalización avanzada",
   custom_art: "Arte propio (fondo e imágenes)",
+  guest_management: "Invitados con link y QR de acceso",
   basic_analytics: "Analytics básicos",
   advanced_analytics: "Analytics avanzados",
   custom_domain: "Dominio personalizado",
@@ -81,6 +82,10 @@ export const COMPARISON_ROWS: readonly ComparisonRow[] = [
   {
     label: FEATURE_LABELS.advanced_personalization,
     value: (p) => featureState(p, "advanced_personalization"),
+  },
+  {
+    label: FEATURE_LABELS.guest_management,
+    value: (p) => featureState(p, "guest_management"),
   },
   {
     label: FEATURE_LABELS.priority_support,

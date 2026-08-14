@@ -60,6 +60,8 @@ import { SettingsPanel } from "./settings-panel";
 import { PreviewPane } from "./preview-pane";
 import { ThemePanel } from "./theme-panel";
 import { ModuleConfigEditor } from "@/components/modules/config-editors";
+import { RsvpModeToggle } from "@/components/dashboard/rsvp-mode-toggle";
+import { GuestManager } from "@/components/dashboard/guest-manager";
 import type { ThemeConfig } from "@/lib/theme/theme";
 import { detectAnimationConflicts } from "@/lib/animation/conflicts";
 
@@ -85,6 +87,8 @@ export function InvitationEditor({
   const [modules, setModules] = useState<EditorModule[]>(initialModules);
   const [theme, setTheme] = useState<ThemeConfig>(initialTheme);
   const uploadCtx = { userId, invitationId: initialInvitation.id };
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const [activeTab, setActiveTab] = useState("modules");
   const [selectedId, setSelectedId] = useState<string | null>(
     initialModules[0]?.id ?? null,
   );
@@ -364,11 +368,16 @@ export function InvitationEditor({
         <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_1fr]">
           {/* Left: controls */}
           <div className="space-y-4">
-            <Tabs defaultValue="modules">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full">
                 <TabsTrigger value="modules" className="flex-1">
                   Módulos
                 </TabsTrigger>
+                {invitation.rsvp_mode === "guest_list" && (
+                  <TabsTrigger value="guests" className="flex-1">
+                    Invitados
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="settings" className="flex-1">
                   Ajustes
                 </TabsTrigger>
@@ -425,7 +434,17 @@ export function InvitationEditor({
                         {MODULE_META[selected.module_type].label}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
+                      {selected.module_type === "rsvp" &&
+                        invitation.rsvp_mode === "guest_list" && (
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => setActiveTab("guests")}
+                          >
+                            Gestionar invitados →
+                          </Button>
+                        )}
                       <ModuleConfigEditor
                         moduleType={selected.module_type}
                         config={selected.config}
@@ -436,6 +455,7 @@ export function InvitationEditor({
                         onSetEventDate={(iso) =>
                           updateSettings({ event_date: iso })
                         }
+                        rsvpMode={invitation.rsvp_mode}
                       />
                     </CardContent>
                   </Card>
@@ -446,6 +466,24 @@ export function InvitationEditor({
                 )}
               </TabsContent>
 
+              {invitation.rsvp_mode === "guest_list" && (
+                <TabsContent value="guests" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">
+                        Lista de invitados
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <GuestManager
+                        invitationId={invitation.id}
+                        siteUrl={siteUrl}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
+
               <TabsContent value="settings">
                 <Card>
                   <CardHeader>
@@ -453,10 +491,19 @@ export function InvitationEditor({
                       Ajustes de la invitación
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <SettingsPanel
                       invitation={invitation}
                       onChange={updateSettings}
+                    />
+                    <RsvpModeToggle
+                      invitationId={invitation.id}
+                      mode={invitation.rsvp_mode}
+                      refresh={false}
+                      onChange={(m) => {
+                        setInvitation((inv) => ({ ...inv, rsvp_mode: m }));
+                        if (m === "guest_list") setActiveTab("guests");
+                      }}
                     />
                   </CardContent>
                 </Card>

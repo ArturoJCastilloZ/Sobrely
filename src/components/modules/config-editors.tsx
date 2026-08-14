@@ -525,7 +525,12 @@ function MusicEditor({ config, onChange }: EditorProps) {
 
 // ---- RSVP -----------------------------------------------------------------
 
-function RsvpEditor({ config, onChange }: EditorProps) {
+function RsvpEditor({
+  config,
+  onChange,
+  rsvpMode,
+}: EditorProps & { rsvpMode?: "open" | "guest_list" }) {
+  const isGuestList = rsvpMode === "guest_list";
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -541,13 +546,20 @@ function RsvpEditor({ config, onChange }: EditorProps) {
           onChange={(e) => onChange({ deadline: localInputToIso(e.target.value) })}
         />
       </Field>
-      <div className="flex items-center justify-between rounded-md border px-3 py-2">
-        <Label className="cursor-pointer">Pedir número de invitados</Label>
-        <Switch
-          checked={Boolean(config.allowGuestCount ?? true)}
-          onCheckedChange={(v) => onChange({ allowGuestCount: v })}
-        />
-      </div>
+      {isGuestList ? (
+        <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+          En modo lista de invitados el cupo de cada invitado lo defines tú en la
+          pestaña <span className="font-medium">Invitados</span>.
+        </p>
+      ) : (
+        <div className="flex items-center justify-between rounded-md border px-3 py-2">
+          <Label className="cursor-pointer">Pedir número de invitados</Label>
+          <Switch
+            checked={Boolean(config.allowGuestCount ?? true)}
+            onCheckedChange={(v) => onChange({ allowGuestCount: v })}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -661,6 +673,7 @@ export function ModuleConfigEditor({
   animationDefaults,
   eventDate,
   onSetEventDate,
+  rsvpMode,
 }: {
   moduleType: ModuleType;
   config: Record<string, unknown>;
@@ -671,6 +684,8 @@ export function ModuleConfigEditor({
   /** Invitation event date (ISO) + setter, used by the countdown module. */
   eventDate?: string;
   onSetEventDate?: (iso: string) => void;
+  /** Modo RSVP de la invitación; en 'guest_list' el cupo lo pone el organizador. */
+  rsvpMode?: "open" | "guest_list";
 }) {
   const props = { config, onChange, ctx };
 
@@ -703,7 +718,7 @@ export function ModuleConfigEditor({
       case "music":
         return <MusicEditor {...props} />;
       case "rsvp":
-        return <RsvpEditor {...props} />;
+        return <RsvpEditor {...props} rsvpMode={rsvpMode} />;
       default:
         return null;
     }
