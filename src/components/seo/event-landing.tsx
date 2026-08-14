@@ -69,7 +69,7 @@ export function EventLandingPage({ data }: { data: EventLanding }) {
       </header>
 
       <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-4 py-16 text-center sm:py-20">
-        <span className="rounded-full border border-brand-gold/30 bg-brand-cream/50 px-3 py-1 text-xs font-medium text-brand-gold-deep">
+        <span className="rounded-full border border-brand-gold/40 bg-brand-gold/10 px-3 py-1 text-xs font-medium text-brand-gold-deep dark:text-brand-gold">
           {data.eyebrow}
         </span>
         <h1 className="font-display text-balance text-4xl font-bold tracking-tight sm:text-6xl">
