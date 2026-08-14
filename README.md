@@ -8,6 +8,36 @@ showers y eventos corporativos. Mobile-first.
 > ÚNICO por evento, Mercado Pago). Subfases 8.1–8.8 implementadas. El detalle de
 > estado por fase vive en [`HANDOFF.md`](./HANDOFF.md).
 
+## Formas de confirmar asistencia (RSVP)
+
+Al crear una invitación eliges cómo van a confirmar tus invitados:
+
+### Confirmación abierta
+Compartes un solo enlace público. Cualquiera que lo reciba entra, escribe su
+nombre y confirma (y, si lo activas, cuántas personas lleva). Ideal cuando no
+tienes una lista cerrada de invitados.
+
+### Lista de invitados (con enlace y QR por invitado)
+Tú armas la lista de invitados, uno por uno o pegando varios a la vez, y a cada
+quien le asignas cuántos lugares tiene (por ejemplo, "Mara González — 2
+lugares"). El sistema le crea a cada invitado **su propio enlace único**, que le
+compartes por WhatsApp o donde prefieras.
+
+Cuando el invitado abre **su** enlace:
+
+- Ve la invitación **con su nombre** y sus lugares reservados.
+- Confirma su asistencia o avisa que no podrá ir. Nadie ve la confirmación de
+  otro: cada enlace es personal.
+- Al confirmar, recibe su **pase de acceso con código QR**, que puede
+  **descargar** como imagen, y un botón para **añadir el evento a su calendario**.
+
+El día del evento, desde tu panel puedes **escanear el QR de cada invitado en la
+entrada** (o marcar su ingreso a mano) para llevar el control de acceso. En todo
+momento ves quién confirmó, cuántas personas van y quién ya ingresó.
+
+> La cantidad de invitados que puedes agregar depende de tu plan. La lista de
+> invitados está disponible en todos los planes.
+
 ## Stack
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript** estricto

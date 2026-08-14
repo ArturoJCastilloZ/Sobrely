@@ -5,6 +5,78 @@
 
 ---
 
+# Sesión 2026-08-14 — Invitados personalizados con QR (lista de invitados)
+
+> **LO MÁS RECIENTE.** Todo en la rama **`skarlette/feature-responsive-web-themes`**
+> (encima del trabajo responsive/temas). `main` INTACTO. Commits `1a5c741` (P1),
+> `2cdb63f` (P2), `70c17ad` (fix contraste), `5956873` (P3). Calidad al cierre:
+> `tsc`/`lint`/`build` limpios, **71/71 tests**. NO probado contra BD real ni con
+> cámara — requiere aplicar migración y probar en el entorno del dev.
+
+## Qué se construyó — un segundo modo de RSVP: "Lista de invitados"
+
+Modelo nuevo junto al RSVP abierto de siempre. Cada invitación tiene `rsvp_mode`
+(`open` = form público de siempre | `guest_list` = invitados nominales). El
+organizador crea una lista; cada invitado tiene un `access_token` no adivinable
+que ES su credencial: deriva su link único (`/g/<token>`) y su QR.
+
+### P1 — Núcleo (commit `1a5c741`)
+- **Migración `0011_invitation_guests.sql`:** columna `rsvp_mode` (+check) en
+  `invitations`; tabla `invitation_guests` (id, invitation_id, name, max_guests,
+  access_token unique [default `encode(gen_random_bytes(24),'hex')`], status
+  [pending/confirmed/declined], confirmed_count, checked_in_at). RLS: **solo el
+  dueño** gestiona; el anónimo NO tiene política (denegado). **2 RPCs SECURITY
+  DEFINER** acotadas por token: `get_guest_invitation` (solo publicadas en modo
+  lista) y `respond_guest` (confirmar/declinar, clamp al cupo).
+- **El modo se elige al CREAR** la invitación (menú en "+ Nueva invitación"). En
+  modo lista se **auto-agrega el módulo RSVP** con `allowGuestCount:false`.
+- **Página del invitado** `/g/[token]` (`noindex`): renderiza la invitación con
+  su nombre + cupo; reemplaza el RSVP abierto por **Confirmar / No podré asistir**
+  (cupo fijo, decisión del dev; sin selector de cantidad ni re-edición).
+- **Gestión** en el editor (pestaña **Invitados**, aparece en modo lista) y en
+  **Respuestas**: agregar 1×1 o masivo ("Nombre, cupo" por línea), editar,
+  eliminar, copiar enlace. `GuestManager` se auto-carga vía `listGuests`.
+- **Gating de plan:** el modo lista está en **TODOS los planes**; lo que cambia
+  es el número de invitados = `maxGuests` del plan efectivo (Free 25, Esencial
+  100, Celebración 250, Premium 500), enforced server-side al crear/editar en
+  `src/lib/guests/actions.ts`. `guest_management` es feature en los 4 planes.
+
+### P2 — QR + pase + check-in (commit `2cdb63f`)
+- **Pase con QR** en la página del invitado al confirmar (`GuestPass`): QR local
+  (`qrcode`) que codifica su link; **"Descargar pase"** compone una tarjeta PNG
+  en canvas. Cero llamadas externas.
+- **Check-in:** escáner de cámara en `/dashboard/invitations/[id]/checkin`
+  (`html5-qrcode`, decodifica local) + **marcado manual** ("Marcar ingreso"/
+  "Deshacer") desde la lista. Acciones `checkInByToken` (dueño, RLS, idempotente)
+  y `setGuestCheckIn`. **Sin migración nueva:** reusa `checked_in_at`.
+- **Deps nuevas (OSS-selfhost ✓):** `qrcode` (MIT), `html5-qrcode` (Apache-2.0),
+  `@types/qrcode`. Ambas puras cliente, sin phone-home.
+
+### P3 — Añadir a calendario (commit `5956873`)
+- Botón **"Añadir a calendario"** en el pase: genera un **`.ics` local** (Apple/
+  Google/Outlook) con título, fecha y ubicación (del módulo mapa). Builder
+  `src/lib/calendar/ics.ts` puro y testeado. Cero llamadas externas.
+
+## Cómo probar
+1. Aplicar `supabase/migrations/0011_invitation_guests.sql`.
+2. Dashboard → **+ Nueva invitación → Lista de invitados** → pestaña Invitados →
+   agregar "Mara, 2" → copiar enlace. **Publicar**.
+3. Abrir `/g/<token>` en incógnito → **Confirmar** → aparece el pase con QR +
+   "Descargar pase" + "Añadir a calendario".
+4. Dashboard → Invitados → **Escanear en la puerta →** (cámara) o "Marcar
+   ingreso" manual.
+
+## Pendiente / riesgos
+- **Wallet passes Apple/Google:** NO hechos. Requieren certificado de Apple /
+  issuer de Google + **llamadas externas** → rompen "cero phone-home". Recomendado
+  NO hacerlo salvo que el negocio lo pida (QR + pase + `.ics` ya cubren el valor).
+- **Dominio de dinero:** el gating por plan toca facturación → pasar secaudit +
+  revisión antes de tu merge a `main`.
+- **Env vars:** ninguna nueva (el link usa `NEXT_PUBLIC_SITE_URL`, ya existente).
+- La cámara del check-in requiere HTTPS (localhost sirve) y permiso de cámara.
+
+---
+
 # Sesión 2026-08-12 (tarde) — Responsive web + Claro/Oscuro + Temáticas/arte propio
 
 > **LO MÁS RECIENTE.** TODO vive en la rama **`skarlette/feature-responsive-web-themes`**
