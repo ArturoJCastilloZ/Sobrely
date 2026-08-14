@@ -72,7 +72,7 @@ describe("applyThemePack", () => {
     expect(applied.colors).toEqual(pack.theme.colors);
     expect(applied.font).toBe(pack.theme.font);
     expect(applied.spacing).toBe(pack.theme.spacing);
-    expect(applied.decoration).toEqual(pack.theme.decoration);
+    expect(applied.decoration).toEqual({ imageUrl: "", ...pack.theme.decoration });
     expect(applied.themePack).toBe(pack.key);
   });
 
