@@ -244,6 +244,75 @@ export async function deleteGuest(id: string): Promise<GuestActionResult> {
   return { ok: true };
 }
 
+export type CheckInResult =
+  | {
+      ok: true;
+      guest: { name: string; maxGuests: number; alreadyCheckedIn: boolean };
+    }
+  | { ok: false; error: string };
+
+/**
+ * Check-in en la puerta por token escaneado. Lo hace el DUEÑO (autenticado);
+ * RLS asegura que solo puede tocar invitados de sus propias invitaciones.
+ * Idempotente: si ya había ingresado, lo informa sin volver a sellar.
+ */
+export async function checkInByToken(token: string): Promise<CheckInResult> {
+  const clean = (token ?? "").trim().toLowerCase();
+  if (!/^[a-f0-9]{16,128}$/.test(clean)) {
+    return { ok: false, error: "Código no válido." };
+  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión expirada." };
+
+  // RLS: solo devuelve el invitado si la invitación es del usuario.
+  const { data: guest } = await supabase
+    .from("invitation_guests")
+    .select("id, name, max_guests, checked_in_at")
+    .eq("access_token", clean)
+    .maybeSingle();
+  if (!guest) return { ok: false, error: "Invitado no encontrado." };
+
+  const alreadyCheckedIn = Boolean(guest.checked_in_at);
+  if (!alreadyCheckedIn) {
+    const { error } = await supabase
+      .from("invitation_guests")
+      .update({ checked_in_at: new Date().toISOString() })
+      .eq("id", guest.id);
+    if (error) return { ok: false, error: "No se pudo registrar el ingreso." };
+  }
+
+  return {
+    ok: true,
+    guest: {
+      name: guest.name as string,
+      maxGuests: guest.max_guests as number,
+      alreadyCheckedIn,
+    },
+  };
+}
+
+/** Marca o revierte el ingreso de un invitado por id (manual, desde la lista). */
+export async function setGuestCheckIn(
+  id: string,
+  checkedIn: boolean,
+): Promise<GuestActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión expirada." };
+
+  const { error } = await supabase
+    .from("invitation_guests")
+    .update({ checked_in_at: checkedIn ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 /**
  * Respuesta del invitado por token (anónimo). Pasa por la RPC SECURITY DEFINER
  * `respond_guest`, que solo opera sobre invitaciones publicadas en modo

@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   addGuest,
   addGuestsBulk,
   editGuest,
   deleteGuest,
+  setGuestCheckIn,
   listGuests,
   type GuestListRow,
 } from "@/lib/guests/actions";
@@ -141,6 +143,18 @@ export function GuestManager({
     });
   }
 
+  function toggleCheckIn(g: GuestRow) {
+    startTransition(async () => {
+      const res = await setGuestCheckIn(g.id, !g.checked_in_at);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(g.checked_in_at ? "Ingreso revertido." : "Ingreso marcado.");
+      await reload();
+    });
+  }
+
   async function copyLink(token: string) {
     try {
       await navigator.clipboard.writeText(guestLink(token));
@@ -150,14 +164,29 @@ export function GuestManager({
     }
   }
 
+  const checkedInCount = guests.filter((g) => g.checked_in_at).length;
+
   return (
     <div className="space-y-6">
       {/* Resumen */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Invitados" value={guests.length} />
-        <Stat label="Lugares" value={totalAllotted} />
+        <Stat label={`Invitados · ${totalAllotted} lugares`} value={guests.length} />
         <Stat label="Confirmados" value={confirmedGuests.length} />
         <Stat label="Personas confirmadas" value={confirmedPeople} />
+        <Stat label="Ingresaron" value={checkedInCount} />
+      </div>
+
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          render={
+            <Link href={`/dashboard/invitations/${invitationId}/checkin`} />
+          }
+          nativeButton={false}
+        >
+          Escanear en la puerta →
+        </Button>
       </div>
 
       {/* Alta */}
@@ -253,6 +282,14 @@ export function GuestManager({
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={g.checked_in_at ? "ghost" : "outline"}
+                  size="sm"
+                  onClick={() => toggleCheckIn(g)}
+                  disabled={pending}
+                >
+                  {g.checked_in_at ? "Deshacer ingreso" : "Marcar ingreso"}
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

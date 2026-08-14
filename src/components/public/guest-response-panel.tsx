@@ -5,6 +5,7 @@ import type { RsvpConfig } from "@/lib/modules/types";
 import type { GuestForInvitation } from "@/lib/invitations/public-types";
 import { respondAsGuest } from "@/lib/guests/actions";
 import { Textarea } from "@/components/ui/textarea";
+import { GuestPass } from "@/components/public/guest-pass";
 
 type GuestStatus = GuestForInvitation["status"];
 
@@ -57,13 +58,16 @@ export function GuestResponsePanel({
       </div>
 
       {status === "confirmed" ? (
-        <div className="w-full max-w-md rounded-xl bg-emerald-500/15 p-6 text-center @4xl/inv:max-w-lg">
-          <p className="text-xl font-semibold text-emerald-700 @4xl/inv:text-2xl dark:text-emerald-300">
-            ¡Gracias por confirmar!
-          </p>
-          <p className="mt-2 text-base text-emerald-800/90 @4xl/inv:text-lg dark:text-emerald-200/90">
-            {peopleLabel} · {guest.name}
-          </p>
+        <div className="flex w-full max-w-md flex-col items-center gap-5 @4xl/inv:max-w-lg">
+          <div className="w-full rounded-xl bg-emerald-500/15 p-6 text-center">
+            <p className="text-xl font-semibold text-emerald-700 @4xl/inv:text-2xl dark:text-emerald-300">
+              ¡Gracias por confirmar!
+            </p>
+            <p className="mt-2 text-base text-emerald-800/90 @4xl/inv:text-lg dark:text-emerald-200/90">
+              {peopleLabel} · {guest.name}
+            </p>
+          </div>
+          <GuestPass token={token} name={guest.name} people={guest.max_guests} />
         </div>
       ) : status === "declined" ? (
         <div className="w-full max-w-md rounded-xl bg-[var(--inv-card)] p-6 text-center @4xl/inv:max-w-lg">

@@ -45,6 +45,21 @@ export const guestRespondSchema = z.object({
 export type GuestRespondInput = z.infer<typeof guestRespondSchema>;
 
 /**
+ * Extrae el access_token de lo que arroja el escáner: puede ser el token crudo
+ * o la URL completa del invitado (`https://…/g/<token>`). Devuelve el token
+ * saneado (solo hex) o "" si no reconoce nada válido.
+ */
+export function extractTokenFromScan(scanned: string): string {
+  const raw = (scanned ?? "").trim();
+  if (!raw) return "";
+  // Si viene como URL, toma el segmento después de /g/.
+  const match = raw.match(/\/g\/([^/?#]+)/i);
+  const candidate = match ? match[1] : raw;
+  // Los tokens son hex (gen_random_bytes → encode hex). Sanea.
+  return /^[a-f0-9]{16,128}$/i.test(candidate) ? candidate.toLowerCase() : "";
+}
+
+/**
  * Parsea el texto de alta masiva a filas `{ name, maxGuests }`. Formato por
  * línea: `Nombre` o `Nombre, cupo`. Ignora líneas vacías; cupo inválido = 1.
  */
