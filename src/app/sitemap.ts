@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { EVENT_LANDING_LIST } from "@/lib/seo/event-landings";
+import { BLOG_POSTS } from "@/lib/blog/posts";
 
 // Normaliza: sin `/` final para no generar `//` en las URLs del sitemap.
 const SITE_URL = (
@@ -30,6 +31,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${SITE_URL}/${e.slug}`,
       changeFrequency: "monthly" as const,
       priority: 0.9,
+    })),
+    // Blog: índice + cada artículo.
+    {
+      url: `${SITE_URL}/blog`,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    },
+    ...BLOG_POSTS.map((p) => ({
+      url: `${SITE_URL}/blog/${p.slug}`,
+      lastModified: p.date,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     })),
     {
       url: `${SITE_URL}/privacidad`,

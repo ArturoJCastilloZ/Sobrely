@@ -64,6 +64,14 @@ export default async function Home() {
         </Link>
         <nav className="flex items-center gap-2">
           <Button
+            render={<Link href="/blog" />}
+            nativeButton={false}
+            variant="ghost"
+            size="sm"
+          >
+            Blog
+          </Button>
+          <Button
             render={<Link href="/pricing" />}
             nativeButton={false}
             variant="ghost"
