@@ -35,6 +35,20 @@ export function PublicInvitationView({
     .filter((m) => m.is_visible)
     .sort((a, b) => a.sort_order - b.sort_order);
 
+  // Ubicación para el .ics: del módulo mapa (venueName + address) si existe.
+  const mapModule = modules.find((m) => m.module_type === "map");
+  const mapCfg = (mapModule?.config ?? {}) as {
+    venueName?: string;
+    address?: string;
+  };
+  const eventLocation =
+    [mapCfg.venueName, mapCfg.address].filter(Boolean).join(", ") || undefined;
+  const eventInfo = {
+    title: invitation.title || "Invitación",
+    dateIso: invitation.event_date ?? "",
+    location: eventLocation,
+  };
+
   return (
     <ThemeScope
       theme={theme}
@@ -65,6 +79,7 @@ export function PublicInvitationView({
                     guest={guest}
                     token={guestToken}
                     config={parseConfig("rsvp", m.config) as RsvpConfig}
+                    event={eventInfo}
                   />
                 ) : (
                   <PublicRsvpForm

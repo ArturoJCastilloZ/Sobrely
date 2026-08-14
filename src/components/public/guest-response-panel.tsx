@@ -6,6 +6,7 @@ import type { GuestForInvitation } from "@/lib/invitations/public-types";
 import { respondAsGuest } from "@/lib/guests/actions";
 import { Textarea } from "@/components/ui/textarea";
 import { GuestPass } from "@/components/public/guest-pass";
+import { AddToCalendar } from "@/components/public/add-to-calendar";
 
 type GuestStatus = GuestForInvitation["status"];
 
@@ -13,10 +14,13 @@ export function GuestResponsePanel({
   guest,
   token,
   config,
+  event,
 }: {
   guest: GuestForInvitation;
   token: string;
   config: RsvpConfig;
+  /** Datos del evento para "Añadir a calendario" (.ics). */
+  event: { title: string; dateIso: string; location?: string };
 }) {
   const [status, setStatus] = useState<GuestStatus>(guest.status);
   const [message, setMessage] = useState(guest.message ?? "");
@@ -77,6 +81,13 @@ export function GuestResponsePanel({
             </p>
           </div>
           <GuestPass token={token} name={guest.name} people={guest.max_guests} />
+          <AddToCalendar
+            uid={`guest-${token}`}
+            title={event.title}
+            location={event.location}
+            description={config.title || "Confirma tu asistencia"}
+            startIso={event.dateIso}
+          />
         </div>
       ) : status === "declined" ? (
         <div className="w-full max-w-md rounded-xl bg-[var(--inv-card)] p-6 text-center @4xl/inv:max-w-lg">
