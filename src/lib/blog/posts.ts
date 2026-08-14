@@ -114,6 +114,163 @@ export const BLOG_POSTS: BlogPost[] = [
       },
     ],
   },
+  {
+    slug: "invitacion-digital-o-impresa",
+    title: "Invitación digital o impresa: ventajas, costos y cuál elegir",
+    description:
+      "Comparamos la invitación digital y la impresa en costo, tiempo, alcance y sustentabilidad para ayudarte a decidir cuál conviene para tu evento.",
+    date: "2026-08-13",
+    body: [
+      {
+        type: "p",
+        text: "Elegir entre una invitación digital y una impresa depende de tu presupuesto, tus tiempos y el tipo de evento. Aquí van las diferencias clave para que decidas con calma.",
+      },
+      { type: "h2", text: "Costo" },
+      {
+        type: "p",
+        text: "La invitación impresa suma diseño, papel, imprenta y envío, y el costo crece con cada invitado. La digital tiene un costo único, sin importar a cuántas personas la mandes.",
+      },
+      { type: "h2", text: "Tiempo y cambios" },
+      {
+        type: "p",
+        text: "Con la digital publicas en el día y corriges un dato cuando quieras. Con la impresa, un error implica reimprimir. Si tu evento aún tiene detalles por cerrar, la digital te da flexibilidad.",
+      },
+      { type: "h2", text: "Alcance y confirmaciones" },
+      {
+        type: "p",
+        text: "La digital se comparte por WhatsApp o redes y trae confirmación de asistencia en línea, así ves cuántos van sin llamar a nadie. La impresa depende de que cada quien responda por su cuenta.",
+      },
+      { type: "h2", text: "Sustentabilidad" },
+      {
+        type: "p",
+        text: "La invitación digital no usa papel ni transporte, una ventaja si te importa el impacto ambiental.",
+      },
+      { type: "h2", text: "¿Cuál elegir?" },
+      {
+        type: "p",
+        text: "Para la mayoría de los eventos, la invitación digital gana en costo, rapidez y control. La impresa tiene sentido como recuerdo físico o en celebraciones muy formales; incluso puedes combinar ambas.",
+      },
+    ],
+  },
+  {
+    slug: "controlar-acceso-evento-con-codigos-qr",
+    title: "Cómo controlar el acceso a tu evento con códigos QR",
+    description:
+      "Aprende a usar códigos QR para el control de acceso en tu evento: pases por invitado, escaneo en la entrada y registro de asistentes en tiempo real.",
+    date: "2026-08-12",
+    related: ["invitaciones-digitales-corporativas", "invitaciones-digitales-boda"],
+    body: [
+      {
+        type: "p",
+        text: "Si quieres saber exactamente quién entra a tu evento y evitar colados, el control de acceso con códigos QR es la forma más simple de lograrlo. Así funciona.",
+      },
+      { type: "h2", text: "1. Crea tu lista de invitados" },
+      {
+        type: "p",
+        text: "Registra a cada invitado con su nombre y cuántos lugares tiene. A cada uno se le genera un enlace único y un pase con su propio código QR.",
+      },
+      { type: "h2", text: "2. Comparte el pase con cada invitado" },
+      {
+        type: "p",
+        text: "Cada persona recibe su enlace, confirma su asistencia y obtiene su pase con QR, que puede guardar o descargar en el celular.",
+      },
+      { type: "h2", text: "3. Escanea en la entrada" },
+      {
+        type: "p",
+        text: "El día del evento, desde tu panel escaneas el QR de cada invitado con la cámara. El sistema marca su ingreso y te avisa si alguien ya había entrado, evitando duplicados.",
+      },
+      { type: "h2", text: "Ventajas del control con QR" },
+      {
+        type: "ul",
+        items: [
+          "Sabes en tiempo real cuántas personas han ingresado.",
+          "Cada pase es personal e intransferible por su código único.",
+          "No necesitas listas en papel ni pasar lista a mano.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "ideas-para-invitaciones-digitales-de-cumpleanos",
+    title: "Ideas para invitaciones digitales de cumpleaños",
+    description:
+      "Ideas y consejos para que tu invitación digital de cumpleaños destaque: temáticas, textos, cuenta regresiva y cómo compartirla.",
+    date: "2026-08-11",
+    related: ["invitaciones-digitales-cumpleanos"],
+    body: [
+      {
+        type: "p",
+        text: "Una buena invitación de cumpleaños da el tono de la fiesta desde el primer vistazo. Aquí tienes ideas para que la tuya destaque.",
+      },
+      { type: "h2", text: "Elige una temática clara" },
+      {
+        type: "p",
+        text: "Define un estilo (elegante, colorido, minimalista o infantil) y mantén colores y tipografías coherentes con la fiesta. Una temática consistente se ve más profesional.",
+      },
+      { type: "h2", text: "Suma una cuenta regresiva" },
+      {
+        type: "p",
+        text: "Un contador hacia el día del cumpleaños genera expectativa y recuerda a tus invitados que la fecha se acerca.",
+      },
+      { type: "h2", text: "Textos que invitan a venir" },
+      {
+        type: "ul",
+        items: [
+          "\"¡Cumplo años y quiero celebrarlo contigo!\"",
+          "\"Habrá pastel, música y buena compañía. Solo faltas tú.\"",
+          "\"Nos vemos para festejar. ¡Confirma tu lugar!\"",
+        ],
+      },
+      { type: "h2", text: "Facilita la confirmación" },
+      {
+        type: "p",
+        text: "Activa la confirmación de asistencia para saber cuántos van y planear comida y lugar. Comparte el enlace por WhatsApp para que respondan con un toque.",
+      },
+    ],
+  },
+  {
+    slug: "textos-para-baby-shower",
+    title: "Textos para baby shower: frases y ejemplos",
+    description:
+      "Ejemplos de textos para invitación de baby shower: tiernos, divertidos y cortos. Cópialos y adáptalos a tu celebración.",
+    date: "2026-08-10",
+    related: ["invitaciones-digitales-baby-shower"],
+    body: [
+      {
+        type: "p",
+        text: "El texto de un baby shower debe transmitir la emoción de la llegada del bebé. Aquí tienes ejemplos para distintos estilos.",
+      },
+      { type: "h2", text: "Textos tiernos" },
+      {
+        type: "ul",
+        items: [
+          "\"Un pequeño milagro está por llegar. Acompáñanos a celebrarlo.\"",
+          "\"Con mucha ilusión esperamos a nuestro bebé. Ven a festejar con nosotros.\"",
+        ],
+      },
+      { type: "h2", text: "Textos divertidos" },
+      {
+        type: "ul",
+        items: [
+          "\"¡Se busca gente feliz para celebrar la llegada del bebé!\"",
+          "\"Pañales, risas y mucho amor. Te esperamos en el baby shower.\"",
+        ],
+      },
+      { type: "h2", text: "Textos cortos" },
+      {
+        type: "ul",
+        items: [
+          "\"Nuestro bebé viene en camino. ¡Celébralo con nosotros!\"",
+          "\"Baby shower en puerta. Tu presencia es el mejor regalo.\"",
+        ],
+      },
+      { type: "h2", text: "No olvides los datos" },
+      {
+        type: "p",
+        text: "Además del texto, incluye la fecha, la hora, el lugar y, si aplica, la mesa de regalos. Activa la confirmación de asistencia para organizar la reunión sin sorpresas.",
+      },
+    ],
+  },
 ];
 
 export function getBlogPost(slug: string): BlogPost | undefined {
