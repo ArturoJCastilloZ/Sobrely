@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { EVENT_LANDING_LIST } from "@/lib/seo/event-landings";
 
 // Normaliza: sin `/` final para no generar `//` en las URLs del sitemap.
 const SITE_URL = (
@@ -24,6 +25,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    // Landing pages por tipo de evento (keywords).
+    ...EVENT_LANDING_LIST.map((e) => ({
+      url: `${SITE_URL}/${e.slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.9,
+    })),
     {
       url: `${SITE_URL}/privacidad`,
       changeFrequency: "yearly",

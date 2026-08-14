@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { LogoLockup } from "@/components/brand/logo-lockup";
 import { createClient } from "@/lib/supabase/server";
 import { JsonLd } from "@/components/seo/json-ld";
+import { EVENT_LANDING_LIST } from "@/lib/seo/event-landings";
 
 export const metadata: Metadata = {
   // Homepage: título absoluto (ignora el template "%s · Sobrely") con keywords.
@@ -125,6 +126,24 @@ export default async function Home() {
             Ya tengo cuenta
           </Button>
         </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-4xl px-4 py-12">
+        <h2 className="text-center font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          Invitaciones para cada evento
+        </h2>
+        <ul className="mt-6 flex flex-wrap justify-center gap-3">
+          {EVENT_LANDING_LIST.map((e) => (
+            <li key={e.slug}>
+              <Link
+                href={`/${e.slug}`}
+                className="inline-flex rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+              >
+                {e.eyebrow}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="mx-auto w-full max-w-3xl px-4 py-16">
