@@ -123,12 +123,26 @@ export function HeroPreview({
           </p>
         )}
         {config.ctaLabel && (
-          <span
-            className="mt-2 rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2.5 @2xl/inv:text-lg @4xl/inv:px-8 @4xl/inv:py-3 @4xl/inv:text-xl"
-            style={{ backgroundColor: PRIMARY }}
+          <div
+            className="mt-3 flex items-center gap-3 @2xl/inv:mt-5 @2xl/inv:gap-4"
+            style={{
+              color: config.imageUrl ? "rgba(255,255,255,.92)" : PRIMARY,
+            }}
           >
-            {config.ctaLabel}
-          </span>
+            <span
+              aria-hidden
+              className="h-px w-8 @2xl/inv:w-12 @4xl/inv:w-16"
+              style={{ backgroundColor: "currentColor", opacity: 0.5 }}
+            />
+            <span className="text-xs font-medium uppercase tracking-[0.3em] @2xl/inv:text-sm @4xl/inv:text-base">
+              {config.ctaLabel}
+            </span>
+            <span
+              aria-hidden
+              className="h-px w-8 @2xl/inv:w-12 @4xl/inv:w-16"
+              style={{ backgroundColor: "currentColor", opacity: 0.5 }}
+            />
+          </div>
         )}
       </div>
     </section>
