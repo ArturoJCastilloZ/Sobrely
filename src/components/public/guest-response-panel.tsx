@@ -59,11 +59,20 @@ export function GuestResponsePanel({
 
       {status === "confirmed" ? (
         <div className="flex w-full max-w-md flex-col items-center gap-5 @4xl/inv:max-w-lg">
-          <div className="w-full rounded-xl bg-emerald-500/15 p-6 text-center">
-            <p className="text-xl font-semibold text-emerald-700 @4xl/inv:text-2xl dark:text-emerald-300">
+          <div className="w-full rounded-xl border border-emerald-600/40 bg-emerald-500/10 p-6 text-center">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-emerald-600 text-xl font-bold text-white @4xl/inv:h-12 @4xl/inv:w-12">
+              ✓
+            </div>
+            <p
+              className="mt-3 text-xl font-bold @4xl/inv:text-2xl"
+              style={{ color: "var(--inv-text)" }}
+            >
               ¡Gracias por confirmar!
             </p>
-            <p className="mt-2 text-base text-emerald-800/90 @4xl/inv:text-lg dark:text-emerald-200/90">
+            <p
+              className="mt-1 text-base font-medium @4xl/inv:text-lg"
+              style={{ color: "var(--inv-text)" }}
+            >
               {peopleLabel} · {guest.name}
             </p>
           </div>
