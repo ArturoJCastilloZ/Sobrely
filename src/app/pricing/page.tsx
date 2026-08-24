@@ -178,8 +178,13 @@ export default async function PricingPage() {
           <div>
             <dt className="font-medium">Reembolsos</dt>
             <dd className="text-muted-foreground">
-              La política de reembolsos se detalla durante el checkout. Los
-              servicios adicionales con intervención del equipo tienen
+              Reembolso completo dentro de 7 días de la compra si faltan más de
+              7 días para tu evento y aún no tienes confirmaciones. Después de la
+              fecha del evento la compra no es reembolsable. Consulta los{" "}
+              <Link href="/terminos" className="underline hover:text-foreground">
+                Términos
+              </Link>
+              . Los servicios adicionales con intervención del equipo tienen
               condiciones propias.
             </dd>
           </div>
