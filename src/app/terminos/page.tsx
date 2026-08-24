@@ -62,10 +62,51 @@ export default function TerminosPage() {
       <section>
         <h2>4. Reembolsos</h2>
         <p>
-          Si solicitas y se aprueba un reembolso, este se procesa a través de
-          Mercado Pago. Al reembolsarse una compra, el acceso al plan se revoca y
-          la invitación asociada se despublica. Para solicitudes de reembolso
-          escríbenos a <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+          Cada plan se cobra por evento y el servicio se considera prestado
+          cuando la invitación queda publicada y disponible para tus invitados.
+          Sobre esa base aplican las siguientes reglas.
+        </p>
+        <ul>
+          <li>
+            <strong>Reembolso completo.</strong> Si lo solicitas dentro de los 7
+            días naturales posteriores a la compra, siempre que falten más de 7
+            días para la fecha del evento y la invitación no haya recibido
+            confirmaciones de asistencia.
+          </li>
+          <li>
+            <strong>Sin reembolso después del evento.</strong> Una vez ocurrida
+            la fecha del evento, el servicio se prestó por completo y la compra
+            no es reembolsable.
+          </li>
+          <li>
+            <strong>Casos intermedios.</strong> Las solicitudes que no encajen en
+            los supuestos anteriores se revisan caso por caso, considerando el
+            uso que haya tenido la invitación.
+          </li>
+          <li>
+            <strong>Falla atribuible a Sobrely.</strong> Si un problema técnico
+            nuestro impide que la invitación funcione y no lo resolvemos en un
+            plazo razonable, te reembolsamos el importe completo, sin importar
+            los plazos anteriores.
+          </li>
+        </ul>
+        <p>
+          Para solicitar un reembolso escríbenos a{" "}
+          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> indicando el
+          correo de tu cuenta y la invitación de que se trata. Respondemos dentro
+          de los 5 días hábiles siguientes.
+        </p>
+        <p>
+          Los reembolsos se procesan a través de Mercado Pago y los tiempos de
+          devolución dependen de tu método de pago y de tu banco. Al reembolsarse
+          una compra, el acceso al plan se revoca y la invitación asociada se
+          despublica de forma automática: deja de ser visible para tus invitados
+          y los pases con código QR dejan de funcionar. Tu contenido no se
+          elimina, vuelve a estado de borrador y permanece en tu cuenta.
+        </p>
+        <p>
+          Estas reglas no limitan los derechos que la legislación aplicable en
+          materia de protección al consumidor te reconozca.
         </p>
       </section>
 
