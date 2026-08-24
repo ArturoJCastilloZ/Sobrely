@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogoLockup } from "@/components/brand/logo-lockup";
 import { JsonLd } from "@/components/seo/json-ld";
+import { LocalLine } from "@/components/seo/local-line";
 import type { EventLanding } from "@/lib/seo/event-landings";
 
 const SITE_URL = (
@@ -167,7 +168,8 @@ export function EventLandingPage({ data }: { data: EventLanding }) {
             Términos y Condiciones
           </Link>
         </div>
-        <p className="mt-2">© {new Date().getFullYear()} Sobrely</p>
+        <LocalLine className="mt-2" />
+        <p className="mt-1">© {new Date().getFullYear()} Sobrely</p>
       </footer>
     </main>
   );

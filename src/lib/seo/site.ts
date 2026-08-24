@@ -12,16 +12,53 @@ export const SITE_URL =
 
 export const SITE_TITLE = "Sobrely — Invitaciones digitales dinámicas";
 
+/** Correo público de contacto. Debe coincidir con el perfil de Google Business. */
+export const CONTACT_EMAIL = "contacto@sobrely.com";
+
+/** Zona de servicio, tal como se muestra al usuario y se declara en Google. */
+export const SERVICE_AREA_LABEL =
+  "Monterrey y área metropolitana, Nuevo León, México";
+
+/** Municipios atendidos. Mismo conjunto que las zonas del perfil de Google. */
+export const SERVICE_AREAS = [
+  "Monterrey",
+  "San Pedro Garza García",
+  "Guadalupe",
+  "San Nicolás de los Garza",
+  "Apodaca",
+  "Santa Catarina",
+  "General Escobedo",
+  "Santiago",
+] as const;
+
 export const SITE_DESCRIPTION =
   "Crea invitaciones digitales dinámicas y personalizables para bodas, XV años, cumpleaños y más.";
 
-export const ORGANIZATION_LD = {
+/**
+ * Negocio local. Se usa `LocalBusiness` en vez de `Organization` porque es el
+ * tipo específico y no conviene declarar ambos: describirían la misma entidad
+ * y Google tendría que desambiguar.
+ *
+ * Sin `streetAddress` a propósito: el domicilio es particular y en Google
+ * Business está oculto (negocio de área de servicio). Localidad, región, país
+ * y `areaServed` bastan para la señal local.
+ */
+export const LOCAL_BUSINESS_LD = {
   "@context": "https://schema.org",
-  "@type": "Organization",
+  "@type": "LocalBusiness",
   name: "Sobrely",
   url: SITE_URL,
   logo: `${SITE_URL}/sobrely-logo-horizontal.png`,
+  image: `${SITE_URL}/sobrely-logo-horizontal.png`,
   description: SITE_DESCRIPTION,
+  email: CONTACT_EMAIL,
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Santa Catarina",
+    addressRegion: "Nuevo León",
+    addressCountry: "MX",
+  },
+  areaServed: SERVICE_AREAS.map((name) => ({ "@type": "City", name })),
 };
 
 export const WEBSITE_LD = {

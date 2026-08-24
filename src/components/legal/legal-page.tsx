@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LogoLockup } from "@/components/brand/logo-lockup";
+import { LocalLine } from "@/components/seo/local-line";
 
 /**
  * Shell común para páginas legales (privacidad, términos). Header con el lockup,
@@ -55,7 +56,8 @@ export function LegalPage({
             Precios
           </Link>
         </div>
-        <p className="mt-3">© {new Date().getFullYear()} Sobrely</p>
+        <LocalLine className="mt-3" />
+        <p className="mt-1">© {new Date().getFullYear()} Sobrely</p>
       </footer>
     </main>
   );

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogoLockup } from "@/components/brand/logo-lockup";
+import { LocalLine } from "@/components/seo/local-line";
 
 /** Header + footer compartidos de las páginas del blog. */
 export function BlogShell({ children }: { children: React.ReactNode }) {
@@ -50,7 +51,8 @@ export function BlogShell({ children }: { children: React.ReactNode }) {
             Términos y Condiciones
           </Link>
         </div>
-        <p className="mt-2">© {new Date().getFullYear()} Sobrely</p>
+        <LocalLine className="mt-2" />
+        <p className="mt-1">© {new Date().getFullYear()} Sobrely</p>
       </footer>
     </main>
   );

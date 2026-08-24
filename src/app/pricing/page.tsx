@@ -12,6 +12,7 @@ import {
   getEffectivePrice,
 } from "@/lib/billing";
 import { JsonLd } from "@/components/seo/json-ld";
+import { LocalLine } from "@/components/seo/local-line";
 
 const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -190,7 +191,10 @@ export default async function PricingPage() {
       </section>
 
       <footer className="mx-auto w-full max-w-6xl px-4 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Sobrely · Sin apps para tus invitados
+        <LocalLine />
+        <p className="mt-1">
+          © {new Date().getFullYear()} Sobrely · Sin apps para tus invitados
+        </p>
       </footer>
     </main>
   );
