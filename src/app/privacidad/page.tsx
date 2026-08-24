@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "Cómo Sobrely recaba, usa y protege tus datos personales al crear invitaciones digitales.",
 };
 
-const SUPPORT_EMAIL = "soporte@sobrely.com";
+const SUPPORT_EMAIL = "contacto@sobrely.com";
 
 export default function PrivacidadPage() {
   return (

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "Términos de uso del servicio de invitaciones digitales Sobrely: cuentas, pagos, contenido y responsabilidades.",
 };
 
-const SUPPORT_EMAIL = "soporte@sobrely.com";
+const SUPPORT_EMAIL = "contacto@sobrely.com";
 
 export default function TerminosPage() {
   return (
