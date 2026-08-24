@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
+import type { BrandingLevel } from "@/lib/billing/types";
 
 /**
  * Pase de acceso del invitado: muestra el QR (que codifica su enlace único) y
@@ -12,10 +13,13 @@ export function GuestPass({
   token,
   name,
   people,
+  branding,
 }: {
   token: string;
   name: string;
   people: number;
+  /** `none` (Celebración/Premium) omite la marca dibujada en el PNG. */
+  branding: BrandingLevel;
 }) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
@@ -86,9 +90,11 @@ export function GuestPass({
       ctx.fillStyle = "#8a8a8a";
       ctx.font = "24px system-ui, sans-serif";
       ctx.fillText("Muestra este código en la entrada", W / 2, 830);
-      ctx.fillStyle = "#b0a89f";
-      ctx.font = "20px system-ui, sans-serif";
-      ctx.fillText("Sobrely", W / 2, 980);
+      if (branding !== "none") {
+        ctx.fillStyle = "#b0a89f";
+        ctx.font = "20px system-ui, sans-serif";
+        ctx.fillText("Sobrely", W / 2, 980);
+      }
 
       const blob: Blob | null = await new Promise((resolve) =>
         canvas.toBlob((b) => resolve(b), "image/png"),

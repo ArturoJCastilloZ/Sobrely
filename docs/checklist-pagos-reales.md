@@ -27,7 +27,11 @@ No actives producción con credenciales o URLs de prueba.
 
 ## 3. Base de datos
 
-- [ ] Aplicar **todas** las migraciones al remoto en orden: `0001`→`0009`.
+- [ ] Aplicar **todas** las migraciones al remoto en orden: `0001`→`0012`.
+      Las posteriores al corte original: `0010` (vanity slugs), `0011` (lista de
+      invitados con QR) y `0012` (branding condicional por plan). Sin `0012` el
+      pie "Hecho con Sobrely" se muestra en TODOS los planes, incluidos los que
+      lo venden sin marca.
 - [ ] Verificar con un query de diagnóstico (tablas, funciones, RLS, policies).
 - [ ] **Sembrar el primer admin** (bootstrap, no hay UI para el primero):
       ```sql

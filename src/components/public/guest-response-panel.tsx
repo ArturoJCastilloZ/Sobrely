@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import type { RsvpConfig } from "@/lib/modules/types";
 import type { GuestForInvitation } from "@/lib/invitations/public-types";
+import type { BrandingLevel } from "@/lib/billing/types";
 import { respondAsGuest } from "@/lib/guests/actions";
 import { Textarea } from "@/components/ui/textarea";
 import { GuestPass } from "@/components/public/guest-pass";
@@ -15,12 +16,15 @@ export function GuestResponsePanel({
   token,
   config,
   event,
+  branding,
 }: {
   guest: GuestForInvitation;
   token: string;
   config: RsvpConfig;
   /** Datos del evento para "Añadir a calendario" (.ics). */
   event: { title: string; dateIso: string; location?: string };
+  /** Nivel de marca del plan efectivo; decide si el pase lleva "Sobrely". */
+  branding: BrandingLevel;
 }) {
   const [status, setStatus] = useState<GuestStatus>(guest.status);
   const [message, setMessage] = useState(guest.message ?? "");
@@ -80,7 +84,12 @@ export function GuestResponsePanel({
               {peopleLabel} · {guest.name}
             </p>
           </div>
-          <GuestPass token={token} name={guest.name} people={guest.max_guests} />
+          <GuestPass
+            token={token}
+            name={guest.name}
+            people={guest.max_guests}
+            branding={branding}
+          />
           <AddToCalendar
             uid={`guest-${token}`}
             title={event.title}

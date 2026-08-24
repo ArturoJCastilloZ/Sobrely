@@ -9,6 +9,7 @@ import { PublicRsvpForm } from "@/components/public/public-rsvp-form";
 import { GuestResponsePanel } from "@/components/public/guest-response-panel";
 import { parseConfig, type RsvpConfig } from "@/lib/modules/types";
 import { parseTheme } from "@/lib/theme/theme";
+import { brandingForPlanCode } from "@/lib/billing/branding";
 import { ThemeScope } from "@/components/theme/theme-scope";
 import { StickerLayer } from "@/components/theme/sticker-layer";
 import { AnimatedModule } from "@/components/animation/animated-module";
@@ -30,6 +31,7 @@ export function PublicInvitationView({
   guestToken?: string;
 }) {
   const theme = parseTheme(invitation.theme_config);
+  const branding = brandingForPlanCode(invitation.plan_code);
 
   const modules = invitation.modules
     .filter((m) => m.is_visible)
@@ -80,6 +82,7 @@ export function PublicInvitationView({
                     token={guestToken}
                     config={parseConfig("rsvp", m.config) as RsvpConfig}
                     event={eventInfo}
+                    branding={branding}
                   />
                 ) : (
                   <PublicRsvpForm
@@ -99,9 +102,18 @@ export function PublicInvitationView({
           );
         })}
 
-        <footer className="px-6 py-8 text-center text-xs opacity-60 @2xl/inv:text-sm @4xl/inv:py-12 @4xl/inv:text-base">
-          Hecho con Sobre<span style={{ color: "var(--inv-primary)" }}>ly</span>
-        </footer>
+        {branding !== "none" && (
+          <footer
+            className={
+              branding === "full"
+                ? "px-6 py-8 text-center text-xs opacity-60 @2xl/inv:text-sm @4xl/inv:py-12 @4xl/inv:text-base"
+                : "px-6 py-6 text-center text-[10px] opacity-35 @2xl/inv:text-xs"
+            }
+          >
+            {branding === "full" ? "Hecho con " : ""}
+            Sobre<span style={{ color: "var(--inv-primary)" }}>ly</span>
+          </footer>
+        )}
       </div>
     </ThemeScope>
   );

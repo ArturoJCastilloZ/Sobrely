@@ -17,6 +17,11 @@ export type PublicInvitation = {
   theme_config: Record<string, unknown> | null;
   owner_name: string | null;
   owner_username: string;
+  /**
+   * Código del plan efectivo, expuesto por las RPC públicas. `null` cuando no
+   * hay entitlement vigente; el front cae a branding completo (fail-safe).
+   */
+  plan_code: string | null;
   modules: PublicModule[];
 };
 
