@@ -5,6 +5,7 @@ import { LogoLockup } from "@/components/brand/logo-lockup";
 import { createClient } from "@/lib/supabase/server";
 import { JsonLd } from "@/components/seo/json-ld";
 import { EVENT_LANDING_LIST } from "@/lib/seo/event-landings";
+import { ORGANIZATION_LD, WEBSITE_LD } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
   // Homepage: título absoluto (ignora el template "%s · Sobrely") con keywords.
@@ -155,7 +156,7 @@ export default async function Home() {
       </section>
 
       <section className="mx-auto w-full max-w-3xl px-4 py-16">
-        <JsonLd data={FAQ_LD} />
+        <JsonLd data={[ORGANIZATION_LD, WEBSITE_LD, FAQ_LD]} />
         <h2 className="text-center font-display text-2xl font-bold tracking-tight sm:text-3xl">
           Preguntas frecuentes
         </h2>

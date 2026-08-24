@@ -5,7 +5,11 @@ import "./globals.css";
 import "./animations.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme/theme-provider";
-import { JsonLd } from "@/components/seo/json-ld";
+import {
+  SITE_URL,
+  SITE_TITLE,
+  SITE_DESCRIPTION,
+} from "@/lib/seo/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,11 +31,6 @@ const dancing = Dancing_Script({
   variable: "--font-dancing",
   subsets: ["latin"],
 });
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-const SITE_TITLE = "Sobrely — Invitaciones digitales dinámicas";
-const SITE_DESCRIPTION =
-  "Crea invitaciones digitales dinámicas y personalizables para bodas, XV años, cumpleaños y más.";
 
 export const metadata: Metadata = {
   // Base para resolver URLs relativas de OG/canónicas a absolutas. Lee de env
@@ -64,24 +63,6 @@ export const metadata: Metadata = {
   },
 };
 
-const ORGANIZATION_LD = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Sobrely",
-  url: SITE_URL,
-  logo: `${SITE_URL}/sobrely-logo-horizontal.png`,
-  description: SITE_DESCRIPTION,
-};
-
-const WEBSITE_LD = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "Sobrely",
-  url: SITE_URL,
-  inLanguage: "es-MX",
-  description: SITE_DESCRIPTION,
-};
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -90,7 +71,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${dancing.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <JsonLd data={[ORGANIZATION_LD, WEBSITE_LD]} />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

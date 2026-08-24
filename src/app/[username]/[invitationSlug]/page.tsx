@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { PublicInvitation } from "@/lib/invitations/public-types";
 import { PublicInvitationView } from "@/components/public/public-invitation";
+import { brandingForPlanCode } from "@/lib/billing/branding";
 
 type Params = { username: string; invitationSlug: string };
 
@@ -37,8 +38,12 @@ export async function generateMetadata({
     ? `${invitation.event_type} · Te invitamos`
     : "Estás invitado";
 
+  // Sin marca: el título va absoluto para no heredar "· Sobrely" del template
+  // del layout. Es la misma promesa del pie, en la pestaña del invitado.
+  const branding = brandingForPlanCode(invitation.plan_code);
+
   return {
-    title,
+    title: branding === "none" ? { absolute: title } : title,
     description,
     openGraph: {
       title,

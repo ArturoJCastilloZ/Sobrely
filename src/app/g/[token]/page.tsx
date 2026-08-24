@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { GuestInvitationBundle } from "@/lib/invitations/public-types";
 import { PublicInvitationView } from "@/components/public/public-invitation";
+import { brandingForPlanCode } from "@/lib/billing/branding";
 
 type Params = { token: string };
 
@@ -29,8 +30,10 @@ export async function generateMetadata({
   if (!bundle) return { title: "Invitación no encontrada" };
 
   const title = bundle.invitation.title || "Invitación";
+  const composed = `${title} · ${bundle.guest.name}`;
+  const branding = brandingForPlanCode(bundle.invitation.plan_code);
   return {
-    title: `${title} · ${bundle.guest.name}`,
+    title: branding === "none" ? { absolute: composed } : composed,
     description: bundle.invitation.event_type
       ? `${bundle.invitation.event_type} · Estás invitado`
       : "Estás invitado",
