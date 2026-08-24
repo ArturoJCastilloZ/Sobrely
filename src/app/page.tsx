@@ -13,8 +13,11 @@ export const metadata: Metadata = {
   title: {
     absolute: "Invitaciones digitales para boda, XV años y más — Sobrely",
   },
+  // 151 caracteres: Google trunca cerca de 155 y la anterior medía 210, así que
+  // se cortaba en resultados. Abre con el QR porque es la consulta que más
+  // impresiones trae según Search Console, y es lo que nos diferencia.
   description:
-    "Crea invitaciones digitales personalizables para bodas, XV años, cumpleaños, baby showers y eventos. Elige un diseño, personalízalo y comparte tu invitación con confirmación de asistencia y acceso por QR.",
+    "Invitaciones digitales con pase QR y control de acceso en la entrada. Confirmación de asistencia en un panel. Para bodas, XV años y eventos de empresa.",
   alternates: { canonical: "/" },
 };
 

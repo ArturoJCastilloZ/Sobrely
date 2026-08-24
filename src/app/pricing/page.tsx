@@ -20,12 +20,15 @@ const SITE_URL = (
 
 export const metadata: Metadata = {
   // El layout raíz aplica el template "%s · Sobrely"; aquí solo el nombre.
-  title: "Planes y precios",
+  // Antes decía "Planes y precios" (27 car de ~60): sin palabra clave y
+  // desperdiciando el espacio. Se evita a propósito poner "desde $199": es el
+  // precio de LANZAMIENTO y el título quedaría falso al terminar la campaña.
+  title: "Precios de invitaciones digitales sin mensualidad",
   description:
     "Crea gratis y paga solo cuando quieras publicar. Planes por evento en pesos mexicanos, sin cobros recurrentes.",
   alternates: { canonical: "/pricing" },
   openGraph: {
-    title: "Planes y precios · Sobrely",
+    title: "Precios de invitaciones digitales sin mensualidad · Sobrely",
     description:
       "Crea gratis y paga solo cuando quieras publicar. Planes por evento en pesos mexicanos, sin cobros recurrentes.",
   },
