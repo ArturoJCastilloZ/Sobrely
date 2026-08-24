@@ -148,13 +148,10 @@ Supabase → **Authentication → Emails → Templates**. Para cada plantilla, p
   Gmail/Outlook marcan el correo como no autenticado.
 - **La API Key es un secreto** (equivale a poder enviar como tu dominio). Si se
   filtra, revócala en Resend y crea otra.
-- **`soporte@sobrely.com`**: las plantillas y las páginas legales (`/privacidad`,
-  `/terminos`) referencian este buzón. Confírmalo:
-  - Puede ser un **alias/forwarding** (Resend no recibe correo entrante; para
-    *recibir* usa el forwarding de tu proveedor de dominio, un alias de Google
-    Workspace, o similar). Si el buzón no existe aún, créalo o cambia el correo en
-    las plantillas y en las páginas legales.
+- **`contacto@sobrely.com`**: las plantillas y las páginas legales (`/privacidad`,
+  `/terminos`) referencian este buzón. Existe como cuenta real de Google
+  Workspace, así que **sí recibe** correo entrante (Resend solo envía).
 - **Sender vs Reply-To**: Supabase envía desde `noreply@sobrely.com`. Si quieres
-  que las respuestas vayan a soporte, eso no se configura en Supabase SMTP; se
-  resuelve con un forwarding de `noreply@` → `soporte@`, o dejando claro en el
-  cuerpo el correo de soporte (ya está en el footer de las plantillas).
+  que las respuestas vayan al buzón de contacto, eso no se configura en Supabase
+  SMTP; se resuelve con un forwarding de `noreply@` → `contacto@`, o dejando claro
+  en el cuerpo el correo de contacto (ya está en el footer de las plantillas).

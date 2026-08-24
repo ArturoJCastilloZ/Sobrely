@@ -179,8 +179,9 @@ Antes la pública estaba fijada a `max-w-[480px]` (tira móvil en desktop). Ahor
   Resend (SPF+DKIM en Vercel DNS), API Key como password SMTP en Supabase
   (`smtp.resend.com:465`, user `resend`), Sender `noreply@sobrely.com`.
   - Gotcha: el **Sender** NO necesita ser buzón real; solo el **dominio** debe estar
-    verificado en Resend. El `soporte@sobrely.com` del footer/legales SÍ necesita
-    buzón/forwarding real (Resend no recibe correo entrante) — **confirmar**.
+    verificado en Resend. El correo del footer/legales SÍ necesita buzón real
+    (Resend no recibe correo entrante) — **resuelto**: es `contacto@sobrely.com`,
+    cuenta de Google Workspace.
 - **Plantillas brandeadas** en `docs/email-templates/` (`confirm-signup`,
   `reset-password`, `magic-link`), email-safe (tablas + inline), logo desde
   `https://sobrely.com/sobrely-logo-horizontal.png`. Pegar en Supabase → Auth →
@@ -230,8 +231,9 @@ Antes la pública estaba fijada a `max-w-[480px]` (tira móvil en desktop). Ahor
   (revela existencia) en vez del neutro — mejor UX, acepta el tradeoff de enumeración.
 
 ## PENDIENTE al cerrar
-1. **`soporte@sobrely.com`:** confirmar/crear buzón o forwarding real (Resend no
-   recibe entrante). Usado en /privacidad, /terminos y footers de correos.
+1. ~~**`soporte@sobrely.com`:** confirmar/crear buzón o forwarding real.~~
+   ✅ **RESUELTO:** el buzón es `contacto@sobrely.com`, cuenta real de Google
+   Workspace. Ya actualizado en /privacidad, /terminos y en los footers.
 2. **Branding OAuth de Google:** sigue en revisión de Google (login ya funciona;
    cosmético). Esperar correo de Confianza y Seguridad y responder el hilo.
 3. ~~Actualizar el remote git al nombre nuevo~~ ✅ HECHO (apunta a `Sobrely` vía 443).
@@ -840,7 +842,7 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
   invitaciones (Supabase/Mercado Pago/Vercel/Google, derechos ARCO, **contenido del usuario
   con declaración de derechos + indemnización** que amarra el legal de los theme packs).
   Enlaces en el footer del landing + en `sitemap.ts`. Correo de contacto usado:
-  `soporte@sobrely.com` (⚠️ confirmar que el buzón exista o cambiarlo).
+  `contacto@sobrely.com` (buzón real en Google Workspace).
 - **SEO del landing** (`3c0a4ae`): el hero ahora nombra "Sobrely" + su propósito explícito
   (para la verificación de marca de Google — ver abajo).
 
@@ -881,7 +883,8 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
    el hilo de correo** de Confianza y Seguridad. Nada más que hacer en código.
 2. **Email propio + plantillas:** configurar **Resend** (SMTP) → pegar la plantilla brandeada de
    "Confirm signup" (+ opcional: reset password, magic link). Requiere DNS en Vercel.
-3. **Correo de soporte:** confirmar/crear `soporte@sobrely.com` (usado en /privacidad y /terminos).
+3. ~~**Correo de soporte:** confirmar/crear `soporte@sobrely.com`.~~ ✅ RESUELTO: es
+   `contacto@sobrely.com` (usado en /privacidad y /terminos).
 4. (Opcional) Smoke test del auto-publish desde el botón "Publicar" — **el dev dijo que YA lo probó
    y funciona** (Boda elegante quedó Publicada tras pagar). ✅
 5. (Ya NO pendiente) `0010` aplicada al remoto ✅; lockup en todos los headers ✅.
@@ -907,7 +910,7 @@ Panel `/admin` solo para admins; rol **no auto-asignable**.
 > skarlette/feature-responsive-web-themes && pnpm dev`) y, con mi OK, **mergear a `main`** (ff)
 > + deploy. ⚠️ Toca **gating de pago** (Premium `custom_art`) → pasar secaudit y revisión antes.
 >
-> **Pendientes que ya venían:** (1) buzón/forwarding real para `soporte@sobrely.com`;
+> **Pendientes que ya venían:** (1) ✅ resuelto, el buzón es `contacto@sobrely.com`;
 > (2) Branding OAuth de Google en revisión (login ya funciona; cosmético).
 > **Ideas a explorar (en el HANDOFF):** quitar fondo de sticker (canvas local);
 > **⭐ Invitados personalizados con QR** (competidor invitio.events: N invitaciones
