@@ -160,6 +160,6 @@ src/
     services/     solicitudes de servicios manuales
     supabase/     clients (browser/server/admin) + guard de proxy
 proxy.ts          refresco de sesión y guardas de ruta
-supabase/migrations/  SQL (0001→0011)
+supabase/migrations/  SQL (0001→0012)
 docs/             desarrollo, pruebas sandbox, checklist de pagos reales
 ```
