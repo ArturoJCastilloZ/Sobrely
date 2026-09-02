@@ -2,10 +2,8 @@ import Link from "next/link";
 import { LogoLockup } from "@/components/brand/logo-lockup";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { signOut } from "@/lib/auth/actions";
 import { isCurrentUserAdmin } from "@/lib/auth/admin";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 
 export default async function DashboardLayout({
   children,
@@ -32,43 +30,7 @@ export default async function DashboardLayout({
           <Link href="/dashboard" aria-label="Sobrely — inicio">
             <LogoLockup markClassName="h-7 w-7" wordClassName="text-lg" />
           </Link>
-          <div className="flex items-center gap-3">
-            {showAdmin ? (
-              <Button
-                render={<Link href="/admin" />}
-                nativeButton={false}
-                variant="ghost"
-                size="sm"
-              >
-                Admin
-              </Button>
-            ) : null}
-            <Button
-              render={<Link href="/dashboard/referrals" />}
-              nativeButton={false}
-              variant="ghost"
-              size="sm"
-            >
-              Referidos
-            </Button>
-            <Button
-              render={<Link href="/dashboard/billing" />}
-              nativeButton={false}
-              variant="ghost"
-              size="sm"
-            >
-              Facturación
-            </Button>
-            <span className="hidden text-sm text-muted-foreground sm:inline">
-              {user.email}
-            </span>
-            <ThemeToggle />
-            <form action={signOut}>
-              <Button type="submit" variant="outline" size="sm">
-                Cerrar sesión
-              </Button>
-            </form>
-          </div>
+          <DashboardNav showAdmin={showAdmin} email={user.email ?? ""} />
         </div>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
