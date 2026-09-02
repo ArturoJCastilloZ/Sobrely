@@ -69,20 +69,35 @@ export function DashboardNav({
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="ghost" size="sm" aria-label="Menú" />}
+            render={
+              <Button
+                variant="ghost"
+                aria-label="Menú"
+                className="h-11 w-11 p-0"
+              />
+            }
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="size-7" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuContent align="end" className="w-60">
             {showAdmin ? (
-              <DropdownMenuItem render={<Link href="/admin" />}>
+              <DropdownMenuItem
+                render={<Link href="/admin" />}
+                className="px-3 py-2.5 text-base"
+              >
                 Admin
               </DropdownMenuItem>
             ) : null}
-            <DropdownMenuItem render={<Link href="/dashboard/referrals" />}>
+            <DropdownMenuItem
+              render={<Link href="/dashboard/referrals" />}
+              className="px-3 py-2.5 text-base"
+            >
               Referidos
             </DropdownMenuItem>
-            <DropdownMenuItem render={<Link href="/dashboard/billing" />}>
+            <DropdownMenuItem
+              render={<Link href="/dashboard/billing" />}
+              className="px-3 py-2.5 text-base"
+            >
               Facturación
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -90,6 +105,7 @@ export function DashboardNav({
               <DropdownMenuItem
                 render={<button type="submit" className="w-full" />}
                 variant="destructive"
+                className="px-3 py-2.5 text-base"
               >
                 Cerrar sesión
               </DropdownMenuItem>
