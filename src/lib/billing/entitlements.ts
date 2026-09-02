@@ -29,6 +29,35 @@ import { isThemePackPremium } from "@/lib/theme/theme-packs";
 type AnyClient = SupabaseClient<any, any, any>;
 
 const FREE_PLAN = getPlan("free")!;
+const PREMIUM_PLAN = getPlan("premium")!;
+
+/**
+ * ¿El DUEÑO de la invitación es admin? Los admins tienen acceso de cortesía
+ * (comp) al plan más alto en TODAS sus invitaciones, sin comprar — es la cuenta
+ * del equipo. RLS: el cliente de sesión solo lee su PROPIA fila de `admin_users`
+ * (select-own), que es justo la del dueño cuando resuelve su invitación; el
+ * cliente service_role (webhook/vanity) lee cualquiera. Un no-dueño no puede
+ * leer la invitación (RLS) → no aplica comp, sin fuga.
+ */
+async function ownerIsComped(
+  supabase: AnyClient,
+  invitationId: string,
+): Promise<boolean> {
+  const { data: inv } = await supabase
+    .from("invitations")
+    .select("user_id")
+    .eq("id", invitationId)
+    .maybeSingle();
+  const ownerId = inv?.user_id as string | undefined;
+  if (!ownerId) return false;
+
+  const { data: admin } = await supabase
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", ownerId)
+    .maybeSingle();
+  return !!admin;
+}
 
 export interface EntitlementInfo {
   planCode: PlanCode;
@@ -87,6 +116,10 @@ export async function getInvitationEffectivePlan(
   supabase: AnyClient,
   invitationId: string,
 ): Promise<Plan> {
+  // Comp: si el dueño es admin, plan más alto sin necesidad de compra.
+  if (await ownerIsComped(supabase, invitationId)) {
+    return PREMIUM_PLAN;
+  }
   const ent = await getInvitationEntitlement(supabase, invitationId);
   if (ent?.isActive) {
     return getPlan(ent.planCode) ?? FREE_PLAN;
@@ -259,7 +292,9 @@ export async function canAddGuest(
   addGuests: number,
 ): Promise<GuestCheck> {
   const ent = await getInvitationEntitlement(admin, invitationId);
-  const limit = ent?.guestLimit ?? FREE_PLAN.maxGuests;
+  // Fallback al plan EFECTIVO (que ya aplica el comp de admin), no a Free fijo.
+  const plan = await getInvitationEffectivePlan(admin, invitationId);
+  const limit = ent?.guestLimit ?? plan.maxGuests;
 
   const { data: rows } = await admin
     .from("rsvp_responses")
