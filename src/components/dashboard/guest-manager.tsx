@@ -238,7 +238,7 @@ export function GuestManager({
   return (
     <div className="space-y-6">
       {/* Resumen */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label={`Invitados · ${totalAllotted} lugares`} value={guests.length} />
         <Stat
           label={
@@ -250,7 +250,11 @@ export function GuestManager({
         />
         <Stat label="Confirmados" value={confirmedGuests.length} />
         <Stat label="Personas confirmadas" value={confirmedPeople} />
-        <Stat label="Ingresaron" value={checkedInCount} />
+        <Stat
+          label="Ingresaron"
+          value={checkedInCount}
+          className="col-span-2 sm:col-span-1"
+        />
       </div>
 
       <div className="flex justify-end">
@@ -352,82 +356,17 @@ export function GuestManager({
       ) : (
         <ul className="space-y-2">
           {guests.map((g) => (
-            <li
+            <GuestRowItem
               key={g.id}
-              className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{g.name}</span>
-                  <Badge variant={statusVariant(g.status)}>
-                    {STATUS_LABEL[g.status]}
-                  </Badge>
-                  {g.checked_in_at && <Badge variant="outline">Ingresó</Badge>}
-                  {g.invited_at && <Badge variant="outline">Enviada</Badge>}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {g.status === "confirmed"
-                    ? `Confirmó ${g.confirmed_count ?? 0} de ${g.max_guests}`
-                    : `${g.max_guests} ${g.max_guests === 1 ? "lugar" : "lugares"}`}
-                  {g.phone ? ` · ${g.phone}` : " · sin teléfono"}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={g.invited_at ? "outline" : "default"}
-                  size="sm"
-                  onClick={() => inviteByWhatsApp(g)}
-                  disabled={pending || !g.phone}
-                  title={
-                    g.phone
-                      ? "Abre WhatsApp con el mensaje listo"
-                      : "Agrega su teléfono para escribirle"
-                  }
-                >
-                  {g.invited_at ? "Reenviar" : "Invitar"} por WhatsApp
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleInvited(g)}
-                  disabled={pending}
-                  title="Para cuando invitaste por otro medio"
-                >
-                  {g.invited_at ? "Marcar sin enviar" : "Marcar enviada"}
-                </Button>
-                <Button
-                  variant={g.checked_in_at ? "ghost" : "outline"}
-                  size="sm"
-                  onClick={() => toggleCheckIn(g)}
-                  disabled={pending}
-                >
-                  {g.checked_in_at ? "Deshacer ingreso" : "Marcar ingreso"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyLink(g.access_token)}
-                >
-                  Copiar enlace
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEdit(g)}
-                  disabled={pending}
-                >
-                  Editar
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(g)}
-                  disabled={pending}
-                >
-                  Eliminar
-                </Button>
-              </div>
-            </li>
+              guest={g}
+              busy={pending}
+              onInvite={() => inviteByWhatsApp(g)}
+              onToggleInvited={() => toggleInvited(g)}
+              onToggleCheckIn={() => toggleCheckIn(g)}
+              onCopyLink={() => copyLink(g.access_token)}
+              onEdit={() => handleEdit(g)}
+              onDelete={() => handleDelete(g)}
+            />
           ))}
         </ul>
       )}
@@ -435,9 +374,128 @@ export function GuestManager({
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+
+/**
+ * Una fila de la lista de invitados.
+ *
+ * Presentacional a propósito (recibe callbacks, no toca server actions): así
+ * el layout se puede montar aislado y revisar a distintos anchos, que es donde
+ * se rompió cuando la fila pasó de 4 acciones a 6.
+ *
+ * La estructura es de DOS renglones, no de dos columnas: con seis acciones no
+ * hay ancho que alcance para poner la info y los botones lado a lado sin que
+ * uno aplaste al otro. Las etiquetas se mantienen cortas por la misma razón.
+ *
+ * La jerarquía la da la VARIANTE del botón (una sola primaria, el resto
+ * fantasma), no separadores verticales: con `flex-wrap` una rayita acaba
+ * colgando al principio o al final de un renglón según el ancho.
+ */
+export function GuestRowItem({
+  guest: g,
+  busy,
+  onInvite,
+  onToggleInvited,
+  onToggleCheckIn,
+  onCopyLink,
+  onEdit,
+  onDelete,
+}: {
+  guest: GuestRow;
+  busy: boolean;
+  onInvite: () => void;
+  onToggleInvited: () => void;
+  onToggleCheckIn: () => void;
+  onCopyLink: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const lugares = `${g.max_guests} ${g.max_guests === 1 ? "lugar" : "lugares"}`;
+
   return (
-    <div className="rounded-lg border p-3 text-center">
+    <li className="rounded-lg border p-3">
+      {/* Renglón 1 — quién es y cómo va */}
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-medium">{g.name}</span>
+          <Badge variant={statusVariant(g.status)}>
+            {STATUS_LABEL[g.status]}
+          </Badge>
+          {g.invited_at && <Badge variant="outline">Enviada</Badge>}
+          {g.checked_in_at && <Badge variant="outline">Ingresó</Badge>}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {g.status === "confirmed"
+            ? `Confirmó ${g.confirmed_count ?? 0} de ${g.max_guests}`
+            : lugares}
+          {g.phone ? ` · ${g.phone}` : " · sin teléfono"}
+        </p>
+      </div>
+
+      {/* Renglón 2 — la acción principal a la izquierda, el resto después */}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <Button
+          variant={g.invited_at ? "outline" : "default"}
+          size="sm"
+          onClick={onInvite}
+          disabled={busy || !g.phone}
+          title={
+            g.phone
+              ? "Abre WhatsApp con el mensaje listo"
+              : "Agrega su teléfono para escribirle"
+          }
+        >
+          {g.invited_at ? "Reenviar" : "Invitar"} por WhatsApp
+        </Button>
+
+        <Button variant="ghost" size="sm" onClick={onCopyLink}>
+          Copiar enlace
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggleInvited}
+          disabled={busy}
+          title="Para cuando invitaste por otro medio"
+        >
+          {g.invited_at ? "Sin enviar" : "Marcar enviada"}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggleCheckIn}
+          disabled={busy}
+        >
+          {g.checked_in_at ? "Deshacer ingreso" : "Marcar ingreso"}
+        </Button>
+
+        <Button variant="ghost" size="sm" onClick={onEdit} disabled={busy}>
+          Editar
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDelete}
+          disabled={busy}
+          className="text-destructive hover:text-destructive"
+        >
+          Eliminar
+        </Button>
+      </div>
+    </li>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  className = "",
+}: {
+  label: string;
+  value: number;
+  className?: string;
+}) {
+  return (
+    <div className={`rounded-lg border p-3 text-center ${className}`}>
       <div className="text-2xl font-bold">{value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
     </div>

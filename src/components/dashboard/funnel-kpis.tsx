@@ -12,13 +12,15 @@ function Kpi({
   label,
   value,
   context,
+  className = "",
 }: {
   label: string;
   value: string;
   context: string;
+  className?: string;
 }) {
   return (
-    <Card className="gap-0 py-4">
+    <Card className={`gap-0 py-4 ${className}`}>
       <CardContent className="px-4">
         <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
           {label}
@@ -103,14 +105,24 @@ export function FunnelKpis({ funnel }: { funnel: EventFunnel }) {
     });
   }
 
-  // El modo lista tiene un escalón más (el envío), así que la rejilla se
-  // adapta en vez de dejar una tarjeta huérfana en su propio renglón.
+  // El modo lista tiene un escalón más (el envío): cinco tarjetas.
   const wide = kpis.length >= 5 ? "lg:grid-cols-5" : "lg:grid-cols-4";
+
+  // En dos columnas, un número impar deja la última media vacía. Se estira a
+  // todo el ancho en vez de quedar huérfana; en `lg` cada una vuelve a su
+  // columna y el tramo deja de aplicar.
+  const impar = kpis.length % 2 === 1;
 
   return (
     <div className={`grid grid-cols-2 gap-3 ${wide}`}>
-      {kpis.map((k) => (
-        <Kpi key={k.label} {...k} />
+      {kpis.map((k, i) => (
+        <Kpi
+          key={k.label}
+          {...k}
+          className={
+            impar && i === kpis.length - 1 ? "col-span-2 lg:col-span-1" : ""
+          }
+        />
       ))}
     </div>
   );
