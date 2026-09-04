@@ -10,7 +10,9 @@ import {
   minimalPlanForModules,
   minimalPlanForFeature,
   resolveExpiry,
+  getActivePlans,
 } from "@/lib/billing/plans";
+import { COMPARISON_ROWS, featureLabel } from "@/lib/billing/features";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -26,6 +28,70 @@ describe("guest_management (lista de invitados, todos los planes)", () => {
 
   it("el plan mínimo que la ofrece es Free (está en todos)", () => {
     expect(minimalPlanForFeature("guest_management")?.code).toBe("free");
+  });
+});
+
+describe("custom_art (arte propio) vive en Celebración", () => {
+  it("Celebración y Premium lo incluyen; Free y Esencial no", () => {
+    expect(planHasFeature(getPlan("celebracion")!, "custom_art")).toBe(true);
+    expect(planHasFeature(getPlan("premium")!, "custom_art")).toBe(true);
+    expect(planHasFeature(getPlan("free")!, "custom_art")).toBe(false);
+    expect(planHasFeature(getPlan("esencial")!, "custom_art")).toBe(false);
+  });
+
+  it("el plan mínimo que lo desbloquea es Celebración", () => {
+    // Esto es lo que alimenta el CTA al publicar Y la insignia del editor:
+    // ambos leen `minimalPlanForFeature`, no un nombre escrito a mano.
+    expect(minimalPlanForFeature("custom_art")?.code).toBe("celebracion");
+  });
+});
+
+describe("invariantes de la escalera de planes", () => {
+  const ordered = getActivePlans();
+
+  it("las capacidades solo se acumulan: nada se pierde al subir de plan", () => {
+    // Atrapa la clase de error, no solo un caso: mover una feature a un plan
+    // más barato y OLVIDAR dejarla en los de arriba dejaría a quien pagó más
+    // con menos. Pasó a un dedo de ocurrir al bajar `custom_art`.
+    for (let i = 1; i < ordered.length; i++) {
+      const cheaper = ordered[i - 1];
+      const pricier = ordered[i];
+      for (const feature of cheaper.features) {
+        expect(
+          pricier.features,
+          `${pricier.code} (más caro que ${cheaper.code}) perdió "${feature}"`,
+        ).toContain(feature);
+      }
+    }
+  });
+
+  it("los módulos permitidos solo se acumulan", () => {
+    for (let i = 1; i < ordered.length; i++) {
+      for (const mod of ordered[i - 1].allowedModules) {
+        expect(
+          ordered[i].allowedModules,
+          `${ordered[i].code} perdió el módulo "${mod}"`,
+        ).toContain(mod);
+      }
+    }
+  });
+
+  it("toda capacidad cobrada aparece en la comparativa de precios", () => {
+    // `custom_art` estaba en las features de Premium pero NO en
+    // COMPARISON_ROWS: se cobraba una capacidad que la página de precios
+    // jamás mencionaba. Nadie paga por lo que no ve.
+    const shown = new Set(COMPARISON_ROWS.map((r) => r.label));
+    const sold = new Set<string>();
+    for (const plan of ordered) {
+      for (const f of plan.features) sold.add(featureLabel(f));
+      for (const f of plan.comingSoon) sold.add(featureLabel(f));
+    }
+    for (const label of sold) {
+      expect(
+        [...shown],
+        `la comparativa de /pricing no muestra "${label}"`,
+      ).toContain(label);
+    }
   });
 });
 

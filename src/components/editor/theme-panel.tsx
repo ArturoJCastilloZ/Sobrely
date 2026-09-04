@@ -21,6 +21,8 @@ import {
   type StylePresetKey,
 } from "@/lib/animation/style-presets";
 import { applyThemePack } from "@/lib/theme/theme-packs";
+import { minimalPlanForFeature } from "@/lib/billing/plans";
+import type { PlanFeature } from "@/lib/billing/types";
 import { ThemePackPicker } from "./theme-pack-picker";
 import { SYSTEM_DEFAULT_ANIMATION } from "@/lib/animation/schema";
 import { AnimationFields } from "@/components/editor/animation-fields";
@@ -49,6 +51,24 @@ const COLOR_FIELDS: { key: ColorKey; label: string }[] = [
   { key: "background", label: "Fondo" },
   { key: "text", label: "Texto" },
 ];
+
+/**
+ * Insignia del plan que desbloquea una capacidad.
+ *
+ * Se deriva de `plans.ts` — la MISMA fuente que gatea al publicar — a
+ * propósito: el nombre del plan venía escrito a mano en tres lugares, y cuando
+ * `custom_art` bajó a Celebración el editor habría seguido pidiendo el plan de
+ * arriba. Ahora un cambio de plan se refleja solo.
+ */
+function FeatureBadge({ feature }: { feature: PlanFeature }) {
+  const plan = minimalPlanForFeature(feature);
+  if (!plan) return null;
+  return (
+    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+      {plan.name} ⭐
+    </span>
+  );
+}
 
 /** Common decoration symbols offered in the picker. */
 const SYMBOL_OPTIONS = [
@@ -253,9 +273,7 @@ export function ThemePanel({
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             Fondo de imagen
-            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
-              Premium ⭐
-            </span>
+            <FeatureBadge feature="custom_art" />
           </Label>
           <ImageUploader
             value={theme.backgroundImage.url}
@@ -282,6 +300,35 @@ export function ThemePanel({
             Sube tu propia imagen de fondo. Eres responsable de contar con los
             derechos para usarla.
           </p>
+          {/* Mucha gente ya diseñó su invitación en otra herramienta antes de
+              llegar aquí. En vez de pedirle empezar de cero, se le dice cómo
+              traer lo que ya tiene. */}
+          {!theme.backgroundImage.url && (
+            <div className="rounded-md border border-dashed px-3 py-2.5 text-xs text-muted-foreground">
+              <p className="font-medium text-foreground">
+                ¿Ya tienes tu diseño hecho?
+              </p>
+              <p className="mt-1">
+                Si lo armaste en Canva, Illustrator o Photoshop, expórtalo como
+                imagen y súbelo aquí: tu invitación se queda con tu diseño y
+                encima le agregas la cuenta regresiva, la ubicación y la
+                confirmación de asistencia.
+              </p>
+              <ul className="mt-1.5 list-disc space-y-0.5 pl-4">
+                <li>
+                  Vertical, alrededor de <strong>1080 × 1920 px</strong>: casi
+                  todos tus invitados la van a abrir en el celular.
+                </li>
+                <li>
+                  JPG o PNG, y deja los textos importantes lejos de los bordes.
+                </li>
+                <li>
+                  Para stickers, exporta <strong>PNG sin fondo</strong> y súbelos
+                  más abajo.
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
@@ -290,9 +337,7 @@ export function ThemePanel({
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             Stickers
-            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
-              Premium ⭐
-            </span>
+            <FeatureBadge feature="custom_art" />
           </Label>
           {/* value="" siempre → el uploader queda en modo "agregar": cada subida
               añade un sticker nuevo al arreglo. */}
@@ -460,9 +505,7 @@ export function ThemePanel({
                   <div className="space-y-1.5 border-t pt-2">
                     <Label className="flex items-center gap-2 text-xs">
                       O tu imagen (.png sin fondo)
-                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
-                        Premium ⭐
-                      </span>
+                      <FeatureBadge feature="custom_art" />
                     </Label>
                     <ImageUploader
                       value={theme.decoration.imageUrl}

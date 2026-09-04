@@ -84,6 +84,10 @@ export const COMPARISON_ROWS: readonly ComparisonRow[] = [
     value: (p) => featureState(p, "advanced_personalization"),
   },
   {
+    label: FEATURE_LABELS.custom_art,
+    value: (p) => featureState(p, "custom_art"),
+  },
+  {
     label: FEATURE_LABELS.guest_management,
     value: (p) => featureState(p, "guest_management"),
   },
