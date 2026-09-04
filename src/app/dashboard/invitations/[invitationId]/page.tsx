@@ -64,11 +64,13 @@ export default async function InvitationDashboardPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username")
+    .select("username, display_name")
     .eq("id", user.id)
     .maybeSingle();
 
   const username = profile?.username ?? "";
+  // Nombre con el que se firma la invitación de WhatsApp ("Ana te invita a…").
+  const hostName = (profile?.display_name as string | null) ?? null;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const publicUrl =
     invitation.is_published && username
@@ -87,7 +89,7 @@ export default async function InvitationDashboardPage({
     const { data } = await supabase
       .from("invitation_guests")
       .select(
-        "name, status, max_guests, confirmed_count, checked_in_at, created_at, updated_at",
+        "name, status, max_guests, confirmed_count, checked_in_at, invited_at, created_at, updated_at",
       )
       .eq("invitation_id", invitationId);
     guestRows.push(...((data ?? []) as GuestRow[]));
@@ -205,7 +207,12 @@ export default async function InvitationDashboardPage({
 
       <section id="invitados" className="scroll-mt-6">
         {isGuestList ? (
-          <GuestManager invitationId={invitation.id} siteUrl={siteUrl} />
+          <GuestManager
+            invitationId={invitation.id}
+            siteUrl={siteUrl}
+            eventTitle={invitation.title as string}
+            hostName={hostName}
+          />
         ) : (
           <RsvpTable
             initialRows={responseRows as unknown as RsvpRow[]}

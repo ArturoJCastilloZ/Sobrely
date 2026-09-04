@@ -45,6 +45,17 @@ export function FunnelKpis({ funnel }: { funnel: EventFunnel }) {
           ? `${funnel.allotted} lugares apartados`
           : "Total de contactos",
     });
+    // La cobertura va ANTES del avance porque es el escalón anterior del
+    // embudo: un avance bajo significa cosas opuestas según si ya se envió
+    // todo o si media lista nunca recibió nada.
+    kpis.push({
+      label: "Invitaciones enviadas",
+      value:
+        funnel.coverageRate === null
+          ? "—"
+          : `${Math.round(funnel.coverageRate * 100)}%`,
+      context: `${funnel.invited ?? 0} de ${registered} enviadas`,
+    });
     kpis.push({
       label: "Avance de respuestas",
       value:
@@ -92,8 +103,12 @@ export function FunnelKpis({ funnel }: { funnel: EventFunnel }) {
     });
   }
 
+  // El modo lista tiene un escalón más (el envío), así que la rejilla se
+  // adapta en vez de dejar una tarjeta huérfana en su propio renglón.
+  const wide = kpis.length >= 5 ? "lg:grid-cols-5" : "lg:grid-cols-4";
+
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className={`grid grid-cols-2 gap-3 ${wide}`}>
       {kpis.map((k) => (
         <Kpi key={k.label} {...k} />
       ))}

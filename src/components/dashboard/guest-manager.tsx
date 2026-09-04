@@ -9,10 +9,12 @@ import {
   editGuest,
   deleteGuest,
   setGuestCheckIn,
+  setGuestInvited,
   listGuests,
   type GuestListRow,
 } from "@/lib/guests/actions";
 import { MAX_GUEST_ALLOTMENT } from "@/lib/guests/schemas";
+import { whatsappInviteUrl } from "@/lib/guests/whatsapp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,15 +38,20 @@ function statusVariant(status: GuestRow["status"]) {
 export function GuestManager({
   invitationId,
   siteUrl,
+  eventTitle,
+  hostName,
 }: {
   invitationId: string;
   siteUrl: string;
+  eventTitle: string;
+  hostName?: string | null;
 }) {
   const [pending, startTransition] = useTransition();
   const [guests, setGuests] = useState<GuestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [allotment, setAllotment] = useState(1);
+  const [phone, setPhone] = useState("");
   const [bulk, setBulk] = useState("");
   const [showBulk, setShowBulk] = useState(false);
 
@@ -78,13 +85,19 @@ export function GuestManager({
       return;
     }
     startTransition(async () => {
-      const res = await addGuest({ invitationId, name, maxGuests: allotment });
+      const res = await addGuest({
+        invitationId,
+        name,
+        maxGuests: allotment,
+        phone: phone.trim() || null,
+      });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
       setName("");
       setAllotment(1);
+      setPhone("");
       toast.success("Invitado agregado.");
       await reload();
     });
@@ -117,8 +130,18 @@ export function GuestManager({
     );
     if (raw === null) return;
     const maxGuests = Math.max(1, Math.min(MAX_GUEST_ALLOTMENT, Number(raw) || 1));
+    const newPhone = window.prompt(
+      "Teléfono para WhatsApp (opcional)",
+      g.phone ?? "",
+    );
+    if (newPhone === null) return;
     startTransition(async () => {
-      const res = await editGuest({ id: g.id, name: newName, maxGuests });
+      const res = await editGuest({
+        id: g.id,
+        name: newName,
+        maxGuests,
+        phone: newPhone.trim() || null,
+      });
       if (!res.ok) {
         toast.error(res.error);
         return;
@@ -155,6 +178,51 @@ export function GuestManager({
     });
   }
 
+  /**
+   * Abre WhatsApp con el mensaje listo y sella el envío.
+   *
+   * El `window.open` va PRIMERO y de forma síncrona: si se hiciera después de
+   * un `await`, Safari e iOS lo tratarían como popup no pedido por el usuario
+   * y lo bloquearían. El sellado va después, sin bloquear el chat.
+   */
+  function inviteByWhatsApp(g: GuestRow) {
+    const url = whatsappInviteUrl({
+      phone: g.phone,
+      guestName: g.name,
+      eventTitle,
+      link: guestLink(g.access_token),
+      hostName,
+    });
+    if (!url) {
+      toast.error("Agrega el teléfono del invitado para escribirle.");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+
+    if (g.invited_at) return; // ya estaba marcada; no se mueve la fecha
+    startTransition(async () => {
+      const res = await setGuestInvited(g.id, true);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      await reload();
+    });
+  }
+
+  /** Marca o desmarca el envío a mano (para quien invitó por otro medio). */
+  function toggleInvited(g: GuestRow) {
+    startTransition(async () => {
+      const res = await setGuestInvited(g.id, !g.invited_at);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(g.invited_at ? "Marcada como no enviada." : "Marcada como enviada.");
+      await reload();
+    });
+  }
+
   async function copyLink(token: string) {
     try {
       await navigator.clipboard.writeText(guestLink(token));
@@ -165,12 +233,21 @@ export function GuestManager({
   }
 
   const checkedInCount = guests.filter((g) => g.checked_in_at).length;
+  const invitedCount = guests.filter((g) => g.invited_at).length;
 
   return (
     <div className="space-y-6">
       {/* Resumen */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Stat label={`Invitados · ${totalAllotted} lugares`} value={guests.length} />
+        <Stat
+          label={
+            guests.length > 0
+              ? `Enviadas · ${Math.round((invitedCount / guests.length) * 100)}%`
+              : "Enviadas"
+          }
+          value={invitedCount}
+        />
         <Stat label="Confirmados" value={confirmedGuests.length} />
         <Stat label="Personas confirmadas" value={confirmedPeople} />
         <Stat label="Ingresaron" value={checkedInCount} />
@@ -218,6 +295,18 @@ export function GuestManager({
                   ),
                 )
               }
+            />
+          </div>
+          <div className="w-full space-y-1.5 sm:w-44">
+            <Label htmlFor="g-phone">WhatsApp (opcional)</Label>
+            <Input
+              id="g-phone"
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              placeholder="55 1234 5678"
+              onChange={(e) => setPhone(e.target.value)}
+              maxLength={25}
             />
           </div>
           <Button onClick={handleAdd} disabled={pending}>
@@ -274,14 +363,38 @@ export function GuestManager({
                     {STATUS_LABEL[g.status]}
                   </Badge>
                   {g.checked_in_at && <Badge variant="outline">Ingresó</Badge>}
+                  {g.invited_at && <Badge variant="outline">Enviada</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {g.status === "confirmed"
                     ? `Confirmó ${g.confirmed_count ?? 0} de ${g.max_guests}`
                     : `${g.max_guests} ${g.max_guests === 1 ? "lugar" : "lugares"}`}
+                  {g.phone ? ` · ${g.phone}` : " · sin teléfono"}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={g.invited_at ? "outline" : "default"}
+                  size="sm"
+                  onClick={() => inviteByWhatsApp(g)}
+                  disabled={pending || !g.phone}
+                  title={
+                    g.phone
+                      ? "Abre WhatsApp con el mensaje listo"
+                      : "Agrega su teléfono para escribirle"
+                  }
+                >
+                  {g.invited_at ? "Reenviar" : "Invitar"} por WhatsApp
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleInvited(g)}
+                  disabled={pending}
+                  title="Para cuando invitaste por otro medio"
+                >
+                  {g.invited_at ? "Marcar sin enviar" : "Marcar enviada"}
+                </Button>
                 <Button
                   variant={g.checked_in_at ? "ghost" : "outline"}
                   size="sm"

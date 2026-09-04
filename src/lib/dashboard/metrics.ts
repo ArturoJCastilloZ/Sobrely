@@ -28,6 +28,8 @@ export interface GuestRow {
   max_guests: number;
   confirmed_count: number | null;
   checked_in_at: string | null;
+  /** Cuándo se le envió su invitación. `null` = todavía no se le envía. */
+  invited_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +48,17 @@ export interface EventFunnel {
   mode: RsvpMode;
   /** Contactos en la lista. `null` en modo abierto: no hay lista previa. */
   registered: number | null;
+  /**
+   * A cuántos ya se les MANDÓ la invitación. `null` en modo abierto, donde no
+   * hay envío nominal que contar.
+   */
+  invited: number | null;
+  /**
+   * `invited / registered` en 0..1 — la COBERTURA. Es el escalón que faltaba:
+   * una tasa de respuesta baja significa cosas opuestas según si ya se envió
+   * todo o si media lista sigue sin recibir nada.
+   */
+  coverageRate: number | null;
   /** Cuántos ya dieron una respuesta. */
   responded: number;
   /** `responded / registered` en 0..1. `null` sin denominador. */
@@ -72,9 +85,13 @@ export function funnelFromGuests(guests: readonly GuestRow[]): EventFunnel {
   const pending = guests.filter((g) => g.status === "pending").length;
   const responded = confirmed + declined;
 
+  const invited = guests.filter((g) => g.invited_at !== null).length;
+
   return {
     mode: "guest_list",
     registered,
+    invited,
+    coverageRate: registered > 0 ? invited / registered : null,
     responded,
     // Sin nadie en la lista no hay tasa que reportar (evita 0/0 = NaN).
     responseRate: registered > 0 ? responded / registered : null,
@@ -105,6 +122,9 @@ export function funnelFromResponses(
   return {
     mode: "open",
     registered: null,
+    // Sin lista nominal no hay envío que contar: la cobertura no existe.
+    invited: null,
+    coverageRate: null,
     // En abierto, cada fila ES una respuesta.
     responded: responses.length,
     responseRate: null,
@@ -318,9 +338,24 @@ export function nextAction(
     }
     return null;
   }
-  if ((funnel.registered ?? 0) === 0) {
+  const registered = funnel.registered ?? 0;
+  if (registered === 0) {
     return { label: "Agrega a tus invitados para empezar", tone: "wait" };
   }
+
+  // El embudo tiene un escalón ANTES de la respuesta: el envío. Pedir que
+  // recuerden a quien nunca recibió su invitación es el consejo equivocado.
+  const sinEnviar = registered - (funnel.invited ?? registered);
+  if (sinEnviar > 0) {
+    return {
+      label:
+        sinEnviar === 1
+          ? "Envía la invitación que falta por mandar"
+          : `Envía las ${sinEnviar} invitaciones que faltan por mandar`,
+      tone: "wait",
+    };
+  }
+
   const pending = funnel.pending ?? 0;
   if (pending === 0) {
     return { label: "Ya respondieron todos tus invitados", tone: "ok" };

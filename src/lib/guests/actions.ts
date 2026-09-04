@@ -73,6 +73,10 @@ export type GuestListRow = {
   status: "pending" | "confirmed" | "declined";
   confirmed_count: number | null;
   checked_in_at: string | null;
+  /** Teléfono para invitar por WhatsApp. `null` = no se capturó. */
+  phone: string | null;
+  /** Cuándo se le envió su invitación. `null` = todavía no se le envía. */
+  invited_at: string | null;
 };
 
 /** Lista los invitados de una invitación propia (RLS: solo el dueño). */
@@ -85,7 +89,7 @@ export async function listGuests(
   const { data } = await supabase
     .from("invitation_guests")
     .select(
-      "id, name, max_guests, access_token, status, confirmed_count, checked_in_at",
+      "id, name, max_guests, access_token, status, confirmed_count, checked_in_at, phone, invited_at",
     )
     .eq("invitation_id", invitationId)
     .order("created_at", { ascending: true });
@@ -139,6 +143,7 @@ export async function addGuest(
     invitation_id: v.invitationId,
     name: v.name,
     max_guests: v.maxGuests,
+    phone: v.phone,
   });
   if (error) return { ok: false, error: "No se pudo agregar el invitado." };
   return { ok: true };
@@ -178,6 +183,9 @@ export async function addGuestsBulk(
       invitation_id: v.invitationId,
       name: r.name,
       max_guests: r.maxGuests,
+      // El alta masiva es "Nombre, lugares": no captura teléfono. Se agrega
+      // después editando, que es cuando el organizador lo tiene a la mano.
+      phone: null,
     })),
   );
   if (error) return { ok: false, error: "No se pudieron agregar los invitados." };
@@ -223,9 +231,48 @@ export async function editGuest(
 
   const { error } = await supabase
     .from("invitation_guests")
-    .update({ name: v.name, max_guests: v.maxGuests })
+    .update({ name: v.name, max_guests: v.maxGuests, phone: v.phone })
     .eq("id", v.id);
   if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Sella (o revierte) el envío de la invitación de un invitado.
+ *
+ * Es lo que alimenta el KPI de COBERTURA. Se marca cuando el organizador abre
+ * el chat de WhatsApp — Sobrely no puede saber si el mensaje se mandó de
+ * verdad, así que esto declara INTENCIÓN de envío, no entrega confirmada. Por
+ * eso se puede revertir a mano.
+ *
+ * Idempotente: volver a marcar algo ya marcado no mueve la fecha original.
+ */
+export async function setGuestInvited(
+  id: string,
+  invited: boolean,
+): Promise<GuestActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión expirada." };
+
+  // RLS: solo devuelve el invitado si la invitación es del usuario.
+  const { data: guest } = await supabase
+    .from("invitation_guests")
+    .select("id, invited_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (!guest) return { ok: false, error: "Invitado no encontrado." };
+
+  const yaMarcado = guest.invited_at !== null;
+  if (yaMarcado === invited) return { ok: true };
+
+  const { error } = await supabase
+    .from("invitation_guests")
+    .update({ invited_at: invited ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) return { ok: false, error: "No se pudo actualizar el envío." };
   return { ok: true };
 }
 

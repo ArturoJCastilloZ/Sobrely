@@ -478,6 +478,7 @@ export function InvitationEditor({
                       <GuestManager
                         invitationId={invitation.id}
                         siteUrl={siteUrl}
+                        eventTitle={invitation.title}
                       />
                     </CardContent>
                   </Card>

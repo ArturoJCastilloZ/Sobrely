@@ -3,6 +3,22 @@ import { z } from "zod";
 /** Cupo máximo asignable a un solo invitado nominal. */
 export const MAX_GUEST_ALLOTMENT = 20;
 
+
+/**
+ * Teléfono opcional del invitado, tal como lo teclea el organizador. La forma
+ * espeja el check constraint de `0017` (`invitation_guests_phone_shape_chk`):
+ * si zod lo deja pasar, Postgres también. Vacío se guarda como `null`, no como
+ * cadena vacía — "sin teléfono" es ausencia, no un valor.
+ */
+export const guestPhoneField = z
+  .string()
+  .trim()
+  .max(25, "Teléfono demasiado largo.")
+  .regex(/^\+?[0-9()\-\s]{7,25}$/, "Teléfono no válido.")
+  .or(z.literal(""))
+  .optional()
+  .transform((v) => (v ? v : null));
+
 /** Alta/edición de un invitado nominal (lado dueño). */
 export const guestUpsertSchema = z.object({
   invitationId: z.string().uuid(),
@@ -13,6 +29,7 @@ export const guestUpsertSchema = z.object({
     .min(1, "Mínimo 1 lugar.")
     .max(MAX_GUEST_ALLOTMENT, `Máximo ${MAX_GUEST_ALLOTMENT} lugares.`)
     .default(1),
+  phone: guestPhoneField,
 });
 
 export type GuestUpsertInput = z.infer<typeof guestUpsertSchema>;
@@ -22,6 +39,7 @@ export const guestEditSchema = z.object({
   id: z.string().uuid(),
   name: z.string().trim().min(1, "El nombre es obligatorio.").max(120),
   maxGuests: z.coerce.number().int().min(1).max(MAX_GUEST_ALLOTMENT).default(1),
+  phone: guestPhoneField,
 });
 
 export type GuestEditInput = z.infer<typeof guestEditSchema>;

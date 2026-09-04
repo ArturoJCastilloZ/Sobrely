@@ -20,6 +20,10 @@ function guest(over: Partial<GuestRow> = {}): GuestRow {
     max_guests: 2,
     confirmed_count: null,
     checked_in_at: null,
+    // Por defecto la invitación YA se envió: así los casos que prueban la
+    // etapa de RESPUESTA no quedan atrapados en la etapa anterior (el envío).
+    // Quien pruebe la cobertura pasa `invited_at: null` a propósito.
+    invited_at: "2026-08-01T10:00:00.000Z",
     created_at: "2026-08-01T10:00:00.000Z",
     updated_at: "2026-08-01T10:00:00.000Z",
     ...over,
@@ -286,5 +290,64 @@ describe("el empujón (next action)", () => {
   it("modo abierto sin respuestas invita a compartir; con respuestas no empuja", () => {
     expect(nextAction(funnelFromResponses([]))?.tone).toBe("wait");
     expect(nextAction(funnelFromResponses([response()]))).toBeNull();
+  });
+});
+
+describe("cobertura — el escalón del envío", () => {
+  it("cuenta a cuántos ya se les mandó la invitación", () => {
+    const f = funnelFromGuests([
+      guest({ invited_at: "2026-08-02T10:00:00.000Z" }),
+      guest({ invited_at: "2026-08-02T11:00:00.000Z" }),
+      guest({ invited_at: null }),
+      guest({ invited_at: null }),
+    ]);
+    expect(f.invited).toBe(2);
+    expect(f.coverageRate).toBe(0.5);
+  });
+
+  it("lista vacía no reporta cobertura en vez de dividir entre cero", () => {
+    const f = funnelFromGuests([]);
+    expect(f.invited).toBe(0);
+    expect(f.coverageRate).toBeNull();
+  });
+
+  it("con todo enviado la cobertura es total", () => {
+    const f = funnelFromGuests([guest(), guest()]);
+    expect(f.invited).toBe(2);
+    expect(f.coverageRate).toBe(1);
+  });
+
+  it("el modo abierto no inventa una cobertura", () => {
+    const f = funnelFromResponses([response()]);
+    expect(f.invited).toBeNull();
+    expect(f.coverageRate).toBeNull();
+  });
+});
+
+describe("nextAction — enviar va antes que recordar", () => {
+  it("con invitaciones sin mandar empuja a ENVIAR, no a recordar", () => {
+    const f = funnelFromGuests([
+      guest({ status: "pending", invited_at: null }),
+      guest({ status: "pending", invited_at: null }),
+      guest({ status: "pending" }),
+    ]);
+    // Hay 3 pendientes de responder, pero 2 nunca recibieron nada: pedir que
+    // les "recuerden" sería el consejo equivocado.
+    expect(nextAction(f)?.label).toBe(
+      "Envía las 2 invitaciones que faltan por mandar",
+    );
+  });
+
+  it("una sola sin mandar se dice en singular", () => {
+    const f = funnelFromGuests([guest(), guest({ invited_at: null })]);
+    expect(nextAction(f)?.label).toBe("Envía la invitación que falta por mandar");
+  });
+
+  it("con todo enviado vuelve a empujar el recordatorio", () => {
+    const f = funnelFromGuests([
+      guest({ status: "pending" }),
+      guest({ status: "pending" }),
+    ]);
+    expect(nextAction(f)?.label).toBe("Recuérdales a los 2 que faltan");
   });
 });
