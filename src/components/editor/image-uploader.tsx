@@ -38,7 +38,7 @@ export function ImageUploader({
 
     setUploading(true);
     try {
-      const blob = await compressImage(file);
+      const { blob, contentType, ext } = await compressImage(file);
 
       // Barrera de cuota de almacenamiento según el plan (server-side).
       const quota = await checkUploadQuota(ctx.invitationId, blob.size);
@@ -50,10 +50,12 @@ export function ImageUploader({
       }
 
       const supabase = createClient();
-      const path = `${ctx.userId}/${ctx.invitationId}/${crypto.randomUUID()}.jpg`;
+      // La extensión y el contentType salen de la compresión: un PNG con
+      // transparencia se guarda WebP, no JPEG (que aplanaría el alfa).
+      const path = `${ctx.userId}/${ctx.invitationId}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage
         .from(BUCKET)
-        .upload(path, blob, { contentType: "image/jpeg", upsert: false });
+        .upload(path, blob, { contentType, upsert: false });
       if (error) {
         toast.error("No se pudo subir la imagen.");
         return;
