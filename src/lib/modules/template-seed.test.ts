@@ -5,8 +5,9 @@ import {
   moduleConfigSchemas,
   type ModuleType,
 } from "@/lib/modules/types";
-import { themeSchema } from "@/lib/theme/theme";
 import { isThemePackPremium, THEME_PACKS } from "@/lib/theme/theme-packs";
+import { defaultTheme, themeSchema } from "@/lib/theme/theme";
+import { resolveTemplateTheme } from "@/lib/invitations/template-theme";
 import { minimalPlanForModules } from "@/lib/billing/plans";
 
 /**
@@ -305,6 +306,48 @@ describe("catálogo de plantillas · la escalera comercial", () => {
         isThemePackPremium(pack),
         `${t.slug} es de plan free pero su pack gatea`,
       ).toBe(false);
+    }
+  });
+});
+
+describe("catálogo de plantillas · la temática llega a la invitación", () => {
+  it("toda plantilla con pack produce LA PALETA DE SU PACK, no la genérica", () => {
+    // El bug que esto atrapa: las plantillas temáticas guardan solo
+    // `{"themePack":"..."}` y `createFromTemplate` copiaba el theme_config tal
+    // cual, sin expandir. Resultado: el usuario elegía "Boda de lujo" y su
+    // invitación nacía con el dorado por defecto. Validar contra `themeSchema`
+    // NO lo detecta —`themePack` es opcional y los colores tienen default—, así
+    // que hay que comparar la paleta resuelta contra la del pack.
+    const withPack = templates.filter(
+      (t) => (t.theme as { themePack?: string }).themePack,
+    );
+    expect(withPack.length).toBeGreaterThanOrEqual(20);
+
+    const failures: string[] = [];
+    for (const t of withPack) {
+      const key = (t.theme as { themePack: string }).themePack;
+      const pack = THEME_PACKS[key];
+      if (!pack) continue; // la guarda de pack inexistente vive en otra prueba
+      const resolved = resolveTemplateTheme(t.theme);
+      if (JSON.stringify(resolved.colors) !== JSON.stringify(pack.theme.colors)) {
+        failures.push(`${t.slug}: no adoptó la paleta de "${key}"`);
+      }
+      if (JSON.stringify(resolved.colors) === JSON.stringify(defaultTheme().colors)) {
+        failures.push(`${t.slug}: quedó con la paleta por defecto`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
+  it("las plantillas sin pack conservan los colores que declararon", () => {
+    const noPack = templates.filter(
+      (t) => !(t.theme as { themePack?: string }).themePack,
+    );
+    expect(noPack.length).toBeGreaterThanOrEqual(20);
+    for (const t of noPack) {
+      const declared = (t.theme as { colors?: Record<string, string> }).colors;
+      if (!declared) continue;
+      expect(resolveTemplateTheme(t.theme).colors, t.slug).toEqual(declared);
     }
   });
 });

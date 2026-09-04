@@ -17,6 +17,7 @@ import {
   isOwnerComped,
 } from "@/lib/billing/entitlements";
 import { getPlan, resolveExpiry } from "@/lib/billing/plans";
+import { resolveTemplateTheme } from "@/lib/invitations/template-theme";
 import type { PlanCode } from "@/lib/billing/types";
 
 /** Short random suffix to keep slugs unique per user without a lookup loop. */
@@ -134,7 +135,9 @@ export async function createFromTemplate(templateId: string) {
       event_type: template.event_type ?? null,
       status: "draft",
       is_published: false,
-      theme_config: template.theme_config ?? {},
+      // La plantilla guarda solo la clave del pack; aquí se expande a su
+      // paleta. Sin esto la invitación nacía con los colores por defecto.
+      theme_config: resolveTemplateTheme(template.theme_config),
     })
     .select("id")
     .single();
