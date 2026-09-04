@@ -26,6 +26,7 @@ import { applyStylePreset, type StylePresetKey } from "@/lib/animation/style-pre
 export const THEME_PACK_CATEGORIES = [
   "boda",
   "xv",
+  "baby",
   "infantil",
   "corporativo",
 ] as const;
@@ -34,6 +35,7 @@ export type ThemePackCategory = (typeof THEME_PACK_CATEGORIES)[number];
 export const THEME_PACK_CATEGORY_LABELS: Record<ThemePackCategory, string> = {
   boda: "Bodas",
   xv: "XV años",
+  baby: "Baby shower",
   infantil: "Infantiles",
   corporativo: "Corporativo",
 };
@@ -250,6 +252,86 @@ export const THEME_PACKS: Record<string, ThemePack> = {
       spacing: "normal",
       stylePreset: "kids-party",
       decoration: { enabled: true, variant: "floating", symbol: "💖" },
+    },
+  },
+  // ---- Baby shower ----------------------------------------------------------
+  // La categoría no existía: sus plantillas tomaban prestados packs infantiles
+  // y de boda. Los cuatro son genéricos (nubes, animalitos de bosque, salvia),
+  // sin evocar personaje ni marca alguna.
+  "baby-nubes": {
+    key: "baby-nubes",
+    label: "Nubes y Cielo",
+    description: "Celeste suave sobre crema, con nubes flotando. Ligero y tranquilo.",
+    category: "baby",
+    isPremium: true,
+    theme: {
+      colors: {
+        primary: "#7fb3d5",
+        secondary: "#cfe4f2",
+        background: "#f6fbff",
+        text: "#33475b",
+      },
+      font: "sans",
+      spacing: "relaxed",
+      stylePreset: "soft-floral",
+      decoration: { enabled: true, variant: "floating", symbol: "☁️" },
+    },
+  },
+  "baby-neutro": {
+    key: "baby-neutro",
+    label: "Baby Neutro",
+    description: "Salvia, crema y tierra. Sin color de género, cálido y sobrio.",
+    category: "baby",
+    isPremium: false,
+    theme: {
+      colors: {
+        primary: "#7c9070",
+        secondary: "#cfd9c6",
+        background: "#fbfaf6",
+        text: "#33382f",
+      },
+      font: "serif",
+      spacing: "relaxed",
+      stylePreset: "minimal-elegant",
+      decoration: { enabled: false, variant: "ambient-gradient", symbol: "❀" },
+    },
+  },
+  "baby-animalitos": {
+    key: "baby-animalitos",
+    label: "Animalitos de Bosque (genérico)",
+    description: "Tonos tierra y miel con hojitas. Tierno y genérico, sin marca.",
+    category: "baby",
+    isPremium: true,
+    theme: {
+      colors: {
+        primary: "#a97c50",
+        secondary: "#d9c3a5",
+        background: "#fdf9f3",
+        text: "#4a3a2c",
+      },
+      font: "script",
+      spacing: "normal",
+      stylePreset: "kids-party",
+      decoration: { enabled: true, variant: "floating", symbol: "🌿" },
+    },
+  },
+  "baby-revelacion": {
+    key: "baby-revelacion",
+    label: "Revelación de Género",
+    description: "Rosa y azul en equilibrio, con destellos. Para no adelantar nada.",
+    category: "baby",
+    isPremium: true,
+    theme: {
+      colors: {
+        primary: "#e8a0bf",
+        secondary: "#8fb8de",
+        background: "#fdf8fb",
+        text: "#3f3a44",
+      },
+      font: "sans",
+      spacing: "normal",
+      stylePreset: "modern-celebration",
+      decoration: { enabled: true, variant: "sparkle", symbol: "✨" },
     },
   },
   // ---- Corporativo ----------------------------------------------------------

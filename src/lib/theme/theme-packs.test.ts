@@ -6,6 +6,8 @@ import {
   applyThemePack,
   getThemePack,
   isThemePackPremium,
+  THEME_PACK_CATEGORIES,
+  THEME_PACK_CATEGORY_LABELS,
 } from "@/lib/theme/theme-packs";
 import { defaultTheme, parseTheme, themeSchema } from "@/lib/theme/theme";
 
@@ -22,6 +24,34 @@ describe("catálogo THEME_PACKS", () => {
   it("incluye al menos un pack free y uno premium (para el gate)", () => {
     expect(THEME_PACK_LIST.some((p) => !p.isPremium)).toBe(true);
     expect(THEME_PACK_LIST.some((p) => p.isPremium)).toBe(true);
+  });
+
+  it("toda categoría declarada tiene al menos un pack", () => {
+    // El selector itera THEME_PACK_CATEGORIES y filtra la lista, así que una
+    // categoría sin packs pinta un encabezado vacío. Esto pasó de verdad:
+    // "baby" no existía y sus plantillas tomaban prestados packs infantiles.
+    for (const category of THEME_PACK_CATEGORIES) {
+      const packs = THEME_PACK_LIST.filter((p) => p.category === category);
+      expect(
+        packs.length,
+        `la categoría "${category}" no tiene ni un pack`,
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it("toda categoría tiene etiqueta legible", () => {
+    for (const category of THEME_PACK_CATEGORIES) {
+      expect(THEME_PACK_CATEGORY_LABELS[category]?.trim()).toBeTruthy();
+    }
+  });
+
+  it("la categoría de cada pack es una de las declaradas", () => {
+    for (const pack of THEME_PACK_LIST) {
+      expect(
+        THEME_PACK_CATEGORIES as readonly string[],
+        `${pack.key}: categoría "${pack.category}" no declarada`,
+      ).toContain(pack.category);
+    }
   });
 
   it("LEGAL: ningún label evoca una marca/personaje protegido conocido", () => {

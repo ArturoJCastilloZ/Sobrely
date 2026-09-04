@@ -278,6 +278,24 @@ describe("catálogo de plantillas · la escalera comercial", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("las plantillas de baby shower usan packs de baby shower", () => {
+    // El hueco original: no existía la categoría "baby", así que estas
+    // plantillas cargaban packs infantiles y de boda. Otros cruces SÍ son
+    // legítimos a propósito (una cena corporativa de gala usando el pack de
+    // lujo, un cumpleaños de adulto usando el minimalista), así que la guarda
+    // se limita al caso que era un hueco real.
+    const baby = templates.filter((t) => t.eventType === "Baby shower");
+    expect(baby.length).toBeGreaterThanOrEqual(10);
+    for (const t of baby) {
+      const key = (t.theme as { themePack?: string }).themePack;
+      if (!key) continue; // los tiers gratis no declaran pack, por diseño
+      expect(
+        THEME_PACKS[key]?.category,
+        `${t.slug} usa el pack "${key}", que no es de baby shower`,
+      ).toBe("baby");
+    }
+  });
+
   it("las plantillas gratis se pueden publicar sin comprar nada", () => {
     const free = templates.filter((t) => planOf(t).code === "free");
     expect(free.length).toBeGreaterThanOrEqual(10);

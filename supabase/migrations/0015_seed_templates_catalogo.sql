@@ -581,7 +581,7 @@ values
     'baby-shower-animalitos',
     'Tierno con animalitos, itinerario de juegos y galería.',
     'Baby shower',
-    '{"themePack":"capibara"}'::jsonb,
+    '{"themePack":"baby-animalitos"}'::jsonb,
     '[
       {"module_type":"hero","sort_order":0,"is_visible":true,"config":{"title":"Baby shower","subtitle":"Con mucho cariño","imageUrl":"","ctaLabel":"Ver invitación"}},
       {"module_type":"welcome","sort_order":1,"is_visible":true,"config":{"title":"Bienvenidos","message":"Vamos a jugar, comer rico y consentir al bebé."}},
@@ -597,11 +597,11 @@ values
     true
   ),
   (
-    'Baby shower kawaii',
-    'baby-shower-kawaii',
-    'Pasteles suaves, con juegos y galería en mosaico.',
+    'Baby shower nubes',
+    'baby-shower-nubes',
+    'Celeste y nubes flotando, con juegos y galería en mosaico.',
     'Baby shower',
-    '{"themePack":"kawaii"}'::jsonb,
+    '{"themePack":"baby-nubes"}'::jsonb,
     '[
       {"module_type":"hero","sort_order":0,"is_visible":true,"config":{"title":"Baby shower","subtitle":"¡Ya viene!","imageUrl":"","ctaLabel":"Acompáñanos"}},
       {"module_type":"welcome","sort_order":1,"is_visible":true,"config":{"title":"Qué emoción","message":"Habrá juegos, postres y muchas fotos."}},
@@ -621,7 +621,7 @@ values
     'baby-shower-revelacion',
     'Para revelación de género, con galería e itinerario.',
     'Baby shower',
-    '{"themePack":"galaxia"}'::jsonb,
+    '{"themePack":"baby-revelacion"}'::jsonb,
     '[
       {"module_type":"hero","sort_order":0,"is_visible":true,"config":{"title":"¿Niño o niña?","subtitle":"Ven a descubrirlo con nosotros","imageUrl":"","ctaLabel":"Quiero saber"}},
       {"module_type":"welcome","sort_order":1,"is_visible":true,"config":{"title":"El gran momento","message":"Ni nosotros sabemos todavía. Lo descubriremos todos juntos."}},
@@ -637,19 +637,19 @@ values
     true
   ),
   (
-    'Baby shower botánico',
-    'baby-shower-botanico',
-    'Follaje y verdes suaves, con itinerario y regalos.',
+    'Baby shower salvia',
+    'baby-shower-salvia',
+    'Salvia y crema, sin color de género, con itinerario y regalos.',
     'Baby shower',
-    '{"themePack":"botanico-greenery"}'::jsonb,
+    '{"themePack":"baby-neutro"}'::jsonb,
     '[
-      {"module_type":"hero","sort_order":0,"is_visible":true,"config":{"title":"Baby shower","subtitle":"Entre hojas y flores","imageUrl":"","ctaLabel":"Ver más"}},
-      {"module_type":"welcome","sort_order":1,"is_visible":true,"config":{"title":"Bienvenidos","message":"Celebramos al aire libre, rodeados de plantas."}},
+      {"module_type":"hero","sort_order":0,"is_visible":true,"config":{"title":"Baby shower","subtitle":"Con calma y cariño","imageUrl":"","ctaLabel":"Ver más"}},
+      {"module_type":"welcome","sort_order":1,"is_visible":true,"config":{"title":"Bienvenidos","message":"Queremos celebrar en corto, con la gente más cercana."}},
       {"module_type":"countdown","sort_order":2,"is_visible":true,"config":{"title":"Faltan","targetDate":"","useEventDate":true}},
       {"module_type":"map","sort_order":3,"is_visible":true,"config":{"title":"Ubicación","venueName":"","address":""}},
       {"module_type":"gallery","sort_order":4,"is_visible":true,"config":{"title":"Galería","images":[],"layout":"grid","lightbox":true,"kenBurns":false}},
       {"module_type":"itinerary","sort_order":5,"is_visible":true,"config":{"title":"Programa","items":[{"time":"12:00","label":"Recepción de invitadas"},{"time":"13:00","label":"Comida"},{"time":"14:30","label":"Juegos"},{"time":"15:30","label":"Apertura de regalos"},{"time":"16:30","label":"Postres y despedida"}]}},
-      {"module_type":"dresscode","sort_order":6,"is_visible":true,"config":{"title":"Código de vestimenta","level":"casual","description":"Cómodo, en tonos verdes o neutros.","imageUrl":""}},
+      {"module_type":"dresscode","sort_order":6,"is_visible":true,"config":{"title":"Código de vestimenta","level":"casual","description":"Cómodo, en tonos neutros.","imageUrl":""}},
       {"module_type":"music","sort_order":7,"is_visible":true,"config":{"title":"Música","url":""}},
       {"module_type":"gifts","sort_order":8,"is_visible":true,"config":{"title":"Mesa de regalos","description":"Registramos lo que necesita el bebé para que elijas con calma.","links":[{"label":"Mesa de regalos","url":""}]}},
       {"module_type":"rsvp","sort_order":9,"is_visible":true,"config":{"title":"Confirma tu asistencia","description":"","deadline":"","allowGuestCount":true}}
@@ -661,7 +661,7 @@ values
     'baby-shower-con-video',
     'Incluye video del ultrasonido o mensaje de los papás.',
     'Baby shower',
-    '{"themePack":"capibara"}'::jsonb,
+    '{"themePack":"baby-animalitos"}'::jsonb,
     '[
       {"module_type":"hero","sort_order":0,"is_visible":true,"config":{"title":"Baby shower","subtitle":"Te invitamos con un video","imageUrl":"","ctaLabel":"Ver el video"}},
       {"module_type":"welcome","sort_order":1,"is_visible":true,"config":{"title":"Nuestro mensaje","message":"Grabamos un video para contarte cómo va todo."}},
@@ -682,7 +682,7 @@ values
     'baby-shower-completo',
     'Todo activado: video, galería, juegos, vestimenta y regalos.',
     'Baby shower',
-    '{"themePack":"kawaii"}'::jsonb,
+    '{"themePack":"baby-nubes"}'::jsonb,
     '[
       {"module_type":"hero","sort_order":0,"is_visible":true,"config":{"title":"Baby shower","subtitle":"Todos los detalles aquí","imageUrl":"","ctaLabel":"Ver todo"}},
       {"module_type":"welcome","sort_order":1,"is_visible":true,"config":{"title":"Bienvenidos","message":"Aquí están el horario, la ubicación y la mesa de regalos."}},
