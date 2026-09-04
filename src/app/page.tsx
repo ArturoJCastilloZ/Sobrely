@@ -7,6 +7,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { EVENT_LANDING_LIST } from "@/lib/seo/event-landings";
 import { LOCAL_BUSINESS_LD, WEBSITE_LD } from "@/lib/seo/site";
 import { LocalLine } from "@/components/seo/local-line";
+import { billingPitch } from "@/lib/billing/value-prop";
 
 export const metadata: Metadata = {
   // Homepage: título absoluto (ignora el template "%s · Sobrely") con keywords.
@@ -33,7 +34,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "¿Cuánto cuesta hacer una invitación digital?",
-    a: "Puedes crearla gratis y solo pagas una vez, por evento, cuando decides publicarla. No hay cobros recurrentes ni suscripción. Consulta los planes en la página de precios.",
+    a: billingPitch().faqAnswer,
   },
   {
     q: "¿Mis invitados necesitan instalar una app?",
@@ -60,6 +61,8 @@ export default async function Home() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const pitch = billingPitch();
 
   return (
     <main className="flex flex-1 flex-col">
@@ -139,6 +142,11 @@ export default async function Home() {
             Ya tengo cuenta
           </Button>
         </div>
+        {/* El mecanismo de cobro, donde se decide: "Empieza gratis" a secas no
+            dice si hay tarjeta, prueba o versión recortada. */}
+        {!user && (
+          <p className="text-sm text-muted-foreground">{pitch.micro}</p>
+        )}
       </section>
 
       <section className="mx-auto w-full max-w-4xl px-4 py-12">

@@ -4,6 +4,7 @@ import { LogoLockup } from "@/components/brand/logo-lockup";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LocalLine } from "@/components/seo/local-line";
 import type { EventLanding } from "@/lib/seo/event-landings";
+import { billingPitch } from "@/lib/billing/value-prop";
 
 const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -95,6 +96,7 @@ export function EventLandingPage({ data }: { data: EventLanding }) {
             Ver precios
           </Button>
         </div>
+        <p className="text-sm text-muted-foreground">{billingPitch().micro}</p>
       </section>
 
       <section className="mx-auto grid w-full max-w-4xl gap-6 px-4 py-8 sm:grid-cols-3">
