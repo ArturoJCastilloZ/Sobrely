@@ -14,6 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   canPublishInvitation,
   getInvitationEntitlement,
+  isOwnerComped,
 } from "@/lib/billing/entitlements";
 import { getPlan, resolveExpiry } from "@/lib/billing/plans";
 import type { PlanCode } from "@/lib/billing/types";
@@ -239,9 +240,13 @@ export async function setPublished(
     };
   }
 
-  // Sin entitlement activo → publicación DEMO en Free (14 días).
+  // Sin entitlement activo → publicación DEMO en Free (14 días). El comp de
+  // admin NO crea la fila: sería un entitlement Free (branding y `guest_limit`
+  // de Free) encima del plan de cortesía, y al vencer ensuciaría el estado.
+  // `is_entitlement_active` en la BD ya deja pública la invitación comped.
   const ent = await getInvitationEntitlement(supabase, invitationId);
-  if (!ent?.isActive) {
+  const comped = await isOwnerComped(supabase, invitationId);
+  if (!ent?.isActive && !comped) {
     const free = getPlan("free")!;
     const now = new Date();
     const eventDate = inv.event_date ? new Date(inv.event_date as string) : null;

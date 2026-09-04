@@ -32,31 +32,25 @@ const FREE_PLAN = getPlan("free")!;
 const PREMIUM_PLAN = getPlan("premium")!;
 
 /**
- * ¿El DUEÑO de la invitación es admin? Los admins tienen acceso de cortesía
- * (comp) al plan más alto en TODAS sus invitaciones, sin comprar — es la cuenta
- * del equipo. RLS: el cliente de sesión solo lee su PROPIA fila de `admin_users`
- * (select-own), que es justo la del dueño cuando resuelve su invitación; el
- * cliente service_role (webhook/vanity) lee cualquiera. Un no-dueño no puede
- * leer la invitación (RLS) → no aplica comp, sin fuga.
+ * ¿El DUEÑO de la invitación tiene comp (cuenta admin)? Los admins tienen
+ * acceso de cortesía al plan más alto en TODAS sus invitaciones, sin comprar.
+ *
+ * La respuesta la da la BD (`invitation_owner_is_comped`, migración 0013), que
+ * es la MISMA fuente que usan `invitation_effective_plan` y las RPC públicas.
+ * No se reimplementa aquí: duplicarla fue justo lo que hizo que la invitación
+ * de un admin se publicara con branding Free.
+ *
+ * Fail-closed: si la RPC falla, NO hay comp.
  */
-async function ownerIsComped(
+export async function isOwnerComped(
   supabase: AnyClient,
   invitationId: string,
 ): Promise<boolean> {
-  const { data: inv } = await supabase
-    .from("invitations")
-    .select("user_id")
-    .eq("id", invitationId)
-    .maybeSingle();
-  const ownerId = inv?.user_id as string | undefined;
-  if (!ownerId) return false;
-
-  const { data: admin } = await supabase
-    .from("admin_users")
-    .select("user_id")
-    .eq("user_id", ownerId)
-    .maybeSingle();
-  return !!admin;
+  const { data, error } = await supabase.rpc("invitation_owner_is_comped", {
+    p_invitation_id: invitationId,
+  });
+  if (error) return false;
+  return data === true;
 }
 
 export interface EntitlementInfo {
@@ -100,31 +94,49 @@ export async function getInvitationEntitlement(
   };
 }
 
-/** ¿La invitación tiene un entitlement vigente ahora? */
+/**
+ * ¿La invitación tiene un entitlement vigente ahora? Espejo de
+ * `public.is_entitlement_active`: el comp de admin cuenta como vigente.
+ */
 export async function isEntitlementActive(
   supabase: AnyClient,
   invitationId: string,
 ): Promise<boolean> {
+  if (await isOwnerComped(supabase, invitationId)) return true;
   const ent = await getInvitationEntitlement(supabase, invitationId);
   return ent?.isActive ?? false;
 }
 
 /**
+ * Plan efectivo + si viene de un comp. Lo usan los callers que necesitan
+ * distinguir el comp (p.ej. los topes, que no deben caer al `guest_limit`
+ * congelado en la fila del entitlement).
+ */
+export async function resolveEffectivePlan(
+  supabase: AnyClient,
+  invitationId: string,
+): Promise<{ plan: Plan; comped: boolean }> {
+  // Comp: si el dueño es admin, plan más alto sin necesidad de compra.
+  if (await isOwnerComped(supabase, invitationId)) {
+    return { plan: PREMIUM_PLAN, comped: true };
+  }
+  const ent = await getInvitationEntitlement(supabase, invitationId);
+  if (ent?.isActive) {
+    return { plan: getPlan(ent.planCode) ?? FREE_PLAN, comped: false };
+  }
+  return { plan: FREE_PLAN, comped: false };
+}
+
+/**
  * Plan EFECTIVO de una invitación: el del entitlement activo, o Free como base.
+ * Espeja `public.invitation_effective_plan` (comp de admin incluido).
  */
 export async function getInvitationEffectivePlan(
   supabase: AnyClient,
   invitationId: string,
 ): Promise<Plan> {
-  // Comp: si el dueño es admin, plan más alto sin necesidad de compra.
-  if (await ownerIsComped(supabase, invitationId)) {
-    return PREMIUM_PLAN;
-  }
-  const ent = await getInvitationEntitlement(supabase, invitationId);
-  if (ent?.isActive) {
-    return getPlan(ent.planCode) ?? FREE_PLAN;
-  }
-  return FREE_PLAN;
+  const { plan } = await resolveEffectivePlan(supabase, invitationId);
+  return plan;
 }
 
 /** Plan base del usuario (profiles.plan). Baseline; el plan real es por invitación. */
@@ -292,9 +304,11 @@ export async function canAddGuest(
   addGuests: number,
 ): Promise<GuestCheck> {
   const ent = await getInvitationEntitlement(admin, invitationId);
-  // Fallback al plan EFECTIVO (que ya aplica el comp de admin), no a Free fijo.
-  const plan = await getInvitationEffectivePlan(admin, invitationId);
-  const limit = ent?.guestLimit ?? plan.maxGuests;
+  const { plan, comped } = await resolveEffectivePlan(admin, invitationId);
+  // Con comp manda el plan efectivo: el `guest_limit` de la fila es un snapshot
+  // del plan comprado (Free 25 en una publicación demo) y ganaría por el `??`,
+  // dejando al admin topado en 25 en vez de los 500 del comp.
+  const limit = comped ? plan.maxGuests : (ent?.guestLimit ?? plan.maxGuests);
 
   const { data: rows } = await admin
     .from("rsvp_responses")
