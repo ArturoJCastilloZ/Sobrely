@@ -114,16 +114,31 @@ describe("comp de admin — el TS consume la fuente SQL", () => {
 });
 
 describe("canAddGuest — el tope con comp no cae al snapshot Free", () => {
-  it("comp con demo Free encima → tope 500 (Premium), no 25", async () => {
+  it("comp con demo Free encima → sin tope (Premium), no 25", async () => {
     const c = fakeClient({
       comped: true,
       entitlement: FREE_DEMO_ENTITLEMENT,
       rsvp: [{ guest_count: 30 }],
     });
     const check = await canAddGuest(c, "inv-1", 1);
-    expect(check.limit).toBe(500);
+    // Premium es ilimitado: `null`. Lo que esta prueba defiende es que NO se
+    // caiga al snapshot Free de la fila, sea cual sea el tope de Premium.
+    expect(check.limit).toBeNull();
+    expect(check.limit).not.toBe(25);
+    expect(check.remaining).toBeNull();
     expect(check.used).toBe(30);
     expect(check.allowed).toBe(true);
+  });
+
+  it("un plan sin tope deja pasar una petición enorme", async () => {
+    const c = fakeClient({
+      comped: true,
+      entitlement: FREE_DEMO_ENTITLEMENT,
+      rsvp: [{ guest_count: 900 }],
+    });
+    const check = await canAddGuest(c, "inv-1", 500);
+    expect(check.allowed).toBe(true);
+    expect(check.used).toBe(900);
   });
 
   it("sin comp → respeta el guest_limit de la fila", async () => {

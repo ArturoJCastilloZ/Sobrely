@@ -13,6 +13,7 @@ import {
   getActivePlans,
 } from "@/lib/billing/plans";
 import { COMPARISON_ROWS, featureLabel } from "@/lib/billing/features";
+import type { PlanCode } from "@/lib/billing/types";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -190,5 +191,54 @@ describe("precios de campaña (env por defecto: lanzamiento activo)", () => {
   it("isOnLaunchOffer true cuando launch < regular", () => {
     expect(celebracion.priceLaunch).toBeLessThan(celebracion.priceRegular);
     expect(isOnLaunchOffer(celebracion)).toBe(true);
+  });
+});
+
+describe("maxGuests — el tope de invitados", () => {
+  it("Premium no tiene tope (null = ilimitado)", () => {
+    expect(getPlan("premium")!.maxGuests).toBeNull();
+  });
+
+  it("los planes con tope conservan su número", () => {
+    expect(getPlan("free")!.maxGuests).toBe(25);
+    expect(getPlan("esencial")!.maxGuests).toBe(100);
+    expect(getPlan("celebracion")!.maxGuests).toBe(250);
+  });
+
+  it("la capacidad nunca baja al subir de plan (null cuenta como infinito)", () => {
+    const cap = (code: PlanCode) => getPlan(code)!.maxGuests ?? Infinity;
+    const escalera: PlanCode[] = ["free", "esencial", "celebracion", "premium"];
+    for (let i = 1; i < escalera.length; i++) {
+      expect(
+        cap(escalera[i]),
+        `${escalera[i]} no puede admitir menos que ${escalera[i - 1]}`,
+      ).toBeGreaterThan(cap(escalera[i - 1]));
+    }
+  });
+});
+
+describe("los highlights no se desincronizan de maxGuests", () => {
+  // Este bullet es texto libre y ya se había quedado atrás una vez: la tabla
+  // comparativa decía "Ilimitados" mientras la tarjeta seguía diciendo
+  // "Hasta 500 invitados". La prueba ancla el copy al dato.
+  it("cada plan anuncia en su bullet el mismo tope que declara", () => {
+    for (const plan of getActivePlans()) {
+      const bullet = plan.highlights.find((h) => /invitados?\b/i.test(h));
+      if (!bullet) continue;
+      if (plan.maxGuests === null) {
+        expect(bullet.toLowerCase(), `${plan.code}`).toContain("ilimitados");
+      } else {
+        expect(bullet, `${plan.code}`).toContain(String(plan.maxGuests));
+      }
+    }
+  });
+
+  it("ningún plan anuncia un tope numérico que ya no existe", () => {
+    for (const plan of getActivePlans()) {
+      if (plan.maxGuests !== null) continue;
+      for (const h of plan.highlights) {
+        expect(h, `${plan.code}: "${h}"`).not.toMatch(/hasta \d+ invitados/i);
+      }
+    }
   });
 });

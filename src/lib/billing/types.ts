@@ -85,8 +85,12 @@ export interface Plan {
    * invitación no tiene fecha de evento. En Free equivale a la demo.
    */
   readonly fallbackDurationDays: number;
-  /** Tope de invitados (RSVP) por invitación. */
-  readonly maxGuests: number;
+  /**
+   * Tope de invitados (RSVP) por invitación. **`null` = ilimitado.**
+   * Se persiste tal cual en `invitation_entitlements.guest_limit`, que es
+   * nullable, así que un plan sin tope no necesita valor centinela.
+   */
+  readonly maxGuests: number | null;
   /** Cuota de almacenamiento de imágenes por invitación, en MB. */
   readonly maxStorageMb: number;
   /** Módulos que el plan permite usar. Los no incluidos se marcan ⭐ premium. */

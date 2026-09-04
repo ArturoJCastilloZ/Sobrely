@@ -288,9 +288,11 @@ export async function canPublishInvitation(
 
 export interface GuestCheck {
   allowed: boolean;
-  limit: number;
+  /** Tope efectivo. **`null` = ilimitado** (Premium). */
+  limit: number | null;
   used: number;
-  remaining: number;
+  /** Lugares que quedan. `null` cuando no hay tope. */
+  remaining: number | null;
 }
 
 /**
@@ -307,7 +309,11 @@ export async function canAddGuest(
   const { plan, comped } = await resolveEffectivePlan(admin, invitationId);
   // Con comp manda el plan efectivo: el `guest_limit` de la fila es un snapshot
   // del plan comprado (Free 25 en una publicación demo) y ganaría por el `??`,
-  // dejando al admin topado en 25 en vez de los 500 del comp.
+  // dejando al admin topado en 25 en vez del cupo del comp (hoy, ilimitado).
+  //
+  // OJO con el `??`: en la columna, `null` significa a la vez "ilimitado" y
+  // "no se guardó". Caer al plan resuelve bien los dos casos — si el plan es
+  // Premium el resultado vuelve a ser null (ilimitado), y si no, su tope real.
   const limit = comped ? plan.maxGuests : (ent?.guestLimit ?? plan.maxGuests);
 
   const { data: rows } = await admin
@@ -319,6 +325,10 @@ export async function canAddGuest(
     (sum, r) => sum + ((r.guest_count as number) ?? 0),
     0,
   );
+
+  if (limit === null) {
+    return { allowed: true, limit: null, used, remaining: null };
+  }
 
   return {
     allowed: used + addGuests <= limit,

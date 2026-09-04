@@ -68,7 +68,10 @@ export const COMPARISON_ROWS: readonly ComparisonRow[] = [
         : formatPrice(p.priceRegular, p.currency),
   },
   { label: "Vigencia de la invitación", value: vigenciaLabel },
-  { label: "Invitados incluidos", value: (p) => `Hasta ${p.maxGuests}` },
+  {
+    label: "Invitados incluidos",
+    value: (p) => (p.maxGuests === null ? "Ilimitados" : `Hasta ${p.maxGuests}`),
+  },
   { label: "Almacenamiento", value: (p) => `${p.maxStorageMb} MB` },
   {
     label: "Módulos disponibles",

@@ -157,7 +157,9 @@ export const PLANS: readonly Plan[] = [
     publishTrialDays: null,
     graceDaysAfterEvent: 90,
     fallbackDurationDays: 365,
-    maxGuests: 500,
+    // Sin tope: una boda de 800 invitados tiene que poder venderse. Ver
+    // `Plan.maxGuests` — null es ilimitado, no "sin definir".
+    maxGuests: null,
     maxStorageMb: 2000,
     allowedModules: ALL_MODULES,
     features: [
@@ -175,8 +177,8 @@ export const PLANS: readonly Plan[] = [
     displayOrder: 4,
     highlights: [
       "Todo lo de Celebración",
+      "Invitados ilimitados",
       "Vigente hasta tu evento + 90 días",
-      "Hasta 500 invitados",
       "Módulo de Video (todos los módulos disponibles)",
       "Invitados nominales con link único y QR de acceso",
       "Mayor almacenamiento",

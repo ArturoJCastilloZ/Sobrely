@@ -20,13 +20,14 @@ export type GuestActionResult = { ok: true } | { ok: false; error: string };
 /**
  * Cupo total de invitados de la invitación = `maxGuests` de su plan EFECTIVO.
  * El modo lista está en todos los planes; lo que cambia es este número (Free 25
- * … Premium 500). En borrador el plan efectivo es Free hasta que se publica con
- * un plan pagado, momento en el que se puede agregar más.
+ * … Premium **ilimitado**). Devuelve `null` cuando el plan no tiene tope. En
+ * borrador el plan efectivo es Free hasta que se publica con un plan pagado,
+ * momento en el que se puede agregar más.
  */
 async function planGuestCap(
   supabase: Awaited<ReturnType<typeof createClient>>,
   invitationId: string,
-): Promise<number> {
+): Promise<number | null> {
   const plan = await getInvitationEffectivePlan(supabase, invitationId);
   return plan.maxGuests;
 }
@@ -127,7 +128,7 @@ export async function addGuest(
 
   const cap = await planGuestCap(supabase, v.invitationId);
   const used = await currentAllotment(supabase, v.invitationId);
-  if (used + v.maxGuests > cap) {
+  if (cap !== null && used + v.maxGuests > cap) {
     return {
       ok: false,
       error: `Tu plan permite hasta ${cap} invitados. Sube de plan para agregar más.`,
@@ -165,7 +166,7 @@ export async function addGuestsBulk(
   const cap = await planGuestCap(supabase, v.invitationId);
   const used = await currentAllotment(supabase, v.invitationId);
   const adding = rows.reduce((s, r) => s + r.maxGuests, 0);
-  if (used + adding > cap) {
+  if (cap !== null && used + adding > cap) {
     return {
       ok: false,
       error: `Tu plan permite hasta ${cap} invitados. Sube de plan para agregar más.`,
@@ -213,7 +214,7 @@ export async function editGuest(
     guest.invitation_id as string,
     v.id,
   );
-  if (used + v.maxGuests > cap) {
+  if (cap !== null && used + v.maxGuests > cap) {
     return {
       ok: false,
       error: `Tu plan permite hasta ${cap} invitados. Sube de plan para agregar más.`,
