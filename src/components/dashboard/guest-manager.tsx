@@ -272,51 +272,16 @@ export function GuestManager({
 
       {/* Alta */}
       <div className="rounded-lg border p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex-1 space-y-1.5">
-            <Label htmlFor="g-name">Nombre del invitado</Label>
-            <Input
-              id="g-name"
-              value={name}
-              placeholder="p. ej. Mara González"
-              onChange={(e) => setName(e.target.value)}
-              maxLength={120}
-            />
-          </div>
-          <div className="w-full space-y-1.5 sm:w-28">
-            <Label htmlFor="g-allot">Lugares</Label>
-            <Input
-              id="g-allot"
-              type="number"
-              min={1}
-              max={MAX_GUEST_ALLOTMENT}
-              value={allotment}
-              onChange={(e) =>
-                setAllotment(
-                  Math.max(
-                    1,
-                    Math.min(MAX_GUEST_ALLOTMENT, Number(e.target.value) || 1),
-                  ),
-                )
-              }
-            />
-          </div>
-          <div className="w-full space-y-1.5 sm:w-44">
-            <Label htmlFor="g-phone">WhatsApp (opcional)</Label>
-            <Input
-              id="g-phone"
-              type="tel"
-              inputMode="tel"
-              value={phone}
-              placeholder="55 1234 5678"
-              onChange={(e) => setPhone(e.target.value)}
-              maxLength={25}
-            />
-          </div>
-          <Button onClick={handleAdd} disabled={pending}>
-            Agregar
-          </Button>
-        </div>
+        <AddGuestFields
+          name={name}
+          allotment={allotment}
+          phone={phone}
+          busy={pending}
+          onName={setName}
+          onAllotment={setAllotment}
+          onPhone={setPhone}
+          onSubmit={handleAdd}
+        />
         <button
           type="button"
           onClick={() => setShowBulk((v) => !v)}
@@ -375,6 +340,87 @@ export function GuestManager({
 }
 
 
+
+/**
+ * Campos de alta de un invitado.
+ *
+ * Presentacional, como `GuestRowItem`, para poder montarlo aislado y medirlo.
+ *
+ * El nombre lleva `min-w` a propósito: es un `flex-1` compitiendo con dos
+ * campos de ancho fijo y un botón, y `flex-1` sin mínimo se encoge hasta el
+ * contenido cuando el panel es angosto — que es exactamente como quedó al
+ * agregar el campo de WhatsApp: el input del nombre acabó más chico que el de
+ * Lugares. Con el mínimo, cuando ya no cabe la fila ENVUELVE en vez de
+ * aplastar el campo más importante.
+ */
+function AddGuestFields({
+  name,
+  allotment,
+  phone,
+  busy,
+  onName,
+  onAllotment,
+  onPhone,
+  onSubmit,
+}: {
+  name: string;
+  allotment: number;
+  phone: string;
+  busy: boolean;
+  onName: (v: string) => void;
+  onAllotment: (v: number) => void;
+  onPhone: (v: string) => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-end gap-3">
+      <div className="min-w-[14rem] flex-1 space-y-1.5">
+        <Label htmlFor="g-name">Nombre del invitado</Label>
+        <Input
+          id="g-name"
+          value={name}
+          placeholder="p. ej. Mara González"
+          onChange={(e) => onName(e.target.value)}
+          maxLength={120}
+        />
+      </div>
+      <div className="w-24 shrink-0 space-y-1.5">
+        <Label htmlFor="g-allot">Lugares</Label>
+        <Input
+          id="g-allot"
+          type="number"
+          min={1}
+          max={MAX_GUEST_ALLOTMENT}
+          value={allotment}
+          onChange={(e) =>
+            onAllotment(
+              Math.max(
+                1,
+                Math.min(MAX_GUEST_ALLOTMENT, Number(e.target.value) || 1),
+              ),
+            )
+          }
+        />
+      </div>
+      <div className="min-w-[10rem] flex-1 space-y-1.5 sm:max-w-[11rem]">
+        <Label htmlFor="g-phone">WhatsApp (opcional)</Label>
+        <Input
+          id="g-phone"
+          type="tel"
+          inputMode="tel"
+          value={phone}
+          placeholder="55 1234 5678"
+          onChange={(e) => onPhone(e.target.value)}
+          maxLength={25}
+        />
+      </div>
+      <Button onClick={onSubmit} disabled={busy} className="shrink-0">
+        Agregar
+      </Button>
+    </div>
+  );
+}
+
 /**
  * Una fila de la lista de invitados.
  *
@@ -390,7 +436,7 @@ export function GuestManager({
  * fantasma), no separadores verticales: con `flex-wrap` una rayita acaba
  * colgando al principio o al final de un renglón según el ancho.
  */
-export function GuestRowItem({
+function GuestRowItem({
   guest: g,
   busy,
   onInvite,
