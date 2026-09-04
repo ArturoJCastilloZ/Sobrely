@@ -71,6 +71,14 @@ Aplica **todas** las migraciones de `supabase/migrations/` en orden (SQL Editor 
 - `0010` slugs personalizados (vanity)
 - `0011` lista de invitados (modo `guest_list` + tabla `invitation_guests` + RPCs
   por token)
+- `0012` branding condicional por plan (`plan_code` en las RPC públicas)
+- `0013` comp de plan para cuentas admin, en SQL (una sola fuente del plan
+  efectivo)
+- `0014` publica `invitation_guests` y `rsvp_responses` en `supabase_realtime`
+  (sin esto el indicador "En vivo" del panel no se enciende)
+- `0015` catálogo de plantillas: 10 por tipo de evento
+- `0016` elimina `plans.allowed_modules` y `plans.features` (dato muerto que se
+  desincronizaba; la fuente es `src/lib/billing/plans.ts`)
 
 Tras `0009`, siembra el primer admin por SQL:
 

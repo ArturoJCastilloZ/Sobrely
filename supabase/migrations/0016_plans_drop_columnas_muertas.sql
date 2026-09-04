@@ -1,0 +1,53 @@
+-- ============================================================================
+-- 0016_plans_drop_columnas_muertas.sql — se van `allowed_modules` y `features`
+--
+-- POR QUÉ
+--
+-- `public.plans` guardaba `allowed_modules` y `features` desde 0006, pero la
+-- aplicación NUNCA las lee: `plans.ts` es la fuente de verdad de los planes y
+-- la BD solo guarda el `id`/`code` para amarrar órdenes y entitlements. Las
+-- tres lecturas de la tabla lo confirman —`select("code")` en fulfillment,
+-- `select("id")` en actions y en el publish— y el propio código lo dice:
+-- "la config tipada es la fuente; la BD guarda el id".
+--
+-- El resultado predecible: se quedaron viejas. A `premium` le faltaban
+-- `custom_art` y `guest_management`, y a `celebracion` `guest_management`, todo
+-- desde el seed original. Nadie se enteró porque nadie las consulta.
+--
+-- Son la misma trampa que ya costó un bug en este proyecto: dos fuentes de
+-- verdad para el mismo hecho. El comp de plan para admins se implementó solo en
+-- TypeScript mientras la función SQL del plan efectivo seguía sin saberlo, y las
+-- invitaciones del equipo se publicaban con la marca de Free (ver 0013). Ahí la
+-- solución fue unificar en UNA fuente; aquí es lo mismo, eliminando la copia
+-- que nadie usa en vez de mantener dos sincronizadas a mano.
+--
+-- QUÉ NO SE TOCA
+--
+-- `coming_soon` es el tercer caso idéntico —tampoco se lee— pero se deja: el
+-- alcance autorizado fueron estas dos. Si se decide quitarla, va en su propia
+-- migración.
+--
+-- El resto de las columnas (`price_*`, `max_guests`, `branding`, …) también las
+-- manda `plans.ts` en tiempo de ejecución, pero se conservan a propósito:
+-- documentan el plan vigente para consultas manuales y auditoría de órdenes
+-- históricas, y no cargan una LISTA que se desincroniza en silencio.
+--
+-- CÓMO SE REVIERTE
+--
+-- El dato no se pierde: vive en `src/lib/billing/plans.ts`. Para volver atrás,
+-- re-agregar las columnas y re-sembrar desde ahí:
+--
+--   alter table public.plans
+--     add column allowed_modules jsonb not null default '[]'::jsonb,
+--     add column features        jsonb not null default '[]'::jsonb;
+--
+-- Nota de orden: 0006 sigue creando y poblando estas columnas, y esta migración
+-- corre después, así que un arranque desde cero funciona igual (0006 crea →
+-- 0016 elimina). No editar 0006: ya está aplicada.
+--
+-- Idempotente vía `if exists`.
+-- ============================================================================
+
+alter table public.plans
+  drop column if exists allowed_modules,
+  drop column if exists features;
