@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { CanvasSection } from "@/components/modules/canvas-section";
 import type {
   CountdownConfig,
   DresscodeConfig,
@@ -15,6 +16,7 @@ import type {
   RsvpConfig,
   VideoConfig,
   WelcomeConfig,
+  CanvasConfig,
 } from "@/lib/modules/types";
 import { parseConfig } from "@/lib/modules/types";
 import { Input } from "@/components/ui/input";
@@ -611,6 +613,8 @@ export function ModulePreview({
       return <GiftsPreview config={parsed as GiftsConfig} animate={animate} />;
     case "music":
       return <MusicPreview config={parsed as MusicConfig} />;
+    case "canvas":
+      return <CanvasSection config={parsed as CanvasConfig} />;
     case "rsvp":
       return (
         <RsvpPreview

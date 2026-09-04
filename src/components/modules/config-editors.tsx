@@ -20,6 +20,7 @@ import {
   type UploadContext,
 } from "@/components/editor/image-uploader";
 import { SortableImageGrid } from "@/components/editor/sortable-image-grid";
+import { CanvasEditor } from "@/components/editor/canvas-editor";
 import {
   CSS_REVEAL_PRESETS,
   ANIMATION_REGISTRY,
@@ -719,6 +720,8 @@ export function ModuleConfigEditor({
         return <MusicEditor {...props} />;
       case "rsvp":
         return <RsvpEditor {...props} rsvpMode={rsvpMode} />;
+      case "canvas":
+        return <CanvasEditor {...props} />;
       default:
         return null;
     }

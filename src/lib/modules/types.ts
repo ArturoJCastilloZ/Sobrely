@@ -18,6 +18,7 @@ export const MODULE_TYPES = [
   "gifts",
   "music",
   "rsvp",
+  "canvas",
 ] as const;
 export type ModuleType = (typeof MODULE_TYPES)[number];
 
@@ -148,6 +149,70 @@ export const musicConfigSchema = z.object({
   url: optionalUrl, // Spotify, YouTube o audio
 });
 
+/** Color hexadecimal; local para no acoplar `modules` con `theme`. */
+const canvasHex = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, "Usa un color hexadecimal de 6 dígitos.");
+
+export const CANVAS_LAYER_KINDS = ["text", "image"] as const;
+export type CanvasLayerKind = (typeof CANVAS_LAYER_KINDS)[number];
+
+/**
+ * Proporción de la sección. La clave del diseño: al fijar una PROPORCIÓN en vez
+ * de una altura en píxeles, las coordenadas fraccionarias de las capas siguen
+ * significando lo mismo en cualquier ancho de pantalla. El competidor resuelve
+ * esto fijando 900px de alto, o sea renunciando a ser responsive; aquí no hace
+ * falta.
+ */
+export const CANVAS_ASPECTS = ["4/5", "1/1", "3/4", "9/16"] as const;
+export type CanvasAspect = (typeof CANVAS_ASPECTS)[number];
+
+export const CANVAS_ASPECT_LABELS: Record<CanvasAspect, string> = {
+  "4/5": "Vertical suave (4:5)",
+  "1/1": "Cuadrada (1:1)",
+  "3/4": "Vertical (3:4)",
+  "9/16": "Historia (9:16)",
+};
+
+/**
+ * Una capa colocable dentro de la sección.
+ *
+ * Posición y tamaño en FRACCIONES (0–1) del contenedor, misma técnica que ya
+ * usan los stickers en producción — es la única que sobrevive bien a móvil. El
+ * orden del arreglo es el z-index: el último queda encima.
+ */
+export const canvasLayerSchema = z.object({
+  id: z.string().min(1).max(64),
+  kind: z.enum(CANVAS_LAYER_KINDS),
+  x: z.number().min(0).max(1).default(0.5),
+  y: z.number().min(0).max(1).default(0.5),
+  /** Ancho como fracción del contenedor. */
+  w: z.number().min(0.05).max(1).default(0.6),
+  rotation: z.number().min(-180).max(180).default(0),
+  // --- capa de texto ---
+  text: z.string().max(300).default(""),
+  /**
+   * Tamaño en `cqw`: porcentaje del ANCHO del contenedor. Así el texto escala
+   * con la sección en lugar de quedarse chico en móvil o gigante en escritorio,
+   * y sigue siendo una unidad relativa (no rompe el zoom como `vw`).
+   */
+  fontSize: z.number().min(1).max(30).default(7),
+  color: canvasHex.default("#111111"),
+  align: z.enum(["left", "center", "right"]).default("center"),
+  // --- capa de imagen ---
+  url: optionalUrl,
+});
+export type CanvasLayer = z.infer<typeof canvasLayerSchema>;
+
+export const canvasConfigSchema = z.object({
+  title: z.string().max(120).default(""),
+  aspect: z.enum(CANVAS_ASPECTS).default("4/5"),
+  /** Fondo de la sección. Vacío = hereda el de la invitación. */
+  background: canvasHex.or(z.literal("")).default(""),
+  layers: z.array(canvasLayerSchema).max(24).default([]),
+});
+export type CanvasConfig = z.infer<typeof canvasConfigSchema>;
+
 export const moduleConfigSchemas = {
   hero: heroConfigSchema,
   welcome: welcomeConfigSchema,
@@ -160,6 +225,7 @@ export const moduleConfigSchemas = {
   gifts: giftsConfigSchema,
   music: musicConfigSchema,
   rsvp: rsvpConfigSchema,
+  canvas: canvasConfigSchema,
 } satisfies Record<ModuleType, z.ZodType>;
 
 export type HeroConfig = z.infer<typeof heroConfigSchema>;
@@ -234,6 +300,12 @@ export const MODULE_META: Record<
     label: "Confirmación (RSVP)",
     icon: "✅",
     description: "Formulario para confirmar asistencia.",
+  },
+  canvas: {
+    label: "Sección libre",
+    icon: "🧩",
+    description:
+      "Un lienzo con proporción fija donde colocas textos e imágenes donde quieras.",
   },
 };
 
