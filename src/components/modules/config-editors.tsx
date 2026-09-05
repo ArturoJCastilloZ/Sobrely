@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import type {
   ModuleType,
   GalleryLayout,
@@ -679,18 +681,9 @@ function RsvpQuestionsEditor({ config, onChange }: EditorProps) {
           </div>
 
           {q.type === "choice" && (
-            <Input
-              value={(q.options ?? []).join(", ")}
-              placeholder={`Opciones separadas por coma (máx. ${MAX_RSVP_QUESTION_OPTIONS})`}
-              onChange={(e) =>
-                patch(i, {
-                  options: e.target.value
-                    .split(",")
-                    .map((o) => o.trim())
-                    .filter(Boolean)
-                    .slice(0, MAX_RSVP_QUESTION_OPTIONS),
-                })
-              }
+            <OptionsInput
+              options={q.options ?? []}
+              onChange={(options) => patch(i, { options })}
             />
           )}
         </div>
@@ -705,6 +698,67 @@ function RsvpQuestionsEditor({ config, onChange }: EditorProps) {
           Agregar pregunta
         </button>
       )}
+    </div>
+  );
+}
+
+
+/**
+ * Captura de opciones separadas por coma.
+ *
+ * Guarda su PROPIO texto en vez de re-derivarlo del array en cada tecla, que
+ * es lo que rompía el campo: `value={options.join(", ")}` con un `onChange`
+ * que hacía `split(",").map(trim).filter(Boolean)` borraba la coma en el
+ * instante de teclearla (produce un token vacío que `filter` elimina) y
+ * comía el espacio siguiente (lo quita `trim`). El input se peleaba con
+ * quien escribía: tras "Carne" ya no se podía seguir.
+ *
+ * El array se deriva al vuelo para el padre, pero el texto visible es el que
+ * el usuario tecleó, intacto. Solo se normaliza al salir del campo, que es
+ * cuando ya terminó de escribir.
+ */
+function OptionsInput({
+  options,
+  onChange,
+}: {
+  options: readonly string[];
+  onChange: (options: string[]) => void;
+}) {
+  const [texto, setTexto] = useState(() => options.join(", "));
+
+  function parse(v: string): string[] {
+    return v
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean)
+      .slice(0, MAX_RSVP_QUESTION_OPTIONS);
+  }
+
+  const opciones = parse(texto);
+  const sobran = texto.split(",").filter((o) => o.trim()).length >
+    MAX_RSVP_QUESTION_OPTIONS;
+
+  return (
+    <div className="space-y-1">
+      <Input
+        value={texto}
+        placeholder={`Opciones separadas por coma (máx. ${MAX_RSVP_QUESTION_OPTIONS})`}
+        onChange={(e) => {
+          setTexto(e.target.value);
+          onChange(parse(e.target.value));
+        }}
+        // Al salir se normaliza el texto a lo que realmente se guardó, para
+        // que no quede una coma suelta o un hueco que no corresponde a nada.
+        onBlur={() => setTexto(opciones.join(", "))}
+      />
+      <p className="text-xs text-muted-foreground">
+        {opciones.length === 0
+          ? "Escribe las opciones separadas por coma. Ej: Carne, Pescado, Vegetariano"
+          : `${opciones.length} ${
+              opciones.length === 1 ? "opción" : "opciones"
+            }: ${opciones.join(" · ")}`}
+        {sobran && ` — solo se guardan las primeras ${MAX_RSVP_QUESTION_OPTIONS}.`}
+      </p>
     </div>
   );
 }
