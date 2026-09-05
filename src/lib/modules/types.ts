@@ -50,11 +50,52 @@ export const mapConfigSchema = z.object({
   address: z.string().max(300).default(""),
 });
 
+/**
+ * Preguntas personalizadas del RSVP (alergias, menú, acompañante).
+ *
+ * El `id` es la llave con la que se guarda la respuesta, NO la etiqueta: así
+ * el organizador puede corregir la redacción de una pregunta sin huerfanar las
+ * respuestas que ya recibió.
+ */
+export const RSVP_QUESTION_TYPES = ["text", "choice", "boolean"] as const;
+export type RsvpQuestionType = (typeof RSVP_QUESTION_TYPES)[number];
+
+export const RSVP_QUESTION_TYPE_LABELS: Record<RsvpQuestionType, string> = {
+  text: "Respuesta libre",
+  choice: "Opciones a elegir",
+  boolean: "Sí o no",
+};
+
+/** Tope de preguntas: confirmar asistencia no debe volverse un formulario. */
+export const MAX_RSVP_QUESTIONS = 5;
+/** Tope de opciones de una pregunta de opción múltiple. */
+export const MAX_RSVP_QUESTION_OPTIONS = 6;
+
+export const rsvpQuestionSchema = z.object({
+  id: z
+    .string()
+    .trim()
+    .min(1)
+    .max(40)
+    // Se usa como llave de un objeto jsonb y como `name` de un input.
+    .regex(/^[a-z0-9_-]+$/, "El id solo admite minúsculas, números, - y _"),
+  label: z.string().trim().min(1, "Escribe la pregunta.").max(120),
+  type: z.enum(RSVP_QUESTION_TYPES).default("text"),
+  options: z
+    .array(z.string().trim().min(1).max(60))
+    .max(MAX_RSVP_QUESTION_OPTIONS)
+    .default([]),
+  required: z.boolean().default(false),
+});
+
+export type RsvpQuestion = z.infer<typeof rsvpQuestionSchema>;
+
 export const rsvpConfigSchema = z.object({
   title: z.string().max(120).default("Confirma tu asistencia"),
   description: z.string().max(400).default(""),
   deadline: z.string().default(""),
   allowGuestCount: z.boolean().default(true),
+  questions: z.array(rsvpQuestionSchema).max(MAX_RSVP_QUESTIONS).default([]),
 });
 
 export const welcomeConfigSchema = z.object({
