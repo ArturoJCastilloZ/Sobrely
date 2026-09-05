@@ -11,8 +11,6 @@ import {
   minutesUntilUnlock,
   normalizePin,
   PIN_LENGTH,
-  registerFailure,
-  registerSuccess,
   verifyPin,
 } from "./pin";
 
@@ -72,71 +70,54 @@ describe("generatePin", () => {
   });
 });
 
-describe("política de bloqueo", () => {
-  const limpio: LockState = { failedAttempts: 0, lockedUntil: null };
+describe("lectura del estado de bloqueo", () => {
+  // La TRANSICIÓN (cobrar el intento, bloquear, limpiar) se mudó a la RPC
+  // `claim_report_attempt` de la 0020, porque en TypeScript no puede ser
+  // atómica y un lote concurrente se saltaba el bloqueo. Lo que queda de este
+  // lado —y lo que se prueba aquí— es LEER el estado que la RPC devuelve.
+  // El comportamiento de la transición se verifica contra la base.
 
-  it("no bloquea antes de agotar los intentos", () => {
-    let estado = limpio;
-    for (let i = 1; i < MAX_FAILED_ATTEMPTS; i++) {
-      estado = registerFailure(estado);
-      expect(isLocked(estado)).toBe(false);
-      expect(attemptsLeft(estado)).toBe(MAX_FAILED_ATTEMPTS - i);
-    }
+  it("una liga sin bloqueo está abierta", () => {
+    expect(isLocked({ failedAttempts: 0, lockedUntil: null })).toBe(false);
+    expect(isLocked({ failedAttempts: 4, lockedUntil: null })).toBe(false);
   });
 
-  it("bloquea justo al quinto fallo", () => {
-    let estado = limpio;
-    for (let i = 0; i < MAX_FAILED_ATTEMPTS; i++) estado = registerFailure(estado);
-    expect(isLocked(estado)).toBe(true);
-    expect(attemptsLeft(estado)).toBe(0);
-    expect(minutesUntilUnlock(estado)).toBe(LOCK_MINUTES);
-  });
-
-  it("el bloqueo se levanta solo cuando pasa el tiempo", () => {
-    const t0 = new Date("2026-09-05T10:00:00Z");
-    let estado = limpio;
-    for (let i = 0; i < MAX_FAILED_ATTEMPTS; i++) {
-      estado = registerFailure(estado, t0);
-    }
+  it("un bloqueo en el futuro cierra; uno vencido no", () => {
+    const estado: LockState = {
+      failedAttempts: MAX_FAILED_ATTEMPTS,
+      lockedUntil: "2026-09-05T10:15:00Z",
+    };
     expect(isLocked(estado, new Date("2026-09-05T10:14:00Z"))).toBe(true);
     expect(isLocked(estado, new Date("2026-09-05T10:16:00Z"))).toBe(false);
-    expect(minutesUntilUnlock(estado, new Date("2026-09-05T10:16:00Z"))).toBe(0);
-  });
-
-  it("el contador NO se reinicia al expirar el bloqueo", () => {
-    // Esta es la propiedad que hace que el bloqueo acumule. Si al pasar los 15
-    // minutos el atacante recuperara sus 5 intentos, tendría 5 cada cuarto de
-    // hora — 480 al día. Quedándose en el tope, cada fallo re-bloquea al
-    // instante y solo gana UNO cada 15 minutos.
-    const t0 = new Date("2026-09-05T10:00:00Z");
-    let estado = limpio;
-    for (let i = 0; i < MAX_FAILED_ATTEMPTS; i++) {
-      estado = registerFailure(estado, t0);
-    }
-    const despues = new Date("2026-09-05T10:20:00Z");
-    expect(isLocked(estado, despues)).toBe(false);
-
-    estado = registerFailure(estado, despues);
-    expect(estado.failedAttempts).toBe(MAX_FAILED_ATTEMPTS + 1);
-    expect(isLocked(estado, despues)).toBe(true);
-  });
-
-  it("un acierto borra el historial", () => {
-    let estado = limpio;
-    for (let i = 0; i < MAX_FAILED_ATTEMPTS; i++) estado = registerFailure(estado);
-    const tras = registerSuccess();
-    expect(tras.failedAttempts).toBe(0);
-    expect(isLocked(tras)).toBe(false);
-    expect(attemptsLeft(tras)).toBe(MAX_FAILED_ATTEMPTS);
   });
 
   it("minutesUntilUnlock redondea hacia arriba y nunca dice cero estando bloqueado", () => {
-    const estado = {
+    const estado: LockState = {
       failedAttempts: MAX_FAILED_ATTEMPTS,
       lockedUntil: "2026-09-05T10:00:30Z",
     };
     // Faltan 30 segundos: decir "0 minutos" sería mentira.
     expect(minutesUntilUnlock(estado, new Date("2026-09-05T10:00:00Z"))).toBe(1);
+    expect(LOCK_MINUTES).toBeGreaterThan(0);
+  });
+
+  it("sin bloqueo no hay minutos que esperar", () => {
+    expect(
+      minutesUntilUnlock({ failedAttempts: 1, lockedUntil: null }),
+    ).toBe(0);
+  });
+
+  it("attemptsLeft descuenta y nunca baja de cero", () => {
+    expect(attemptsLeft({ failedAttempts: 0, lockedUntil: null })).toBe(
+      MAX_FAILED_ATTEMPTS,
+    );
+    expect(attemptsLeft({ failedAttempts: 1, lockedUntil: null })).toBe(
+      MAX_FAILED_ATTEMPTS - 1,
+    );
+    // La RPC sigue contando más allá del tope; la UI no debe decir "-3".
+    expect(
+      attemptsLeft({ failedAttempts: MAX_FAILED_ATTEMPTS + 3, lockedUntil: null }),
+    ).toBe(0);
   });
 });
 

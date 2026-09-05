@@ -15,10 +15,10 @@ import {
   generatePin,
   hashPin,
   isLocked,
+  LOCK_MINUTES,
+  MAX_FAILED_ATTEMPTS,
   minutesUntilUnlock,
   normalizePin,
-  registerFailure,
-  registerSuccess,
   verifyPin,
 } from "./pin";
 import {
@@ -182,64 +182,55 @@ export async function openReport(
 
   const admin = createAdminClient();
 
-  const { data: link } = await admin
-    .from("invitation_reports")
-    .select(
-      "id, invitation_id, pin_hash, failed_attempts, locked_until, view_count",
-    )
-    .eq("token", token)
-    .is("revoked_at", null)
-    .maybeSingle();
+  // El intento se COBRA ANTES de verificar, y de forma atómica (`for update`
+  // dentro de la RPC). Hacerlo después —o con un leer-y-reescribir desde aquí—
+  // deja pasar entero un lote concurrente: todas las peticiones leerían el
+  // mismo contador en cero y el bloqueo nunca se dispararía. Ver `0020`.
+  const { data: claim } = await admin.rpc("claim_report_attempt", {
+    p_token: token,
+    p_max_attempts: MAX_FAILED_ATTEMPTS,
+    p_lock_minutes: LOCK_MINUTES,
+  });
 
   // Token inexistente y token revocado se responden igual: distinguirlos le
   // diría a quien prueba al azar cuáles llegaron a existir.
-  if (!link) return { ok: false, reason: "not_found" };
+  if (!claim) return { ok: false, reason: "not_found" };
 
   const estado = {
-    failedAttempts: (link.failed_attempts as number) ?? 0,
-    lockedUntil: (link.locked_until as string) ?? null,
+    failedAttempts: (claim.failed_attempts as number) ?? 0,
+    lockedUntil: (claim.locked_until as string) ?? null,
   };
 
-  // Estando bloqueada NO se verifica el PIN, ni siquiera el correcto. Si se
-  // verificara, el acierto abriría igual y el bloqueo no serviría de nada.
-  if (isLocked(estado)) {
-    return { ok: false, reason: "locked", minutesLeft: minutesUntilUnlock(estado) };
+  // Bloqueada: la RPC ni siquiera devolvió el hash, así que el PIN correcto
+  // tampoco abre. Es lo que hace que el bloqueo signifique algo.
+  if (claim.locked === true) {
+    return {
+      ok: false,
+      reason: "locked",
+      minutesLeft: minutesUntilUnlock(estado),
+    };
   }
 
-  const bueno = await verifyPin(pin, link.pin_hash as string);
+  const bueno = await verifyPin(pin, claim.pin_hash as string);
 
   if (!bueno) {
-    const siguiente = registerFailure(estado);
-    await admin
-      .from("invitation_reports")
-      .update({
-        failed_attempts: siguiente.failedAttempts,
-        locked_until: siguiente.lockedUntil,
-      })
-      .eq("id", link.id);
-
-    if (isLocked(siguiente)) {
+    // El intento ya quedó cobrado por la RPC; aquí solo se traduce el estado
+    // que devolvió.
+    if (isLocked(estado)) {
       return {
         ok: false,
         reason: "locked",
-        minutesLeft: minutesUntilUnlock(siguiente),
+        minutesLeft: minutesUntilUnlock(estado),
       };
     }
-    return { ok: false, reason: "bad_pin", attemptsLeft: attemptsLeft(siguiente) };
+    return { ok: false, reason: "bad_pin", attemptsLeft: attemptsLeft(estado) };
   }
 
-  const limpio = registerSuccess();
-  await admin
-    .from("invitation_reports")
-    .update({
-      failed_attempts: limpio.failedAttempts,
-      locked_until: limpio.lockedUntil,
-      view_count: ((link.view_count as number) ?? 0) + 1,
-      last_viewed_at: new Date().toISOString(),
-    })
-    .eq("id", link.id);
+  // Acierto: se devuelve el intento cobrado, se limpia el bloqueo y se cuenta
+  // la visita, todo en una sentencia.
+  await admin.rpc("finish_report_attempt", { p_token: token });
 
-  const report = await loadReport(admin, link.invitation_id as string);
+  const report = await loadReport(admin, claim.invitation_id as string);
   if (!report) return { ok: false, reason: "not_found" };
 
   return { ok: true, report };

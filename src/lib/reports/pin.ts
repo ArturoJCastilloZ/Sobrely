@@ -40,7 +40,9 @@ export {
   LOCK_MINUTES,
 } from "./constants";
 
-import { LOCK_MINUTES, MAX_FAILED_ATTEMPTS, PIN_LENGTH } from "./constants";
+// `LOCK_MINUTES` solo se re-exporta: ya no se usa aquí, porque la transición
+// que lo consumía se mudó a la RPC de la `0020`.
+import { MAX_FAILED_ATTEMPTS, PIN_LENGTH } from "./constants";
 
 /**
  * Parámetros de scrypt. `N` es el costo; 2^15 tarda ~100 ms en un servidor
@@ -108,31 +110,18 @@ export function minutesUntilUnlock(
 }
 
 /**
- * Estado siguiente después de un intento FALLIDO.
+ * La TRANSICIÓN de estado (cobrar un intento, bloquear, limpiar al acertar)
+ * NO vive aquí: vive en la RPC `claim_report_attempt` de la migración `0020`.
  *
- * El contador no se reinicia al bloquear: si se reiniciara, quien espera los 15
- * minutos recupera los 5 intentos completos una y otra vez, y el bloqueo deja
- * de acumular. Al quedar en el tope, cada fallo posterior vuelve a bloquear de
- * inmediato — el atacante gana un intento cada 15 minutos, no cinco.
+ * No es una preferencia de estilo. Hacerlo en TypeScript obliga a leer el
+ * contador en una consulta y escribirlo en otra, y entre las dos caben
+ * doscientas peticiones concurrentes que leen el mismo cero — el bloqueo nunca
+ * se dispara. La atomicidad solo la puede dar la base. Lo que sí se queda de
+ * este lado es la POLÍTICA (cuántos intentos, cuántos minutos), que se le pasa
+ * a la RPC como parámetros desde `constants.ts`.
+ *
+ * Lo de abajo son lecturas del estado que la RPC devuelve, no decisiones.
  */
-export function registerFailure(
-  state: LockState,
-  now: Date = new Date(),
-): LockState {
-  const failedAttempts = state.failedAttempts + 1;
-  if (failedAttempts < MAX_FAILED_ATTEMPTS) {
-    return { failedAttempts, lockedUntil: null };
-  }
-  return {
-    failedAttempts,
-    lockedUntil: new Date(now.getTime() + LOCK_MINUTES * 60_000).toISOString(),
-  };
-}
-
-/** Estado después de un acierto: borrón y cuenta nueva. */
-export function registerSuccess(): LockState {
-  return { failedAttempts: 0, lockedUntil: null };
-}
 
 /** Intentos que le quedan antes del bloqueo. Nunca negativo. */
 export function attemptsLeft(state: LockState): number {
