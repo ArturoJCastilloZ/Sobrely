@@ -5,6 +5,8 @@ import type { RsvpConfig } from "@/lib/modules/types";
 import type { GuestForInvitation } from "@/lib/invitations/public-types";
 import type { BrandingLevel } from "@/lib/billing/types";
 import { respondAsGuest } from "@/lib/guests/actions";
+import { RsvpQuestionFields } from "@/components/public/rsvp-question-fields";
+import type { RsvpAnswers } from "@/lib/modules/rsvp-answers";
 import { Textarea } from "@/components/ui/textarea";
 import { GuestPass } from "@/components/public/guest-pass";
 import { AddToCalendar } from "@/components/public/add-to-calendar";
@@ -28,6 +30,7 @@ export function GuestResponsePanel({
 }) {
   const [status, setStatus] = useState<GuestStatus>(guest.status);
   const [message, setMessage] = useState(guest.message ?? "");
+  const [answers, setAnswers] = useState<RsvpAnswers>({});
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -37,7 +40,15 @@ export function GuestResponsePanel({
   function respond(confirmedCount: number) {
     setError(null);
     startTransition(async () => {
-      const res = await respondAsGuest({ token, confirmedCount, message });
+      // Al DECLINAR no se mandan respuestas: exigirle el menú a quien avisa
+      // que no va sería absurdo, y una pregunta obligatoria le impediría
+      // declinar. El servidor solo valida lo obligatorio si algo llega.
+      const res = await respondAsGuest({
+        token,
+        confirmedCount,
+        message,
+        answers: confirmedCount > 0 ? answers : undefined,
+      });
       if (!res.ok) {
         setError(res.error);
         return;
@@ -109,6 +120,14 @@ export function GuestResponsePanel({
         </div>
       ) : (
         <div className="w-full max-w-md space-y-5 @2xl/inv:max-w-lg @4xl/inv:max-w-xl">
+          <RsvpQuestionFields
+            questions={config.questions ?? []}
+            values={answers}
+            onChange={setAnswers}
+            labelClassName="block text-base font-medium @4xl/inv:text-lg"
+            inputClassName={fieldSurface}
+          />
+
           <div className="space-y-2">
             <label
               htmlFor="guest-message"

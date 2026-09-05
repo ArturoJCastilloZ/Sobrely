@@ -18,6 +18,14 @@ export const rsvpSubmitSchema = z.object({
     .max(MAX_GUEST_COUNT, `Máximo ${MAX_GUEST_COUNT} invitados.`)
     .default(1),
   message: z.string().trim().max(500).optional().default(""),
+  /**
+   * Respuestas a las preguntas personalizadas. Se recibe SIN tipar a
+   * propósito: el visitante es anónimo y podría mandar cualquier cosa. La
+   * forma válida depende de las preguntas que la invitación declara en su
+   * `config`, así que el saneado ocurre en el servidor, contra la BD
+   * (`sanitizeAnswers`), no aquí.
+   */
+  answers: z.unknown().optional(),
 });
 
 export type RsvpSubmitInput = z.infer<typeof rsvpSubmitSchema>;

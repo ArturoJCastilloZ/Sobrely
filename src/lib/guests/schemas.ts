@@ -58,6 +58,12 @@ export const guestRespondSchema = z.object({
   // > 0 confirma ese cupo; 0 declina ("Cancelar asistencia").
   confirmedCount: z.coerce.number().int().min(0).max(MAX_GUEST_ALLOTMENT),
   message: z.string().trim().max(500).optional().default(""),
+  /**
+   * Respuestas a las preguntas personalizadas. Sin tipar aquí a propósito: el
+   * invitado es anónimo y la forma válida depende de las preguntas que la
+   * invitación declara. El saneado ocurre en el servidor contra la BD.
+   */
+  answers: z.unknown().optional(),
 });
 
 export type GuestRespondInput = z.infer<typeof guestRespondSchema>;

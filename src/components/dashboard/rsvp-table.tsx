@@ -9,6 +9,8 @@ import {
   type AttendanceStatus,
 } from "@/lib/rsvp/constants";
 import { deleteRsvp, updateRsvp } from "@/lib/rsvp/actions";
+import type { RsvpQuestion } from "@/lib/modules/types";
+import { describeAnswers } from "@/lib/modules/rsvp-answers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,8 @@ export type RsvpRow = {
   attendance_status: string;
   guest_count: number;
   message: string | null;
+  /** Respuestas a las preguntas personalizadas, por id de pregunta. */
+  answers?: unknown;
   created_at: string;
 };
 
@@ -38,12 +42,15 @@ function statusVariant(status: string) {
   return "secondary" as const;
 }
 
-function toCsv(rows: RsvpRow[]): string {
+function toCsv(rows: RsvpRow[], questions: readonly RsvpQuestion[]): string {
   const header = [
     "Nombre",
     "Correo",
     "Asistencia",
     "Invitados",
+    // Una columna por pregunta: es la forma en que esto sirve de verdad —
+    // contar cuántos menús vegetarianos hay se hace en la hoja de cálculo.
+    ...questions.map((q) => q.label),
     "Mensaje",
     "Fecha",
   ];
@@ -55,6 +62,10 @@ function toCsv(rows: RsvpRow[]): string {
       ATTENDANCE_LABELS[r.attendance_status as AttendanceStatus] ??
         r.attendance_status,
       String(r.guest_count),
+      ...questions.map((q) => {
+        const v = describeAnswers([q], r.answers)[0];
+        return v ? v.value : "";
+      }),
       r.message ?? "",
       new Date(r.created_at).toLocaleString("es-MX"),
     ]
@@ -67,9 +78,12 @@ function toCsv(rows: RsvpRow[]): string {
 export function RsvpTable({
   initialRows,
   invitationSlug,
+  questions = [],
 }: {
   initialRows: RsvpRow[];
   invitationSlug: string;
+  /** Preguntas vigentes del módulo RSVP; alimentan columna y CSV. */
+  questions?: readonly RsvpQuestion[];
 }) {
   const [rows, setRows] = useState<RsvpRow[]>(initialRows);
   const [filter, setFilter] = useState<Filter>("all");
@@ -85,7 +99,7 @@ export function RsvpTable({
   );
 
   function exportCsv() {
-    const csv = toCsv(rows);
+    const csv = toCsv(rows, questions);
     const blob = new Blob([`﻿${csv}`], {
       type: "text/csv;charset=utf-8;",
     });
@@ -183,7 +197,23 @@ export function RsvpTable({
                   </td>
                   <td className="p-2 tabular-nums">{row.guest_count}</td>
                   <td className="p-2 max-w-[220px] text-muted-foreground">
-                    {row.message || "—"}
+                    {(() => {
+                      const respuestas = describeAnswers(questions, row.answers);
+                      if (respuestas.length === 0) return row.message || "—";
+                      return (
+                        <div className="space-y-0.5">
+                          {respuestas.map((a) => (
+                            <div key={a.label} className="text-xs">
+                              <span className="opacity-70">{a.label}:</span>{" "}
+                              <span className="text-foreground">{a.value}</span>
+                            </div>
+                          ))}
+                          {row.message && (
+                            <div className="text-xs italic">{row.message}</div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="p-2">
                     <div className="flex gap-1">

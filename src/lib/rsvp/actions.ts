@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAddGuest } from "@/lib/billing/entitlements";
+import { sanitizeRsvpAnswers } from "./sanitize-server";
 import {
   rsvpSubmitSchema,
   rsvpUpdateSchema,
@@ -11,6 +12,8 @@ import {
 } from "./schemas";
 
 export type RsvpActionResult = { ok: true } | { ok: false; error: string };
+
+
 
 /**
  * Public RSVP submission. RLS only allows inserting into PUBLISHED invitations,
@@ -31,6 +34,10 @@ export async function submitRsvp(
   // Tope de invitados por plan (enforcement server-side). Se usa el cliente
   // admin porque el visitante es anónimo y RLS no le permite sumar respuestas.
   const admin = createAdminClient();
+
+  const answers = await sanitizeRsvpAnswers(admin, v.invitationId, v.answers);
+  if (!answers.ok) return { ok: false, error: answers.error };
+
   const guestCheck = await canAddGuest(admin, v.invitationId, v.guestCount);
   if (!guestCheck.allowed) {
     return {
@@ -48,6 +55,7 @@ export async function submitRsvp(
     attendance_status: v.attendanceStatus,
     guest_count: v.guestCount,
     message: v.message || null,
+    answers: answers.answers,
   });
 
   if (error) {

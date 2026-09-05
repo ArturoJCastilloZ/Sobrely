@@ -9,6 +9,8 @@ import {
   type AttendanceStatus,
 } from "@/lib/rsvp/constants";
 import { submitRsvp } from "@/lib/rsvp/actions";
+import { RsvpQuestionFields } from "@/components/public/rsvp-question-fields";
+import type { RsvpAnswers } from "@/lib/modules/rsvp-answers";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +36,7 @@ export function PublicRsvpForm({
 }) {
   const [status, setStatus] = useState<AttendanceStatus | null>(null);
   const [count, setCount] = useState(1);
+  const [answers, setAnswers] = useState<RsvpAnswers>({});
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [closed, setClosed] = useState(false);
@@ -88,6 +91,7 @@ export function PublicRsvpForm({
         attendanceStatus: status,
         guestCount: config.allowGuestCount ? count : 1,
         message,
+        answers,
       });
       if (!res.ok) {
         setError(res.error);
@@ -204,6 +208,15 @@ export function PublicRsvpForm({
               />
             </div>
           )}
+
+          {/* Preguntas del anfitrión, antes del mensaje libre. */}
+          <RsvpQuestionFields
+            questions={config.questions ?? []}
+            values={answers}
+            onChange={setAnswers}
+            labelClassName={labelCls}
+            inputClassName={inputCls}
+          />
 
           <div className="space-y-1.5">
             <Label htmlFor="message" className={labelCls}>

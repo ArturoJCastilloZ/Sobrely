@@ -7,6 +7,15 @@
  */
 import type { RsvpQuestion } from "./types";
 
+/**
+ * Id nuevo para una pregunta. Aleatorio y corto, NO derivado de la etiqueta:
+ * dos preguntas parecidas colisionarían, y cambiar el texto no debe cambiar la
+ * llave con la que ya se guardaron respuestas.
+ */
+export function newQuestionId(): string {
+  return `q${Math.random().toString(36).slice(2, 8)}`;
+}
+
 /** Valor de una respuesta, ya saneado. */
 export type RsvpAnswerValue = string | boolean;
 export type RsvpAnswers = Record<string, RsvpAnswerValue>;

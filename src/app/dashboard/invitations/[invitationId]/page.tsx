@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CalendarDays, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { rsvpConfigSchema } from "@/lib/modules/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RsvpTable, type RsvpRow } from "@/components/dashboard/rsvp-table";
@@ -97,12 +98,23 @@ export default async function InvitationDashboardPage({
     const { data } = await supabase
       .from("rsvp_responses")
       .select(
-        "id, guest_name, guest_email, attendance_status, guest_count, message, created_at, updated_at",
+        "id, guest_name, guest_email, attendance_status, guest_count, message, answers, created_at, updated_at",
       )
       .eq("invitation_id", invitationId)
       .order("created_at", { ascending: false });
     responseRows = (data ?? []) as (ResponseRow & { id: string })[];
   }
+
+  // Preguntas vigentes del módulo RSVP: dan contexto a las respuestas guardadas
+  // (que se indexan por id) y alimentan las columnas del CSV.
+  const { data: rsvpModule } = await supabase
+    .from("invitation_modules")
+    .select("config")
+    .eq("invitation_id", invitationId)
+    .eq("module_type", "rsvp")
+    .maybeSingle();
+  const rsvpQuestions =
+    rsvpConfigSchema.safeParse(rsvpModule?.config ?? {}).data?.questions ?? [];
 
   const funnel = isGuestList
     ? funnelFromGuests(guestRows)
@@ -217,6 +229,7 @@ export default async function InvitationDashboardPage({
           <RsvpTable
             initialRows={responseRows as unknown as RsvpRow[]}
             invitationSlug={invitation.slug}
+            questions={rsvpQuestions}
           />
         )}
       </section>

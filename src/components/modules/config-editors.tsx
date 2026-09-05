@@ -1,6 +1,19 @@
 "use client";
 
-import type { ModuleType, GalleryLayout, DresscodeLevel } from "@/lib/modules/types";
+import type {
+  ModuleType,
+  GalleryLayout,
+  DresscodeLevel,
+  RsvpQuestion,
+  RsvpQuestionType,
+} from "@/lib/modules/types";
+import {
+  MAX_RSVP_QUESTIONS,
+  MAX_RSVP_QUESTION_OPTIONS,
+  RSVP_QUESTION_TYPES,
+  RSVP_QUESTION_TYPE_LABELS,
+} from "@/lib/modules/types";
+import { newQuestionId } from "@/lib/modules/rsvp-answers";
 import { GALLERY_LAYOUTS, GALLERY_LAYOUT_LABELS } from "@/lib/modules/types";
 import { DRESSCODE_LEVELS, DRESSCODE_LABELS } from "@/lib/modules/types";
 import { Input } from "@/components/ui/input";
@@ -559,6 +572,138 @@ function RsvpEditor({
             onCheckedChange={(v) => onChange({ allowGuestCount: v })}
           />
         </div>
+      )}
+      <RsvpQuestionsEditor config={config} onChange={onChange} />
+    </div>
+  );
+}
+
+/**
+ * Preguntas personalizadas al confirmar (alergias, menú, transporte).
+ *
+ * El `id` se genera una vez y no se vuelve a tocar: es la llave con la que se
+ * guardan las respuestas, así que renombrar la pregunta conserva lo ya
+ * recibido. Borrar una pregunta NO borra las respuestas de la base, pero deja
+ * de mostrarlas — sin la pregunta, el valor suelto no significa nada, y por
+ * eso el botón lo advierte.
+ */
+function RsvpQuestionsEditor({ config, onChange }: EditorProps) {
+  const questions: RsvpQuestion[] = Array.isArray(config.questions)
+    ? (config.questions as RsvpQuestion[])
+    : [];
+
+  function patch(i: number, p: Partial<RsvpQuestion>) {
+    const next = questions.map((q, idx) => (idx === i ? { ...q, ...p } : q));
+    onChange({ questions: next });
+  }
+
+  function add() {
+    onChange({
+      questions: [
+        ...questions,
+        {
+          id: newQuestionId(),
+          label: "",
+          type: "text" as const,
+          options: [],
+          required: false,
+        },
+      ],
+    });
+  }
+
+  function remove(i: number) {
+    onChange({ questions: questions.filter((_, idx) => idx !== i) });
+  }
+
+  return (
+    <div className="space-y-3 border-t pt-3">
+      <div className="flex items-center justify-between">
+        <Label>Preguntas al confirmar</Label>
+        <span className="text-xs text-muted-foreground">
+          {questions.length}/{MAX_RSVP_QUESTIONS}
+        </span>
+      </div>
+
+      {questions.length === 0 && (
+        <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+          Sin preguntas extra. Puedes pedir alergias, elección de menú o si
+          necesitan transporte.
+        </p>
+      )}
+
+      {questions.map((q, i) => (
+        <div key={q.id} className="space-y-2 rounded-md border p-3">
+          <Input
+            value={q.label ?? ""}
+            placeholder="p. ej. ¿Alguna alergia o restricción alimentaria?"
+            maxLength={120}
+            onChange={(e) => patch(i, { label: e.target.value })}
+          />
+
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              className="h-9 rounded-md border bg-transparent px-2 text-sm"
+              value={q.type ?? "text"}
+              onChange={(e) =>
+                patch(i, {
+                  type: e.target.value as RsvpQuestionType,
+                  // Las opciones solo tienen sentido en "elegir una".
+                  options: e.target.value === "choice" ? (q.options ?? []) : [],
+                })
+              }
+            >
+              {RSVP_QUESTION_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {RSVP_QUESTION_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <Switch
+                checked={Boolean(q.required)}
+                onCheckedChange={(v) => patch(i, { required: v })}
+              />
+              Obligatoria
+            </label>
+
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="ml-auto text-xs text-destructive underline"
+              title="Las respuestas ya recibidas dejarán de mostrarse"
+            >
+              Quitar
+            </button>
+          </div>
+
+          {q.type === "choice" && (
+            <Input
+              value={(q.options ?? []).join(", ")}
+              placeholder={`Opciones separadas por coma (máx. ${MAX_RSVP_QUESTION_OPTIONS})`}
+              onChange={(e) =>
+                patch(i, {
+                  options: e.target.value
+                    .split(",")
+                    .map((o) => o.trim())
+                    .filter(Boolean)
+                    .slice(0, MAX_RSVP_QUESTION_OPTIONS),
+                })
+              }
+            />
+          )}
+        </div>
+      ))}
+
+      {questions.length < MAX_RSVP_QUESTIONS && (
+        <button
+          type="button"
+          onClick={add}
+          className="text-sm text-muted-foreground underline hover:text-foreground"
+        >
+          Agregar pregunta
+        </button>
       )}
     </div>
   );

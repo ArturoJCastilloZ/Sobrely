@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sanitizeRsvpAnswers } from "@/lib/rsvp/sanitize-server";
 import { getInvitationEffectivePlan } from "@/lib/billing/entitlements";
 import {
   guestUpsertSchema,
@@ -376,10 +377,28 @@ export async function respondAsGuest(
   const v = parsed.data;
 
   const admin = createAdminClient();
+
+  // El token es la única llave que trae el invitado; la invitación se resuelve
+  // desde él para poder leer QUÉ preguntas declara y sanear contra eso.
+  const { data: fila } = await admin
+    .from("invitation_guests")
+    .select("invitation_id")
+    .eq("access_token", v.token)
+    .maybeSingle();
+  if (!fila) return { ok: false, error: "No se pudo registrar tu respuesta." };
+
+  const answers = await sanitizeRsvpAnswers(
+    admin,
+    fila.invitation_id as string,
+    v.answers,
+  );
+  if (!answers.ok) return { ok: false, error: answers.error };
+
   const { data, error } = await admin.rpc("respond_guest", {
     p_token: v.token,
     p_confirmed_count: v.confirmedCount,
     p_message: v.message || null,
+    p_answers: answers.answers,
   });
   if (error || !data) {
     return { ok: false, error: "No se pudo registrar tu respuesta." };
