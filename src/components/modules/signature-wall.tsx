@@ -69,6 +69,14 @@ export function SignatureWall({
 
   const restantes = MAX_MESSAGE_LENGTH - mensaje.length;
 
+  // Superficie y borde tomados de la PALETA DE LA INVITACIÓN, no de los tokens
+  // de la app. El aviso ya estaba escrito en `public-rsvp-form`: el input por
+  // defecto es transparente con un borde de token que **desaparece** sobre un
+  // fondo tintado. Aquí pasó exactamente eso — el formulario se veía como
+  // texto flotando, sin campos ni botón.
+  const campo =
+    "w-full rounded-md border bg-[var(--inv-card)] border-[color-mix(in_srgb,var(--inv-text)_30%,transparent)] px-3 py-2 text-base md:text-sm @4xl/inv:text-base";
+
   return (
     <section className="px-6 py-10 @2xl/inv:py-14">
       <div className="mx-auto max-w-xl">
@@ -82,7 +90,7 @@ export function SignatureWall({
         )}
 
         {listo ? (
-          <div className="mt-6 rounded-lg border p-4 text-center">
+          <div className="mt-6 rounded-lg border border-[color-mix(in_srgb,var(--inv-text)_30%,transparent)] bg-[var(--inv-card)] p-4 text-center">
             <p className="text-sm font-medium">¡Gracias por firmar!</p>
             <p className="mt-1 text-xs opacity-70">
               {listo.pendiente
@@ -106,7 +114,7 @@ export function SignatureWall({
               maxLength={MAX_NAME_LENGTH}
               aria-label="Tu nombre"
               // `text-base` en móvil evita el zoom automático de iOS al enfocar.
-              className="w-full rounded-md border bg-transparent px-3 py-2 text-base md:text-sm"
+              className={campo}
             />
             <textarea
               value={mensaje}
@@ -115,7 +123,7 @@ export function SignatureWall({
               rows={4}
               maxLength={MAX_MESSAGE_LENGTH}
               aria-label="Tu mensaje"
-              className="w-full rounded-md border bg-transparent px-3 py-2 text-base md:text-sm"
+              className={campo}
             />
             <div className="flex items-center justify-between gap-3">
               {/* El contador solo aparece cerca del tope: mostrarlo siempre
@@ -126,7 +134,8 @@ export function SignatureWall({
               <button
                 type="submit"
                 disabled={enviando}
-                className="rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50"
+                style={{ backgroundColor: "var(--inv-primary)" }}
+                className="flex h-10 items-center justify-center rounded-md px-5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60 @4xl/inv:h-12 @4xl/inv:text-base"
               >
                 {enviando ? "Enviando…" : config.buttonLabel}
               </button>
@@ -148,7 +157,10 @@ export function SignatureWall({
             </p>
           ) : (
             firmas.map((f) => (
-              <figure key={f.id} className="rounded-lg border px-4 py-3">
+              <figure
+                key={f.id}
+                className="rounded-lg border border-[color-mix(in_srgb,var(--inv-text)_20%,transparent)] bg-[var(--inv-card)] px-4 py-3"
+              >
                 {/* `whitespace-pre-line`: quien firmó en tres renglones lo hizo
                     a propósito y el saneado los conserva. */}
                 <blockquote className="whitespace-pre-line text-sm">

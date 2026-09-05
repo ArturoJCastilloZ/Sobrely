@@ -102,9 +102,16 @@ export async function signGuestbook(
 /**
  * Firmas visibles de una invitación, para el muro público.
  *
- * Va por el cliente ANÓNIMO a propósito, no por el admin: así la política
- * `signatures_public_select` de la `0023` es la que decide qué se ve, y una
- * firma oculta no puede colarse por un descuido de este archivo.
+ * El `eq("is_hidden", false)` es OBLIGATORIO, no defensa en profundidad, y
+ * aquí está el porqué: la política de la `0023` que filtra las ocultas aplica
+ * al visitante anónimo, pero el DUEÑO tiene `signatures_owner_all` (`for all`),
+ * que le devuelve TODO. Sin este filtro, el anfitrión abre su propia invitación
+ * con la sesión iniciada y ve en el muro las firmas que él mismo ocultó, sin
+ * ninguna marca — y creyendo que sus invitados también las ven.
+ *
+ * La lección: RLS decide quién PUEDE leer qué, no qué debe MOSTRAR una
+ * pantalla. Delegarle la presentación falla justo con el usuario que más
+ * permisos tiene.
  */
 export async function listSignatures(
   invitationId: string,
@@ -114,6 +121,7 @@ export async function listSignatures(
     .from("invitation_signatures")
     .select("id, guest_name, message, created_at")
     .eq("invitation_id", invitationId)
+    .eq("is_hidden", false)
     .order("created_at", { ascending: false })
     .limit(SIGNATURES_PAGE_SIZE);
   return (data ?? []) as SignatureRow[];
