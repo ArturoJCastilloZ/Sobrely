@@ -18,6 +18,7 @@ export const MODULE_TYPES = [
   "gifts",
   "music",
   "rsvp",
+  "signatures",
 ] as const;
 export type ModuleType = (typeof MODULE_TYPES)[number];
 
@@ -107,6 +108,31 @@ export const rsvpConfigSchema = z.object({
   deadline: z.string().default(""),
   allowGuestCount: z.boolean().default(true),
   questions: z.array(rsvpQuestionSchema).max(MAX_RSVP_QUESTIONS).default([]),
+});
+
+/** Tope de firmas que se muestran de una vez en la página pública. */
+export const SIGNATURES_PAGE_SIZE = 30;
+
+/**
+ * Libro de firmas. La CONFIG solo describe el módulo; las firmas en sí NO
+ * caben aquí — las escribe un visitante anónimo y `invitation_modules` es
+ * solo-dueño por RLS. Viven en su propia tabla (`invitation_signatures`,
+ * migración 0023), igual que las respuestas del RSVP.
+ */
+export const signaturesConfigSchema = z.object({
+  title: z.string().max(120).default("Libro de firmas"),
+  description: z
+    .string()
+    .max(400)
+    .default("Déjanos unas palabras. Las leeremos todas."),
+  /** Etiqueta del botón. Cambia mucho según el tipo de evento. */
+  buttonLabel: z.string().max(40).default("Firmar"),
+  /**
+   * Si el anfitrión quiere revisar antes de publicar. Con `true`, la firma se
+   * guarda oculta y él decide. Por defecto NO, porque una boda con moderación
+   * obligatoria deja el muro vacío toda la fiesta.
+   */
+  requireApproval: z.boolean().default(false),
 });
 
 export const welcomeConfigSchema = z.object({
@@ -212,6 +238,7 @@ export const moduleConfigSchemas = {
   gifts: giftsConfigSchema,
   music: musicConfigSchema,
   rsvp: rsvpConfigSchema,
+  signatures: signaturesConfigSchema,
 } satisfies Record<ModuleType, z.ZodType>;
 
 /**
@@ -255,6 +282,7 @@ export type DresscodeConfig = z.infer<typeof dresscodeConfigSchema>;
 export type GiftsConfig = z.infer<typeof giftsConfigSchema>;
 export type MusicConfig = z.infer<typeof musicConfigSchema>;
 export type RsvpConfig = z.infer<typeof rsvpConfigSchema>;
+export type SignaturesConfig = z.infer<typeof signaturesConfigSchema>;
 
 // ---- Registry metadata ----------------------------------------------------
 
@@ -316,6 +344,11 @@ export const MODULE_META: Record<
     label: "Confirmación (RSVP)",
     icon: "✅",
     description: "Formulario para confirmar asistencia.",
+  },
+  signatures: {
+    label: "Libro de firmas",
+    icon: "🖋️",
+    description: "Tus invitados te dejan un mensaje.",
   },
 };
 

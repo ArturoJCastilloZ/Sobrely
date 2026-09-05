@@ -15,6 +15,7 @@ import { ConfirmationsChart } from "@/components/dashboard/confirmations-chart";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { LiveIndicator } from "@/components/dashboard/live-indicator";
 import { ReportShare } from "@/components/dashboard/report-share";
+import { SignaturesModeration } from "@/components/dashboard/signatures-moderation";
 import { getReportLink } from "@/lib/reports/actions";
 import {
   activityFromGuests,
@@ -121,6 +122,16 @@ export default async function InvitationDashboardPage({
   // Liga viva del reporte compartido, si el anfitrión ya generó una.
   const reportLink = await getReportLink(invitationId);
 
+  // La moderación solo aparece si la invitación OFRECE libro de firmas. Sin el
+  // módulo no hay nada que moderar y la tarjeta sería ruido.
+  const { data: signaturesModule } = await supabase
+    .from("invitation_modules")
+    .select("id")
+    .eq("invitation_id", invitationId)
+    .eq("module_type", "signatures")
+    .maybeSingle();
+  const tieneLibroDeFirmas = Boolean(signaturesModule);
+
   const funnel = isGuestList
     ? funnelFromGuests(guestRows)
     : funnelFromResponses(responseRows);
@@ -225,6 +236,10 @@ export default async function InvitationDashboardPage({
         link={reportLink}
         siteUrl={siteUrl}
       />
+
+      {tieneLibroDeFirmas && (
+        <SignaturesModeration invitationId={invitation.id} />
+      )}
 
       <ConfirmationsChart outcomes={outcomes} now={now} />
 

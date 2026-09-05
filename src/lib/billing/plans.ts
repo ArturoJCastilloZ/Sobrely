@@ -36,6 +36,12 @@ const CELEBRACION_MODULES: readonly ModuleType[] = [
   "itinerary",
   "dresscode",
   "music",
+  // El libro de firmas vive aquí por DECISIÓN DE PRECIO del dev (2026-09-05),
+  // no por dónde cayó solo. `ALL_MODULES = MODULE_TYPES` hace que todo módulo
+  // nuevo nazca en Premium únicamente, y ahí nadie lo vería: Invitio lo regala
+  // en su plan gratis. Ponerlo en Celebración lo deja al alcance de $399 y
+  // Premium lo hereda — el mismo reparto que `custom_art`.
+  "signatures",
 ];
 
 /** Premium incluye todos los módulos existentes (agrega `video`). */

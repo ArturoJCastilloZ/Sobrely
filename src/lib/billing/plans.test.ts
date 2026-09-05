@@ -47,6 +47,25 @@ describe("custom_art (arte propio) vive en Celebración", () => {
   });
 });
 
+describe("libro de firmas (módulo) vive en Celebración, no en Premium solo", () => {
+  // Esta prueba existe para que la DECISIÓN no se pierda. `ALL_MODULES =
+  // MODULE_TYPES` hace que todo módulo nuevo caiga en Premium únicamente, que
+  // es lo que nadie quiere aquí: Invitio regala el libro de firmas en su plan
+  // gratis, así que nacer en el de $699 lo dejaría invisible. El dev decidió
+  // Celebración + Premium el 2026-09-05, el mismo reparto que `custom_art`.
+  it("Celebración y Premium lo incluyen; Free y Esencial no", () => {
+    expect(planAllowsModule(getPlan("celebracion")!, "signatures")).toBe(true);
+    expect(planAllowsModule(getPlan("premium")!, "signatures")).toBe(true);
+    expect(planAllowsModule(getPlan("free")!, "signatures")).toBe(false);
+    expect(planAllowsModule(getPlan("esencial")!, "signatures")).toBe(false);
+  });
+
+  it("el plan mínimo que lo desbloquea es Celebración", () => {
+    // Alimenta el CTA al publicar y la insignia ⭐ del editor.
+    expect(minimalPlanForModules(["signatures"])?.code).toBe("celebracion");
+  });
+});
+
 describe("invariantes de la escalera de planes", () => {
   const ordered = getActivePlans();
 

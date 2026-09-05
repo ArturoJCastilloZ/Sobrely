@@ -390,6 +390,52 @@ function ItineraryEditor({ config, onChange }: EditorProps) {
 
 // ---- Dress code -----------------------------------------------------------
 
+/**
+ * Libro de firmas. La config solo describe el módulo — las firmas viven en su
+ * propia tabla porque las escribe un visitante anónimo (ver migración 0023).
+ */
+function SignaturesEditor({ config, onChange }: EditorProps) {
+  return (
+    <div className="space-y-3">
+      <Field label="Título">
+        <Input
+          value={str(config.title)}
+          onChange={(e) => onChange({ title: e.target.value })}
+          placeholder="Libro de firmas"
+        />
+      </Field>
+      <Field label="Descripción">
+        <Textarea
+          value={str(config.description)}
+          onChange={(e) => onChange({ description: e.target.value })}
+          rows={2}
+          placeholder="Déjanos unas palabras. Las leeremos todas."
+        />
+      </Field>
+      <Field label="Texto del botón">
+        <Input
+          value={str(config.buttonLabel)}
+          onChange={(e) => onChange({ buttonLabel: e.target.value })}
+          placeholder="Firmar"
+        />
+      </Field>
+
+      <div className="flex items-center justify-between rounded-md border px-3 py-2">
+        <Label className="cursor-pointer">Revisar las firmas antes de publicarlas</Label>
+        <Switch
+          checked={Boolean(config.requireApproval)}
+          onCheckedChange={(v) => onChange({ requireApproval: v })}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {config.requireApproval
+          ? "Cada firma llega oculta y tú decides si se muestra. Acuérdate de revisarlas durante el evento, o el muro se queda vacío."
+          : "Las firmas se muestran al instante. Puedes ocultar cualquiera desde el panel del evento."}
+      </p>
+    </div>
+  );
+}
+
 function DresscodeEditor({ config, onChange, ctx }: EditorProps) {
   const level = (config.level as DresscodeLevel) ?? "formal";
   return (
@@ -933,6 +979,8 @@ export function ModuleConfigEditor({
         return <MusicEditor {...props} />;
       case "rsvp":
         return <RsvpEditor {...props} rsvpMode={rsvpMode} />;
+      case "signatures":
+        return <SignaturesEditor {...props} />;
       default:
         return null;
     }

@@ -13,6 +13,7 @@ import type {
   ModuleType,
   MusicConfig,
   RsvpConfig,
+  SignaturesConfig,
   VideoConfig,
   WelcomeConfig,
 } from "@/lib/modules/types";
@@ -395,6 +396,48 @@ export function ItineraryPreview({
   );
 }
 
+// ---- Libro de firmas ------------------------------------------------------
+
+/**
+ * Vista ESTÁTICA del libro de firmas: la que se ve en el editor y en el
+ * preview. El muro de verdad (`SignatureWall`) es interactivo y necesita el
+ * id de la invitación, así que la página pública lo despacha aparte — igual
+ * que el RSVP.
+ */
+export function SignaturesPreview({ config }: { config: SignaturesConfig }) {
+  return (
+    <Section className="flex flex-col items-center gap-3 text-center">
+      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
+        {config.title || "Libro de firmas"}
+      </h3>
+      {config.description && (
+        <p className="max-w-md text-sm opacity-75 @2xl/inv:text-base">
+          {config.description}
+        </p>
+      )}
+      <div className="w-full max-w-md space-y-2 text-left">
+        <div className="rounded-md border px-3 py-2 text-sm opacity-50">
+          Tu nombre
+        </div>
+        <div className="rounded-md border px-3 py-6 text-sm opacity-50">
+          Tu mensaje
+        </div>
+      </div>
+      <span
+        className="rounded-md px-4 py-2 text-sm font-medium text-white"
+        style={{ backgroundColor: PRIMARY }}
+      >
+        {config.buttonLabel || "Firmar"}
+      </span>
+      {config.requireApproval && (
+        <p className="text-xs opacity-60">
+          Las firmas se publican después de que las revises.
+        </p>
+      )}
+    </Section>
+  );
+}
+
 // ---- Dress code -----------------------------------------------------------
 
 export function DresscodePreview({ config }: { config: DresscodeConfig }) {
@@ -619,6 +662,8 @@ export function ModulePreview({
           editorHint={editorHint}
         />
       );
+    case "signatures":
+      return <SignaturesPreview config={parsed as SignaturesConfig} />;
     default:
       return null;
   }

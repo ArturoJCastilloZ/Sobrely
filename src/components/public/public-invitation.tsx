@@ -7,7 +7,12 @@ import type {
 import { ModulePreview } from "@/components/modules/previews";
 import { PublicRsvpForm } from "@/components/public/public-rsvp-form";
 import { GuestResponsePanel } from "@/components/public/guest-response-panel";
-import { parseConfig, type RsvpConfig } from "@/lib/modules/types";
+import {
+  parseConfig,
+  type RsvpConfig,
+  type SignaturesConfig,
+} from "@/lib/modules/types";
+import { SignatureWall } from "@/components/modules/signature-wall";
 import { parseTheme } from "@/lib/theme/theme";
 import { brandingForPlanCode } from "@/lib/billing/branding";
 import { ThemeScope } from "@/components/theme/theme-scope";
@@ -75,6 +80,10 @@ export function PublicInvitationView({
           );
           return (
             <AnimatedModule key={m.id} animation={animation} index={i}>
+              {/* Los módulos INTERACTIVOS se despachan aquí y no en
+                  `ModulePreview`: necesitan el id de la invitación y hablan
+                  con el servidor. `ModulePreview` es la vista estática que
+                  comparten el editor y el preview. */}
               {m.module_type === "rsvp" ? (
                 guest && guestToken ? (
                   <GuestResponsePanel
@@ -90,6 +99,13 @@ export function PublicInvitationView({
                     config={parseConfig("rsvp", m.config) as RsvpConfig}
                   />
                 )
+              ) : m.module_type === "signatures" ? (
+                <SignatureWall
+                  invitationId={invitation.id}
+                  config={
+                    parseConfig("signatures", m.config) as SignaturesConfig
+                  }
+                />
               ) : (
                 <ModulePreview
                   moduleType={m.module_type}
