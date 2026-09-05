@@ -173,7 +173,9 @@ function ReportView({ report }: { report: SharedReport }) {
         </p>
       </section>
 
-      <FunnelKpis funnel={funnel} />
+      {/* `third_party`: quien abre esta liga no es el anfitrión — no es "tu"
+          lista. */}
+      <FunnelKpis funnel={funnel} voice="third_party" />
 
       <footer className="mt-10 border-t pt-5 text-xs text-muted-foreground">
         <p>Cifras al {generado}. Recarga la página para actualizarlas.</p>

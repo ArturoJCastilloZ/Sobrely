@@ -34,13 +34,30 @@ function Kpi({
   );
 }
 
-export function FunnelKpis({ funnel }: { funnel: EventFunnel }) {
+/**
+ * A quién le habla la tarjeta.
+ *
+ * Existe porque el mismo componente se pinta en dos lados: el panel del
+ * anfitrión y el reporte compartido, que abre un tercero (el banquete, el
+ * salón). Decirle "tu lista" a quien no es el dueño del evento está mal, y es
+ * el tipo de detalle que solo se ve mirando la página, no el diff.
+ */
+export type FunnelVoice = "owner" | "third_party";
+
+export function FunnelKpis({
+  funnel,
+  voice = "owner",
+}: {
+  funnel: EventFunnel;
+  voice?: FunnelVoice;
+}) {
   const kpis: { label: string; value: string; context: string }[] = [];
 
   if (funnel.mode === "guest_list") {
     const registered = funnel.registered ?? 0;
     kpis.push({
-      label: "Invitados en tu lista",
+      label:
+        voice === "owner" ? "Invitados en tu lista" : "Invitados en la lista",
       value: String(registered),
       context:
         funnel.allotted !== null
