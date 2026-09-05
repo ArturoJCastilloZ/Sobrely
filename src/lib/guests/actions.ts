@@ -78,6 +78,10 @@ export type GuestListRow = {
   phone: string | null;
   /** Cuándo se le envió su invitación. `null` = todavía no se le envía. */
   invited_at: string | null;
+  /** Último recordatorio enviado. `null` = nunca se le recordó. */
+  reminded_at: string | null;
+  /** Cuántas veces se le ha recordado. */
+  reminder_count: number;
 };
 
 /** Lista los invitados de una invitación propia (RLS: solo el dueño). */
@@ -90,7 +94,7 @@ export async function listGuests(
   const { data } = await supabase
     .from("invitation_guests")
     .select(
-      "id, name, max_guests, access_token, status, confirmed_count, checked_in_at, phone, invited_at",
+      "id, name, max_guests, access_token, status, confirmed_count, checked_in_at, phone, invited_at, reminded_at, reminder_count",
     )
     .eq("invitation_id", invitationId)
     .order("created_at", { ascending: true });
@@ -274,6 +278,63 @@ export async function setGuestInvited(
     .update({ invited_at: invited ? new Date().toISOString() : null })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar el envío." };
+  return { ok: true };
+}
+
+/**
+ * Sella que se le ENVIÓ un recordatorio, y suma uno a la cuenta.
+ *
+ * Igual que `setGuestInvited`, declara INTENCIÓN: `wa.me` abre el chat en el
+ * teléfono del anfitrión y es él quien decide si le da enviar. Sobrely no
+ * puede saber si el mensaje salió.
+ *
+ * A diferencia de `invited_at`, esto NO es idempotente y no debe serlo: cada
+ * recordatorio es un evento distinto, y la cuenta es justo lo que distingue a
+ * quien se le pasó de quien está ignorando. Por eso `reminded_at` sí se mueve
+ * en cada llamada.
+ *
+ * `deshacer` existe porque el anfitrión puede abrir el chat y arrepentirse; sin
+ * eso, el invitado quedaría en la ventana de cortesía 24 h sin haber recibido
+ * nada. Resta uno en vez de poner la cuenta en cero: solo deshace el último.
+ */
+export async function markGuestReminded(
+  id: string,
+  deshacer = false,
+): Promise<GuestActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión expirada." };
+
+  // RLS: solo devuelve el invitado si la invitación es del usuario.
+  const { data: guest } = await supabase
+    .from("invitation_guests")
+    .select("id, reminder_count")
+    .eq("id", id)
+    .maybeSingle();
+  if (!guest) return { ok: false, error: "Invitado no encontrado." };
+
+  const actual = (guest.reminder_count as number) ?? 0;
+  const siguiente = deshacer ? Math.max(0, actual - 1) : actual + 1;
+
+  const { error } = await supabase
+    .from("invitation_guests")
+    .update({
+      // Deshacer SIEMPRE limpia la fecha, aunque queden recordatorios en la
+      // cuenta: sacar al invitado de la ventana de cortesía es precisamente el
+      // punto de deshacer. Poner `now()` lo dejaría bloqueado 24 h por un
+      // mensaje que nunca salió.
+      //
+      // Queda `reminded_at = null` con `reminder_count > 0`, que se lee como
+      // "se le recordó antes, pero la fecha del último se descartó". Es
+      // preferible a inventar una fecha: no se guarda el historial completo,
+      // así que la anterior no se puede restaurar.
+      reminded_at: deshacer ? null : new Date().toISOString(),
+      reminder_count: siguiente,
+    })
+    .eq("id", id);
+  if (error) return { ok: false, error: "No se pudo registrar el recordatorio." };
   return { ok: true };
 }
 

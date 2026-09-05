@@ -15,6 +15,7 @@ import {
 } from "@/lib/guests/actions";
 import { MAX_GUEST_ALLOTMENT } from "@/lib/guests/schemas";
 import { whatsappInviteUrl } from "@/lib/guests/whatsapp";
+import { ReminderPanel } from "@/components/dashboard/reminder-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -237,6 +238,19 @@ export function GuestManager({
 
   return (
     <div className="space-y-6">
+      {/* Perseguir a los que faltan. Va ARRIBA de la lista porque es la acción
+          del día cuando el evento ya se envió; administrar la lista viene
+          antes en el tiempo, pero después en la frecuencia de uso. */}
+      {!loading && guests.length > 0 && (
+        <ReminderPanel
+          guests={guests}
+          eventTitle={eventTitle}
+          hostName={hostName}
+          siteUrl={siteUrl}
+          onChanged={reload}
+        />
+      )}
+
       {/* Resumen */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label={`Invitados · ${totalAllotted} lugares`} value={guests.length} />

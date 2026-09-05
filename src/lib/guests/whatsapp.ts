@@ -88,6 +88,34 @@ export function inviteMessage(input: {
 }
 
 /**
+ * Mensaje de RECORDATORIO. Es otro texto, no el mismo con otro asunto.
+ *
+ * Quien recibe esto ya tuvo su invitación y no ha contestado, así que repetirle
+ * "te invitamos a X" se lee como que el anfitrión no lleva la cuenta. El
+ * recordatorio reconoce que ya se la mandó, pide lo único que falta —la
+ * confirmación— y explica POR QUÉ importa: sin el número no se cierra el
+ * banquete. Y no regaña: quien no contestó casi siempre lo dejó pendiente, no
+ * lo ignoró.
+ *
+ * Va sin fecha límite a propósito: la invitación puede tener una y puede no
+ * tenerla, y anunciar una que no existe sería inventar.
+ */
+export function reminderMessage(input: {
+  guestName: string;
+  eventTitle: string;
+  link: string;
+  hostName?: string | null;
+}): string {
+  const { guestName, eventTitle, link, hostName } = input;
+  const quien = hostName?.trim() ? `${hostName.trim()} sigue` : "Seguimos";
+  return (
+    `Hola ${guestName.trim()}, ¿alcanzaste a ver la invitación de ${eventTitle.trim()}?\n\n` +
+    `${quien} esperando tu confirmación para cerrar el número de lugares. ` +
+    `Se contesta en un momento, aquí mismo:\n${link}`
+  );
+}
+
+/**
  * Enlace `wa.me` con el mensaje pre-llenado. `null` cuando el teléfono no
  * sirve, para que quien llame decida qué mostrar en vez de abrir un chat roto.
  */
@@ -101,5 +129,22 @@ export function whatsappInviteUrl(input: {
   const digits = normalizePhone(input.phone);
   if (!digits) return null;
   const text = encodeURIComponent(inviteMessage(input));
+  return `https://wa.me/${digits}?text=${text}`;
+}
+
+/**
+ * Enlace `wa.me` de RECORDATORIO. Mismo mecanismo que la invitación, otro
+ * texto — se separan para que cambiar uno no toque el otro por accidente.
+ */
+export function whatsappReminderUrl(input: {
+  phone: string | null | undefined;
+  guestName: string;
+  eventTitle: string;
+  link: string;
+  hostName?: string | null;
+}): string | null {
+  const digits = normalizePhone(input.phone);
+  if (!digits) return null;
+  const text = encodeURIComponent(reminderMessage(input));
   return `https://wa.me/${digits}?text=${text}`;
 }
