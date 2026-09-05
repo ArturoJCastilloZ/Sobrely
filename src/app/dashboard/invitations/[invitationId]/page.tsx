@@ -14,6 +14,8 @@ import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { ConfirmationsChart } from "@/components/dashboard/confirmations-chart";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { LiveIndicator } from "@/components/dashboard/live-indicator";
+import { ReportShare } from "@/components/dashboard/report-share";
+import { getReportLink } from "@/lib/reports/actions";
 import {
   activityFromGuests,
   activityFromResponses,
@@ -116,6 +118,9 @@ export default async function InvitationDashboardPage({
   const rsvpQuestions =
     rsvpConfigSchema.safeParse(rsvpModule?.config ?? {}).data?.questions ?? [];
 
+  // Liga viva del reporte compartido, si el anfitrión ya generó una.
+  const reportLink = await getReportLink(invitationId);
+
   const funnel = isGuestList
     ? funnelFromGuests(guestRows)
     : funnelFromResponses(responseRows);
@@ -214,6 +219,12 @@ export default async function InvitationDashboardPage({
         <ResponseBreakdown funnel={funnel} />
         <ActivityFeed items={activity} now={now} />
       </div>
+
+      <ReportShare
+        invitationId={invitation.id}
+        link={reportLink}
+        siteUrl={siteUrl}
+      />
 
       <ConfirmationsChart outcomes={outcomes} now={now} />
 
