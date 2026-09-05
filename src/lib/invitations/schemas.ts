@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { MODULE_TYPES, moduleConfigSchemas, type ModuleType } from "@/lib/modules/types";
+import {
+  MODULE_TYPES,
+  moduleConfigWriteSchemas,
+  type ModuleType,
+} from "@/lib/modules/types";
 import { themeSchema } from "@/lib/theme/theme";
 
 /** Slugify a string into a URL-safe invitation slug. */
@@ -49,7 +53,9 @@ export const editorModuleSchema = z
     config: z.record(z.string(), z.unknown()),
   })
   .superRefine((mod, ctx) => {
-    const schema = moduleConfigSchemas[mod.module_type as ModuleType];
+    // Esquema de ESCRITURA: aquí sí se rechaza lo mal formado, porque hay
+    // alguien enfrente a quien avisarle. Al leer se es tolerante.
+    const schema = moduleConfigWriteSchemas[mod.module_type as ModuleType];
     const result = schema.safeParse(mod.config);
     if (!result.success) {
       ctx.addIssue({

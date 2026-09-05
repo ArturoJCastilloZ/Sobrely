@@ -86,21 +86,20 @@ export const rsvpQuestionSchema = z.object({
     .max(MAX_RSVP_QUESTION_OPTIONS)
     .default([]),
   required: z.boolean().default(false),
-}).superRefine((q, ctx) => {
-  // Una pregunta de "elegir una" sin opciones es una trampa: el invitado ve un
-  // desplegable vacío y no hay valor que `sanitizeAnswers` pueda aceptar, así
-  // que si además es obligatoria queda IMPOSIBLE de confirmar. Se rechaza al
-  // guardar en vez de dejar que reviente del lado del invitado.
-  if (q.type === "choice" && q.options.length === 0) {
-    ctx.addIssue({
-      code: "custom",
-      message: "Una pregunta de opciones necesita al menos una opción.",
-      path: ["options"],
-    });
-  }
 });
 
 export type RsvpQuestion = z.infer<typeof rsvpQuestionSchema>;
+
+/**
+ * ¿Esta pregunta se puede responder siquiera?
+ *
+ * Una de "elegir una" sin opciones no: el invitado ve un desplegable vacío y
+ * no hay valor que `sanitizeAnswers` pueda aceptar. Si además es obligatoria,
+ * confirmar sería IMPOSIBLE.
+ */
+export function isAnswerableQuestion(q: RsvpQuestion): boolean {
+  return q.type !== "choice" || q.options.length > 0;
+}
 
 export const rsvpConfigSchema = z.object({
   title: z.string().max(120).default("Confirma tu asistencia"),
@@ -213,6 +212,36 @@ export const moduleConfigSchemas = {
   gifts: giftsConfigSchema,
   music: musicConfigSchema,
   rsvp: rsvpConfigSchema,
+} satisfies Record<ModuleType, z.ZodType>;
+
+/**
+ * Esquemas de ESCRITURA: los mismos, pero exigentes.
+ *
+ * La distinción importa. `moduleConfigSchemas` se usa al LEER, y ahí
+ * `parseConfig` descarta la config ENTERA si algo no valida: una restricción
+ * nueva convertiría configs viejos y perfectamente guardados en "inválidos" y
+ * la página pública perdería título, descripción y fecha límite en silencio —
+ * y el editor persistiría esa pérdida al primer guardado.
+ *
+ * Por eso lo estricto vive solo aquí, en la puerta de entrada: se rechaza al
+ * guardar, que es cuando hay alguien enfrente a quien avisarle, y nunca al
+ * leer lo que ya estaba.
+ */
+const rsvpConfigWriteSchema = rsvpConfigSchema.superRefine((cfg, ctx) => {
+  cfg.questions.forEach((q, i) => {
+    if (!isAnswerableQuestion(q)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Una pregunta de opciones necesita al menos una opción.",
+        path: ["questions", i, "options"],
+      });
+    }
+  });
+});
+
+export const moduleConfigWriteSchemas = {
+  ...moduleConfigSchemas,
+  rsvp: rsvpConfigWriteSchema,
 } satisfies Record<ModuleType, z.ZodType>;
 
 export type HeroConfig = z.infer<typeof heroConfigSchema>;

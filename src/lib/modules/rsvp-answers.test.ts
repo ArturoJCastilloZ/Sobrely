@@ -4,7 +4,12 @@ import {
   describeAnswers,
   sanitizeAnswers,
 } from "./rsvp-answers";
-import { rsvpConfigSchema, type RsvpQuestion } from "./types";
+import {
+  moduleConfigWriteSchemas,
+  parseConfig,
+  rsvpConfigSchema,
+  type RsvpQuestion,
+} from "./types";
 
 const q = (over: Partial<RsvpQuestion> = {}): RsvpQuestion => ({
   id: "alergias",
@@ -152,36 +157,54 @@ describe("lo obligatorio solo se le exige a quien confirma", () => {
 });
 
 describe("una pregunta de opciones necesita opciones", () => {
-  it("el esquema rechaza `choice` sin opciones", () => {
-    const r = rsvpConfigSchema.safeParse({
-      questions: [{ id: "menu", label: "Elige tu menú", type: "choice", options: [] }],
-    });
+  const rota = {
+    id: "menu",
+    label: "Elige tu menú",
+    type: "choice" as const,
+    options: [] as string[],
+    required: true,
+  };
+
+  it("al GUARDAR se rechaza: no sirve de nada y bloquearía al invitado", () => {
+    const r = moduleConfigWriteSchemas.rsvp.safeParse({ questions: [rota] });
     expect(r.success).toBe(false);
   });
 
-  it("la trampa completa: obligatoria y sin opciones, imposible de responder", () => {
-    // Antes se podía guardar, y entonces `q.options.includes(...)` no casaba
-    // con NADA: el invitado no podía confirmar jamás.
-    const r = rsvpConfigSchema.safeParse({
-      questions: [
-        { id: "menu", label: "Elige tu menú", type: "choice", options: [], required: true },
-      ],
-    });
-    expect(r.success).toBe(false);
+  it("al LEER se tolera, y el resto de la config SOBREVIVE", () => {
+    // Esta es la trampa que costó un hallazgo: si el esquema de lectura
+    // rechazara, `parseConfig` tiraría la config ENTERA y la página pública
+    // perdería título, descripción y fecha límite en silencio.
+    const cfg = parseConfig("rsvp", {
+      title: "Confirma antes del viernes",
+      description: "Nos ayuda a planear",
+      deadline: "2026-10-01T00:00:00.000Z",
+      questions: [rota],
+    }) as { title: string; description: string; deadline: string };
+    expect(cfg.title).toBe("Confirma antes del viernes");
+    expect(cfg.description).toBe("Nos ayuda a planear");
+    expect(cfg.deadline).toBe("2026-10-01T00:00:00.000Z");
   });
 
-  it("con al menos una opción sí se acepta", () => {
-    const r = rsvpConfigSchema.safeParse({
-      questions: [
-        { id: "menu", label: "Elige tu menú", type: "choice", options: ["Carne"] },
-      ],
+  it("una pregunta imposible NO bloquea al invitado aunque sea obligatoria", () => {
+    // Sin opciones no hay valor que aceptar; exigirla dejaría a la persona
+    // sin poder confirmar nunca. El error del anfitrión no lo paga el invitado.
+    const r = sanitizeAnswers([rota], {});
+    expect(r).toEqual({ ok: true, answers: {} });
+  });
+
+  it("con al menos una opción sí se guarda y sí se exige", () => {
+    const buena = { ...rota, options: ["Carne"] };
+    expect(moduleConfigWriteSchemas.rsvp.safeParse({ questions: [buena] }).success).toBe(true);
+    expect(sanitizeAnswers([buena], {}).ok).toBe(false);
+    expect(sanitizeAnswers([buena], { menu: "Carne" })).toEqual({
+      ok: true,
+      answers: { menu: "Carne" },
     });
-    expect(r.success).toBe(true);
   });
 
   it("los otros tipos no necesitan opciones", () => {
     for (const type of ["text", "boolean"] as const) {
-      const r = rsvpConfigSchema.safeParse({
+      const r = moduleConfigWriteSchemas.rsvp.safeParse({
         questions: [{ id: "x", label: "¿Algo?", type, options: [] }],
       });
       expect(r.success, type).toBe(true);

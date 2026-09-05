@@ -5,7 +5,7 @@
  * de fiar. Se valida contra las preguntas realmente declaradas y se descarta
  * todo lo demás, en vez de guardar el objeto tal como llegó.
  */
-import type { RsvpQuestion } from "./types";
+import { isAnswerableQuestion, type RsvpQuestion } from "./types";
 
 /**
  * Id nuevo para una pregunta. Aleatorio y corto, NO derivado de la etiqueta:
@@ -76,7 +76,16 @@ export function sanitizeAnswers(
       }
     }
 
-    if (enforceRequired && q.required && answers[q.id] === undefined) {
+    // Nunca se exige una pregunta que NO SE PUEDE responder (una de opciones
+    // sin opciones). El guardado ya las rechaza, pero si alguna quedó viva de
+    // antes, el invitado no debe pagar el error del anfitrión quedándose sin
+    // poder confirmar.
+    if (
+      enforceRequired &&
+      q.required &&
+      isAnswerableQuestion(q) &&
+      answers[q.id] === undefined
+    ) {
       return { ok: false, error: `Falta responder: ${q.label}` };
     }
   }
