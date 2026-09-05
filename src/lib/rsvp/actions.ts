@@ -13,8 +13,6 @@ import {
 
 export type RsvpActionResult = { ok: true } | { ok: false; error: string };
 
-
-
 /**
  * Public RSVP submission. RLS only allows inserting into PUBLISHED invitations,
  * so an anonymous visitor cannot write to drafts or arbitrary rows.
@@ -35,7 +33,12 @@ export async function submitRsvp(
   // admin porque el visitante es anónimo y RLS no le permite sumar respuestas.
   const admin = createAdminClient();
 
-  const answers = await sanitizeRsvpAnswers(admin, v.invitationId, v.answers);
+  // Solo se le exige lo obligatorio a quien dice que SÍ va. A quien declina no
+  // se le pide elegir menú, y a quien duda ("tal vez") tampoco — todavía no
+  // sabe si asiste. Lo que contesten se guarda igual; solo no se les exige.
+  const answers = await sanitizeRsvpAnswers(admin, v.invitationId, v.answers, {
+    enforceRequired: v.attendanceStatus === "yes",
+  });
   if (!answers.ok) return { ok: false, error: answers.error };
 
   const guestCheck = await canAddGuest(admin, v.invitationId, v.guestCount);

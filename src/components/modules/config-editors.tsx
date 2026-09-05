@@ -686,6 +686,21 @@ function RsvpQuestionsEditor({ config, onChange }: EditorProps) {
               onChange={(options) => patch(i, { options })}
             />
           )}
+
+          {/* El guardado ya rechaza estos dos casos, pero con un error genérico
+              ("Configuración inválida en el módulo rsvp") que no dice CUÁL
+              pregunta falla. El aviso en línea lo señala antes de intentar. */}
+          {!q.label?.trim() && (
+            <p className="text-xs text-destructive">
+              Escribe la pregunta o quítala: no se puede guardar en blanco.
+            </p>
+          )}
+          {q.type === "choice" && (q.options ?? []).length === 0 && (
+            <p className="text-xs text-destructive">
+              Agrega al menos una opción
+              {q.required ? " — sin opciones, nadie podría confirmar." : "."}
+            </p>
+          )}
         </div>
       ))}
 

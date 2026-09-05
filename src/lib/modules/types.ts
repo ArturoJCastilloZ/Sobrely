@@ -86,6 +86,18 @@ export const rsvpQuestionSchema = z.object({
     .max(MAX_RSVP_QUESTION_OPTIONS)
     .default([]),
   required: z.boolean().default(false),
+}).superRefine((q, ctx) => {
+  // Una pregunta de "elegir una" sin opciones es una trampa: el invitado ve un
+  // desplegable vacío y no hay valor que `sanitizeAnswers` pueda aceptar, así
+  // que si además es obligatoria queda IMPOSIBLE de confirmar. Se rechaza al
+  // guardar en vez de dejar que reviente del lado del invitado.
+  if (q.type === "choice" && q.options.length === 0) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Una pregunta de opciones necesita al menos una opción.",
+      path: ["options"],
+    });
+  }
 });
 
 export type RsvpQuestion = z.infer<typeof rsvpQuestionSchema>;

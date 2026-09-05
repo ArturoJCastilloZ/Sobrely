@@ -115,3 +115,76 @@ describe("rsvpConfigSchema — las preguntas son opcionales y acotadas", () => {
     expect(rsvpConfigSchema.safeParse({ questions: malo }).success).toBe(false);
   });
 });
+
+describe("lo obligatorio solo se le exige a quien confirma", () => {
+  const menu = q({
+    id: "menu",
+    label: "Elige tu menú",
+    type: "choice",
+    options: ["Carne", "Vegetariano"],
+    required: true,
+  });
+
+  it("al DECLINAR no se exige, aunque no llegue nada", () => {
+    // El formulario ni siquiera manda respuestas al declinar; exigirlas dejaba
+    // al invitado sin poder decir que no.
+    const r = sanitizeAnswers([menu], undefined, { enforceRequired: false });
+    expect(r).toEqual({ ok: true, answers: {} });
+  });
+
+  it("al CONFIRMAR sí se exige (comportamiento por defecto)", () => {
+    expect(sanitizeAnswers([menu], {}).ok).toBe(false);
+    expect(sanitizeAnswers([menu], {}, { enforceRequired: true }).ok).toBe(false);
+  });
+
+  it("lo que el invitado sí contestó se guarda aunque no se le exija", () => {
+    const r = sanitizeAnswers([menu], { menu: "Carne" }, { enforceRequired: false });
+    expect(r).toEqual({ ok: true, answers: { menu: "Carne" } });
+  });
+
+  it("sin preguntas obligatorias, exigir o no da lo mismo", () => {
+    const libre = q({ required: false });
+    expect(sanitizeAnswers([libre], {}, { enforceRequired: true })).toEqual({
+      ok: true,
+      answers: {},
+    });
+  });
+});
+
+describe("una pregunta de opciones necesita opciones", () => {
+  it("el esquema rechaza `choice` sin opciones", () => {
+    const r = rsvpConfigSchema.safeParse({
+      questions: [{ id: "menu", label: "Elige tu menú", type: "choice", options: [] }],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("la trampa completa: obligatoria y sin opciones, imposible de responder", () => {
+    // Antes se podía guardar, y entonces `q.options.includes(...)` no casaba
+    // con NADA: el invitado no podía confirmar jamás.
+    const r = rsvpConfigSchema.safeParse({
+      questions: [
+        { id: "menu", label: "Elige tu menú", type: "choice", options: [], required: true },
+      ],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("con al menos una opción sí se acepta", () => {
+    const r = rsvpConfigSchema.safeParse({
+      questions: [
+        { id: "menu", label: "Elige tu menú", type: "choice", options: ["Carne"] },
+      ],
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("los otros tipos no necesitan opciones", () => {
+    for (const type of ["text", "boolean"] as const) {
+      const r = rsvpConfigSchema.safeParse({
+        questions: [{ id: "x", label: "¿Algo?", type, options: [] }],
+      });
+      expect(r.success, type).toBe(true);
+    }
+  });
+});

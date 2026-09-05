@@ -387,10 +387,13 @@ export async function respondAsGuest(
     .maybeSingle();
   if (!fila) return { ok: false, error: "No se pudo registrar tu respuesta." };
 
+  // Lo obligatorio solo se le exige a quien CONFIRMA. `confirmedCount === 0`
+  // es "no podré asistir": exigirle el menú lo dejaría sin poder declinar.
   const answers = await sanitizeRsvpAnswers(
     admin,
     fila.invitation_id as string,
     v.answers,
+    { enforceRequired: v.confirmedCount > 0 },
   );
   if (!answers.ok) return { ok: false, error: answers.error };
 

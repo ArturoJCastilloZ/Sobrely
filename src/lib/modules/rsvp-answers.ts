@@ -38,11 +38,20 @@ export const MAX_ANSWER_LENGTH = 300;
  *  * una pregunta `required` sin respuesta corta el envío con el nombre de la
  *    pregunta, para que el invitado sepa cuál le falta;
  *  * las respuestas vacías no se guardan: `{}` es "no contestó".
+ *
+ * `enforceRequired` existe porque lo obligatorio SOLO aplica a quien confirma.
+ * A quien avisa que NO va no se le puede exigir que elija menú: sería absurdo,
+ * y como el formulario ni siquiera manda respuestas al declinar, la pregunta
+ * obligatoria le impediría declinar — quedaría atrapado sin poder responder
+ * ni que sí ni que no. Lo que el invitado conteste igual se guarda; lo único
+ * que cambia es si se le EXIGE.
  */
 export function sanitizeAnswers(
   questions: readonly RsvpQuestion[],
   raw: unknown,
+  opts: { enforceRequired?: boolean } = {},
 ): AnswersResult {
+  const enforceRequired = opts.enforceRequired ?? true;
   const entrada: Record<string, unknown> =
     raw !== null && typeof raw === "object" && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)
@@ -67,7 +76,7 @@ export function sanitizeAnswers(
       }
     }
 
-    if (q.required && answers[q.id] === undefined) {
+    if (enforceRequired && q.required && answers[q.id] === undefined) {
       return { ok: false, error: `Falta responder: ${q.label}` };
     }
   }

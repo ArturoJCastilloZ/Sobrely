@@ -33,6 +33,10 @@ export async function sanitizeRsvpAnswers(
   admin: AnyClient,
   invitationId: string,
   raw: unknown,
+  /**
+   * Lo obligatorio solo se exige a quien CONFIRMA. Ver `sanitizeAnswers`.
+   */
+  opts: { enforceRequired?: boolean } = {},
 ): Promise<SanitizeResult> {
   // Cliente admin a propósito: el anónimo no puede leer `invitation_modules`
   // por RLS, y necesitamos las preguntas para saber qué es válido.
@@ -47,5 +51,5 @@ export async function sanitizeRsvpAnswers(
   // Config ilegible o módulo ausente = no hay preguntas que responder. No se
   // guarda nada, en vez de aceptar lo que venga.
   const questions = parsed.success ? parsed.data.questions : [];
-  return sanitizeAnswers(questions, raw);
+  return sanitizeAnswers(questions, raw, opts);
 }
