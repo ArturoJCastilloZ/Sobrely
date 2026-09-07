@@ -97,7 +97,16 @@ export async function listGuests(
       "id, name, max_guests, access_token, status, confirmed_count, checked_in_at, phone, invited_at, reminded_at, reminder_count",
     )
     .eq("invitation_id", invitationId)
-    .order("created_at", { ascending: true });
+    // El pegado masivo inserta el lote entero con el MISMO `created_at` (medido:
+    // 6 invitados comparten timestamp al microsegundo), así que `created_at`
+    // solo NO define un orden y Postgres puede devolverlos distinto entre
+    // lecturas. Se desempata por `name` y no por `id`: `id` es un uuid
+    // aleatorio, y ordenar por él revuelve el lote en un orden sin sentido para
+    // el anfitrión. `id` va al final solo para volverlo total — dos invitados
+    // pueden llamarse igual.
+    .order("created_at", { ascending: true })
+    .order("name", { ascending: true })
+    .order("id", { ascending: true });
   return (data ?? []) as GuestListRow[];
 }
 
