@@ -251,24 +251,42 @@ export function GuestManager({
         />
       )}
 
-      {/* Resumen */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <Stat label={`Invitados · ${totalAllotted} lugares`} value={guests.length} />
-        <Stat
-          label={
-            guests.length > 0
-              ? `Enviadas · ${Math.round((invitedCount / guests.length) * 100)}%`
-              : "Enviadas"
-          }
-          value={invitedCount}
-        />
-        <Stat label="Confirmados" value={confirmedGuests.length} />
-        <Stat label="Personas confirmadas" value={confirmedPeople} />
-        <Stat
-          label="Ingresaron"
-          value={checkedInCount}
-          className="col-span-2 sm:col-span-1"
-        />
+      {/*
+        Resumen. Las columnas responden al CONTENEDOR, no al viewport.
+        Este mismo componente se pinta en dos anchos muy distintos —la columna
+        de 420px del editor y la pagina de la invitacion a ancho completo— y una
+        media query mira la ventana, no la caja. Medido a 1440px de viewport:
+        con `lg:grid-cols-5` cada tarjeta quedaba en 74px dentro del editor y la
+        etiqueta se partia en tres lineas, mientras en la pagina median 195px.
+      */}
+      <div className="@container/stats">
+        <div className="grid grid-cols-2 gap-3 @md/stats:grid-cols-3 @3xl/stats:grid-cols-5">
+          <Stat
+            label="Invitados"
+            value={guests.length}
+            context={`${totalAllotted} lugares`}
+          />
+          <Stat
+            label="Enviadas"
+            value={invitedCount}
+            context={
+              guests.length > 0
+                ? `${Math.round((invitedCount / guests.length) * 100)}% de la lista`
+                : undefined
+            }
+          />
+          <Stat label="Confirmados" value={confirmedGuests.length} />
+          <Stat
+            label="Personas"
+            value={confirmedPeople}
+            context="contando acompañantes"
+          />
+          <Stat
+            label="Ingresaron"
+            value={checkedInCount}
+            className="col-span-2 @md/stats:col-span-1"
+          />
+        </div>
       </div>
 
       <div className="flex justify-end">
@@ -547,19 +565,34 @@ function GuestRowItem({
   );
 }
 
+/**
+ * Cifra del resumen.
+ *
+ * `context` va aparte de `label` a proposito. Antes los dos datos venian
+ * pegados en una sola cadena ("Invitados · 10 lugares") y en la columna
+ * estrecha del editor eso partia la etiqueta en TRES lineas, midiendo 74px de
+ * ancho. Separarlos deja que cada uno rompa donde debe, y ademas adopta la
+ * anatomia que este repo ya tenia en `FunnelKpis` en vez de sostener dos
+ * patrones distintos para lo mismo.
+ */
 function Stat({
   label,
   value,
+  context,
   className = "",
 }: {
   label: string;
   value: number;
+  context?: string;
   className?: string;
 }) {
   return (
     <div className={`rounded-lg border p-3 text-center ${className}`}>
-      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-2xl font-bold tabular-nums">{value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
+      {context && (
+        <div className="mt-0.5 text-[11px] text-muted-foreground/70">{context}</div>
+      )}
     </div>
   );
 }
