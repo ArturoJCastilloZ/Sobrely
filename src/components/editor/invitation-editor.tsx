@@ -46,12 +46,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 import { SortableModuleItem } from "./sortable-module-item";
 import { ModulePalette } from "./module-palette";
 import { SettingsPanel } from "./settings-panel";
@@ -61,7 +55,12 @@ import { ModuleConfigEditor, MODULE_REGISTRY } from "@/components/modules/regist
 import { RsvpModeToggle } from "@/components/dashboard/rsvp-mode-toggle";
 import { GuestManager } from "@/components/dashboard/guest-manager";
 import type { ThemeConfig } from "@/lib/theme/theme";
-import { Undo2Icon, Redo2Icon } from "lucide-react";
+import {
+  Undo2Icon, Redo2Icon, LayersIcon, MousePointerClickIcon, ArrowLeftIcon,
+  PaletteIcon, UsersIcon, SettingsIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 import { detectAnimationConflicts } from "@/lib/animation/conflicts";
 import type { EditorAction } from "@/lib/invitations/editor-document";
 import {
@@ -82,6 +81,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+/**
+ * Paneles de nivel DOCUMENTO. Van separados de la lista de secciones porque no
+ * son hermanos suyos: cambian la invitacion entera, no un bloque. Mezclarlos en
+ * un mismo control de pestanas era el defecto estructural del editor viejo.
+ */
+const PANELES_DOC = [
+  { id: "theme", label: "Tema", icon: PaletteIcon },
+  { id: "guests", label: "Invitados", icon: UsersIcon },
+  { id: "settings", label: "Ajustes", icon: SettingsIcon },
+] as const;
+
+type PanelId = "module" | (typeof PANELES_DOC)[number]["id"];
 
 export function InvitationEditor({
   initialInvitation,
@@ -112,7 +124,7 @@ export function InvitationEditor({
 
   const uploadCtx = { userId, invitationId: initialInvitation.id };
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-  const [activeTab, setActiveTab] = useState("modules");
+  const [panel, setPanel] = useState<PanelId>("module");
   const [selectedId, setSelectedId] = useState<string | null>(
     initialModules[0]?.id ?? null,
   );
@@ -300,7 +312,7 @@ export function InvitationEditor({
   const upgradePlanObj = upgradePlan ? getPlan(upgradePlan) : undefined;
 
   return (
-    <div className="flex min-h-svh flex-col">
+    <div className="flex h-svh flex-col overflow-hidden">
       {/* Modal de mejora de plan (bloqueo de publicación por módulos premium) */}
       {upgradePlanObj && (
         <div
@@ -379,28 +391,47 @@ export function InvitationEditor({
       </AlertDialog>
 
       {/* Top bar */}
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 overflow-hidden">
+      {/*
+        Barra superior. Antes eran TRES bloques apilados —acciones, enlace
+        publico y URL personalizada— que en un telefono se comian una fraccion
+        grande del viewport antes de mostrar nada editable. El enlace y la URL
+        bajan al panel de Ajustes, que es donde se consultan, no donde estorban.
+      */}
+      <header className="shrink-0 border-b">
+        <div className="flex w-full items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4">
+          {/*
+            `min-w-0` en los dos flex es lo que permite que el titulo se recorte
+            en vez de empujar. Sin el, un hijo flex se niega a encogerse por
+            debajo de su contenido y la barra desborda: medido a 375px, el
+            contenido ocupaba 424px y "Publicar" quedaba fuera de pantalla.
+          */}
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 sm:gap-3">
+            <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon-sm"
+                aria-label="Volver al panel"
                 render={<Link href="/dashboard" />}
                 nativeButton={false}
+                className="shrink-0"
               >
-                ← Volver
+                <ArrowLeftIcon />
               </Button>
               <span className="truncate text-sm font-medium">
                 {invitation.title || "Sin título"}
               </span>
               {/* Estado del autoguardado. Sustituye al boton Guardar: el
-                  usuario no deberia tener que acordarse de guardar. */}
-              <span className="shrink-0 text-xs text-muted-foreground" aria-live="polite">
+                  usuario no deberia tener que acordarse de guardar.
+                  Se oculta en pantallas estrechas — el titulo importa mas, y
+                  el estado se sigue anunciando por `aria-live`. */}
+              <span
+                className="hidden shrink-0 text-xs text-muted-foreground sm:inline"
+                aria-live="polite"
+              >
                 {dirty ? "Guardando…" : "Guardado"}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-1.5">
               {/* Deshacer / rehacer. Los atajos funcionan igual; estos botones
                   existen porque un atajo que nadie ve no existe. */}
               <Button
@@ -438,201 +469,223 @@ export function InvitationEditor({
             </div>
           </div>
 
-          <PublishControls
-            username={username}
-            slug={invitation.slug}
-            isPublished={invitation.is_published}
-            dirty={dirty}
-          />
-          {invitation.is_published && (
-            <VanitySlugCard invitationId={invitation.id} />
-          )}
         </div>
       </header>
 
-      {/* Body: editor + preview (desktop two columns, mobile tabs) */}
-      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_1fr]">
-          {/* Left: controls */}
-          <div className="space-y-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="w-full">
-                <TabsTrigger value="modules" className="flex-1">
-                  Módulos
-                </TabsTrigger>
-                {invitation.rsvp_mode === "guest_list" && (
-                  <TabsTrigger value="guests" className="flex-1">
-                    Invitados
-                  </TabsTrigger>
-                )}
-                <TabsTrigger value="settings" className="flex-1">
-                  Ajustes
-                </TabsTrigger>
-                <TabsTrigger value="theme" className="flex-1">
-                  Tema
-                </TabsTrigger>
-                <TabsTrigger value="preview" className="flex-1 lg:hidden">
-                  Vista previa
-                </TabsTrigger>
-              </TabsList>
+      {/*
+        Tres columnas: riel de secciones, canvas y panel de propiedades.
 
-              <TabsContent value="modules" className="space-y-4">
-                <ModulePalette onAdd={addModule} />
+        UN SOLO ARBOL, no dos. Antes el preview se montaba DOS VECES en
+        escritorio —uno en la pestana movil oculta por CSS y otro en la columna
+        derecha—, con sus dos capas de stickers escuchando punteros. Si aqui se
+        hiciera "tres columnas en desktop, pestanas en movil" con clases, el
+        doble montaje seguiria. Este arbol pasa de fila a columna y el preview
+        existe una vez.
 
-                {modules.length === 0 ? (
-                  <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                    Aún no hay módulos. Agrega el primero.
-                  </p>
-                ) : (
-                  <DndContext
-                    id="modules-dnd"
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    modifiers={[restrictToVerticalAxis]}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={modules.map((m) => m.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-2">
-                        {modules.map((m) => (
-                          <SortableModuleItem
-                            key={m.id}
-                            module={m}
-                            selected={m.id === selectedId}
-                            onSelect={() => setSelectedId(m.id)}
-                            onToggleVisible={(v) => toggleVisible(m.id, v)}
-                            onDelete={() => setPorBorrar(m)}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                )}
+        Y desaparecen las pestanas, que mezclaban tres cosas distintas en un
+        mismo control —nivel de documento (Tema, Ajustes), nivel de bloque
+        (Modulos) y un modo (Vista previa)— y llegaban a cinco `flex-1` en
+        420px, truncandose.
+      */}
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        {/* Riel: que hay en la invitacion */}
+        <nav
+          aria-label="Secciones de la invitación"
+          className="flex shrink-0 flex-col gap-3 border-b p-3 lg:w-(--ed-sidebar-w) lg:overflow-y-auto lg:border-r lg:border-b-0"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[length:var(--ed-text-micro)] font-(--ed-weight-medium) tracking-(--ed-tracking-micro) text-muted-foreground uppercase">
+              Secciones
+            </span>
+            <ModulePalette onAdd={addModule} />
+          </div>
 
-                <Separator />
-
-                {selected ? (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        {(() => {
-                          const Icon = MODULE_REGISTRY[selected.module_type].Icon;
-                          return <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />;
-                        })()}
-                        {MODULE_META[selected.module_type].label}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {selected.module_type === "rsvp" &&
-                        invitation.rsvp_mode === "guest_list" && (
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => setActiveTab("guests")}
-                          >
-                            Gestionar invitados →
-                          </Button>
-                        )}
-                      <ModuleConfigEditor
-                        moduleType={selected.module_type}
-                        config={selected.config}
-                        onChange={(patch) => updateConfig(selected.id, patch)}
-                        ctx={uploadCtx}
-                        animationDefaults={theme.animation}
-                        eventDate={invitation.event_date}
-                        onSetEventDate={(iso) =>
-                          updateSettings({ event_date: iso })
-                        }
-                        rsvpMode={invitation.rsvp_mode}
-                      />
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <p className="text-center text-sm text-muted-foreground">
-                    Selecciona un módulo para editarlo.
-                  </p>
-                )}
-              </TabsContent>
-
-              {invitation.rsvp_mode === "guest_list" && (
-                <TabsContent value="guests" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">
-                        Lista de invitados
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <GuestManager
-                        invitationId={invitation.id}
-                        siteUrl={siteUrl}
-                        eventTitle={invitation.title}
-                      />
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              )}
-
-              <TabsContent value="settings">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      Ajustes de la invitación
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <SettingsPanel
-                      invitation={invitation}
-                      onChange={updateSettings}
-                    />
-                    <RsvpModeToggle
-                      invitationId={invitation.id}
-                      mode={invitation.rsvp_mode}
-                      refresh={false}
-                      onChange={(m) => {
-                        aplicar({ type: "updateSettings", patch: { rsvp_mode: m } });
-                        if (m === "guest_list") setActiveTab("guests");
+          {modules.length === 0 ? (
+            <EmptyState
+              icon={<LayersIcon />}
+              title="Tu invitación está vacía"
+              description="Agrega la primera sección para empezar."
+              className="py-8"
+            />
+          ) : (
+            <DndContext
+              id="modules-dnd"
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis]}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={modules.map((m) => m.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-1.5">
+                  {modules.map((m) => (
+                    <SortableModuleItem
+                      key={m.id}
+                      module={m}
+                      selected={panel === "module" && m.id === selectedId}
+                      onSelect={() => {
+                        setSelectedId(m.id);
+                        setPanel("module");
                       }}
+                      onToggleVisible={(v) => toggleVisible(m.id, v)}
+                      onDelete={() => setPorBorrar(m)}
                     />
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
 
-              <TabsContent value="theme">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Tema</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ThemePanel
-                      theme={theme}
-                      onChange={updateTheme}
-                      warnings={detectAnimationConflicts(theme, modules)}
-                      onApplyAnimationToAll={applyAnimationToAll}
-                      ctx={uploadCtx}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
+          {/*
+            Nivel de DOCUMENTO, separado del nivel de bloque por un filete. No
+            son hermanos de "Secciones": cambian la invitacion entera.
+          */}
+          <div className="mt-auto space-y-0.5 border-t pt-3">
+            {PANELES_DOC.filter(
+              (p) => p.id !== "guests" || invitation.rsvp_mode === "guest_list",
+            ).map((p) => {
+              const Icon = p.icon;
+              const activo = panel === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPanel(p.id)}
+                  aria-current={activo ? "true" : undefined}
+                  className={cn(
+                    "flex h-11 w-full items-center gap-2.5 rounded-[var(--ed-radius-sm)] px-2.5 text-left",
+                    "text-[length:var(--ed-text-sm)] tracking-(--ed-tracking-sm)",
+                    "transition-colors duration-(--ed-fast) focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+                    activo
+                      ? "bg-muted font-(--ed-weight-medium) text-foreground"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" aria-hidden />
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
 
-              <TabsContent value="preview" className="lg:hidden">
-                <PreviewPane modules={modules} theme={theme} eventDate={invitation.event_date} onStickersChange={(stickers) => updateTheme({ stickers })} />
-              </TabsContent>
-            </Tabs>
+        {/* Canvas: el protagonista. Antes vivia a la derecha, con un parrafo
+            gris encima que decia "Vista previa en tiempo real". */}
+        <main className="flex min-h-[60svh] min-w-0 flex-1 flex-col overflow-y-auto bg-muted/40 p-4 lg:min-h-0">
+          <PreviewPane
+            modules={modules}
+            theme={theme}
+            eventDate={invitation.event_date}
+            onStickersChange={(stickers) => updateTheme({ stickers })}
+          />
+        </main>
+
+        {/* Inspector: contextual a lo que hay seleccionado. */}
+        <aside
+          aria-label="Propiedades"
+          className="flex shrink-0 flex-col border-t lg:w-[380px] lg:overflow-y-auto lg:border-t-0 lg:border-l"
+        >
+          <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3.5">
+            {panel === "module" && selected ? (
+              <>
+                {(() => {
+                  const Icon = MODULE_REGISTRY[selected.module_type].Icon;
+                  return <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />;
+                })()}
+                <span className="text-[length:var(--ed-text-sm)] font-(--ed-weight-semibold) tracking-(--ed-tracking-sm)">
+                  {MODULE_META[selected.module_type].label}
+                </span>
+              </>
+            ) : (
+              <span className="text-[length:var(--ed-text-sm)] font-(--ed-weight-semibold) tracking-(--ed-tracking-sm)">
+                {PANELES_DOC.find((p) => p.id === panel)?.label ?? "Propiedades"}
+              </span>
+            )}
           </div>
 
-          {/* Right: live preview (desktop only) */}
-          <div className="hidden lg:block">
-            <div className="sticky top-20">
-              <p className="mb-2 text-center text-xs text-muted-foreground">
-                Vista previa en tiempo real
-              </p>
-              <PreviewPane modules={modules} theme={theme} eventDate={invitation.event_date} onStickersChange={(stickers) => updateTheme({ stickers })} />
-            </div>
+          <div className="space-y-4 p-3.5">
+            {panel === "module" &&
+              (selected ? (
+                <>
+                  {selected.module_type === "rsvp" &&
+                    invitation.rsvp_mode === "guest_list" && (
+                      <Button
+                        variant="outline"
+                        size="touch"
+                        className="w-full"
+                        onClick={() => setPanel("guests")}
+                      >
+                        Gestionar invitados
+                      </Button>
+                    )}
+                  <ModuleConfigEditor
+                    moduleType={selected.module_type}
+                    config={selected.config}
+                    onChange={(patch) => updateConfig(selected.id, patch)}
+                    ctx={uploadCtx}
+                    animationDefaults={theme.animation}
+                    eventDate={invitation.event_date}
+                    onSetEventDate={(iso) => updateSettings({ event_date: iso })}
+                    rsvpMode={invitation.rsvp_mode}
+                  />
+                </>
+              ) : (
+                <EmptyState
+                  icon={<MousePointerClickIcon />}
+                  title="Nada seleccionado"
+                  description="Elige una sección de la izquierda para editarla."
+                  className="py-8"
+                />
+              ))}
+
+            {panel === "theme" && (
+              <ThemePanel
+                theme={theme}
+                onChange={updateTheme}
+                warnings={detectAnimationConflicts(theme, modules)}
+                onApplyAnimationToAll={applyAnimationToAll}
+                ctx={uploadCtx}
+              />
+            )}
+
+            {panel === "guests" && invitation.rsvp_mode === "guest_list" && (
+              <GuestManager
+                invitationId={invitation.id}
+                siteUrl={siteUrl}
+                eventTitle={invitation.title}
+              />
+            )}
+
+            {panel === "settings" && (
+              <>
+                <SettingsPanel invitation={invitation} onChange={updateSettings} />
+                <RsvpModeToggle
+                  invitationId={invitation.id}
+                  mode={invitation.rsvp_mode}
+                  refresh={false}
+                  onChange={(m) => {
+                    aplicar({ type: "updateSettings", patch: { rsvp_mode: m } });
+                    if (m === "guest_list") setPanel("guests");
+                  }}
+                />
+                {/* Bajan aqui desde la barra superior: se consultan al
+                    compartir, no en cada tecla. */}
+                <Separator />
+                <PublishControls
+                  username={username}
+                  slug={invitation.slug}
+                  isPublished={invitation.is_published}
+                  dirty={dirty}
+                />
+                {invitation.is_published && (
+                  <VanitySlugCard invitationId={invitation.id} />
+                )}
+              </>
+            )}
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );
