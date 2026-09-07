@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -14,14 +14,12 @@ import {
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
 import {
-  defaultConfigFor,
   MODULE_META,
   type ModuleType,
 } from "@/lib/modules/types";
@@ -63,11 +61,27 @@ import { ModuleConfigEditor, MODULE_REGISTRY } from "@/components/modules/regist
 import { RsvpModeToggle } from "@/components/dashboard/rsvp-mode-toggle";
 import { GuestManager } from "@/components/dashboard/guest-manager";
 import type { ThemeConfig } from "@/lib/theme/theme";
+import { Undo2Icon, Redo2Icon } from "lucide-react";
 import { detectAnimationConflicts } from "@/lib/animation/conflicts";
-
-function reindex(modules: EditorModule[]): EditorModule[] {
-  return modules.map((m, i) => ({ ...m, sort_order: i }));
-}
+import type { EditorAction } from "@/lib/invitations/editor-document";
+import {
+  editorHistoryReducer,
+  estadoInicial,
+  hayCambiosSinGuardar,
+  puedeDeshacer,
+  puedeRehacer,
+} from "@/lib/invitations/editor-history";
+import { useAutosave } from "@/lib/invitations/use-autosave";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function InvitationEditor({
   initialInvitation,
@@ -82,25 +96,42 @@ export function InvitationEditor({
   username: string;
   userId: string;
 }) {
-  const [invitation, setInvitation] =
-    useState<EditorInvitation>(initialInvitation);
-  const [modules, setModules] = useState<EditorModule[]>(initialModules);
-  const [theme, setTheme] = useState<ThemeConfig>(initialTheme);
+  // UN documento, no tres estados sueltos. Es la precondicion del historial:
+  // un ⌘Z tiene que capturar invitacion, modulos y tema a la vez.
+  const [historia, despachar] = useReducer(
+    editorHistoryReducer,
+    { invitation: initialInvitation, modules: initialModules, theme: initialTheme },
+    estadoInicial,
+  );
+  const { invitation, modules, theme } = historia.presente;
+
+  const aplicar = useCallback(
+    (action: EditorAction) => despachar({ type: "aplicar", action }),
+    [],
+  );
+
   const uploadCtx = { userId, invitationId: initialInvitation.id };
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const [activeTab, setActiveTab] = useState("modules");
   const [selectedId, setSelectedId] = useState<string | null>(
     initialModules[0]?.id ?? null,
   );
-  const [dirty, setDirty] = useState(false);
-  const [isSaving, startSaving] = useTransition();
+  // Derivado del documento, no una bandera: deshacer hasta el punto guardado
+  // deja de marcar pendientes, que es lo que el usuario espera.
+  const dirty = useMemo(() => hayCambiosSinGuardar(historia), [historia]);
   const [isPublishing, startPublishing] = useTransition();
   // Plan requerido cuando la publicación se bloquea por usar módulos ⭐ premium.
   const [upgradePlan, setUpgradePlan] = useState<PlanCode | null>(null);
+  /** Modulo pendiente de confirmar borrado. Antes se borraba a un clic. */
+  const [porBorrar, setPorBorrar] = useState<EditorModule | null>(null);
 
   function handlePublishToggle() {
     const next = !invitation.is_published;
     startPublishing(async () => {
+      // Antes "Publicar" estaba deshabilitado mientras hubiera cambios sin
+      // guardar, y el usuario tenia que deducir ese modelo de dos pasos. Ahora
+      // se guarda primero: publicar una version vieja seria peor.
+      if (dirty) await guardarAhora();
       const res = await setPublished(invitation.id, next);
       if (!res.ok) {
         // Bloqueo por plan → abre el CTA de mejora en vez de solo un toast.
@@ -111,7 +142,7 @@ export function InvitationEditor({
         toast.error(res.error);
         return;
       }
-      setInvitation((prev) => ({ ...prev, is_published: res.is_published }));
+      aplicar({ type: "setPublished", published: res.is_published });
       toast.success(
         res.is_published ? "Invitación publicada." : "Invitación despublicada.",
       );
@@ -127,137 +158,144 @@ export function InvitationEditor({
 
   const selected = modules.find((m) => m.id === selectedId) ?? null;
 
-  function markDirty() {
-    setDirty(true);
-  }
-
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    setModules((prev) => {
-      const oldIndex = prev.findIndex((m) => m.id === active.id);
-      const newIndex = prev.findIndex((m) => m.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return prev;
-      return reindex(arrayMove(prev, oldIndex, newIndex));
-    });
-    markDirty();
+    aplicar({ type: "reorder", activeId: String(active.id), overId: String(over.id) });
   }
 
   function addModule(type: ModuleType) {
-    const newModule: EditorModule = {
-      id: `tmp-${crypto.randomUUID()}`,
-      module_type: type,
-      sort_order: modules.length,
-      is_visible: true,
-      config: defaultConfigFor(type),
-    };
-    setModules((prev) => reindex([...prev, newModule]));
-    setSelectedId(newModule.id);
-    markDirty();
+    // El id se genera AQUI y no en el reducer: un reducer con `crypto.randomUUID()`
+    // dentro no es una funcion pura y deja de ser reproducible en pruebas.
+    const id = `tmp-${crypto.randomUUID()}`;
+    aplicar({ type: "addModule", moduleType: type, id });
+    setSelectedId(id);
   }
 
   function deleteModule(id: string) {
-    setModules((prev) => reindex(prev.filter((m) => m.id !== id)));
+    aplicar({ type: "deleteModule", id });
     setSelectedId((cur) => (cur === id ? null : cur));
-    markDirty();
   }
 
   function toggleVisible(id: string, visible: boolean) {
-    setModules((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, is_visible: visible } : m)),
-    );
-    markDirty();
+    aplicar({ type: "toggleVisible", id, visible });
   }
 
   function updateConfig(id: string, patch: Record<string, unknown>) {
-    setModules((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, config: { ...m.config, ...patch } } : m,
-      ),
-    );
-    markDirty();
+    aplicar({ type: "updateConfig", id, patch });
   }
 
   function updateSettings(patch: Partial<EditorInvitation>) {
-    setInvitation((prev) => ({ ...prev, ...patch }));
-    markDirty();
+    aplicar({ type: "updateSettings", patch });
   }
 
   function updateTheme(patch: Partial<ThemeConfig>) {
-    setTheme((prev) => ({ ...prev, ...patch }));
-    markDirty();
+    aplicar({ type: "updateTheme", patch });
   }
 
   /** Clears every per-module animation override so all inherit the theme. */
   function applyAnimationToAll() {
-    setModules((prev) =>
-      prev.map((m) => {
-        if (!("animation" in m.config)) return m;
-        const next = { ...m.config };
-        delete next.animation;
-        return { ...m, config: next };
-      }),
-    );
-    markDirty();
+    aplicar({ type: "clearAnimationOverrides" });
     toast.success("Animación del tema aplicada a todos los módulos.");
   }
 
-  function handleSave() {
-    if (!invitation.title.trim()) {
+  // Referencia viva al documento, para que el autoguardado no dependa de una
+  // clausura vieja: sin esto guardaria lo que habia cuando se armo el callback.
+  const docRef = useRef(historia.presente);
+  useEffect(() => {
+    docRef.current = historia.presente;
+  }, [historia.presente]);
+
+  const guardarDocumento = useCallback(async () => {
+    const doc = docRef.current;
+
+    if (!doc.invitation.title.trim()) {
       toast.error("El título es obligatorio.");
       return;
     }
-    const cleanSlug = slugify(invitation.slug);
+    const cleanSlug = slugify(doc.invitation.slug);
     if (!cleanSlug) {
       toast.error("El slug es obligatorio (usa letras o números).");
       return;
     }
-    // Reflect the normalized slug back in the field.
-    if (cleanSlug !== invitation.slug) {
-      setInvitation((prev) => ({ ...prev, slug: cleanSlug }));
+    if (cleanSlug !== doc.invitation.slug) {
+      despachar({ type: "aplicar", action: { type: "updateSettings", patch: { slug: cleanSlug } } });
     }
 
-    startSaving(async () => {
-      const result = await saveEditor({
-        invitationId: invitation.id,
-        settings: {
-          title: invitation.title.trim(),
-          slug: cleanSlug,
-          eventType: invitation.event_type,
-          eventDate: invitation.event_date,
-        },
-        theme,
-        modules: modules.map((m, i) => ({
-          id: m.id,
-          module_type: m.module_type,
-          sort_order: i,
-          is_visible: m.is_visible,
-          config: m.config,
-        })),
-      });
+    // Se congela lo que se envia. El punto guardado sera ESTE, no lo que haya
+    // en pantalla cuando vuelva la respuesta: si el usuario siguio escribiendo,
+    // eso sigue pendiente.
+    const enviado = {
+      ...doc,
+      invitation: { ...doc.invitation, slug: cleanSlug, title: doc.invitation.title.trim() },
+    };
 
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-
-      // Adopt real DB ids so re-saving doesn't churn rows.
-      const fresh = result.modules.map((m) => ({
+    const result = await saveEditor({
+      invitationId: enviado.invitation.id,
+      settings: {
+        title: enviado.invitation.title,
+        slug: cleanSlug,
+        eventType: enviado.invitation.event_type,
+        eventDate: enviado.invitation.event_date,
+      },
+      theme: enviado.theme,
+      modules: enviado.modules.map((m, i) => ({
         id: m.id,
-        module_type: m.module_type as ModuleType,
-        sort_order: m.sort_order,
+        module_type: m.module_type,
+        sort_order: i,
         is_visible: m.is_visible,
-        config: m.config ?? {},
-      }));
-      setModules(fresh);
-      setSelectedId((cur) => {
-        if (cur && fresh.some((m) => m.id === cur)) return cur;
-        return fresh[0]?.id ?? null;
-      });
-      setDirty(false);
-      toast.success("Cambios guardados.");
+        config: m.config,
+      })),
     });
-  }
+
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+
+    // Solo se remapean los IDS temporales a su uuid real. Reemplazar los
+    // modulos enteros con los del servidor —lo que hacia antes— borraba
+    // cualquier edicion hecha durante la peticion.
+    const mapa: Record<string, string> = {};
+    enviado.modules.forEach((m, i) => {
+      const real = result.modules[i];
+      if (real && real.id !== m.id) mapa[m.id] = real.id;
+    });
+    if (Object.keys(mapa).length > 0) {
+      despachar({ type: "aplicar", action: { type: "remapIds", mapa } });
+    }
+
+    const guardado = {
+      ...enviado,
+      modules: enviado.modules.map((m) => (mapa[m.id] ? { ...m, id: mapa[m.id] } : m)),
+    };
+    despachar({ type: "marcarGuardado", documento: guardado });
+
+    setSelectedId((cur) => (cur && mapa[cur] ? mapa[cur] : cur));
+  }, []);
+
+  const { guardarAhora } = useAutosave({ hayCambios: dirty, guardar: guardarDocumento });
+
+  // Deshacer / rehacer. `metaKey` para macOS, `ctrlKey` para el resto.
+  useEffect(() => {
+    function alTeclado(e: KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+      // Dentro de un campo de texto manda el deshacer NATIVO del navegador:
+      // secuestrarlo ahi haria que ⌘Z borre el modulo entero en vez de la
+      // ultima palabra, que es lo contrario de lo que el usuario espera.
+      const el = document.activeElement;
+      const enCampo =
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.isContentEditable);
+      if (enCampo) return;
+
+      e.preventDefault();
+      despachar(e.shiftKey ? { type: "rehacer" } : { type: "deshacer" });
+    }
+    window.addEventListener("keydown", alTeclado);
+    return () => window.removeEventListener("keydown", alTeclado);
+  }, []);
 
   const upgradePlanObj = upgradePlan ? getPlan(upgradePlan) : undefined;
 
@@ -307,6 +345,39 @@ export function InvitationEditor({
         </div>
       )}
 
+      {/*
+        Confirmacion de borrado. Antes un clic en un boton de 28px destruia el
+        modulo y su config sin preguntar y sin retorno — no habia undo en todo
+        el producto. Ahora hay las dos cosas, y el dialogo lo dice.
+      */}
+      <AlertDialog
+        open={porBorrar !== null}
+        onOpenChange={(abierto) => !abierto && setPorBorrar(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              ¿Eliminar «{porBorrar ? MODULE_META[porBorrar.module_type].label : ""}»?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Se quita la sección y todo lo que escribiste en ella. Puedes
+              recuperarla con Deshacer mientras no cierres el editor.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel />
+            <AlertDialogAction
+              onClick={() => {
+                if (porBorrar) deleteModule(porBorrar.id);
+                setPorBorrar(null);
+              }}
+            >
+              Eliminar sección
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Top bar */}
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-3">
@@ -323,14 +394,38 @@ export function InvitationEditor({
               <span className="truncate text-sm font-medium">
                 {invitation.title || "Sin título"}
               </span>
-              {dirty && (
-                <span className="text-xs text-warning">• sin guardar</span>
-              )}
+              {/* Estado del autoguardado. Sustituye al boton Guardar: el
+                  usuario no deberia tener que acordarse de guardar. */}
+              <span className="shrink-0 text-xs text-muted-foreground" aria-live="polite">
+                {dirty ? "Guardando…" : "Guardado"}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {/* Deshacer / rehacer. Los atajos funcionan igual; estos botones
+                  existen porque un atajo que nadie ve no existe. */}
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Deshacer"
+                title="Deshacer (⌘Z)"
+                disabled={!puedeDeshacer(historia)}
+                onClick={() => despachar({ type: "deshacer" })}
+              >
+                <Undo2Icon />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Rehacer"
+                title="Rehacer (⌘⇧Z)"
+                disabled={!puedeRehacer(historia)}
+                onClick={() => despachar({ type: "rehacer" })}
+              >
+                <Redo2Icon />
+              </Button>
               <Button
                 onClick={handlePublishToggle}
-                disabled={isPublishing || dirty}
+                disabled={isPublishing}
                 variant={invitation.is_published ? "outline" : "default"}
                 size="sm"
               >
@@ -339,14 +434,6 @@ export function InvitationEditor({
                   : invitation.is_published
                     ? "Despublicar"
                     : "Publicar"}
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={isSaving || !dirty}
-                variant={invitation.is_published ? "default" : "outline"}
-                size="sm"
-              >
-                {isSaving ? "Guardando…" : "Guardar"}
               </Button>
             </div>
           </div>
@@ -416,7 +503,7 @@ export function InvitationEditor({
                             selected={m.id === selectedId}
                             onSelect={() => setSelectedId(m.id)}
                             onToggleVisible={(v) => toggleVisible(m.id, v)}
-                            onDelete={() => deleteModule(m.id)}
+                            onDelete={() => setPorBorrar(m)}
                           />
                         ))}
                       </div>
@@ -505,7 +592,7 @@ export function InvitationEditor({
                       mode={invitation.rsvp_mode}
                       refresh={false}
                       onChange={(m) => {
-                        setInvitation((inv) => ({ ...inv, rsvp_mode: m }));
+                        aplicar({ type: "updateSettings", patch: { rsvp_mode: m } });
                         if (m === "guest_list") setActiveTab("guests");
                       }}
                     />

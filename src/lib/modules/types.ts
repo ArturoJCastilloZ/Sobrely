@@ -353,15 +353,49 @@ export function defaultConfigFor(type: ModuleType): Record<string, unknown> {
 }
 
 /**
- * Parses/normalizes a stored config against its schema, filling defaults for
- * missing fields. Falls back to defaults if the stored data is invalid.
+ * Lee un `config` guardado y lo normaliza contra su esquema.
+ *
+ * Antes, si UN campo no validaba, se descartaba la config ENTERA y se devolvían
+ * los defaults. El comentario decía "falls back", pero el efecto real era
+ * pérdida total: un `imageUrl` mal guardado se llevaba por delante el título,
+ * la descripción y todo lo demás de ese módulo — y el editor PERSISTÍA esa
+ * pérdida al primer guardado, porque escribe lo que tiene en pantalla.
+ *
+ * Ahora el descarte es por CAMPO: se parte de los defaults y se acepta cada
+ * campo guardado que valide por sí solo. Un campo roto cuesta ese campo, no el
+ * módulo.
+ *
+ * Se midió antes de cambiarlo, porque endurecer o relajar una lectura es
+ * retroactivo sobre datos que ya existen: de los **52 módulos en producción,
+ * cero** fallaban la validación. El riesgo era latente, no activo — pero
+ * latente en el peor sitio posible.
+ *
+ * `onDescartado` permite reportar lo que se cayó en vez de tragárselo; sin él,
+ * el modo de fallo silencioso solo se hace más pequeño, no desaparece.
  */
 export function parseConfig(
   type: ModuleType,
   raw: unknown,
+  onDescartado?: (campo: string) => void,
 ): Record<string, unknown> {
-  const result = moduleConfigSchemas[type].safeParse(raw ?? {});
-  return result.success
-    ? (result.data as Record<string, unknown>)
-    : defaultConfigFor(type);
+  const esquema = moduleConfigSchemas[type];
+  const directo = esquema.safeParse(raw ?? {});
+  if (directo.success) return directo.data as Record<string, unknown>;
+
+  // Camino lento, solo cuando algo no valida. Se prueba campo a campo sobre los
+  // defaults: así se conserva todo lo que sí es válido.
+  const base = defaultConfigFor(type);
+  if (raw === null || typeof raw !== "object") return base;
+
+  const salida: Record<string, unknown> = { ...base };
+  for (const [campo, valor] of Object.entries(raw as Record<string, unknown>)) {
+    if (!(campo in base)) continue; // campo que el esquema no conoce
+    const intento = esquema.safeParse({ ...salida, [campo]: valor });
+    if (intento.success) {
+      salida[campo] = (intento.data as Record<string, unknown>)[campo];
+    } else {
+      onDescartado?.(campo);
+    }
+  }
+  return salida;
 }

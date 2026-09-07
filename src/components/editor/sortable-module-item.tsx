@@ -4,6 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { MODULE_META } from "@/lib/modules/types";
 import { MODULE_REGISTRY } from "@/components/modules/registry";
+import { GripVerticalIcon, Trash2Icon } from "lucide-react";
 import type { EditorModule } from "@/lib/invitations/editor-types";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,7 @@ export function SortableModuleItem({
         {...attributes}
         {...listeners}
       >
-        ⠿
+        <GripVerticalIcon className="size-4" aria-hidden />
       </button>
 
       <button
@@ -72,7 +73,7 @@ export function SortableModuleItem({
         aria-label="Eliminar módulo"
         onClick={onDelete}
       >
-        🗑
+        <Trash2Icon className="size-4" aria-hidden />
       </Button>
     </div>
   );
