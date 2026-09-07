@@ -96,7 +96,13 @@ function Option({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "rounded-md border p-3 text-left transition-colors disabled:opacity-60",
+        // Se queda como <button> nativo A PROPOSITO: es una TARJETA
+        // seleccionable de dos lineas, no un boton de accion, y forzarla dentro
+        // de `Button` seria pelearse con su layout. Lo que si hereda ahora es
+        // el anillo de foco, que era el motivo real por el que un <button>
+        // crudo se sentia roto: era navegable por teclado SIN indicador.
+        "rounded-[var(--ed-radius-md)] border p-3 text-left transition-colors duration-(--ed-fast) disabled:opacity-60",
+        "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
         active
           ? "border-primary bg-primary/5 ring-1 ring-primary"
           : "hover:bg-muted",

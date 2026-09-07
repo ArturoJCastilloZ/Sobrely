@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useMemo, useState } from "react";
 import {
   Card,
@@ -89,19 +90,21 @@ export function ConfirmationsChart({
           aria-label="Rango de tiempo"
         >
           {RANGES.map((r) => (
-            <button
+            <Button
               key={r.key}
               type="button"
+              variant="ghost"
+              size="xs"
               onClick={() => setRange(r.key)}
               aria-pressed={range === r.key}
-              className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+              className={`transition-colors duration-(--ed-fast) ${
                 range === r.key
-                  ? "bg-background text-foreground shadow-sm"
+                  ? "bg-background text-foreground shadow-(--ed-shadow-sm)"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {r.label}
-            </button>
+            </Button>
           ))}
         </div>
       </CardHeader>

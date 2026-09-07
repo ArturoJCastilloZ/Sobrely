@@ -296,13 +296,15 @@ export function GuestManager({
           onPhone={setPhone}
           onSubmit={handleAdd}
         />
-        <button
+        <Button
           type="button"
+          variant="link"
+          size="sm"
           onClick={() => setShowBulk((v) => !v)}
-          className="mt-3 text-sm text-muted-foreground underline hover:text-foreground"
+          className="mt-3 self-start px-0 text-muted-foreground hover:text-foreground"
         >
           {showBulk ? "Ocultar alta masiva" : "Agregar varios a la vez"}
-        </button>
+        </Button>
         {showBulk && (
           <div className="mt-3 space-y-2">
             <Label htmlFor="g-bulk">
