@@ -62,6 +62,106 @@
   --color-brand-cream: #f5eedb;
   --color-brand-ink: #111827;
   --font-display: var(--font-playfair);
+
+  /* ==========================================================================
+     Sistema del CHROME  (`--ed-*`)  ·  Fase 1
+     --------------------------------------------------------------------------
+     `ed` = editor/escritorio: es el sistema de la HERRAMIENTA (dashboard,
+     editor, admin), y esta deliberadamente separado de `--inv-*`, que es el
+     tema de la INVITACION y lo elige el anfitrion.
+
+     La separacion no es estilistica, es defensiva: `ThemeScope` inyecta los
+     `--inv-*` en linea sobre el arbol del preview, y si el chrome consumiera
+     esos mismos nombres, elegir un pack rosa tenieria el panel. El editor tiene
+     que verse igual con cualquier tema.
+
+     Los valores no se inventaron: se extrajeron de bundles de produccion
+     (Linear para tipografia y motion, Geist para la composicion de sombras).
+     Lo que casi nadie copia y es donde esta la sensacion de acabado: el
+     tracking se vuelve MAS negativo conforme sube el tamano, y en micro llega
+     a cero.
+     ========================================================================== */
+
+  /* Tipografia: tamano / interlineado / tracking, siempre juntos. Separarlos es
+     como se pierde el sistema. */
+  --ed-text-micro: 0.6875rem;   /* 11px */
+  --ed-leading-micro: 1.4;
+  --ed-tracking-micro: 0em;
+
+  --ed-text-mini: 0.75rem;      /* 12px */
+  --ed-leading-mini: 1.5;
+  --ed-tracking-mini: -0.005em;
+
+  --ed-text-sm: 0.8125rem;      /* 13px */
+  --ed-leading-sm: 1.5;
+  --ed-tracking-sm: -0.01em;
+
+  --ed-text-md: 0.9375rem;      /* 15px — el CUERPO */
+  --ed-leading-md: 1.6;
+  --ed-tracking-md: -0.011em;
+
+  --ed-text-lg: 1.0625rem;      /* 17px — titulo de seccion; el nivel que HOY
+                                   no existe: la app salta de 16 a 24 */
+  --ed-leading-lg: 1.4;
+  --ed-tracking-lg: -0.012em;
+
+  --ed-text-xl: 1.25rem;        /* 20px */
+  --ed-leading-xl: 1.3;
+  --ed-tracking-xl: -0.015em;
+
+  --ed-text-2xl: 1.5rem;        /* 24px */
+  --ed-leading-2xl: 1.2;
+  --ed-tracking-2xl: -0.018em;
+
+  --ed-text-3xl: 2rem;          /* 32px */
+  --ed-leading-3xl: 1.125;
+  --ed-tracking-3xl: -0.022em;
+
+  /* Pesos NO redondos. Requieren fuente variable, y Geist lo es. Confirmado
+     como practica sistemica: Linear usa 400/510/590/680 y Notion 420/520/620. */
+  --ed-weight-normal: 400;
+  --ed-weight-medium: 510;
+  --ed-weight-semibold: 590;
+
+  --ed-radius-sm: 6px;
+  --ed-radius-md: 8px;
+  --ed-radius-lg: 12px;
+
+  /* Sombras COMPUESTAS: borde de 1px + capas con offset y blur crecientes.
+     Una sola `box-shadow` es la firma visual de plantilla generica. */
+  --ed-shadow-sm: 0 0 0 1px var(--ed-shadow-ring), 0 1px 2px var(--ed-shadow-a);
+  --ed-shadow-panel: 0 0 0 1px var(--ed-shadow-ring), 0 2px 2px var(--ed-shadow-a),
+    0 8px 8px -8px var(--ed-shadow-a);
+  --ed-shadow-menu: 0 0 0 1px var(--ed-shadow-ring), 0 1px 1px var(--ed-shadow-b),
+    0 4px 8px -4px var(--ed-shadow-a), 0 16px 24px -8px var(--ed-shadow-c);
+  --ed-shadow-modal: 0 0 0 1px var(--ed-shadow-ring), 0 32px 72px -12px var(--ed-shadow-c),
+    0 8px 32px -12px var(--ed-shadow-a), 0 8px 24px -12px var(--ed-shadow-d);
+
+  /* Nada por encima de 250ms en un control del editor: se percibe lento, no
+     elegante. Los >300ms son para la invitacion renderizada. */
+  --ed-fast: 100ms;
+  --ed-base: 160ms;
+  --ed-slow: 250ms;
+  --ed-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ed-ease-emphasis: cubic-bezier(0.23, 1, 0.32, 1);
+
+  --ed-topbar-h: 52px;
+  --ed-sidebar-w: 300px;
+  --ed-inspector-w: 320px;
+
+  /* Colores semanticos. Antes NO existian: habia 75 usos de colores crudos de
+     Tailwind (`text-amber-600` para "sin guardar", `text-red-400` para borrar),
+     cada uno con su variante dark escrita a mano. Los pares se verifican contra
+     AA en `semantic-colors.test.ts`. */
+  --color-success: var(--success);
+  --color-success-fg: var(--success-fg);
+  --color-success-surface: var(--success-surface);
+  --color-warning: var(--warning);
+  --color-warning-fg: var(--warning-fg);
+  --color-warning-surface: var(--warning-surface);
+  --color-info: var(--info);
+  --color-info-fg: var(--info-fg);
+  --color-info-surface: var(--info-surface);
 }
 
 :root {
@@ -131,6 +231,48 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Valores crudos de los tokens semanticos y de las capas de sombra.
+   En hex a proposito: asi se pueden verificar contra WCAG con la misma
+   utilidad que usa el CTA de la invitacion (`src/lib/theme/contrast.ts`), y la
+   prueba falla el build si alguien los cambia por un par ilegible. */
+:root {
+  --success: #15803d;
+  --success-fg: #ffffff;
+  --success-surface: #eaf6ee;
+  --warning: #a16207;
+  --warning-fg: #ffffff;
+  --warning-surface: #fdf4e3;
+  --info: #1d4ed8;
+  --info-fg: #ffffff;
+  --info-surface: #eaf0fd;
+
+  --ed-shadow-ring: rgb(0 0 0 / 0.08);
+  --ed-shadow-a: rgb(0 0 0 / 0.04);
+  --ed-shadow-b: rgb(0 0 0 / 0.02);
+  --ed-shadow-c: rgb(0 0 0 / 0.06);
+  --ed-shadow-d: rgb(0 0 0 / 0.12);
+}
+
+.dark {
+  --success: #4ade80;
+  --success-fg: #052e14;
+  --success-surface: #0f2417;
+  --warning: #fbbf24;
+  --warning-fg: #2a1a00;
+  --warning-surface: #2a2008;
+  --info: #93c5fd;
+  --info-fg: #0a1a33;
+  --info-surface: #101d33;
+
+  /* En oscuro las sombras se apagan y manda el borde: una sombra negra sobre
+     fondo negro es ruido, no profundidad. Es lo que hace Linear. */
+  --ed-shadow-ring: rgb(255 255 255 / 0.10);
+  --ed-shadow-a: transparent;
+  --ed-shadow-b: transparent;
+  --ed-shadow-c: transparent;
+  --ed-shadow-d: transparent;
 }
 
 @layer base {
