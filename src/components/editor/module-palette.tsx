@@ -2,6 +2,7 @@
 
 import { MODULE_META, MODULE_TYPES, type ModuleType } from "@/lib/modules/types";
 import { MODULE_REGISTRY } from "@/components/modules/registry";
+import { SparkleIcon } from "lucide-react";
 import { minimalPlanForModules } from "@/lib/billing/plans";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,23 +13,36 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 /**
- * Selector "Agregar módulo". Marca los módulos de paga con ⭐ + el plan mínimo
- * que los incluye, para que el usuario sepa desde el editor qué desbloquea cada
- * plan (el enforcement duro sigue en la publicación). Free = sin marca.
+ * Selector "Agregar sección".
+ *
+ * Marca los módulos de paga con el plan mínimo que los incluye, para que se vea
+ * desde el editor qué desbloquea cada plan (el enforcement duro sigue estando
+ * en la publicación). Free = sin marca.
+ *
+ * `trigger` existe porque este mismo menú se abre desde dos sitios: el botón de
+ * la cabecera del riel, que agrega al final, y el `+` del gutter, que inserta
+ * en una posición concreta. Es el mismo catálogo; cambia dónde cae lo elegido.
  */
 export function ModulePalette({
   onAdd,
+  trigger,
+  align = "start",
+  children,
 }: {
   onAdd: (type: ModuleType) => void;
+  trigger?: React.ReactElement;
+  align?: "start" | "center" | "end";
+  /** Contenido del disparador. Por defecto, la etiqueta de texto. */
+  children?: React.ReactNode;
 }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" className="w-full" />}
+        render={trigger ?? <Button variant="outline" size="sm" />}
       >
-        + Agregar módulo
+        {children ?? "Agregar sección"}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent align={align} className="w-64">
         {MODULE_TYPES.map((type) => {
           // Plan mínimo que incluye este módulo; si no es Free, es premium.
           const plan = minimalPlanForModules([type]);
@@ -48,8 +62,9 @@ export function ModulePalette({
                   {MODULE_META[type].label}
                 </span>
                 {isPremium && (
-                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                    ⭐ {plan!.name}
+                  <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                    <SparkleIcon className="size-2.5" aria-hidden />
+                    {plan!.name}
                   </span>
                 )}
               </span>

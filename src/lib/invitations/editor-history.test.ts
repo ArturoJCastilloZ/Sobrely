@@ -176,3 +176,45 @@ describe("historial del editor", () => {
     expect(s.presente.modules.map((m) => [m.id, m.sort_order])).toEqual([["m2", 0], ["m1", 1]]);
   });
 });
+
+describe("insertar en una posición", () => {
+  it("sin índice va al final, como antes", () => {
+    let s = estadoInicial(doc());
+    s = aplicar(s, { type: "aplicar", action: { type: "addModule", moduleType: "map", id: "nuevo" } });
+    expect(s.presente.modules.map((m) => m.id)).toEqual(["m1", "m2", "nuevo"]);
+  });
+
+  it("inserta EXACTAMENTE donde se apunta y reindexa", () => {
+    let s = estadoInicial(doc());
+    s = aplicar(s, {
+      type: "aplicar",
+      action: { type: "addModule", moduleType: "map", id: "nuevo", index: 1 },
+    });
+    expect(s.presente.modules.map((m) => m.id)).toEqual(["m1", "nuevo", "m2"]);
+    expect(s.presente.modules.map((m) => m.sort_order)).toEqual([0, 1, 2]);
+  });
+
+  it("índice 0 lo pone primero", () => {
+    let s = estadoInicial(doc());
+    s = aplicar(s, {
+      type: "aplicar",
+      action: { type: "addModule", moduleType: "map", id: "nuevo", index: 0 },
+    });
+    expect(s.presente.modules[0].id).toBe("nuevo");
+  });
+
+  it("un índice fuera de rango se acota en vez de romper", () => {
+    let s = estadoInicial(doc());
+    s = aplicar(s, { type: "aplicar", action: { type: "addModule", moduleType: "map", id: "a", index: 99 } });
+    s = aplicar(s, { type: "aplicar", action: { type: "addModule", moduleType: "map", id: "b", index: -5 } });
+    expect(s.presente.modules.map((m) => m.id)).toEqual(["b", "m1", "m2", "a"]);
+    expect(s.presente.modules.map((m) => m.sort_order)).toEqual([0, 1, 2, 3]);
+  });
+
+  it("deshacer quita la sección insertada en medio", () => {
+    let s = estadoInicial(doc());
+    s = aplicar(s, { type: "aplicar", action: { type: "addModule", moduleType: "map", id: "nuevo", index: 1 } });
+    s = aplicar(s, { type: "deshacer" });
+    expect(s.presente.modules.map((m) => m.id)).toEqual(["m1", "m2"]);
+  });
+});

@@ -25,7 +25,18 @@ export type EditorDocument = {
 
 export type EditorAction =
   | { type: "reorder"; activeId: string; overId: string }
-  | { type: "addModule"; moduleType: ModuleType; id: string }
+  | {
+      type: "addModule";
+      moduleType: ModuleType;
+      id: string;
+      /**
+       * Posición donde insertar. Sin ella va al final, que es como se
+       * comportaba antes. El gutter con `+` la usa para meter la sección
+       * EXACTAMENTE donde el usuario apuntó, en vez de mandarla abajo y
+       * obligarle a arrastrarla.
+       */
+      index?: number;
+    }
   | { type: "deleteModule"; id: string }
   | { type: "toggleVisible"; id: string; visible: boolean }
   | { type: "updateConfig"; id: string; patch: Record<string, unknown> }
@@ -65,11 +76,17 @@ export function editorDocumentReducer(
       const nuevo: EditorModule = {
         id: action.id,
         module_type: action.moduleType,
-        sort_order: doc.modules.length,
+        sort_order: 0, // lo fija `reindex`
         is_visible: true,
         config: defaultConfigFor(action.moduleType),
       };
-      return { ...doc, modules: reindex([...doc.modules, nuevo]) };
+      const at =
+        action.index === undefined
+          ? doc.modules.length
+          : Math.max(0, Math.min(action.index, doc.modules.length));
+      const siguientes = [...doc.modules];
+      siguientes.splice(at, 0, nuevo);
+      return { ...doc, modules: reindex(siguientes) };
     }
 
     case "deleteModule": {

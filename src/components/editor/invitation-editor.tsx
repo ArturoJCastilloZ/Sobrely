@@ -56,7 +56,7 @@ import { RsvpModeToggle } from "@/components/dashboard/rsvp-mode-toggle";
 import { GuestManager } from "@/components/dashboard/guest-manager";
 import type { ThemeConfig } from "@/lib/theme/theme";
 import {
-  Undo2Icon, Redo2Icon, LayersIcon, MousePointerClickIcon, ArrowLeftIcon,
+  Undo2Icon, Redo2Icon, LayersIcon, MousePointerClickIcon, ArrowLeftIcon, PlusIcon,
   PaletteIcon, UsersIcon, SettingsIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -94,6 +94,35 @@ const PANELES_DOC = [
 ] as const;
 
 type PanelId = "module" | (typeof PANELES_DOC)[number]["id"];
+
+/** Franja entre dos secciones con el `+` que inserta ahi. */
+function Gutter({
+  indice,
+  onAdd,
+}: {
+  indice: number;
+  onAdd: (type: ModuleType, index: number) => void;
+}) {
+  return (
+    <div className="group/gutter relative flex h-3 items-center focus-within:h-7 hover:h-7">
+      <div className="h-px flex-1 bg-primary/40 opacity-0 transition-opacity duration-(--ed-fast) group-focus-within/gutter:opacity-100 group-hover/gutter:opacity-100" />
+      <ModulePalette
+        align="start"
+        onAdd={(type) => onAdd(type, indice)}
+        trigger={
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={`Insertar sección en la posición ${indice + 1}`}
+            className="ml-1 rounded-full bg-primary text-primary-foreground opacity-0 transition-opacity duration-(--ed-fast) group-focus-within/gutter:opacity-100 group-hover/gutter:opacity-100 hover:bg-primary focus-visible:opacity-100"
+          />
+        }
+      >
+        <PlusIcon />
+      </ModulePalette>
+    </div>
+  );
+}
 
 export function InvitationEditor({
   initialInvitation,
@@ -176,12 +205,13 @@ export function InvitationEditor({
     aplicar({ type: "reorder", activeId: String(active.id), overId: String(over.id) });
   }
 
-  function addModule(type: ModuleType) {
+  function addModule(type: ModuleType, index?: number) {
     // El id se genera AQUI y no en el reducer: un reducer con `crypto.randomUUID()`
     // dentro no es una funcion pura y deja de ser reproducible en pruebas.
     const id = `tmp-${crypto.randomUUID()}`;
-    aplicar({ type: "addModule", moduleType: type, id });
+    aplicar({ type: "addModule", moduleType: type, id, index });
     setSelectedId(id);
+    setPanel("module");
   }
 
   function deleteModule(id: string) {
@@ -519,20 +549,34 @@ export function InvitationEditor({
                 items={modules.map((m) => m.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="space-y-1.5">
-                  {modules.map((m) => (
-                    <SortableModuleItem
-                      key={m.id}
-                      module={m}
-                      selected={panel === "module" && m.id === selectedId}
-                      onSelect={() => {
-                        setSelectedId(m.id);
-                        setPanel("module");
-                      }}
-                      onToggleVisible={(v) => toggleVisible(m.id, v)}
-                      onDelete={() => setPorBorrar(m)}
-                    />
+                {/*
+                  Gutter con `+` ENTRE secciones, patron de Notion. Antes solo
+                  existia un "Agregar modulo" global que siempre empujaba al
+                  final: si querias una seccion en medio, la agregabas abajo y
+                  la arrastrabas. El `+` inserta donde apuntas.
+
+                  Aparece al pasar el cursor sobre su franja, no siempre: cinco
+                  botones permanentes entre cuatro secciones convierten una
+                  lista en ruido. `focus-within` lo mantiene visible cuando se
+                  llega por teclado, que si no seria inalcanzable.
+                */}
+                <div>
+                  {modules.map((m, i) => (
+                    <div key={m.id}>
+                      <Gutter indice={i} onAdd={addModule} />
+                      <SortableModuleItem
+                        module={m}
+                        selected={panel === "module" && m.id === selectedId}
+                        onSelect={() => {
+                          setSelectedId(m.id);
+                          setPanel("module");
+                        }}
+                        onToggleVisible={(v) => toggleVisible(m.id, v)}
+                        onDelete={() => setPorBorrar(m)}
+                      />
+                    </div>
                   ))}
+                  <Gutter indice={modules.length} onAdd={addModule} />
                 </div>
               </SortableContext>
             </DndContext>
