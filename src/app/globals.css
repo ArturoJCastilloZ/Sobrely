@@ -7,7 +7,14 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  /* Ojo: `--font-sans: var(--font-sans)` es un CICLO. Por spec de custom
+     properties, una auto-referencia computa al valor *guaranteed-invalid*, y
+     `font-family: var(--font-sans)` sin fallback cae a la fuente del UA. Medido
+     en el navegador: `getComputedStyle(document.body).fontFamily` devolvía
+     "Times" — la app ENTERA se renderizaba en Times New Roman mientras Geist
+     estaba cargada y auto-hospedada, colgando sin usar de `--font-geist-sans`
+     (que sí existe: el `variable` está en el <html> de layout.tsx). */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
