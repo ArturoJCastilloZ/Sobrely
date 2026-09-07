@@ -10,7 +10,7 @@ export default function Error(props: {
     <RouteError
       {...props}
       titulo="No pudimos cargar tu panel"
-      descripcion="Tus invitaciones y tus invitados estan a salvo. Reintenta en un momento."
+      descripcion="Tus invitaciones y tus invitados están a salvo. Reintenta en un momento."
       volverHref="/"
       volverLabel="Ir al inicio"
     />

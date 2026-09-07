@@ -7,20 +7,20 @@ import { Button } from "@/components/ui/button";
 /**
  * Pantalla de error de ruta, compartida por los `error.tsx` del proyecto.
  *
- * Antes de esto NO habia ni un solo `error.tsx` en el arbol: cualquier
- * excepcion no capturada en el dashboard, el admin, el editor o el check-in
- * caia en la pantalla por defecto de Next, que en produccion es una pagina en
+ * Antes de esto NO había ni un solo `error.tsx` en el árbol: cualquier
+ * excepción no capturada en el dashboard, el admin, el editor o el check-in
+ * caía en la pantalla por defecto de Next, que en producción es una página en
  * blanco con "Application error".
  *
- * El `digest` se muestra a proposito: es el unico dato con el que se puede
+ * El `digest` se muestra a propósito: es el único dato con el que se puede
  * cruzar el error que vio el usuario contra los logs del servidor. El mensaje
  * crudo NO se muestra, porque puede filtrar detalles internos.
  */
 export function RouteError({
   error,
   reset,
-  titulo = "Algo salio mal",
-  descripcion = "No pudimos cargar esta seccion. El problema es nuestro, no tuyo.",
+  titulo = "Algo salió mal",
+  descripcion = "No pudimos cargar esta sección. El problema es nuestro, no tuyo.",
   volverHref = "/dashboard",
   volverLabel = "Ir al panel",
 }: {
@@ -77,7 +77,7 @@ export function RouteError({
 
       {error.digest && (
         <p className="text-xs text-muted-foreground">
-          Si vuelve a pasar, mandanos este codigo:{" "}
+          Si vuelve a pasar, mándanos este código:{" "}
           <code className="rounded bg-muted px-1.5 py-0.5 font-mono">
             {error.digest}
           </code>

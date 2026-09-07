@@ -10,7 +10,7 @@ export default function Error(props: {
     <RouteError
       {...props}
       titulo="No pudimos abrir el editor"
-      descripcion="Tu invitacion no se perdio: lo ultimo que guardaste sigue ahi. Reintenta o vuelve al panel."
+      descripcion="Tu invitación no se perdió: lo último que guardaste sigue ahí. Reintenta o vuelve al panel."
       volverHref="/dashboard"
       volverLabel="Ir al panel"
     />

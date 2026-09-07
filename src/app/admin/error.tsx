@@ -9,7 +9,7 @@ export default function Error(props: {
   return (
     <RouteError
       {...props}
-      titulo="Error en el panel de administracion"
+      titulo="Error en el panel de administración"
       descripcion="No se pudo cargar esta vista."
       volverHref="/dashboard"
       volverLabel="Ir al panel"

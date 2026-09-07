@@ -9,8 +9,8 @@ export default function Error(props: {
   return (
     <RouteError
       {...props}
-      titulo="Algo salio mal"
-      descripcion="Tuvimos un problema al cargar esta pagina. Puedes reintentar o volver al inicio."
+      titulo="Algo salió mal"
+      descripcion="Tuvimos un problema al cargar esta página. Puedes reintentar o volver al inicio."
       volverHref="/"
       volverLabel="Ir al inicio"
     />
