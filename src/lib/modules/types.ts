@@ -19,6 +19,7 @@ export const MODULE_TYPES = [
   "music",
   "rsvp",
   "signatures",
+  "album",
 ] as const;
 export type ModuleType = (typeof MODULE_TYPES)[number];
 
@@ -135,6 +136,44 @@ export const signaturesConfigSchema = z.object({
   requireApproval: z.boolean().default(false),
 });
 
+/** Tope de fotos que se muestran de una vez en el muro del álbum. */
+export const ALBUM_PAGE_SIZE = 24;
+
+/** Techo por archivo, en bytes. Coincide con el `check` de la migración 0026. */
+export const ALBUM_MAX_PHOTO_BYTES = 12 * 1024 * 1024;
+
+/**
+ * Álbum digital colaborativo post-evento. Igual que el libro de firmas, la
+ * CONFIG solo describe el módulo: las fotos las sube un visitante ANÓNIMO y
+ * viven en `invitation_album_photos` (migración 0026).
+ *
+ * A diferencia de las firmas, la subida NO entra por la llave `anon`: pasa por
+ * el servidor. Una fila de texto no le cuesta dinero a nadie; un archivo sí, y
+ * la llave pública está al alcance de cualquiera con el enlace.
+ */
+export const albumConfigSchema = z.object({
+  title: z.string().max(120).default("Álbum del evento"),
+  description: z
+    .string()
+    .max(400)
+    .default("¿Tomaste fotos? Súbelas aquí y las vemos todos."),
+  buttonLabel: z.string().max(40).default("Subir fotos"),
+  /**
+   * Si el anfitrión quiere revisar antes de publicar. Por defecto NO, por la
+   * misma razón que en las firmas: un álbum moderado se queda vacío justo
+   * mientras la fiesta pasa.
+   */
+  requireApproval: z.boolean().default(false),
+  /**
+   * El interruptor para CERRAR el álbum. Un álbum post-evento sin forma de
+   * cerrarse queda abierto para siempre a cualquiera que conserve el enlace, y
+   * es el anfitrión quien paga ese almacenamiento.
+   */
+  allowUploads: z.boolean().default(true),
+  /** Cuántas fotos admite el evento en total. Es también el tope de la cuota. */
+  maxPhotos: z.number().int().min(1).max(500).default(200),
+});
+
 export const welcomeConfigSchema = z.object({
   title: z.string().max(120).default("Bienvenidos"),
   message: z.string().max(1000).default(""),
@@ -239,6 +278,7 @@ export const moduleConfigSchemas = {
   music: musicConfigSchema,
   rsvp: rsvpConfigSchema,
   signatures: signaturesConfigSchema,
+  album: albumConfigSchema,
 } satisfies Record<ModuleType, z.ZodType>;
 
 /**
@@ -283,6 +323,7 @@ export type GiftsConfig = z.infer<typeof giftsConfigSchema>;
 export type MusicConfig = z.infer<typeof musicConfigSchema>;
 export type RsvpConfig = z.infer<typeof rsvpConfigSchema>;
 export type SignaturesConfig = z.infer<typeof signaturesConfigSchema>;
+export type AlbumConfig = z.infer<typeof albumConfigSchema>;
 
 // ---- Registry metadata ----------------------------------------------------
 
@@ -349,6 +390,11 @@ export const MODULE_META: Record<
     label: "Libro de firmas",
     icon: "🖋️",
     description: "Tus invitados te dejan un mensaje.",
+  },
+  album: {
+    label: "Álbum colaborativo",
+    icon: "📸",
+    description: "Tus invitados suben sus fotos después del evento.",
   },
 };
 
