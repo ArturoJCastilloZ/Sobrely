@@ -19,7 +19,7 @@ export function FormMessage({
     return (
       <p
         role="status"
-        className="rounded-md bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600 dark:text-emerald-400"
+        className="rounded-md bg-success/10 px-3 py-2 text-sm text-success"
       >
         {success}
       </p>

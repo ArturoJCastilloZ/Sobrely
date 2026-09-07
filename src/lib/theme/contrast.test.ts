@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  contrastRatio, deriveCta, hexToRgb, mix, rgbToHex,
+  contrastRatio, deriveCta, deriveStatus, hexToRgb, mix, rgbToHex,
   AA_NORMAL, MAX_DARKEN, WHITE,
+  STATUS_SUCCESS_BASE, STATUS_DANGER_BASE,
 } from "./contrast";
 import { THEME_PACKS } from "./theme-packs";
 
@@ -114,5 +115,58 @@ describe("deriveCta", () => {
     // comentario de MAX_DARKEN.
     expect(MAX_DARKEN).toBeGreaterThanOrEqual(0.2);
     expect(MAX_DARKEN).toBeLessThanOrEqual(0.3);
+  });
+});
+
+describe("deriveStatus", () => {
+  it("no toca un color que ya es legible sobre el fondo", () => {
+    // Ojo con el color de ejemplo: emerald-600 (#059669) sobre blanco da 3.77 y
+    // NO pasa AA, asi que `deriveStatus` si lo ajusta. Esta prueba fallo la
+    // primera vez por asumir lo contrario. Se usa un verde que si cumple.
+    const yaLegible = "#0f6b46";
+    expect(contrastRatio(yaLegible, "#ffffff")).toBeGreaterThanOrEqual(AA_NORMAL);
+    expect(deriveStatus(yaLegible, "#1f2937", "#ffffff")).toBe(yaLegible);
+  });
+
+  it("el verde base NO pasa AA sobre blanco, y por eso se ajusta", () => {
+    // Deja constancia del numero: es la razon de que este modulo exista.
+    expect(contrastRatio(STATUS_SUCCESS_BASE, "#ffffff")).toBeLessThan(AA_NORMAL);
+    const ajustado = deriveStatus(STATUS_SUCCESS_BASE, "#1f2937", "#ffffff");
+    expect(ajustado).not.toBe(STATUS_SUCCESS_BASE);
+    expect(contrastRatio(ajustado, "#ffffff")).toBeGreaterThanOrEqual(AA_NORMAL);
+  });
+
+  it("arregla los DOS cruces que estaban rotos, medidos", () => {
+    // El bug: la variante `dark:` responde al tema de la APP, no al de la
+    // invitación, así que las dos combinaciones cruzadas fallaban.
+    const oscura = { ink: "#f4efe6", bg: "#161310" };
+    const clara = { ink: "#2a2724", bg: "#fffdf8" };
+
+    // emerald-700 sobre invitación oscura daba 3.37; red-600 daba 3.83.
+    for (const base of [STATUS_SUCCESS_BASE, STATUS_DANGER_BASE]) {
+      const s = deriveStatus(base, oscura.ink, oscura.bg);
+      expect(contrastRatio(s, oscura.bg), `oscura ${base} -> ${s}`).toBeGreaterThanOrEqual(AA_NORMAL);
+      const c = deriveStatus(base, clara.ink, clara.bg);
+      expect(contrastRatio(c, clara.bg), `clara ${base} -> ${c}`).toBeGreaterThanOrEqual(AA_NORMAL);
+    }
+  });
+
+  it("cumple AA en los 20 packs reales, para éxito y error", () => {
+    for (const pack of Object.values(THEME_PACKS)) {
+      const { text, background } = pack.theme.colors;
+      for (const base of [STATUS_SUCCESS_BASE, STATUS_DANGER_BASE]) {
+        const c = deriveStatus(base, text, background);
+        expect(
+          contrastRatio(c, background),
+          `${pack.key} ${base} -> ${c} = ${contrastRatio(c, background).toFixed(2)}`,
+        ).toBeGreaterThanOrEqual(AA_NORMAL);
+      }
+    }
+  });
+
+  it("conserva el matiz cuando puede: no devuelve la tinta a la primera", () => {
+    // En un pack oscuro el verde sigue siendo verde, no gris del texto.
+    const s = deriveStatus(STATUS_SUCCESS_BASE, "#f4efe6", "#161310");
+    expect(s).not.toBe("#f4efe6");
   });
 });

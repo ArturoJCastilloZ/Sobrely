@@ -209,14 +209,14 @@ export function ConfirmationsChart({
             <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <span
-                  className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"
+                  className="size-1.5 rounded-full bg-success"
                   aria-hidden="true"
                 />
                 {last.confirmed} confirmaciones
               </span>
               <span className="flex items-center gap-1.5">
                 <span
-                  className="size-1.5 rounded-full bg-red-500 dark:bg-red-400"
+                  className="size-1.5 rounded-full bg-destructive"
                   aria-hidden="true"
                 />
                 {last.declined} rechazos

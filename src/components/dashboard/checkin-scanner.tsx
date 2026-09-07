@@ -119,9 +119,9 @@ export function CheckInScanner() {
           className={
             "mx-auto max-w-sm rounded-lg p-4 text-center " +
             (feedback.kind === "success"
-              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+              ? "bg-success/15 text-success"
               : feedback.kind === "already"
-                ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                ? "bg-warning/15 text-warning"
                 : "bg-destructive/15 text-destructive")
           }
         >

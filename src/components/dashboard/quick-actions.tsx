@@ -121,8 +121,8 @@ export function QuickActions({
         <div
           className={`flex items-center gap-2.5 rounded-lg border px-4 py-3 text-sm ${
             nudge.tone === "ok"
-              ? "border-emerald-500/25 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300"
-              : "border-amber-500/25 bg-amber-500/5 text-amber-800 dark:text-amber-200"
+              ? "border-success/25 bg-success/5 text-success"
+              : "border-warning/25 bg-warning/5 text-warning"
           }`}
         >
           {nudge.tone === "ok" ? (

@@ -899,7 +899,7 @@ function AnimationControl({
               </div>
             )}
             {selectedMeta && selectedMeta.cost !== "low" && (
-              <p className="pt-1 text-xs text-amber-600">
+              <p className="pt-1 text-xs text-warning">
                 ⚠ Puede impactar el rendimiento en móviles.
               </p>
             )}

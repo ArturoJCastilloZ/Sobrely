@@ -193,7 +193,7 @@ export default async function InvitationDashboardPage({
           {ratePill ? (
             <Badge
               variant="secondary"
-              className="border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              className="border-success/25 bg-success/10 text-success"
             >
               {ratePill}
             </Badge>

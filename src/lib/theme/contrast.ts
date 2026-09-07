@@ -140,3 +140,36 @@ export function deriveCta(
     ratio,
   };
 }
+
+/**
+ * Colores de ESTADO dentro de la invitación (éxito y error).
+ *
+ * El bug que resuelve, medido: los avisos de la página pública usaban
+ * `text-emerald-700 dark:text-emerald-400`, y esa variante `dark:` responde al
+ * tema de la APP —la clase en el `<html>`— no al de la INVITACIÓN. Son dos ejes
+ * independientes, así que las dos combinaciones cruzadas fallan:
+ *
+ *   invitación oscura + app en claro → emerald-700 sobre fondo oscuro = 3.37
+ *   invitación clara  + app en oscuro → emerald-400 sobre fondo claro = 1.89
+ *
+ * El segundo es el caso común y el peor: un invitado con el teléfono en modo
+ * oscuro abriendo una invitación clara veía el mensaje de confirmación
+ * prácticamente invisible.
+ *
+ * La tinta de la invitación (`ink`) SÍ es legible sobre su fondo —los packs se
+ * diseñan así—, de modo que se mezcla el color de estado hacia ella hasta que
+ * cumple. Conserva el matiz mientras se pueda; si ni mezclando del todo alcanza,
+ * devuelve la tinta, que es legible por construcción.
+ */
+export function deriveStatus(base: string, ink: string, background: string): string {
+  if (contrastRatio(base, background) >= AA_NORMAL) return base;
+  for (let t = 0.05; t <= 1; t += 0.05) {
+    const cand = mix(base, ink, t);
+    if (contrastRatio(cand, background) >= AA_NORMAL) return cand;
+  }
+  return ink;
+}
+
+/** Verde y rojo base. Tailwind emerald-600 y red-600, como punto de partida. */
+export const STATUS_SUCCESS_BASE = "#059669";
+export const STATUS_DANGER_BASE = "#dc2626";

@@ -31,16 +31,16 @@ function segmentsFor(funnel: EventFunnel): Segment[] {
       count: funnel.confirmed,
       consequence:
         funnel.attendees > 0 ? `${funnel.attendees} asistentes` : "sin asistentes aún",
-      bar: "bg-emerald-500 dark:bg-emerald-400",
-      dot: "bg-emerald-500 dark:bg-emerald-400",
+      bar: "bg-success",
+      dot: "bg-success",
     },
     {
       key: "declined",
       label: "Declinados",
       count: funnel.declined,
       consequence: "sin asistencia",
-      bar: "bg-red-500 dark:bg-red-400",
-      dot: "bg-red-500 dark:bg-red-400",
+      bar: "bg-destructive",
+      dot: "bg-destructive",
     },
   ];
 
@@ -50,8 +50,8 @@ function segmentsFor(funnel: EventFunnel): Segment[] {
       label: "Sin responder",
       count: funnel.pending,
       consequence: "aún no contestan",
-      bar: "bg-amber-500 dark:bg-amber-400",
-      dot: "bg-amber-500 dark:bg-amber-400",
+      bar: "bg-warning",
+      dot: "bg-warning",
     });
   }
   if (funnel.maybe !== null) {
@@ -60,8 +60,8 @@ function segmentsFor(funnel: EventFunnel): Segment[] {
       label: "Tal vez",
       count: funnel.maybe,
       consequence: "sin decidir",
-      bar: "bg-amber-500 dark:bg-amber-400",
-      dot: "bg-amber-500 dark:bg-amber-400",
+      bar: "bg-warning",
+      dot: "bg-warning",
     });
   }
 

@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { deriveCta } from "./contrast";
+import {
+  deriveCta,
+  deriveStatus,
+  STATUS_SUCCESS_BASE,
+  STATUS_DANGER_BASE,
+} from "./contrast";
 import {
   animationConfigSchema,
   SYSTEM_DEFAULT_ANIMATION,
@@ -168,6 +173,19 @@ function ctaVars(theme: ThemeConfig): Record<string, string> {
     "--inv-cta": cta.bg,
     "--inv-cta-fg": cta.fg,
     "--inv-cta-border": cta.kind === "outline" ? cta.border : "transparent",
+    // Estado dentro de la invitacion. NO se usan los tokens del chrome: su
+    // variante oscura la decide el tema de la APP, y la invitacion tiene su
+    // propio modo. Ver `deriveStatus`.
+    "--inv-success": deriveStatus(
+      STATUS_SUCCESS_BASE,
+      theme.colors.text,
+      theme.colors.background,
+    ),
+    "--inv-danger": deriveStatus(
+      STATUS_DANGER_BASE,
+      theme.colors.text,
+      theme.colors.background,
+    ),
   };
 }
 

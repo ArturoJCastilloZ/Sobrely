@@ -324,7 +324,7 @@ export function InvitationEditor({
                 {invitation.title || "Sin título"}
               </span>
               {dirty && (
-                <span className="text-xs text-amber-600">• sin guardar</span>
+                <span className="text-xs text-warning">• sin guardar</span>
               )}
             </div>
             <div className="flex items-center gap-2">

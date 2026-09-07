@@ -120,7 +120,11 @@ export function PublicRsvpForm({
       </div>
 
       {done ? (
-        <div className="w-full max-w-sm rounded-lg bg-emerald-500/10 p-4 text-center text-sm text-emerald-700 dark:text-emerald-400">
+        <div style={{
+          color: "var(--inv-success)",
+          backgroundColor: "color-mix(in srgb, var(--inv-success) 10%, transparent)",
+        }}
+        className="w-full max-w-sm rounded-lg p-4 text-center text-sm">
           ¡Gracias! Tu confirmación quedó registrada.
         </div>
       ) : closed ? (

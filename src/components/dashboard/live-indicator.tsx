@@ -68,13 +68,13 @@ export function LiveIndicator({
     <span className="flex items-center gap-3 text-xs">
       <span className="flex items-center gap-1.5 text-muted-foreground">
         <span
-          className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 motion-safe:animate-pulse"
+          className="size-1.5 rounded-full bg-success motion-safe:animate-pulse"
           aria-hidden="true"
         />
         En vivo
       </span>
       {changes > 0 ? (
-        <span className="font-medium text-emerald-700 dark:text-emerald-300">
+        <span className="font-medium text-success">
           {changes === 1
             ? "1 respuesta nueva"
             : `${changes} respuestas nuevas`}

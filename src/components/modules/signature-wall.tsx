@@ -145,7 +145,8 @@ export function SignatureWall({
               </button>
             </div>
             {error && (
-              <p role="alert" className="text-sm text-red-600">
+              <p role="alert" style={{ color: "var(--inv-danger)" }}
+                className="text-sm">
                 {error}
               </p>
             )}

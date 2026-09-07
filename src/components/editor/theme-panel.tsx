@@ -64,7 +64,7 @@ function FeatureBadge({ feature }: { feature: PlanFeature }) {
   const plan = minimalPlanForFeature(feature);
   if (!plan) return null;
   return (
-    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+    <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning">
       {plan.name} ⭐
     </span>
   );
@@ -235,7 +235,7 @@ export function ThemePanel({
       </div>
 
       {warnings.length > 0 && (
-        <div className="space-y-1 rounded-md bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
+        <div className="space-y-1 rounded-md bg-warning/10 p-3 text-xs text-warning">
           {warnings.map((w, i) => (
             <p key={i}>⚠ {w}</p>
           ))}

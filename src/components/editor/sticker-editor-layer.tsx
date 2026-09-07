@@ -137,7 +137,7 @@ export function StickerEditorLayer({
                 <Circle className="h-3.5 w-3.5" />
               </ToolBtn>
               <ToolBtn label="Eliminar" onClick={() => remove(s.id)}>
-                <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </ToolBtn>
             </div>
           )}

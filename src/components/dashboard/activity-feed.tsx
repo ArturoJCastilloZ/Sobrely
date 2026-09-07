@@ -45,9 +45,9 @@ const VERB: Record<ActivityItem["kind"], string> = {
 };
 
 const DOT: Record<ActivityItem["kind"], string> = {
-  confirmed: "bg-emerald-500 dark:bg-emerald-400",
-  declined: "bg-red-500 dark:bg-red-400",
-  maybe: "bg-amber-500 dark:bg-amber-400",
+  confirmed: "bg-success",
+  declined: "bg-destructive",
+  maybe: "bg-warning",
 };
 
 export function ActivityFeed({
