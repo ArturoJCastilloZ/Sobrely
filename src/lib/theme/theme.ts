@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { deriveCta } from "./contrast";
 import {
   animationConfigSchema,
   SYSTEM_DEFAULT_ANIMATION,
@@ -151,6 +152,25 @@ export const MODE_PRESETS = {
   dark: { background: "#161310", text: "#f4efe6" },
 } as const;
 
+/**
+ * Variables del CTA. `deriveCta` decide entre relleno solido y contorno segun
+ * cuanto habria que oscurecer el primario: por encima del umbral, oscurecerlo
+ * cumpliria AA a costa de destruir la identidad del pack (`kawaii` pasaria de
+ * rosa pastel a malva), asi que ahi cambia de tratamiento en vez de color.
+ */
+function ctaVars(theme: ThemeConfig): Record<string, string> {
+  const cta = deriveCta(
+    theme.colors.primary,
+    theme.colors.text,
+    theme.colors.background,
+  );
+  return {
+    "--inv-cta": cta.bg,
+    "--inv-cta-fg": cta.fg,
+    "--inv-cta-border": cta.kind === "outline" ? cta.border : "transparent",
+  };
+}
+
 /** Builds the inline CSS variables that ThemeScope applies. */
 export function themeCssVars(theme: ThemeConfig): React.CSSProperties {
   return {
@@ -165,6 +185,15 @@ export function themeCssVars(theme: ThemeConfig): React.CSSProperties {
     ["--inv-card" as string]:
       theme.mode === "dark" ? "rgba(0,0,0,0.22)" : "rgba(255,255,255,0.7)",
     ["--inv-space" as string]: SPACING_VALUES[theme.spacing],
+    // CTA legible, derivado — no guardado.
+    //
+    // Los tres botones de accion de la invitacion publica pintaban `text-white`
+    // sobre `--inv-primary`, y ese color lo elige el ANFITRION via theme pack.
+    // Medidos los 20 packs, 11 no llegaban a 4.5:1 (`boda-lujo`, el del plan
+    // caro, se quedaba en 3.09). Se deriva en vez de guardarse para que no haya
+    // dato que migrar y para que un pack corregido arregle a todas sus
+    // invitaciones a la vez.
+    ...ctaVars(theme),
     backgroundColor: theme.colors.background,
     color: theme.colors.text,
     fontFamily: FONT_STACKS[theme.font],

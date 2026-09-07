@@ -134,8 +134,12 @@ export function SignatureWall({
               <button
                 type="submit"
                 disabled={enviando}
-                style={{ backgroundColor: "var(--inv-primary)" }}
-                className="flex h-10 items-center justify-center rounded-md px-5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60 @4xl/inv:h-12 @4xl/inv:text-base"
+                style={{
+                  backgroundColor: "var(--inv-cta)",
+                  color: "var(--inv-cta-fg)",
+                  border: "1px solid var(--inv-cta-border)",
+                }}
+                className="flex h-11 items-center justify-center rounded-md px-5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60 @4xl/inv:h-12 @4xl/inv:text-base"
               >
                 {enviando ? "Enviando…" : config.buttonLabel}
               </button>

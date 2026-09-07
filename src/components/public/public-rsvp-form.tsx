@@ -168,13 +168,17 @@ export function PublicRsvpForm({
                   onClick={() => setStatus(s)}
                   style={
                     status === s
-                      ? { backgroundColor: "var(--inv-primary)" }
+                      ? {
+                          backgroundColor: "var(--inv-cta)",
+                          color: "var(--inv-cta-fg)",
+                          borderColor: "var(--inv-cta-border)",
+                        }
                       : undefined
                   }
                   className={cn(
-                    "flex h-9 items-center justify-center rounded-md border px-2 text-sm font-medium transition-colors @4xl/inv:h-11 @4xl/inv:text-base",
+                    "flex h-11 items-center justify-center rounded-md border px-2 text-sm font-medium transition-colors @4xl/inv:text-base",
                     status === s
-                      ? "border-transparent text-white"
+                      ? ""
                       : "border-[color-mix(in_srgb,var(--inv-text)_30%,transparent)] hover:bg-[var(--inv-card)]",
                   )}
                 >
@@ -239,8 +243,12 @@ export function PublicRsvpForm({
           <button
             type="submit"
             disabled={pending}
-            style={{ backgroundColor: "var(--inv-primary)" }}
-            className="flex h-10 w-full items-center justify-center rounded-md px-4 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60 @4xl/inv:h-12 @4xl/inv:text-base"
+            style={{
+              backgroundColor: "var(--inv-cta)",
+              color: "var(--inv-cta-fg)",
+              border: "1px solid var(--inv-cta-border)",
+            }}
+            className="flex h-11 w-full items-center justify-center rounded-md px-4 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60 @4xl/inv:h-12 @4xl/inv:text-base"
           >
             {pending ? "Enviando…" : "Confirmar"}
           </button>

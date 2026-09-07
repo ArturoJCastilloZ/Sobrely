@@ -155,8 +155,12 @@ export function GuestResponsePanel({
             type="button"
             disabled={pending}
             onClick={() => respond(guest.max_guests)}
-            style={{ backgroundColor: "var(--inv-primary)" }}
-            className="flex h-14 w-full items-center justify-center rounded-lg px-4 text-lg font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 @4xl/inv:h-16 @4xl/inv:text-xl"
+            style={{
+              backgroundColor: "var(--inv-cta)",
+              color: "var(--inv-cta-fg)",
+              border: "1px solid var(--inv-cta-border)",
+            }}
+            className="flex h-14 w-full items-center justify-center rounded-lg px-4 text-lg font-semibold transition-opacity hover:opacity-90 disabled:opacity-60 @4xl/inv:h-16 @4xl/inv:text-xl"
           >
             {pending ? "Enviando…" : `Confirmar asistencia (${peopleLabel})`}
           </button>
