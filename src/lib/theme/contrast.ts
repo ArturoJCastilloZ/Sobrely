@@ -161,11 +161,32 @@ export function deriveCta(
  * cumple. Conserva el matiz mientras se pueda; si ni mezclando del todo alcanza,
  * devuelve la tinta, que es legible por construcción.
  */
-export function deriveStatus(base: string, ink: string, background: string): string {
-  if (contrastRatio(base, background) >= AA_NORMAL) return base;
+export function deriveStatus(
+  base: string,
+  ink: string,
+  background: string,
+  /**
+   * Cuánto se tiñe la superficie con el propio color de estado. Los avisos se
+   * pintan sobre `color-mix(... 10%, transparent)` DEL MISMO color, así que el
+   * fondo real no es el de la invitación: es un poco más oscuro (o más claro)
+   * y el contraste baja.
+   *
+   * Medido en `zz-demo`: el verde derivado daba 4.57 contra el blanco puro y
+   * **4.01 sobre su propio tinte al 10 %** — por debajo de AA, justo en el
+   * mensaje "tu confirmación quedó registrada". Por eso se deriva contra el
+   * caso MÁS DURO, no contra el fondo desnudo: así el token sirve para los dos
+   * usos, tintado y sin tintar.
+   */
+  surfaceTint = 0.1,
+): string {
+  // La superficie depende del candidato, así que se evalúa por candidato. No
+  // hay circularidad: para cada color propuesto se sabe qué fondo produce.
+  const cumple = (c: string) => contrastRatio(c, mix(background, c, surfaceTint)) >= AA_NORMAL;
+
+  if (cumple(base)) return base;
   for (let t = 0.05; t <= 1; t += 0.05) {
     const cand = mix(base, ink, t);
-    if (contrastRatio(cand, background) >= AA_NORMAL) return cand;
+    if (cumple(cand)) return cand;
   }
   return ink;
 }

@@ -164,6 +164,23 @@ describe("deriveStatus", () => {
     }
   });
 
+  it("cumple AA tambien SOBRE SU PROPIO TINTE, que es donde se pinta", () => {
+    // El fallo que encontro la revision: el token se derivaba contra el fondo
+    // desnudo, pero el aviso se pinta sobre `color-mix(... 10%)` del mismo
+    // color. En zz-demo eso bajaba de 4.57 a 4.01.
+    for (const pack of Object.values(THEME_PACKS)) {
+      const { text, background } = pack.theme.colors;
+      for (const base of [STATUS_SUCCESS_BASE, STATUS_DANGER_BASE]) {
+        const c = deriveStatus(base, text, background);
+        const superficie = mix(background, c, 0.1);
+        expect(
+          contrastRatio(c, superficie),
+          `${pack.key} ${base} -> ${c} sobre tinte = ${contrastRatio(c, superficie).toFixed(2)}`,
+        ).toBeGreaterThanOrEqual(AA_NORMAL);
+      }
+    }
+  });
+
   it("conserva el matiz cuando puede: no devuelve la tinta a la primera", () => {
     // En un pack oscuro el verde sigue siendo verde, no gris del texto.
     const s = deriveStatus(STATUS_SUCCESS_BASE, "#f4efe6", "#161310");
