@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import type {
-  ModuleType,
   GalleryLayout,
   DresscodeLevel,
   RsvpQuestion,
@@ -39,7 +38,6 @@ import {
   CSS_REVEAL_PRESETS,
   ANIMATION_REGISTRY,
 } from "@/lib/animation/registry";
-import { defaultAnimation } from "@/lib/animation/schema";
 import type {
   AnimationConfig,
   AnimationOverride,
@@ -49,7 +47,6 @@ import { AnimationFields } from "@/components/editor/animation-fields";
 import { Badge } from "@/components/ui/badge";
 
 const REVEAL_OPTIONS = [...CSS_REVEAL_PRESETS] as AnimationPreset[];
-const ANIM_DEFAULTS = defaultAnimation();
 
 /** ISO string -> value for <input type="datetime-local"> (local time). */
 function isoToLocalInput(iso: string): string {
@@ -95,7 +92,7 @@ function str(v: unknown): string {
 
 // ---- Hero -----------------------------------------------------------------
 
-function HeroEditor({ config, onChange, ctx }: EditorProps) {
+export function HeroEditor({ config, onChange, ctx }: EditorProps) {
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -129,7 +126,7 @@ function HeroEditor({ config, onChange, ctx }: EditorProps) {
 
 // ---- Welcome --------------------------------------------------------------
 
-function WelcomeEditor({ config, onChange }: EditorProps) {
+export function WelcomeEditor({ config, onChange }: EditorProps) {
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -148,7 +145,7 @@ function WelcomeEditor({ config, onChange }: EditorProps) {
 
 // ---- Countdown ------------------------------------------------------------
 
-function CountdownEditor({
+export function CountdownEditor({
   config,
   onChange,
   eventDate = "",
@@ -207,7 +204,7 @@ function CountdownEditor({
 
 // ---- Map ------------------------------------------------------------------
 
-function MapEditor({ config, onChange }: EditorProps) {
+export function MapEditor({ config, onChange }: EditorProps) {
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -225,7 +222,7 @@ function MapEditor({ config, onChange }: EditorProps) {
 
 // ---- Gallery --------------------------------------------------------------
 
-function GalleryEditor({ config, onChange, ctx }: EditorProps) {
+export function GalleryEditor({ config, onChange, ctx }: EditorProps) {
   const images = Array.isArray(config.images)
     ? (config.images as string[])
     : [];
@@ -308,7 +305,7 @@ function GalleryEditor({ config, onChange, ctx }: EditorProps) {
 
 // ---- Video ----------------------------------------------------------------
 
-function VideoEditor({ config, onChange }: EditorProps) {
+export function VideoEditor({ config, onChange }: EditorProps) {
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -330,7 +327,7 @@ function VideoEditor({ config, onChange }: EditorProps) {
 
 type ItineraryItem = { time: string; label: string };
 
-function ItineraryEditor({ config, onChange }: EditorProps) {
+export function ItineraryEditor({ config, onChange }: EditorProps) {
   const items: ItineraryItem[] = Array.isArray(config.items)
     ? (config.items as ItineraryItem[])
     : [];
@@ -394,7 +391,7 @@ function ItineraryEditor({ config, onChange }: EditorProps) {
  * Libro de firmas. La config solo describe el módulo — las firmas viven en su
  * propia tabla porque las escribe un visitante anónimo (ver migración 0023).
  */
-function SignaturesEditor({ config, onChange }: EditorProps) {
+export function SignaturesEditor({ config, onChange }: EditorProps) {
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -436,7 +433,7 @@ function SignaturesEditor({ config, onChange }: EditorProps) {
   );
 }
 
-function DresscodeEditor({ config, onChange, ctx }: EditorProps) {
+export function DresscodeEditor({ config, onChange, ctx }: EditorProps) {
   const level = (config.level as DresscodeLevel) ?? "formal";
   return (
     <div className="space-y-3">
@@ -504,7 +501,7 @@ function DresscodeEditor({ config, onChange, ctx }: EditorProps) {
 
 type GiftLink = { label: string; url: string };
 
-function GiftsEditor({ config, onChange }: EditorProps) {
+export function GiftsEditor({ config, onChange }: EditorProps) {
   const links: GiftLink[] = Array.isArray(config.links)
     ? (config.links as GiftLink[])
     : [];
@@ -566,7 +563,7 @@ function GiftsEditor({ config, onChange }: EditorProps) {
 
 // ---- Music ----------------------------------------------------------------
 
-function MusicEditor({ config, onChange }: EditorProps) {
+export function MusicEditor({ config, onChange }: EditorProps) {
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -586,7 +583,7 @@ function MusicEditor({ config, onChange }: EditorProps) {
 
 // ---- RSVP -----------------------------------------------------------------
 
-function RsvpEditor({
+export function RsvpEditor({
   config,
   onChange,
   rsvpMode,
@@ -828,7 +825,7 @@ function OptionsInput({
 
 const INHERIT = "__inherit__";
 
-function AnimationControl({
+export function AnimationControl({
   config,
   onChange,
   defaults,
@@ -925,75 +922,4 @@ function AnimationControl({
 
 // ---- Dispatcher -----------------------------------------------------------
 
-export function ModuleConfigEditor({
-  moduleType,
-  config,
-  onChange,
-  ctx,
-  animationDefaults,
-  eventDate,
-  onSetEventDate,
-  rsvpMode,
-}: {
-  moduleType: ModuleType;
-  config: Record<string, unknown>;
-  onChange: (patch: Record<string, unknown>) => void;
-  ctx?: UploadContext;
-  /** The theme's animation — shown as the inherited baseline in the control. */
-  animationDefaults?: AnimationConfig;
-  /** Invitation event date (ISO) + setter, used by the countdown module. */
-  eventDate?: string;
-  onSetEventDate?: (iso: string) => void;
-  /** Modo RSVP de la invitación; en 'guest_list' el cupo lo pone el organizador. */
-  rsvpMode?: "open" | "guest_list";
-}) {
-  const props = { config, onChange, ctx };
-
-  const editor = (() => {
-    switch (moduleType) {
-      case "hero":
-        return <HeroEditor {...props} />;
-      case "welcome":
-        return <WelcomeEditor {...props} />;
-      case "countdown":
-        return (
-          <CountdownEditor
-            {...props}
-            eventDate={eventDate}
-            onSetEventDate={onSetEventDate}
-          />
-        );
-      case "map":
-        return <MapEditor {...props} />;
-      case "gallery":
-        return <GalleryEditor {...props} />;
-      case "video":
-        return <VideoEditor {...props} />;
-      case "itinerary":
-        return <ItineraryEditor {...props} />;
-      case "dresscode":
-        return <DresscodeEditor {...props} />;
-      case "gifts":
-        return <GiftsEditor {...props} />;
-      case "music":
-        return <MusicEditor {...props} />;
-      case "rsvp":
-        return <RsvpEditor {...props} rsvpMode={rsvpMode} />;
-      case "signatures":
-        return <SignaturesEditor {...props} />;
-      default:
-        return null;
-    }
-  })();
-
-  return (
-    <div>
-      {editor}
-      <AnimationControl
-        config={config}
-        onChange={onChange}
-        defaults={animationDefaults ?? ANIM_DEFAULTS}
-      />
-    </div>
-  );
-}
+// El despacho por tipo vive en `registry.tsx`.

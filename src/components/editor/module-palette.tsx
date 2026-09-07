@@ -1,6 +1,7 @@
 "use client";
 
 import { MODULE_META, MODULE_TYPES, type ModuleType } from "@/lib/modules/types";
+import { MODULE_REGISTRY } from "@/components/modules/registry";
 import { minimalPlanForModules } from "@/lib/billing/plans";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,8 +40,12 @@ export function ModulePalette({
               className="flex flex-col items-start gap-0.5"
             >
               <span className="flex w-full items-center justify-between gap-2 font-medium">
-                <span>
-                  {MODULE_META[type].icon} {MODULE_META[type].label}
+                <span className="flex items-center gap-2">
+                  {(() => {
+                    const Icon = MODULE_REGISTRY[type].Icon;
+                    return <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />;
+                  })()}
+                  {MODULE_META[type].label}
                 </span>
                 {isPremium && (
                   <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">

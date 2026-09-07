@@ -10,14 +10,12 @@ import type {
   HeroConfig,
   ItineraryConfig,
   MapConfig,
-  ModuleType,
   MusicConfig,
   RsvpConfig,
   SignaturesConfig,
   VideoConfig,
   WelcomeConfig,
 } from "@/lib/modules/types";
-import { parseConfig } from "@/lib/modules/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -609,62 +607,5 @@ export function RsvpPreview({
   );
 }
 
-// ---- Dispatcher -----------------------------------------------------------
-
-export function ModulePreview({
-  moduleType,
-  config,
-  interactive,
-  editorHint,
-  animate = false,
-  eventDate = "",
-}: {
-  moduleType: ModuleType;
-  config: Record<string, unknown>;
-  interactive?: boolean;
-  editorHint?: boolean;
-  /** Enables the module's internal choreography (text reveal, stagger, …). */
-  animate?: boolean;
-  /** Invitation-level event date (ISO), used by the countdown module. */
-  eventDate?: string;
-}) {
-  const parsed = parseConfig(moduleType, config);
-  switch (moduleType) {
-    case "hero":
-      return <HeroPreview config={parsed as HeroConfig} animate={animate} />;
-    case "welcome":
-      return <WelcomePreview config={parsed as WelcomeConfig} />;
-    case "countdown":
-      return (
-        <CountdownPreview config={parsed as CountdownConfig} eventDate={eventDate} />
-      );
-    case "map":
-      return <MapPreview config={parsed as MapConfig} />;
-    case "gallery":
-      return <GalleryPreview config={parsed as GalleryConfig} animate={animate} />;
-    case "video":
-      return <VideoPreview config={parsed as VideoConfig} />;
-    case "itinerary":
-      return (
-        <ItineraryPreview config={parsed as ItineraryConfig} animate={animate} />
-      );
-    case "dresscode":
-      return <DresscodePreview config={parsed as DresscodeConfig} />;
-    case "gifts":
-      return <GiftsPreview config={parsed as GiftsConfig} animate={animate} />;
-    case "music":
-      return <MusicPreview config={parsed as MusicConfig} />;
-    case "rsvp":
-      return (
-        <RsvpPreview
-          config={parsed as RsvpConfig}
-          interactive={interactive}
-          editorHint={editorHint}
-        />
-      );
-    case "signatures":
-      return <SignaturesPreview config={parsed as SignaturesConfig} />;
-    default:
-      return null;
-  }
-}
+// El despacho por tipo vive en `registry.tsx`: un solo lugar por modulo, y
+// olvidar una entrada es un error de TypeScript en vez de un modulo invisible.

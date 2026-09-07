@@ -4,7 +4,7 @@ import type {
   PublicInvitation,
   GuestForInvitation,
 } from "@/lib/invitations/public-types";
-import { ModulePreview } from "@/components/modules/previews";
+import { ModulePreview } from "@/components/modules/registry";
 import { PublicRsvpForm } from "@/components/public/public-rsvp-form";
 import { GuestResponsePanel } from "@/components/public/guest-response-panel";
 import {

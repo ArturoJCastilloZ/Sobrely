@@ -286,68 +286,63 @@ export type SignaturesConfig = z.infer<typeof signaturesConfigSchema>;
 
 // ---- Registry metadata ----------------------------------------------------
 
+/**
+ * Metadatos de cada tipo. El ICONO ya no vive aqui: era un emoji, y un emoji se
+ * renderiza con la fuente del sistema, no hereda color ni grosor del tema y
+ * cambia de forma entre Windows, Android y macOS. Ahora es un componente de
+ * `lucide-react` y vive en `components/modules/registry.tsx`, junto al resto
+ * de lo que define un modulo.
+ */
 export const MODULE_META: Record<
   ModuleType,
-  { label: string; icon: string; description: string }
+  { label: string; description: string }
 > = {
   hero: {
     label: "Portada",
-    icon: "✨",
     description: "Título principal, subtítulo e imagen de fondo.",
   },
   welcome: {
     label: "Bienvenida",
-    icon: "💌",
     description: "Mensaje de bienvenida para tus invitados.",
   },
   countdown: {
     label: "Cuenta regresiva",
-    icon: "⏳",
     description: "Temporizador hacia la fecha del evento.",
   },
   map: {
     label: "Ubicación",
-    icon: "📍",
     description: "Dirección del lugar con enlace a mapa.",
   },
   gallery: {
     label: "Galería",
-    icon: "🖼️",
     description: "Colección de fotos del evento.",
   },
   video: {
     label: "Video",
-    icon: "🎬",
     description: "Video de YouTube o Vimeo.",
   },
   itinerary: {
     label: "Itinerario",
-    icon: "🗓️",
     description: "Programa del evento por horarios.",
   },
   dresscode: {
     label: "Código de vestimenta",
-    icon: "👗",
     description: "Indica el dress code a tus invitados.",
   },
   gifts: {
     label: "Mesa de regalos",
-    icon: "🎁",
     description: "Enlaces a tus mesas de regalos.",
   },
   music: {
     label: "Música",
-    icon: "🎵",
     description: "Enlace a Spotify, YouTube o audio.",
   },
   rsvp: {
     label: "Confirmación (RSVP)",
-    icon: "✅",
     description: "Formulario para confirmar asistencia.",
   },
   signatures: {
     label: "Libro de firmas",
-    icon: "🖋️",
     description: "Tus invitados te dejan un mensaje.",
   },
 };

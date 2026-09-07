@@ -59,7 +59,7 @@ import { ModulePalette } from "./module-palette";
 import { SettingsPanel } from "./settings-panel";
 import { PreviewPane } from "./preview-pane";
 import { ThemePanel } from "./theme-panel";
-import { ModuleConfigEditor } from "@/components/modules/config-editors";
+import { ModuleConfigEditor, MODULE_REGISTRY } from "@/components/modules/registry";
 import { RsvpModeToggle } from "@/components/dashboard/rsvp-mode-toggle";
 import { GuestManager } from "@/components/dashboard/guest-manager";
 import type { ThemeConfig } from "@/lib/theme/theme";
@@ -429,8 +429,11 @@ export function InvitationEditor({
                 {selected ? (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">
-                        {MODULE_META[selected.module_type].icon}{" "}
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        {(() => {
+                          const Icon = MODULE_REGISTRY[selected.module_type].Icon;
+                          return <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />;
+                        })()}
                         {MODULE_META[selected.module_type].label}
                       </CardTitle>
                     </CardHeader>

@@ -3,6 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { MODULE_META } from "@/lib/modules/types";
+import { MODULE_REGISTRY } from "@/components/modules/registry";
 import type { EditorModule } from "@/lib/invitations/editor-types";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export function SortableModuleItem({
     useSortable({ id: module.id });
 
   const meta = MODULE_META[module.module_type];
+  const Icon = MODULE_REGISTRY[module.module_type].Icon;
 
   return (
     <div
@@ -48,8 +50,9 @@ export function SortableModuleItem({
         onClick={onSelect}
         className="flex-1 text-left"
       >
-        <span className="text-sm font-medium">
-          {meta.icon} {meta.label}
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          {meta.label}
         </span>
         {!module.is_visible && (
           <span className="ml-2 text-xs text-muted-foreground">(oculto)</span>

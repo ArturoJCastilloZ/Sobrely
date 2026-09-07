@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { EditorModule } from "@/lib/invitations/editor-types";
 import type { ThemeConfig } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
-import { ModulePreview } from "@/components/modules/previews";
+import { ModulePreview } from "@/components/modules/registry";
 import { ThemeScope } from "@/components/theme/theme-scope";
 import { StickerEditorLayer } from "@/components/editor/sticker-editor-layer";
 import { AnimatedModule } from "@/components/animation/animated-module";
