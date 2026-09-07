@@ -186,14 +186,6 @@ export default async function InvitationDashboardPage({
             >
               Editar invitación
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              render={<Link href="/dashboard" />}
-              nativeButton={false}
-            >
-              ← Volver
-            </Button>
           </div>
         </div>
 

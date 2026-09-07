@@ -50,10 +50,6 @@ export function AnimationCatalog() {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted-foreground">
-        Catálogo base de animaciones (Fase 5.3). Pulsa reproducir para verlas.
-      </p>
-
       {/* Floating replay button: reachable at any scroll position. */}
       <Button
         size="lg"

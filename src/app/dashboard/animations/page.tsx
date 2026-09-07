@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { AnimationCatalog } from "@/components/animation/animation-catalog";
 
 export const metadata: Metadata = { title: "Catálogo de animaciones" };
@@ -8,23 +6,16 @@ export const metadata: Metadata = { title: "Catálogo de animaciones" };
 export default function AnimationsCatalogPage() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Catálogo de animaciones
-          </h1>
-          <p className="text-muted-foreground">
-            Vista previa de las animaciones disponibles.
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          render={<Link href="/dashboard" />}
-          nativeButton={false}
-        >
-          ← Volver
-        </Button>
+      {/* Sin boton "Volver": con el sidebar persistente es navegacion
+          duplicada, y ademas competia con el. Volver es el sidebar. */}
+      <div>
+        <h1 className="text-[length:var(--ed-text-2xl)]/(--ed-leading-2xl) font-(--ed-weight-semibold) tracking-(--ed-tracking-2xl)">
+          Catálogo de animaciones
+        </h1>
+        <p className="text-[length:var(--ed-text-sm)]/(--ed-leading-sm) tracking-(--ed-tracking-sm) text-muted-foreground">
+          Así se ven las animaciones que puedes aplicar a tu invitación. Pulsa
+          reproducir para verlas en movimiento.
+        </p>
       </div>
 
       <AnimationCatalog />

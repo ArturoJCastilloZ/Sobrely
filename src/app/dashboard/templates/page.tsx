@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -40,14 +38,6 @@ export default async function TemplatesPage() {
             Elige un diseño para empezar más rápido.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          render={<Link href="/dashboard" />}
-          nativeButton={false}
-        >
-          ← Volver
-        </Button>
       </div>
 
       {list.length === 0 ? (
