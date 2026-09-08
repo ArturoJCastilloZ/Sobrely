@@ -575,7 +575,16 @@ export function InvitationEditor({
           className="shrink-0 border-b border-warning/40 bg-warning-surface px-4 py-3 text-sm"
         >
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="font-medium text-warning-fg">
+            {/*
+              `text-warning` y NO `text-warning-fg`: `-fg` es la mitad que va
+              sobre el color SOLIDO, no sobre el `-surface`. Medido en el
+              navegador con el tema oscuro, `warning-fg` daba
+              `rgb(42, 26, 0)` sobre un fondo `rgb(42, 32, 8)` — el mismo
+              color, texto INVISIBLE. El emparejamiento bueno ya lo afirma
+              `semantic-colors.test.ts`: "el color solido es legible como
+              TEXTO sobre su propia superficie", en claro y en oscuro.
+            */}
+            <span className="font-medium text-warning">
               Otra pestaña guardó cambios más nuevos.
             </span>
             <span className="text-muted-foreground">

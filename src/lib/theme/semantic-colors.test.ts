@@ -83,4 +83,31 @@ describe("tokens semánticos del chrome", () => {
       expect(contrastRatio(claro[base], "#ffffff")).toBeGreaterThanOrEqual(AA_NORMAL);
     }
   });
+
+  /**
+   * El emparejamiento es la mitad del token que se equivoca en la práctica.
+   * `-fg` va sobre el color SÓLIDO; sobre `-surface` va el sólido. Medido:
+   * `text-warning-fg` sobre `bg-warning-surface` en tema oscuro dio
+   * `rgb(42, 26, 0)` sobre `rgb(42, 32, 8)` — contraste **1.05**, texto
+   * INVISIBLE. Compilaba, pasaba todo, y solo se vio mirando la pantalla.
+   *
+   * Esta prueba MIDE la diferencia entre las dos parejas, y eso es todo lo
+   * que puede hacer. NO impide que un componente use la mala: lo intenté con
+   * un barrido del árbol y no funciona, porque el `bg-*-surface` vive en el
+   * className del PADRE y el `text-*-fg` en el del HIJO, así que ninguna
+   * regex sobre un solo atributo los ve juntos. Se quitó en vez de dejarla
+   * verde sin defender nada. El emparejamiento se sigue cazando MIRANDO la
+   * pantalla — es el mismo error que costó el formulario invisible del libro
+   * de firmas.
+   */
+  it("la pareja MALA (-fg sobre -surface) es ilegible, y por eso se prohíbe", () => {
+    for (const [base] of PARES) {
+      const mala = contrastRatio(oscuro[`${base}-fg`], oscuro[`${base}-surface`]);
+      const buena = contrastRatio(oscuro[base], oscuro[`${base}-surface`]);
+      // No es una preferencia estética: la mala es peor de forma medible.
+      expect(buena, `${base}: la buena (${buena.toFixed(2)}) debe superar a la mala (${mala.toFixed(2)})`)
+        .toBeGreaterThan(mala);
+    }
+  });
+
 });
