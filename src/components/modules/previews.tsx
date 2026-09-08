@@ -316,7 +316,7 @@ const HERO_TEXTO_CLASSES: Record<HeroVariant, string> = {
     "relative flex max-w-3xl flex-col items-center gap-3 @2xl/inv:gap-5",
   offset: "relative flex max-w-xl flex-col items-start gap-3 @2xl/inv:gap-5",
   split:
-    "relative flex flex-col items-center gap-3 @2xl/inv:w-1/2 @2xl/inv:items-start @2xl/inv:gap-5",
+    "relative order-1 flex flex-col items-center gap-3 @2xl/inv:order-2 @2xl/inv:w-1/2 @2xl/inv:items-start @2xl/inv:gap-5",
   editorial:
     "relative order-1 flex max-w-3xl flex-col items-start gap-3 @2xl/inv:gap-5",
   plain: "relative flex max-w-2xl flex-col items-center gap-4 @2xl/inv:gap-6",
@@ -362,7 +362,12 @@ export function HeroPreview({
         <div
           className={
             config.variant === "split"
-              ? "relative w-full overflow-hidden rounded-lg @2xl/inv:w-1/2"
+              ? // `order-2` en móvil: el título va PRIMERO cuando la portada
+                // apila. Sin esto la foto ocupa 560 px a 420 de ancho con
+                // proporción 3/4 —exactamente el alto del recorte de la
+                // miniatura— y la plantilla se anunciaba en el catálogo con una
+                // foto y CERO texto. Medido, y visto en la hoja de contacto.
+                "relative order-2 w-full overflow-hidden rounded-lg @2xl/inv:order-1 @2xl/inv:w-1/2"
               : "relative order-2 w-full max-w-md overflow-hidden rounded-lg"
           }
           style={{ aspectRatio: config.variant === "split" ? "3/4" : "4/3" }}
