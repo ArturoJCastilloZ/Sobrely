@@ -735,7 +735,7 @@ que **el piloto ejercita las cinco familias y las seis primitivas**.
 | 14 | Diploma | Graduación | F1 | Pexels `8177931` | P1 P2 |
 | 15 | Retícula | Corporativo | F4 | ninguna (textura) | P1 P4 |
 
-**Nueve de las quince no consumen ninguna licencia.** Es deliberado: si la
+**Ocho de las quince no consumen ninguna licencia** (las siete F4, más la F5, que usa la foto del anfitrión). Es deliberado: si la
 dirección visual sólo funciona con fotos compradas, no es dirección visual.
 
 ### Puntuación
@@ -768,7 +768,7 @@ o se descarta antes de tocar el resto del catálogo.
 1. **P4 · tipografía** — máximo cambio percibido por unidad de trabajo, no toca layout.
 2. **P1 · alineación y retícula** — con defectos idénticos a hoy: cero píxeles movidos.
 3. **P2 · slot de media con velo MEDIDO** — la pieza grande; arregla además el `.45` fijo del hero.
-4. **Piloto F4 + F5** (7 de las 15): **no consumen licencias** y validan lo caro.
+4. **Piloto F4 + F5** (8 de las 15): **no consumen licencias** y validan lo caro.
 5. **P3, P5, P6.**
 6. **Piloto F1/F2/F3** con las candidatas de §7, cada una pasando por el medidor de contraste.
 7. **Puntuar el piloto** con las 6 métricas y el umbral de 8.
