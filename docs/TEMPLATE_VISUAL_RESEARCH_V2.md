@@ -783,6 +783,118 @@ o se descarta antes de tocar el resto del catálogo.
 
 ---
 
+---
+
+# 19. PUNTUACIÓN DEL PILOTO (2026-09-08)
+
+El §16 dejó las 6 métricas **sin puntuar a propósito**: puntuar un diseño que no
+existe es inventarse el número. Ya existen las 15 renderizadas, con su miniatura
+capturada y verificadas en producción, así que aquí va la puntuación real.
+
+Escala 1–10 en **Visual Quality · Uniqueness · Event Relevance · Composition ·
+Premium Feel · Mobile Potential**. Umbral del research: **promedio ≥ 8** para
+recomendar implementación; por debajo, se rediseña o se descarta.
+
+Base de la puntuación: las 15 miniaturas miradas en hoja de contacto, las
+páginas completas a 1200 px y a 375 px, y dos mediciones de las que sale la
+columna **MP** (ver §19.2).
+
+| plantilla | cat. | fam. | VQ | Uniq | ER | Comp | PF | MP | **prom** | |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `boda-papel-y-lino` | Boda | F4 | 8 | 7 | 6 | 8 | 8 | 6 | **7.2** | ❌ |
+| `boda-marco-nuestro` | Boda | F5 | 5 | 6 | 5 | 7 | 6 | 7 | **6.0** | ❌ |
+| `boda-jardin-partido` | Boda | F1 | 9 | 8 | 8 | 9 | 9 | 8 | **8.5** | ✅ |
+| `xv-seda` | XV años | F4 | 8 | 7 | 7 | 8 | 8 | 6 | **7.3** | ❌ |
+| `xv-corona` | XV años | F3 | 9 | 9 | 8 | 9 | 9 | 8 | **8.7** | ✅ |
+| `baby-nube-de-algodon` | Baby shower | F4 | 7 | 4 | 6 | 7 | 6 | 6 | **6.0** | ❌ |
+| `baby-punto-y-flor` | Baby shower | F1 | 9 | 8 | 8 | 8 | 8 | 8 | **8.2** | ✅ |
+| `revelacion-dos-sobres` | Gender reveal | F4 | 7 | 4 | 6 | 7 | 6 | 6 | **6.0** | ❌ |
+| `revelacion-coral` | Gender reveal | F3 | 8 | 9 | 7 | 8 | 8 | 8 | **8.0** | ✅ |
+| `cumpleanos-papel-picado` | Cumpleaños | F4 | 7 | 6 | 6 | 7 | 6 | 6 | **6.3** | ❌ |
+| `cumpleanos-arco` | Cumpleaños | F1 | 8 | 8 | 9 | 8 | 7 | 8 | **8.0** | ✅ |
+| `bautizo-cera-blanca` | Bautizo | F3 | 9 | 8 | 5 | 9 | 9 | 8 | **8.0** | ✅ |
+| `comunion-cinta` | Primera comunión | F4 | 6 | 5 | 4 | 6 | 6 | 6 | **5.5** | ❌ |
+| `graduacion-diploma` | Graduación | F1 | 8 | 8 | 9 | 8 | 7 | 8 | **8.0** | ✅ |
+| `corporativo-reticula` | Corporativo | F4 | 8 | 8 | 7 | 8 | 8 | 7 | **7.7** | ❌ |
+
+## 19.1 El resultado, y contradice lo que yo recomendé
+
+| | aprueban |
+|---|---|
+| **con fotografía** (F1 · F3) | **7 de 7** |
+| **sin fotografía** (F4 · F5) | **0 de 8** |
+
+**7 de 15 pasan el umbral. La línea divisoria es exactamente la fotografía.**
+
+Eso desmiente la apuesta que hice en el §16 de este mismo documento: *«ocho de
+las quince no consumen ninguna licencia… si la dirección visual sólo funciona
+con fotos compradas, no es dirección visual»*. El piloto dice que, **con las
+piezas que Sobrely tiene hoy**, sí funciona sólo con fotografía.
+
+Y conviene decir por qué, sin consolarse: la familia F4 se apoyaba en el modelo
+Greenvelope, que es **ilustración firmada por artista** más tipografía y forma de
+tarjeta. Lo que se implementó fue *textura SVG tenue + filete + par tipográfico*,
+que no es lo mismo. **No falló la hipótesis «premium sin fotografía»: falló mi
+sustituto barato de la ilustración.** Las dos peores del piloto —`comunion-cinta`
+(5.5) y las dos pastel de 6.0— son justo las que se quedaron sin nada que mirar.
+
+## 19.2 Dos defectos sistémicos, medidos
+
+**1. El marco pierde su lectura de tarjeta en móvil.** Medido sobre `xv-seda`:
+
+| ancho | ancho del marco | margen a cada lado |
+|---|---|---|
+| 1200 px | 896 | **152** — lee como tarjeta |
+| 375 px | 375 | **0** — toca los dos bordes, lee como banda |
+
+`FRAME_CLASSES` pone el borde en el contenedor de la sección, que en móvil es a
+sangre. Afecta a las **7** plantillas con marco y es lo que hunde su columna MP a
+6. **Es un arreglo pequeño** —margen horizontal en las variantes con marco, sólo
+por debajo del breakpoint— y probablemente sube 3 o 4 de ellas al umbral.
+
+**2. Dos plantillas del piloto son casi la misma.** `baby-nube-de-algodon` y
+`revelacion-dos-sobres` son degradado pastel + marco, de categorías distintas
+pero indistinguibles en la rejilla. Es el **problema nº 4 del research
+reproducido dentro del piloto**, y confirma que la regla de diferenciación no
+puede ser sólo *«no repetir familia dentro de una categoría»*: hay que mirar el
+catálogo entero.
+
+## 19.3 Recomendación
+
+1. **Arreglar el marco en móvil** antes de decidir nada más: es barato y mueve la
+   columna MP de siete plantillas. Después, **repuntuar**.
+2. **No promover ninguna F4 al catálogo grande** con su forma actual. O se les da
+   ilustración de verdad —lo que significa dibujar, no texturizar— o se convierten
+   a F1/F3 con fotografía.
+3. **F1 y F3 son la dirección que funciona.** Las siete pasan, y tres pasan con
+   holgura (`xv-corona` 8.7, `boda-jardin-partido` 8.5, `baby-punto-y-flor` 8.2).
+4. **`bautizo-cera-blanca` pasa con truco**: 8.0 exacto, sostenido por un 9 en
+   composición y hundido por un **5 en relevancia de evento**. Es un bodegón
+   blanco que podría ser boda o memorial. Sirve mientras no haya nada mejor, y
+   hay que sustituirla en cuanto lo haya.
+5. **F2 sigue sin representante**: ninguna de las siete fotos pasó el umbral de
+   velo (§7), así que la familia «telón total» no se ha validado.
+
+## 19.4 Nota por plantilla
+
+- **Papel y Lino** (7.2) — Papelería correcta, pero nada en la pieza dice «boda» salvo el copy. El marco pierde su lectura de tarjeta en móvil.
+- **Marco Nuestro** (6.0) — La foto marcador de posición lee como una losa beige a tamaño de miniatura. El catálogo se vende con la miniatura, y ésta no vende.
+- **Jardín Partido** (8.5) — La papelería salvia y el serif se sostienen mutuamente. La mejor de las tres de boda.
+- **Seda** (7.3) — Bonita y coherente, pero el filete doble a sangre en móvil la abarata.
+- **Corona** (8.7) — La más memorable del piloto: el objeto sobre negro corta contra un catálogo 96 % claro.
+- **Nube de Algodón** (6.0) — Degradado pastel más marco. Es casi indistinguible de «Dos Sobres»: el problema nº 4 del research reaparecido DENTRO del piloto.
+- **Punto y Flor** (8.2) — El bodegón de punto hace el trabajo que la tipografía sola no hacía.
+- **Dos Sobres** (6.0) — Mismo diagnóstico que «Nube de Algodón», y el concepto de los dos sobres no llega a verse.
+- **Coral** (8.0) — Evita el rosa-azul de manual y por eso destaca. Relevancia algo baja: globos sin señal explícita del evento.
+- **Papel Picado** (6.3) — El nombre promete papel picado y la pieza entrega una guirnalda tenue de fondo.
+- **Arco** (8.0) — Festiva y legible de inmediato. Lo premium es lo más flojo: globos de colores tiran a genérico.
+- **Cera Blanca** (8.0) — Visualmente la más fina del piloto, y a la vez la de relevancia más baja: es un bodegón blanco que podría ser boda, memorial o comunión. Ya venía anotado al elegirla.
+- **Cinta** (5.5) — La más floja. Sin foto y sin textura, todo el peso cae en el título; y ningún elemento la ancla a una comunión.
+- **Diploma** (8.0) — Lectura inmediata del evento. Premium flojo: el confeti dorado tira a genérico.
+- **Retícula** (7.7) — La única alineada a la izquierda, y eso la distingue. Se queda a un pelo por el marco en móvil.
+
+---
+
 ## ⛔ FIN DE LA INVESTIGACIÓN
 
 No se ha modificado ninguna plantilla, ni descargado ninguna imagen, ni tocado
