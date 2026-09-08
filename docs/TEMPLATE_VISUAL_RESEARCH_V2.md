@@ -1052,11 +1052,32 @@ abierta y que nadie ha tomado.
 
 ---
 
-## ⛔ FIN DE LA INVESTIGACIÓN
+## ✅ FASE COMPLETA — cierre del 2026-09-08
 
-No se ha modificado ninguna plantilla, ni descargado ninguna imagen, ni tocado
-`event_type`, ni escrito ninguna migración.
+Aprobada por el dev, implementada y evaluada. **El piloto quedó en 13 de 15**
+contra el umbral de 8/10; empezó en 7. Las 6 primitivas están en producción y
+las 15 plantillas están sembradas, capturadas y puntuadas tres veces (§19.1
+inicial, §19.5 tras el marco, §19.6 tras la conversión, §19.7 la última).
 
-**Esperando la frase exacta: «APROBADO TEMPLATE RESEARCH V2».**
+**Estado medido al cierre:** 65 plantillas activas en 9 categorías, 0 sin
+miniatura, 0 archivos ausentes. Migraciones `0032`–`0036` aplicadas.
 
-Y aun con ella, lo primero que se implementa es **el piloto**, no el catálogo.
+### Lo que este documento tuvo que corregirse a sí mismo
+
+1. **§16 apostaba** que «si la dirección visual sólo funciona con fotos
+   compradas, no es dirección visual». El piloto lo desmintió: 0 de 8 sin
+   fotografía pasaron. Lo que falló no fue la hipótesis sino su **sustituto
+   barato** — textura SVG + filete no es la ilustración firmada de Greenvelope.
+2. **§19.3 predijo** que arreglar el marco en móvil subiría «3 o 4 al umbral».
+   Cruzaron **cero**: el déficit no estaba en el móvil.
+3. **§19.1 concluyó** «hace falta fotografía». La variable real es **«hace falta
+   un OBJETO del evento»**: el primer corte salió perfecto y la enmascaraba.
+
+### Lo que queda abierto
+
+- `boda-marco-nuestro` (7.3) y `comunion-cinta` (5.8) — decisión de producto,
+  no otra iteración. Ver §19.7.
+- **F2 tiene un solo representante** y por los pelos: de 13 fotografías, sólo
+  `revelacion-tinta` baja del umbral de velo de 0.35.
+- El **resto del catálogo** (las 50 originales) sigue sin tocar. El piloto
+  existía para decidir si se rehace, y ya hay con qué decidirlo.
