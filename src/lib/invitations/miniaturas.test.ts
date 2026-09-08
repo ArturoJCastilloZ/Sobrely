@@ -71,6 +71,46 @@ describe("la proporción es UNA sola fuente", () => {
   });
 });
 
+describe("la caché del optimizador no puede servir miniaturas viejas", () => {
+  const catalogo = readFileSync(
+    join(RAIZ, "src", "app", "dashboard", "templates", "page.tsx"),
+    "utf8",
+  );
+  const config = readFileSync(join(RAIZ, "next.config.ts"), "utf8");
+  const preview = readFileSync(
+    join(RAIZ, "src", "lib", "invitations", "template-preview.ts"),
+    "utf8",
+  );
+
+  /**
+   * El modo de fallo que esto atrapa, y que ya ocurrió: las miniaturas se
+   * regeneran EN SU SITIO —el archivo cambia y la ruta no— y la caché en disco
+   * del optimizador de Next se indexa por URL con 4 h de vida. Tras regenerar
+   * las 50 con el arte puesto, el catálogo seguía mostrando las viejas —sin
+   * arte y con copy de anfitrión ya retirado— con `X-Nextjs-Cache: HIT` de una
+   * entrada anterior a la regeneración, mientras el archivo en crudo ya era el
+   * nuevo. Nada avisaba.
+   */
+  it("el catálogo añade la revisión a la URL de la miniatura", () => {
+    expect(catalogo).toMatch(/REVISION_MINIATURAS/);
+    expect(catalogo).toMatch(/\?v=\$\{REVISION_MINIATURAS\}/);
+  });
+
+  it("la query está permitida en images.localPatterns", () => {
+    // Sin declararla, Next 16 no solo ignora la query: TUMBA la página con
+    // `next-image-unconfigured-localpatterns`. Pasó al primer intento.
+    expect(config).toMatch(/localPatterns/);
+    expect(config).toMatch(/previews\/plantillas/);
+  });
+
+  it("el script de captura actualiza la revisión", () => {
+    // Una revisión que no sube deja el catálogo sirviendo lo cacheado, así que
+    // el bump tiene que ser parte de la tanda y no un paso manual.
+    expect(script).toMatch(/REVISION_MINIATURAS = "\$\{rev\}"/);
+    expect(preview).toMatch(/export const REVISION_MINIATURAS = "\d+";/);
+  });
+});
+
 describe("las miniaturas en disco", () => {
   const hayCarpeta = existsSync(DIR_MINIATURAS);
   const archivos = hayCarpeta ? readdirSync(DIR_MINIATURAS) : [];

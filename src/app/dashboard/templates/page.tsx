@@ -15,7 +15,10 @@ import { cn } from "@/lib/utils";
 // La proporción se importa del MISMO sitio del que la lee el script de
 // captura: si el hueco reservado aquí y la imagen capturada se separan,
 // `object-cover` recorta el diseño sin que falle nada.
-import { PROPORCION_MINIATURA } from "@/lib/invitations/template-preview";
+import {
+  PROPORCION_MINIATURA,
+  REVISION_MINIATURAS,
+} from "@/lib/invitations/template-preview";
 import { UseTemplateButton } from "@/components/dashboard/use-template-button";
 
 export const metadata: Metadata = { title: "Plantillas" };
@@ -92,7 +95,13 @@ export default async function TemplatesPage() {
                   className="relative block w-full bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                 >
                   <Image
-                    src={tpl.preview_image_url}
+                    // `?v=` con la revision de la tanda. La cache del
+                    // optimizador de Next se indexa por URL y las miniaturas
+                    // se regeneran EN SU SITIO, asi que sin esto sirve las
+                    // viejas hasta 4h — medido, con `X-Nextjs-Cache: HIT` de
+                    // una entrada anterior a la regeneracion. La query esta
+                    // declarada en `images.localPatterns` del next.config.
+                    src={`${tpl.preview_image_url}?v=${REVISION_MINIATURAS}`}
                     // El nombre YA esta como titulo justo debajo, asi que un
                     // alt que lo repita solo hace que un lector de pantalla lo
                     // lea dos veces. El enlace es lo que necesita nombre.

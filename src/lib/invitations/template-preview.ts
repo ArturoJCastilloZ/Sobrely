@@ -49,3 +49,22 @@ export const ALTO_CAPTURA =
 
 /** Escala del dispositivo: 2 para que la miniatura no se vea borrosa en retina. */
 export const ESCALA_CAPTURA = 2;
+
+/**
+ * Revisión de las miniaturas. La ESCRIBE `scripts/capturar-miniaturas.mts` al
+ * terminar una tanda completa, y el catálogo la añade como `?v=` a cada URL.
+ *
+ * Por qué hace falta. Las miniaturas se regeneran EN SU SITIO: el archivo
+ * cambia y la ruta no. Y `next/image` cachea por URL, no por contenido, así
+ * que sirve la versión optimizada vieja indefinidamente. Se vio en vivo: tras
+ * regenerar las 50 con el arte puesto, el catálogo seguía mostrando las
+ * anteriores —sin arte y con el copy de anfitrión que ya se había quitado—
+ * mientras el archivo servido en crudo era el nuevo y correcto.
+ *
+ * En desarrollo se nota poco porque uno borra `.next`; en producción los
+ * clientes desplegados se quedarían con las viejas sin que nada avisara. Un
+ * solo número que cambia con la tanda basta para invalidar la caché del
+ * optimizador y la del navegador, y evita tener que renombrar 50 archivos o
+ * volver a escribir 50 URLs en la BD en cada regeneración.
+ */
+export const REVISION_MINIATURAS = "202609080436";

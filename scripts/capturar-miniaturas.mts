@@ -174,6 +174,32 @@ async function main() {
       `${Math.round(bytes / 1024)} KB en total · ${DESTINO}`,
   );
 
+  // La REVISION se escribe solo si la tanda salio completa. Las miniaturas se
+  // regeneran en su sitio —el archivo cambia y la ruta no— y `next/image`
+  // cachea por URL, asi que sin bump el catalogo sigue sirviendo las viejas.
+  // Se vio en vivo: tras regenerar las 50 con arte, el catalogo mostraba las
+  // anteriores mientras el archivo en crudo ya era el nuevo.
+  if (fallos.length === 0) {
+    const rutaConst = join(RAIZ, "src", "lib", "invitations", "template-preview.ts");
+    const antes = readFileSync(rutaConst, "utf8");
+    const rev = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
+    const despues = antes.replace(
+      /export const REVISION_MINIATURAS = "[^"]*";/,
+      `export const REVISION_MINIATURAS = "${rev}";`,
+    );
+    if (despues === antes) {
+      // Si el reemplazo no encaja, se avisa en vez de seguir en silencio: una
+      // revision que no sube deja el catalogo sirviendo miniaturas viejas.
+      console.error(
+        "\nAVISO: no pude actualizar REVISION_MINIATURAS en template-preview.ts.\n" +
+          "El catalogo puede seguir sirviendo las miniaturas cacheadas.",
+      );
+    } else {
+      writeFileSync(rutaConst, despues);
+      console.log(`Revision de miniaturas -> ${rev}`);
+    }
+  }
+
   // Salir con error si algo falló: en CI, un fallo silencioso deja miniaturas
   // viejas o ausentes y el catálogo parece funcionar.
   if (fallos.length > 0) {
