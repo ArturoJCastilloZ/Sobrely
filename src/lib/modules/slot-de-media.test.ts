@@ -75,6 +75,22 @@ describe("retro-compatibilidad", () => {
     ).toBe(false);
   });
 
+  it.each([
+    ["", true],
+    ["/arte/boda-botanica.svg", true],
+    ["https://ncxglanrfeepzenrfvoh.supabase.co/storage/v1/object/public/a/b.jpg", true],
+    // Origen externo disfrazado de ruta local — la misma media guarda que
+    // `esArteDeLaApp` (b48d823).
+    ["//cdn.ajeno.com/x.png", false],
+    ["javascript:alert(1)", false],
+    ["data:image/svg+xml;base64,AAA", false],
+    ["no-es-una-ruta.jpg", false],
+  ])("url %s -> válida=%s", (url, ok) => {
+    expect(
+      moduleConfigSchemas.welcome.safeParse({ media: { url } }).success,
+    ).toBe(ok);
+  });
+
   it("el velo está acotado a 0–1", () => {
     expect(
       moduleConfigSchemas.welcome.safeParse({ media: { overlay: 2 } }).success,

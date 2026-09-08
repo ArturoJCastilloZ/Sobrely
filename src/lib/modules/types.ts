@@ -131,7 +131,34 @@ export const MEDIA_SHAPE_LABELS: Record<MediaShape, string> = {
 const mediaShape = {
   media: z
     .object({
-      url: z.string().default(""),
+      // Ni `z.string()` a secas ni `z.string().url()`.
+      //
+      // A secas es más laxo que el resto del esquema (`hero.imageUrl` y
+      // `gallery.images` sí validan) y dejaría entrar `javascript:` o `data:`.
+      // En un `<img src>` ninguno de los dos ejecuta script, pero no hay razón
+      // para aceptarlos.
+      //
+      // Y `.url()` a secas tampoco sirve: rechazaría `/arte/…`, que es como se
+      // sirve el arte de las PLANTILLAS. Es la misma distinción por ORIGEN que
+      // `esArteDeLaApp` (`b48d823`): ruta relativa a la raíz = la sirve la app;
+      // URL absoluta = la subió el usuario a su Storage. `//host/x.png` se
+      // rechaza aunque empiece por "/": es un origen externo disfrazado.
+      url: z
+        .union([
+          z.literal(""),
+          // `.url()` a secas NO basta: usa el constructor URL, que acepta
+          // CUALQUIER esquema — `javascript:` y `data:` incluidos. Medido: los
+          // dos pasaban. Se acota a http(s).
+          z
+            .string()
+            .url()
+            .refine(
+              (u) => /^https?:\/\//i.test(u),
+              "Solo se admiten URLs http(s).",
+            ),
+          z.string().regex(/^\/(?!\/)[^\s]*$/, "Ruta de imagen inválida."),
+        ])
+        .default(""),
       // Vacío = decorativa. Quien la pinta le pone `aria-hidden` en ese caso,
       // que es lo correcto para una imagen sin contenido propio.
       alt: z.string().max(160).default(""),
