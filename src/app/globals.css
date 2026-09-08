@@ -286,3 +286,22 @@
     @apply font-sans;
   }
 }
+/*
+ * Par tipográfico de la invitación (Fase 11 · P4).
+ *
+ * Los títulos usan `--inv-font-heading` y el cuerpo hereda `--inv-font-body`
+ * del `fontFamily` que `themeCssVars` pone en la raíz del scope.
+ *
+ * `inherit` de reserva a propósito: si la variable no estuviera —un tema viejo,
+ * un scope montado a mano— los títulos heredan del cuerpo, que es exactamente
+ * lo que hacían las 50 plantillas antes de esto. Sin `typography` declarada,
+ * `--inv-font-heading` YA vale lo mismo que el cuerpo, así que la regla es un
+ * no-op y el render no se mueve.
+ *
+ * Sólo familia: `font-size` y `letter-spacing` los siguen poniendo las clases
+ * de Tailwind (`text-3xl`, `tracking-tight`). Meterlos aquí las sobrescribiría
+ * y eso SÍ movería píxeles; la escala tipográfica es trabajo de P1.
+ */
+.inv-scope :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--inv-font-heading, inherit);
+}

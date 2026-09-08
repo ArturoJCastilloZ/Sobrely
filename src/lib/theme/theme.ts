@@ -61,6 +61,17 @@ export const themeSchema = z.object({
       text: "#1f2937",
     }),
   font: z.enum(FONT_KEYS).default("sans"),
+  // Par tipografico (Fase 11 · P4). OPCIONAL a proposito: cuando falta, titulos
+  // y cuerpo usan `font`, que es exactamente lo que hacian las 50 plantillas
+  // antes de esto — el render no se mueve un pixel. Se anade como par porque el
+  // esquema NO tenia con que diferenciar: `font` es UNA familia para todo, y la
+  // Fase 7 planeaba "emparejar" un campo que no existia.
+  typography: z
+    .object({
+      heading: z.enum(FONT_KEYS),
+      body: z.enum(FONT_KEYS),
+    })
+    .optional(),
   spacing: z.enum(SPACING_KEYS).default("normal"),
   // Light/dark surface of the invitation (independent of the viewer's app
   // theme). Retro-compatible: themes saved before this field parse as "light".
@@ -131,6 +142,23 @@ export const FONT_STACKS: Record<FontKey, string> = {
   script: 'var(--font-dancing), "Segoe Script", cursive',
 };
 
+/**
+ * Par tipografico efectivo: el declarado, o `font` para ambos.
+ *
+ * La retro-compatibilidad es el punto: un tema guardado antes de la Fase 11 no
+ * trae `typography`, y tiene que renderizar IDENTICO. Por eso el defecto no es
+ * un par "bonito" sino la familia unica de siempre.
+ */
+export function resolveTypography(theme: ThemeConfig): {
+  heading: FontKey;
+  body: FontKey;
+} {
+  return {
+    heading: theme.typography?.heading ?? theme.font,
+    body: theme.typography?.body ?? theme.font,
+  };
+}
+
 export const FONT_LABELS: Record<FontKey, string> = {
   sans: "Moderna (Sans)",
   serif: "Clásica (Serif)",
@@ -191,6 +219,7 @@ function ctaVars(theme: ThemeConfig): Record<string, string> {
 
 /** Builds the inline CSS variables that ThemeScope applies. */
 export function themeCssVars(theme: ThemeConfig): React.CSSProperties {
+  const tipografia = resolveTypography(theme);
   return {
     // Custom properties consumed by the module previews.
     ["--inv-primary" as string]: theme.colors.primary,
@@ -212,8 +241,16 @@ export function themeCssVars(theme: ThemeConfig): React.CSSProperties {
     // dato que migrar y para que un pack corregido arregle a todas sus
     // invitaciones a la vez.
     ...ctaVars(theme),
+    // Par tipografico (P4). `--inv-font-heading` lo consume la regla
+    // `.inv-scope :is(h1..h6)` de globals.css, con `inherit` de reserva: si la
+    // variable faltara, los titulos heredan del cuerpo — que es el
+    // comportamiento de siempre.
+    ["--inv-font-heading" as string]: FONT_STACKS[tipografia.heading],
+    ["--inv-font-body" as string]: FONT_STACKS[tipografia.body],
     backgroundColor: theme.colors.background,
     color: theme.colors.text,
-    fontFamily: FONT_STACKS[theme.font],
+    // Sin `typography`, `tipografia.body === theme.font`, asi que esto es el
+    // mismo valor que antes.
+    fontFamily: FONT_STACKS[tipografia.body],
   };
 }

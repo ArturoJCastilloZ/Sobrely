@@ -74,7 +74,11 @@ export function ThemeScope({
       // `backdrop-contract.test.ts` scans every file that renders
       // <ThemeScope> and fails if any of them passes an `overflow-*-hidden`.
       className={cn(
-        "relative overflow-x-clip",
+        // `inv-scope` es un gancho de CSS, no una utilidad de Tailwind: le da a
+        // globals.css un selector estable para el par tipografico (Fase 11 P4)
+        // sin tener que tocar los 14 titulos de previews.tsx uno por uno.
+        // tailwind-merge no la toca porque no pertenece a ningun grupo suyo.
+        "inv-scope relative overflow-x-clip",
         theme.mode === "dark" && "dark",
         className,
       )}
