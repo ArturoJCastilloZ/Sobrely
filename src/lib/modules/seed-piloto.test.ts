@@ -20,15 +20,18 @@ import { ARTE, buscarArte } from "@/lib/theme/arte";
  * plantilla a la que le faltan campos y nadie se entera.
  */
 
-const SQL = readFileSync(
-  fileURLToPath(
-    new URL(
-      "../../../supabase/migrations/0032_seed_piloto_fase11_f4_f5.sql",
-      import.meta.url,
-    ),
-  ),
-  "utf8",
-);
+const MIGRACIONES = [
+  "0032_seed_piloto_fase11_f4_f5.sql",
+  "0033_seed_piloto_fase11_f1_f3.sql",
+] as const;
+
+const leerMigracion = (nombre: string) =>
+  readFileSync(
+    fileURLToPath(new URL(`../../../supabase/migrations/${nombre}`, import.meta.url)),
+    "utf8",
+  );
+
+const SQL = MIGRACIONES.map(leerMigracion).join("\n");
 
 const RAIZ_PUBLIC = fileURLToPath(new URL("../../../public", import.meta.url));
 
@@ -45,9 +48,12 @@ function filas(): Fila[] {
   // en el comentario de cabecera, y cortando desde el principio el slice salía
   // vacío — lo que además dejaba los `it.each` sin casos, o sea en verde sin
   // probar nada. Lo cazó el conteo de 8.
-  const iValues = SQL.indexOf("\nvalues");
-  const cuerpo = SQL.slice(iValues, SQL.indexOf("on conflict", iValues));
-  const trozos = cuerpo.split(/\n\(\n/).slice(1);
+  const trozos = MIGRACIONES.flatMap((nombre) => {
+    const sql = leerMigracion(nombre);
+    const iValues = sql.indexOf("\nvalues");
+    const cuerpo = sql.slice(iValues, sql.indexOf("on conflict", iValues));
+    return cuerpo.split(/\n\(\n/).slice(1);
+  });
   return trozos.map((t) => {
     const textos = [...t.matchAll(/'((?:[^']|'')*)'/g)].map((m) =>
       m[1].replace(/''/g, "'"),
@@ -70,12 +76,15 @@ const FILAS = filas();
 const MODULOS_FREE = ["hero", "welcome", "countdown", "rsvp"];
 
 describe("el seed del piloto es legible por el producto", () => {
-  it("trae las 8 plantillas", () => {
-    expect(FILAS).toHaveLength(8);
-    expect(new Set(FILAS.map((f) => f.slug)).size).toBe(8);
+  it("trae las 15 del piloto y ningún slug repetido", () => {
+    // 8 en la `0032` (F4/F5) + 7 en la `0033` (F1/F3). Sin esta aserción de
+    // CONTEO, un extractor roto dejaría los `it.each` con cero casos y la suite
+    // en verde sin probar nada — que es justo lo que pasó la primera vez.
+    expect(FILAS).toHaveLength(15);
+    expect(new Set(FILAS.map((f) => f.slug)).size).toBe(15);
   });
 
-  it("el JSON de las 16 columnas es válido", () => {
+  it("el JSON de las 30 columnas es válido", () => {
     // Si esto falla, el `insert` reventaría en producción a media migración.
     for (const f of FILAS) {
       expect(typeof f.theme, f.slug).toBe("object");
@@ -143,18 +152,31 @@ describe("el arte referenciado existe y su velo es el MEDIDO", () => {
     expect(t.backgroundImage.overlay, `${f.slug} · velo`).toBe(arte!.overlay);
   });
 
-  it("la fotografía del hero también sale del arte ya licenciado", () => {
-    const conFoto = FILAS.flatMap((f) =>
-      f.modulos
-        .filter((m) => m.module_type === "hero")
-        .map((m) => [f.slug, (m.config as { imageUrl?: string }).imageUrl] as const),
-    ).filter(([, u]) => u);
-    // Exactamente una: la F5. Si aparecieran más, alguien metió una imagen
-    // nueva sin pasar por la conversación de licencias.
-    expect(conFoto).toHaveLength(1);
-    const [, url] = conFoto[0];
-    expect(existsSync(RAIZ_PUBLIC + url!)).toBe(true);
-    expect(ARTE.some((a) => url!.includes(a.clave))).toBe(true);
+  it("toda imagen referenciada existe en disco y está registrada en arte.ts", () => {
+    // Recorre heroes Y slots de media. Que exista en disco no basta: tiene que
+    // estar en `arte.ts`, que es donde vive el velo MEDIDO y la polaridad. Una
+    // foto suelta en `public/` sin registrar es una foto sin procedencia.
+    const urls = FILAS.flatMap((f) =>
+      f.modulos.flatMap((m) => {
+        const c = m.config as {
+          imageUrl?: string;
+          media?: { url?: string };
+        };
+        return [c.imageUrl, c.media?.url].filter((u): u is string => Boolean(u));
+      }),
+    );
+    expect(urls.length).toBeGreaterThanOrEqual(8);
+    for (const url of urls) {
+      expect(url.startsWith("/"), `${url} no la sirve la app`).toBe(true);
+      expect(existsSync(RAIZ_PUBLIC + url), `${url} no existe en disco`).toBe(true);
+      const clave = url
+        .replace(/^\/arte\/(foto\/)?/, "")
+        .replace(/\.(svg|jpg)$/, "");
+      expect(
+        ARTE.some((a) => a.clave === clave),
+        `${clave} no está registrada en arte.ts`,
+      ).toBe(true);
+    }
   });
 });
 

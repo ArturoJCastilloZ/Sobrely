@@ -27,10 +27,11 @@ export type DireccionArte = {
   /** Clave estable. El archivo depende de `tipo` — ver `rutaArte`. */
   clave: string;
   /**
-   * `svg` = dibujado a mano aquí. `foto` = fotografía de Pexels DESCARGADA y
-   * auto-hospedada en `public/arte/foto/`.
+   * `svg` = dibujado a mano aquí. `foto` = fotografía de Pexels o Unsplash
+   * DESCARGADA y auto-hospedada en `public/arte/foto/`.
    *
-   * Nunca se enlaza a `images.pexels.com`: eso seria un CDN en runtime y
+   * Nunca se enlaza a `images.pexels.com` ni a `images.unsplash.com`: eso seria
+   * un CDN en runtime y
    * rompe la regla de cero phone-home. La descarga es de una vez, como una
    * dependencia. Procedencia y autoria en `public/arte/PROCEDENCIA.md`.
    */
@@ -185,6 +186,81 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     // 0.35 medido. Aceptable: la textura de brillo aguanta el velo.
     overlay: 0.35,
+  },
+  // ---- 2.ª investigación (Fase 11) — las 7 del piloto F1/F2/F3 -------------
+  //
+  // Descargadas el 2026-09-08 con autorización explícita del dev. Licencias
+  // leídas en la fuente ese mismo día; procedencia, autoría y URL original en
+  // `public/arte/PROCEDENCIA.md`.
+  //
+  // Los `overlay` de aquí abajo los puso el MEDIDOR, no el ojo. Y son ALTOS:
+  // entre 0.5 y 0.65, todos por encima del umbral de 0.35 que el research fija
+  // (criterio E5, con el precedente de `boda-flores-cinta`, descartada a 0.55).
+  //
+  // Eso NO las descalifica, porque descalifica un USO concreto: el de telón con
+  // texto encima, que es la familia F2. En F1 (partida) y F3 (objeto y aire) la
+  // foto es una FIGURA CONTENIDA y no hay texto sobre ella, así que el velo no
+  // interviene. El número queda declarado para que, si alguien las monta alguna
+  // vez como `backgroundImage`, sepa lo que cuesta.
+  //
+  // ⚠️ Conclusión que hay que decir en voz alta: **ninguna de estas siete sirve
+  // para F2**. Un telón necesita rango de luminancia estrecho y centro vacío —
+  // hoy la única foto del repo que lo cumple es `boda-marco-floral`, con 0.10.
+  {
+    clave: "boda-papeleria-salvia",
+    tipo: "foto",
+    nombre: "Papelería salvia",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0.55,
+  },
+  {
+    clave: "xv-tiara-noche",
+    tipo: "foto",
+    nombre: "Tiara de noche",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0.6,
+  },
+  {
+    clave: "baby-punto-y-flor",
+    tipo: "foto",
+    nombre: "Punto y flor",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0.5,
+  },
+  {
+    clave: "revelacion-globos-coral",
+    tipo: "foto",
+    nombre: "Globos coral",
+    eventos: ["Gender reveal"],
+    polaridad: "oscuro",
+    overlay: 0.55,
+  },
+  {
+    clave: "cumple-arco-globos",
+    tipo: "foto",
+    nombre: "Arco de globos",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0.5,
+  },
+  {
+    clave: "bautizo-cera-blanca",
+    tipo: "foto",
+    nombre: "Cera blanca",
+    eventos: ["Bautizo"],
+    polaridad: "oscuro",
+    overlay: 0.55,
+  },
+  {
+    clave: "graduacion-diploma",
+    tipo: "foto",
+    nombre: "Diploma",
+    eventos: ["Graduación"],
+    polaridad: "oscuro",
+    overlay: 0.55,
   },
 ] as const;
 

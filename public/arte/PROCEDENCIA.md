@@ -51,6 +51,59 @@ mínimo que `scripts/verificar-contraste-arte.mts` midió para que el peor píxe
 de la banda central llegue a WCAG AA. Desnudas, las tres daban 4.15, 3.44 y
 2.37 — ninguna admitía texto legible.
 
+## 2.ª investigación (Fase 11) — las 7 fotos del piloto F1/F3
+
+Descargadas el **2026-09-08** con autorización explícita del dev, a `w=1600`, y
+auto-hospedadas. Licencias **leídas en la fuente ese mismo día**:
+
+- **Pexels** (<https://www.pexels.com/license/>): uso gratuito y comercial,
+  atribución no requerida. Prohíbe vender copias sin modificar, usarlas en una
+  marca, **implicar respaldo de las personas o marcas retratadas** y
+  redistribuirlas en otras plataformas de stock.
+- **Unsplash** (<https://unsplash.com/license>): licencia irrevocable, mundial y
+  comercial, sin atribución. Prohíbe vender copias sin modificación
+  significativa y **compilar imágenes para replicar un servicio similar**.
+
+> Las dos prohíben, con distintas palabras, lo mismo: convertir sus imágenes en
+> un servicio de imágenes. Por eso el catálogo de assets de Sobrely es
+> **interno y ligado al diseño**, y nunca un explorador para el usuario final.
+
+| archivo | fuente | autor | licencia | velo medido |
+|---|---|---|---|---|
+| `foto/boda-papeleria-salvia.jpg` | Pexels [11650091](https://www.pexels.com/photo/white-printer-paper-on-brown-paper-11650091/) | Michelle Henderson | Free to use | **0.55** (texto oscuro) |
+| `foto/xv-tiara-noche.jpg` | Pexels [7127246](https://www.pexels.com/photo/close-up-shot-of-a-diamond-crown-7127246/) | Rūdolfs Klintsons | Free to use | **0.60** (texto oscuro) |
+| `foto/baby-punto-y-flor.jpg` | Pexels [5360746](https://www.pexels.com/photo/knitted-fabrics-on-brown-wooden-round-stool-5360746/) | Tilsa Tanaka | Free to use | **0.50** (texto oscuro) |
+| `foto/bautizo-cera-blanca.jpg` | Pexels [18116030](https://www.pexels.com/photo/white-roses-in-glass-vase-and-candle-in-candlestick-18116030/) | Elif | Free to use | **0.55** (texto oscuro) |
+| `foto/graduacion-diploma.jpg` | Pexels [8177931](https://www.pexels.com/photo/from-above-shot-of-a-diploma-8177931/) | Leeloo The First | Free to use | **0.55** (texto oscuro) |
+| `foto/revelacion-globos-coral.jpg` | Unsplash [`_-txX-7CCCk`](https://unsplash.com/photos/_-txX-7CCCk) | Olesia Bahrii | Unsplash License | **0.55** (texto oscuro) |
+| `foto/cumple-arco-globos.jpg` | Unsplash [`iQaFCjuMTfo`](https://unsplash.com/photos/iQaFCjuMTfo) | Daniel Huniewicz | Unsplash License | **0.50** (texto oscuro) |
+
+### El velo de estas siete es ALTO, y hay que decir qué significa
+
+Las siete piden entre **0.50 y 0.65**, todas por encima del umbral de **0.35**
+que fija el research (criterio E5), el mismo con el que se descartó
+`boda-flores-cinta`.
+
+**No están descalificadas: lo está un USO.** El velo sólo interviene cuando la
+foto es TELÓN y lleva texto encima —la familia F2—. En **F1** (composición
+partida) y **F3** (objeto y aire) la foto es una **figura contenida**, sin texto
+sobre ella, y el velo no se aplica. El número queda registrado para que, si
+alguien las monta como `backgroundImage`, sepa el precio.
+
+⚠️ **Consecuencia declarada:** **ninguna de estas siete sirve para F2.** Un telón
+necesita rango de luminancia estrecho y centro vacío; hoy la única fotografía
+del repo que lo cumple es `foto/boda-marco-floral.jpg`, con 0.10.
+
+### Dos descartes de esta tanda, por si vuelven a proponerse
+
+- **Pexels 26756768** (rebanada de pastel con vela). En la rejilla se veía sólo
+  el postre; **a tamaño real hay una persona en el encuadre**. Ninguna licencia
+  garantiza *model release*, y el research veta caras y cuerpos reconocibles.
+  Es el caso que justifica el criterio «elegida MIRÁNDOLA, nunca por su alt».
+- **Pexels 6168240** (vela de bautizo). Válida de licencia y sin personas, pero
+  el fondo es **rojo intenso de tela de iglesia**: choca con la dirección blanca
+  y serena de la categoría y falla el criterio de consistencia interna.
+
 ## Los SVG
 
 Las otras diez direcciones (`arte/*.svg`) están **dibujadas a mano en este
