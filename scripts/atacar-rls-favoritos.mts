@@ -68,8 +68,38 @@ async function rest(
   return { status: r.status, body };
 }
 
+/**
+ * Lee, SOLO EN LECTURA, el id de otro usuario real. No escribe nada bajo ese
+ * id: se usa unicamente como destinatario de un insert que DEBE ser denegado.
+ *
+ * Hace falta de verdad. La version anterior probaba el `with check` insertando
+ * con un uuid inventado, y ese insert falla siempre por la CLAVE FORANEA a
+ * auth.users (`23503`) antes de que RLS opine — otro verde que no prueba nada,
+ * el mismo modo de fallo que el `42501` del perimetro. Solo con un user_id que
+ * EXISTE el rechazo puede atribuirse al `with check`.
+ */
+async function otroUsuario(): Promise<string | null> {
+  const r = await fetch(`${URL_BASE}/auth/v1/admin/users?per_page=50`, {
+    headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}` },
+  });
+  if (!r.ok) return null;
+  const j = (await r.json()) as { users?: { id: string }[] };
+  return j.users?.find((u) => u.id !== USER_DEV)?.id ?? null;
+}
+
+/** Que capa rechazo un INSERT: la FK o la politica. */
+function porQueFalloInsert(r: Res): string {
+  const t = JSON.stringify(r.body ?? "");
+  if (t.includes("23503") || t.includes("foreign key")) return "CLAVE FORANEA — el with_check NO quedo probado";
+  if (t.includes("42501") || t.includes("row-level security")) return "RLS / with_check";
+  if (t.includes("permission denied")) return "PRIVILEGIO (revoke)";
+  return "—";
+}
+
 const filas: string[] = [];
 let fallos = 0;
+/** Si el `with check` cediera, la fila ajena creada se borra aqui. */
+let AJENO_ID: string | null = null;
 
 function juzgar(clausula: string, esperado: string, ok: boolean, observado: string) {
   if (!ok) fallos++;
@@ -189,12 +219,28 @@ async function main() {
       const leo = await rest("template_favorites?select=user_id,template_id", { key: ANON, token: TOKEN });
       const lista = Array.isArray(leo.body) ? (leo.body as { user_id: string }[]) : [];
       juzgar("sesion real LEE sus propios favoritos", ">=1 fila", leo.status === 200 && lista.length >= 1, resumen(leo));
-      juzgar(
-        "sesion real NO ve favoritos de otros",
-        "solo user_id propio",
-        lista.every((f) => f.user_id === USER_DEV),
-        `${new Set(lista.map((f) => f.user_id)).size} user_id distinto(s)`,
-      );
+      /*
+        Este test es VACIO si en la tabla no hay ninguna fila ajena: "solo veo
+        las mias" se cumple trivialmente cuando las mias son las unicas que
+        existen, y pasaria en verde aunque la politica no filtrara nada. Se
+        cuenta el total con la service role para saber si hay algo que ocultar,
+        y si no lo hay se reporta NO CONCLUYENTE en vez de PASA.
+      */
+      const todo = await rest("template_favorites?select=user_id", { key: SERVICE });
+      const nTotal = Array.isArray(todo.body) ? todo.body.length : 0;
+      const ajenasEnTabla = nTotal - lista.length;
+      if (ajenasEnTabla <= 0) {
+        filas.push(
+          `  ----- | sesion real NO ve favoritos de otros           | NO CONCLUYENTE   | no hay filas ajenas en la tabla (total ${nTotal})`,
+        );
+      } else {
+        juzgar(
+          "sesion real NO ve favoritos de otros",
+          "solo user_id propio",
+          lista.every((f) => f.user_id === USER_DEV),
+          `ve ${lista.length} de ${nTotal}; ${new Set(lista.map((f) => f.user_id)).size} user_id distinto(s)`,
+        );
+      }
 
       const mio = await rest("template_favorites", {
         key: ANON, token: TOKEN, metodo: "POST", prefer: "return=representation",
@@ -202,13 +248,25 @@ async function main() {
       });
       juzgar("sesion real INSERTA un favorito propio", "201", mio.status === 201, resumen(mio));
 
-      const ajeno = await rest("template_favorites", {
-        key: ANON, token: TOKEN, metodo: "POST", prefer: "return=representation",
-        // Un uuid que no es el suyo. Si `with check` no defendiera, esta fila
-        // se crearia a nombre de otro — y se borra abajo en el finally.
-        cuerpo: { user_id: "00000000-0000-0000-0000-000000000001", template_id: TPL_A },
-      });
-      juzgar("sesion real INSERTA a nombre de OTRO", "denegado", ajeno.status >= 400, resumen(ajeno));
+      const OTRO = await otroUsuario();
+      if (!OTRO) {
+        filas.push("  ----- | sesion real INSERTA a nombre de OTRO           | SIN COMPROBAR    | no se pudo leer otro user_id");
+      } else {
+        const ajeno = await rest("template_favorites", {
+          key: ANON, token: TOKEN, metodo: "POST", prefer: "return=representation",
+          // Un user_id REAL que no es el suyo. Si `with check` no defendiera,
+          // la fila se crearia a nombre de otro — y se borra en el `finally`.
+          cuerpo: { user_id: OTRO, template_id: TPL_A },
+        });
+        const causa = porQueFalloInsert(ajeno);
+        AJENO_ID = OTRO;
+        juzgar(
+          "sesion real INSERTA a nombre de OTRO",
+          "denegado por RLS",
+          ajeno.status >= 400 && !causa.startsWith("CLAVE FORANEA"),
+          `HTTP ${ajeno.status} [freno: ${causa}]`,
+        );
+      }
 
       const updMio = await rest(
         `template_favorites?user_id=eq.${USER_DEV}&template_id=eq.${TPL_B}`,
@@ -235,7 +293,7 @@ async function main() {
   } finally {
     // ---- LIMPIEZA, pase lo que pase --------------------------------------
     await rest(`template_favorites?user_id=eq.${USER_DEV}`, { key: SERVICE, metodo: "DELETE" });
-    await rest("template_favorites?user_id=eq.00000000-0000-0000-0000-000000000001", { key: SERVICE, metodo: "DELETE" });
+    if (AJENO_ID) await rest(`template_favorites?user_id=eq.${AJENO_ID}`, { key: SERVICE, metodo: "DELETE" });
     const queda = await rest("template_favorites?select=user_id", { key: SERVICE });
     const n = Array.isArray(queda.body) ? queda.body.length : -1;
     console.log(filas.join("\n"));
