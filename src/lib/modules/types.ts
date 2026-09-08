@@ -65,9 +65,98 @@ const layoutShape = {
   bleed: z.enum(SECTION_BLEEDS).default("contained"),
 };
 
+// ---- Slot de media (Fase 11 · P2) ----------------------------------------
+
+export const MEDIA_POSITIONS = [
+  "none",
+  "top",
+  "bottom",
+  "left",
+  "right",
+  "background",
+] as const;
+export type MediaPosition = (typeof MEDIA_POSITIONS)[number];
+
+export const MEDIA_SHAPES = ["rect", "circle", "arch"] as const;
+export type MediaShape = (typeof MEDIA_SHAPES)[number];
+
+export const MEDIA_RATIOS = [
+  "1/1",
+  "4/3",
+  "3/4",
+  "3/2",
+  "2/3",
+  "16/9",
+] as const;
+export type MediaRatio = (typeof MEDIA_RATIOS)[number];
+
+export const MEDIA_FOCALS = ["top", "center", "bottom"] as const;
+export type MediaFocal = (typeof MEDIA_FOCALS)[number];
+
+export const MEDIA_POSITION_LABELS: Record<MediaPosition, string> = {
+  none: "Sin imagen",
+  top: "Arriba",
+  bottom: "Abajo",
+  left: "A la izquierda",
+  right: "A la derecha",
+  background: "De fondo",
+};
+
+export const MEDIA_SHAPE_LABELS: Record<MediaShape, string> = {
+  rect: "Rectángulo",
+  circle: "Círculo",
+  arch: "Arco",
+};
+
+/**
+ * Imagen del módulo (Fase 11 · P2).
+ *
+ * El research midió que la fotografía del producto NO existe: 0 de 50 heroes
+ * con foto y 30 de 30 galerías vacías. Las únicas superficies de imagen del
+ * catálogo estaban declaradas y vacías. Esto le da una a cada módulo.
+ *
+ * `position: "none"` por defecto — y `Section` entonces renderiza EXACTAMENTE
+ * el árbol de antes, sin una envoltura de más.
+ *
+ * `left`/`right` son el eje horizontal de verdad: son el «editorial partido»
+ * (familia F1 del research), y por eso la retícula genérica de 12 columnas se
+ * pudo dejar fuera de P1 — el reparto lo hace el propio slot.
+ *
+ * `overlay` es un velo que se declara POR IMAGEN, no un valor fijo. Es la
+ * lección que ya está pagada: `scripts/verificar-contraste-arte.mts` calcula el
+ * velo MÍNIMO midiendo el peor píxel de la banda central, porque un valor fijo o
+ * se queda corto y deja texto ilegible, o se pasa y borra la foto. El defecto es
+ * 0 porque sin texto encima no hace falta velar nada.
+ */
+const mediaShape = {
+  media: z
+    .object({
+      url: z.string().default(""),
+      // Vacío = decorativa. Quien la pinta le pone `aria-hidden` en ese caso,
+      // que es lo correcto para una imagen sin contenido propio.
+      alt: z.string().max(160).default(""),
+      position: z.enum(MEDIA_POSITIONS).default("none"),
+      ratio: z.enum(MEDIA_RATIOS).default("4/3"),
+      focal: z.enum(MEDIA_FOCALS).default("center"),
+      overlay: z.number().min(0).max(1).default(0),
+      shape: z.enum(MEDIA_SHAPES).default("rect"),
+    })
+    // El defecto va explícito y no `{}`: esta versión de zod pide el objeto de
+    // SALIDA completo. Es el mismo patrón que `backgroundImage` en theme.ts.
+    .default({
+      url: "",
+      alt: "",
+      position: "none",
+      ratio: "4/3",
+      focal: "center",
+      overlay: 0,
+      shape: "rect",
+    }),
+};
+
 /** `z.object` + las perillas de composición, para no repetirlas en 11 sitios. */
 const objetoConLayout = <T extends z.ZodRawShape>(shape: T) =>
-  z.object({ ...shape, ...layoutShape });
+  z.object({ ...shape, ...layoutShape, ...mediaShape });
 
 // ---- Per-module config schemas -------------------------------------------
 
@@ -76,6 +165,12 @@ export const heroConfigSchema = z.object({
   subtitle: z.string().max(200).default(""),
   imageUrl: z.string().url().or(z.literal("")).default(""),
   ctaLabel: z.string().max(40).default(""),
+  // El velo sobre la foto del hero estaba HARDCODEADO en `rgba(0,0,0,.45)`, lo
+  // que contradice la disciplina del velo MÍNIMO medido por imagen
+  // (`verificar-contraste-arte.mts`). Ahora se declara. El defecto sigue siendo
+  // 0.45 a proposito: es el valor que tenian las invitaciones ya guardadas, y
+  // cambiarlo les moveria el render.
+  overlay: z.number().min(0).max(1).default(0.45),
 });
 
 export const countdownConfigSchema = objetoConLayout({
@@ -312,6 +407,9 @@ export const moduleConfigWriteSchemas = {
   ...moduleConfigSchemas,
   rsvp: rsvpConfigWriteSchema,
 } satisfies Record<ModuleType, z.ZodType>;
+
+/** La imagen de un módulo, ya normalizada. */
+export type MediaConfig = z.infer<typeof mediaShape.media>;
 
 export type HeroConfig = z.infer<typeof heroConfigSchema>;
 export type WelcomeConfig = z.infer<typeof welcomeConfigSchema>;

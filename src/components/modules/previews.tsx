@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils";
 import type {
   SectionAlign,
   SectionBleed,
+  MediaConfig,
+  MediaShape,
+  MediaFocal,
   CountdownConfig,
   DresscodeConfig,
   GalleryConfig,
@@ -58,12 +61,135 @@ const BLEED_CLASSES: Record<SectionBleed, string> = {
   full: "max-w-none px-0 @2xl/inv:max-w-none @2xl/inv:px-0",
 };
 
+const SHAPE_CLASSES: Record<MediaShape, string> = {
+  rect: "rounded-lg",
+  circle: "aspect-square rounded-full",
+  // El arco de la papelería impresa (la referencia es Greenvelope): recto
+  // abajo, semicírculo arriba. Con `border-radius` y no `clip-path` para que
+  // no rompa el recorte de la imagen ni cueste una capa de composición.
+  arch: "rounded-t-[50%] rounded-b-lg",
+};
+
+const FOCAL_CLASSES: Record<MediaFocal, string> = {
+  top: "object-top",
+  center: "object-center",
+  bottom: "object-bottom",
+};
+
+/** La imagen del slot, sin la envoltura que decide dónde va. */
+function MediaImg({
+  media,
+  className,
+}: {
+  media: MediaConfig;
+  className?: string;
+}) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={media.url}
+      // Sin texto alternativo es DECORATIVA, y entonces se esconde del lector de
+      // pantalla en vez de anunciarse con un alt inventado.
+      alt={media.alt}
+      aria-hidden={media.alt ? undefined : true}
+      loading="lazy"
+      className={cn(
+        "h-full w-full object-cover",
+        FOCAL_CLASSES[media.focal],
+        className,
+      )}
+    />
+  );
+}
+
+/**
+ * Coloca la imagen alrededor del contenido (Fase 11 · P2).
+ *
+ * `left`/`right` apilan en móvil y reparten en escritorio: es el «editorial
+ * partido» del research dentro del modelo modular, sin lienzo absoluto y con
+ * responsive real — que es justo lo que Invitio cede.
+ */
+function ConMedia({
+  media,
+  children,
+}: {
+  media: MediaConfig;
+  children: React.ReactNode;
+}) {
+  const marco = cn("overflow-hidden", SHAPE_CLASSES[media.shape]);
+
+  if (media.position === "background") {
+    return (
+      <>
+        <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
+          <MediaImg media={media} className="rounded-none" />
+          {media.overlay > 0 && (
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundColor: "var(--inv-bg, #fff)",
+                opacity: media.overlay,
+              }}
+            />
+          )}
+        </div>
+        {children}
+      </>
+    );
+  }
+
+  const figura = (
+    <div
+      className={cn(marco, "relative w-full")}
+      style={
+        media.shape === "circle" ? undefined : { aspectRatio: media.ratio }
+      }
+    >
+      <MediaImg media={media} className="rounded-none" />
+      {media.overlay > 0 && (
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            backgroundColor: "var(--inv-bg, #fff)",
+            opacity: media.overlay,
+          }}
+        />
+      )}
+    </div>
+  );
+
+  if (media.position === "top" || media.position === "bottom") {
+    return (
+      <>
+        {media.position === "top" && figura}
+        {children}
+        {media.position === "bottom" && figura}
+      </>
+    );
+  }
+
+  // left / right — el eje horizontal que el renderer no tenía.
+  return (
+    <div
+      className={cn(
+        "flex w-full flex-col gap-6 @2xl/inv:flex-row @2xl/inv:items-center @2xl/inv:gap-10",
+        media.position === "right" && "@2xl/inv:flex-row-reverse",
+      )}
+    >
+      <div className="w-full @2xl/inv:w-1/2">{figura}</div>
+      <div className="flex w-full flex-col @2xl/inv:w-1/2">{children}</div>
+    </div>
+  );
+}
+
 function Section({
   children,
   tint = false,
   wide = false,
   align = "center",
   bleed = "contained",
+  media,
   className,
 }: {
   children: React.ReactNode;
@@ -72,8 +198,19 @@ function Section({
   wide?: boolean;
   align?: SectionAlign;
   bleed?: SectionBleed;
+  media?: MediaConfig;
   className?: string;
 }) {
+  // Sin imagen, `contenido === children`: el árbol renderizado es LITERALMENTE
+  // el de antes, sin una envoltura de más. Es lo que permite comprobar por md5
+  // que las 50 no se mueven.
+  const conMedia = Boolean(media && media.position !== "none" && media.url);
+  const contenido = conMedia ? (
+    <ConMedia media={media!}>{children}</ConMedia>
+  ) : (
+    children
+  );
+
   return (
     <section
       className="w-full"
@@ -93,9 +230,12 @@ function Section({
           // resultado es, literalmente, el de antes.
           ALIGN_CLASSES[align],
           BLEED_CLASSES[bleed],
+          // `relative` solo con fondo: es el bloque contenedor de la capa
+          // absoluta. Condicional para no tocar el camino por defecto.
+          conMedia && media!.position === "background" && "relative",
         )}
       >
-        {children}
+        {contenido}
       </div>
     </section>
   );
@@ -132,7 +272,7 @@ export function HeroPreview({
         <div
           className={cn("absolute inset-0", animate && "inv-kenburns")}
           style={{
-            backgroundImage: `linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)), url(${config.imageUrl})`,
+            backgroundImage: `linear-gradient(rgba(0,0,0,${config.overlay}),rgba(0,0,0,${config.overlay})), url(${config.imageUrl})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -186,7 +326,12 @@ export function HeroPreview({
 
 export function WelcomePreview({ config }: { config: WelcomeConfig }) {
   return (
-    <Section align={config.align} bleed={config.bleed} className="text-center">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      media={config.media}
+      className="text-center"
+    >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Bienvenidos"}
       </h3>
@@ -269,6 +414,7 @@ export function CountdownPreview({
       <Section
         align={config.align}
         bleed={config.bleed}
+        media={config.media}
         tint
         className="flex flex-col items-center gap-4 text-center"
       >
@@ -286,6 +432,7 @@ export function CountdownPreview({
     <Section
       align={config.align}
       bleed={config.bleed}
+      media={config.media}
       tint
       className="flex flex-col items-center gap-4 text-center"
     >
@@ -322,6 +469,7 @@ export function MapPreview({
     <Section
       align={config.align}
       bleed={config.bleed}
+      media={config.media}
       className="flex flex-col items-center gap-2 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -371,6 +519,7 @@ export function GalleryPreview({
     <Section
       align={config.align}
       bleed={config.bleed}
+      media={config.media}
       wide
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -424,6 +573,7 @@ export function VideoPreview({ config }: { config: VideoConfig }) {
     <Section
       align={config.align}
       bleed={config.bleed}
+      media={config.media}
       wide
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -461,6 +611,7 @@ export function ItineraryPreview({
     <Section
       align={config.align}
       bleed={config.bleed}
+      media={config.media}
       tint
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -509,6 +660,7 @@ export function SignaturesPreview({ config }: { config: SignaturesConfig }) {
     <Section
       align={config.align}
       bleed={config.bleed}
+      media={config.media}
       className="flex flex-col items-center gap-3 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -550,6 +702,7 @@ export function DresscodePreview({ config }: { config: DresscodeConfig }) {
     <Section
       align={config.align}
       bleed={config.bleed}
+      media={config.media}
       className="flex flex-col items-center gap-3 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -599,6 +752,7 @@ export function GiftsPreview({
     <Section
       align={config.align}
       bleed={config.bleed}
+      media={config.media}
       tint
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -641,6 +795,7 @@ export function MusicPreview({ config }: { config: MusicConfig }) {
     <Section
       align={config.align}
       bleed={config.bleed}
+      media={config.media}
       className="flex flex-col items-center gap-2 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -681,6 +836,7 @@ export function RsvpPreview({
     <Section
       align={config.align}
       bleed={config.bleed}
+      media={config.media}
       tint
       className="flex flex-col items-center gap-4"
     >
