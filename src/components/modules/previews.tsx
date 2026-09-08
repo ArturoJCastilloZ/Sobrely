@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type {
+  HeroVariant,
   SectionAlign,
   SectionBleed,
+  SectionFrame,
   MediaConfig,
   MediaShape,
   MediaFocal,
@@ -54,6 +56,25 @@ const ALIGN_CLASSES: Record<SectionAlign, string> = {
   start: "items-start text-left",
   center: "",
   end: "items-end text-right",
+};
+
+/**
+ * Marco de papelería (Fase 11 · P5).
+ *
+ * `none` es la cadena vacía, igual que `ALIGN_CLASSES.center`: es lo que hace
+ * que el defecto no emita nada y las 50 no se muevan.
+ *
+ * El color no va aquí sino en un `style`, porque tiene que salir del tema de la
+ * INVITACIÓN (`--inv-primary`) y no de un gris fijo: un filete gris sobre una
+ * paleta terracota se ve prestado.
+ */
+const FRAME_CLASSES: Record<SectionFrame, string> = {
+  none: "",
+  line: "border p-6 @2xl/inv:p-10",
+  double: "border-4 border-double p-6 @2xl/inv:p-10",
+  // Regla por dentro del bloque, separada del borde del contenedor: el recurso
+  // clásico de la papelería impresa.
+  inset: "outline outline-1 -outline-offset-8 p-8 @2xl/inv:p-12",
 };
 
 const BLEED_CLASSES: Record<SectionBleed, string> = {
@@ -189,6 +210,7 @@ function Section({
   wide = false,
   align = "center",
   bleed = "contained",
+  frame = "none",
   media,
   className,
 }: {
@@ -198,6 +220,7 @@ function Section({
   wide?: boolean;
   align?: SectionAlign;
   bleed?: SectionBleed;
+  frame?: SectionFrame;
   media?: MediaConfig;
   className?: string;
 }) {
@@ -230,10 +253,23 @@ function Section({
           // resultado es, literalmente, el de antes.
           ALIGN_CLASSES[align],
           BLEED_CLASSES[bleed],
+          FRAME_CLASSES[frame],
           // `relative` solo con fondo: es el bloque contenedor de la capa
           // absoluta. Condicional para no tocar el camino por defecto.
           conMedia && media!.position === "background" && "relative",
         )}
+        // `undefined` sin marco: React omite el atributo y el HTML es el mismo
+        // de antes, byte a byte.
+        style={
+          frame === "none"
+            ? undefined
+            : {
+                borderColor:
+                  "color-mix(in srgb, var(--inv-primary, #888) 35%, transparent)",
+                outlineColor:
+                  "color-mix(in srgb, var(--inv-primary, #888) 35%, transparent)",
+              }
+        }
       >
         {contenido}
       </div>
@@ -255,6 +291,37 @@ function formatDate(iso: string) {
 
 // ---- Hero -----------------------------------------------------------------
 
+/**
+ * Clases de la portada por variante (Fase 11 · P3).
+ *
+ * `centered` es la cadena EXACTA que tenía el hero antes de esto — copiada, no
+ * recompuesta— porque es el defecto de las 50 y cualquier reordenamiento de
+ * clases es un cambio que habría que justificar.
+ */
+const HERO_SECTION_CLASSES: Record<HeroVariant, string> = {
+  centered:
+    "relative flex min-h-[260px] flex-col items-center justify-center gap-3 overflow-hidden px-6 py-12 text-center @2xl/inv:min-h-[460px] @2xl/inv:py-20 @4xl/inv:min-h-[70svh]",
+  offset:
+    "relative flex min-h-[260px] flex-col items-start justify-end gap-3 overflow-hidden px-6 py-12 text-left @2xl/inv:min-h-[460px] @2xl/inv:px-12 @2xl/inv:py-20 @4xl/inv:min-h-[70svh]",
+  split:
+    "relative flex flex-col items-center gap-6 overflow-hidden px-6 py-12 text-center @2xl/inv:min-h-[460px] @2xl/inv:flex-row @2xl/inv:items-center @2xl/inv:gap-10 @2xl/inv:px-12 @2xl/inv:py-16 @2xl/inv:text-left",
+  editorial:
+    "relative flex flex-col items-start gap-6 overflow-hidden px-6 py-12 text-left @2xl/inv:px-12 @2xl/inv:py-20",
+  plain:
+    "relative flex min-h-[260px] flex-col items-center justify-center gap-3 overflow-hidden px-6 py-16 text-center @2xl/inv:min-h-[420px] @2xl/inv:py-24",
+};
+
+const HERO_TEXTO_CLASSES: Record<HeroVariant, string> = {
+  centered:
+    "relative flex max-w-3xl flex-col items-center gap-3 @2xl/inv:gap-5",
+  offset: "relative flex max-w-xl flex-col items-start gap-3 @2xl/inv:gap-5",
+  split:
+    "relative flex flex-col items-center gap-3 @2xl/inv:w-1/2 @2xl/inv:items-start @2xl/inv:gap-5",
+  editorial:
+    "relative order-1 flex max-w-3xl flex-col items-start gap-3 @2xl/inv:gap-5",
+  plain: "relative flex max-w-2xl flex-col items-center gap-4 @2xl/inv:gap-6",
+};
+
 export function HeroPreview({
   config,
   animate = false,
@@ -263,12 +330,25 @@ export function HeroPreview({
   animate?: boolean;
 }) {
   const title = config.title || "Nuestra celebración";
+
+  // La foto es TELÓN sólo en dos variantes; en las otras es una figura
+  // contenida, o no se pinta.
+  const fotoDeFondo =
+    config.variant === "centered" || config.variant === "offset";
+  const fotoContenida =
+    config.variant === "split" || config.variant === "editorial";
+  const conFoto = Boolean(config.imageUrl);
+  const sobreFoto = fotoDeFondo && conFoto;
+
   return (
     <section
-      className="relative flex min-h-[260px] flex-col items-center justify-center gap-3 overflow-hidden px-6 py-12 text-center @2xl/inv:min-h-[460px] @2xl/inv:py-20 @4xl/inv:min-h-[70svh]"
-      style={config.imageUrl ? undefined : { backgroundColor: TINT }}
+      className={HERO_SECTION_CLASSES[config.variant]}
+      // Con la foto a sangre no hay tinte; sin ella sí. En `plain` siempre lo
+      // hay, aunque la invitación traiga imagen: la variante la ignora a
+      // propósito.
+      style={sobreFoto ? undefined : { backgroundColor: TINT }}
     >
-      {config.imageUrl && (
+      {fotoDeFondo && conFoto && (
         <div
           className={cn("absolute inset-0", animate && "inv-kenburns")}
           style={{
@@ -278,10 +358,29 @@ export function HeroPreview({
           }}
         />
       )}
-      <div className="relative flex max-w-3xl flex-col items-center gap-3 @2xl/inv:gap-5">
+      {fotoContenida && conFoto && (
+        <div
+          className={
+            config.variant === "split"
+              ? "relative w-full overflow-hidden rounded-lg @2xl/inv:w-1/2"
+              : "relative order-2 w-full max-w-md overflow-hidden rounded-lg"
+          }
+          style={{ aspectRatio: config.variant === "split" ? "3/4" : "4/3" }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={config.imageUrl}
+            alt=""
+            aria-hidden
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
+      <div className={HERO_TEXTO_CLASSES[config.variant]}>
         <h2
           className="text-3xl font-bold tracking-tight @2xl/inv:text-5xl @4xl/inv:text-6xl @5xl/inv:text-7xl"
-          style={{ color: config.imageUrl ? "#fff" : "inherit" }}
+          style={{ color: sobreFoto ? "#fff" : "inherit" }}
         >
           {animate ? <TextReveal text={title} variant="text-rise" /> : title}
         </h2>
@@ -289,7 +388,7 @@ export function HeroPreview({
           <p
             className="text-base @2xl/inv:text-xl @4xl/inv:text-2xl @5xl/inv:text-3xl"
             style={{
-              color: config.imageUrl ? "rgba(255,255,255,.9)" : "inherit",
+              color: sobreFoto ? "rgba(255,255,255,.9)" : "inherit",
             }}
           >
             {config.subtitle}
@@ -299,7 +398,7 @@ export function HeroPreview({
           <div
             className="mt-3 flex items-center gap-3 @2xl/inv:mt-5 @2xl/inv:gap-4"
             style={{
-              color: config.imageUrl ? "rgba(255,255,255,.92)" : PRIMARY,
+              color: sobreFoto ? "rgba(255,255,255,.92)" : PRIMARY,
             }}
           >
             <span
@@ -330,6 +429,7 @@ export function WelcomePreview({ config }: { config: WelcomeConfig }) {
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       className="text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -415,6 +515,7 @@ export function CountdownPreview({
         align={config.align}
         bleed={config.bleed}
         media={config.media}
+        frame={config.frame}
         tint
         className="flex flex-col items-center gap-4 text-center"
       >
@@ -433,6 +534,7 @@ export function CountdownPreview({
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       tint
       className="flex flex-col items-center gap-4 text-center"
     >
@@ -470,6 +572,7 @@ export function MapPreview({
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       className="flex flex-col items-center gap-2 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -520,6 +623,7 @@ export function GalleryPreview({
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       wide
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -574,6 +678,7 @@ export function VideoPreview({ config }: { config: VideoConfig }) {
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       wide
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -612,6 +717,7 @@ export function ItineraryPreview({
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       tint
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -661,6 +767,7 @@ export function SignaturesPreview({ config }: { config: SignaturesConfig }) {
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       className="flex flex-col items-center gap-3 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -703,6 +810,7 @@ export function DresscodePreview({ config }: { config: DresscodeConfig }) {
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       className="flex flex-col items-center gap-3 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -753,6 +861,7 @@ export function GiftsPreview({
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       tint
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -796,6 +905,7 @@ export function MusicPreview({ config }: { config: MusicConfig }) {
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       className="flex flex-col items-center gap-2 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -837,6 +947,7 @@ export function RsvpPreview({
       align={config.align}
       bleed={config.bleed}
       media={config.media}
+      frame={config.frame}
       tint
       className="flex flex-col items-center gap-4"
     >

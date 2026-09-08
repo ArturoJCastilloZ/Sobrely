@@ -27,10 +27,51 @@ const optionalUrl = z
   .union([z.string().trim().url(), z.literal("")])
   .default("");
 
+/**
+ * URL de imagen aceptada por el producto, validada por ORIGEN.
+ *
+ * Ni `z.string()` a secas ni `z.string().url()`:
+ *
+ * - a secas deja entrar `javascript:` y `data:`.
+ * - **`.url()` TAMPOCO basta**, y esto está medido: se apoya en el constructor
+ *   `URL`, que acepta CUALQUIER esquema. `javascript:alert(1)` y
+ *   `data:image/svg+xml;…` pasaban los dos.
+ * - y `.url()` además RECHAZA `/arte/…`, que es como se sirve el arte de las
+ *   plantillas. Sin esto una plantilla no puede traer su propia fotografía, que
+ *   es justo lo que la Fase 11 viene a arreglar.
+ *
+ * Así que: http(s) absoluta —lo que sube el usuario a su Storage— o ruta
+ * relativa a la raíz —lo que sirve la app—. `//host/x.png` se rechaza aunque
+ * empiece por "/": es un origen externo disfrazado, y colarlo rompería el cero
+ * phone-home. Es la misma distinción por origen que `esArteDeLaApp` (`b48d823`).
+ */
+export const imagenUrlSchema = z.union([
+  z
+    .string()
+    .url()
+    .refine((u) => /^https?:\/\//i.test(u), "Solo se admiten URLs http(s)."),
+  z.string().regex(/^\/(?!\/)[^\s]*$/, "Ruta de imagen inválida."),
+]);
+
+/** Igual, pero vacía = «sin imagen». */
+export const imagenUrlOpcionalSchema = z
+  .union([z.literal(""), imagenUrlSchema])
+  .default("");
+
 // ---- Composición de sección (Fase 11 · P1) --------------------------------
 
 export const SECTION_ALIGNS = ["start", "center", "end"] as const;
 export type SectionAlign = (typeof SECTION_ALIGNS)[number];
+
+export const SECTION_FRAMES = ["none", "line", "double", "inset"] as const;
+export type SectionFrame = (typeof SECTION_FRAMES)[number];
+
+export const SECTION_FRAME_LABELS: Record<SectionFrame, string> = {
+  none: "Sin marco",
+  line: "Filete",
+  double: "Filete doble",
+  inset: "Marco interior",
+};
 
 export const SECTION_BLEEDS = ["contained", "full"] as const;
 export type SectionBleed = (typeof SECTION_BLEEDS)[number];
@@ -63,6 +104,10 @@ export const SECTION_BLEED_LABELS: Record<SectionBleed, string> = {
 const layoutShape = {
   align: z.enum(SECTION_ALIGNS).default("center"),
   bleed: z.enum(SECTION_BLEEDS).default("contained"),
+  // Marco de papelería (Fase 11 · P5). Es lo que sostiene la familia F4 del
+  // research —la que NO gasta ninguna licencia— y la referencia es Greenvelope:
+  // premium por oficio gráfico, no por fotografía. `none` no emite nada.
+  frame: z.enum(SECTION_FRAMES).default("none"),
 };
 
 // ---- Slot de media (Fase 11 · P2) ----------------------------------------
@@ -131,34 +176,7 @@ export const MEDIA_SHAPE_LABELS: Record<MediaShape, string> = {
 const mediaShape = {
   media: z
     .object({
-      // Ni `z.string()` a secas ni `z.string().url()`.
-      //
-      // A secas es más laxo que el resto del esquema (`hero.imageUrl` y
-      // `gallery.images` sí validan) y dejaría entrar `javascript:` o `data:`.
-      // En un `<img src>` ninguno de los dos ejecuta script, pero no hay razón
-      // para aceptarlos.
-      //
-      // Y `.url()` a secas tampoco sirve: rechazaría `/arte/…`, que es como se
-      // sirve el arte de las PLANTILLAS. Es la misma distinción por ORIGEN que
-      // `esArteDeLaApp` (`b48d823`): ruta relativa a la raíz = la sirve la app;
-      // URL absoluta = la subió el usuario a su Storage. `//host/x.png` se
-      // rechaza aunque empiece por "/": es un origen externo disfrazado.
-      url: z
-        .union([
-          z.literal(""),
-          // `.url()` a secas NO basta: usa el constructor URL, que acepta
-          // CUALQUIER esquema — `javascript:` y `data:` incluidos. Medido: los
-          // dos pasaban. Se acota a http(s).
-          z
-            .string()
-            .url()
-            .refine(
-              (u) => /^https?:\/\//i.test(u),
-              "Solo se admiten URLs http(s).",
-            ),
-          z.string().regex(/^\/(?!\/)[^\s]*$/, "Ruta de imagen inválida."),
-        ])
-        .default(""),
+      url: imagenUrlOpcionalSchema,
       // Vacío = decorativa. Quien la pinta le pone `aria-hidden` en ese caso,
       // que es lo correcto para una imagen sin contenido propio.
       alt: z.string().max(160).default(""),
@@ -187,10 +205,29 @@ const objetoConLayout = <T extends z.ZodRawShape>(shape: T) =>
 
 // ---- Per-module config schemas -------------------------------------------
 
+export const HERO_VARIANTS = [
+  "centered",
+  "offset",
+  "split",
+  "editorial",
+  "plain",
+] as const;
+export type HeroVariant = (typeof HERO_VARIANTS)[number];
+
+export const HERO_VARIANT_LABELS: Record<HeroVariant, string> = {
+  centered: "Centrada",
+  offset: "Texto a un lado",
+  split: "Partida",
+  editorial: "Editorial",
+  plain: "Sólo tipografía",
+};
+
 export const heroConfigSchema = z.object({
   title: z.string().max(120).default("Nuestra celebración"),
   subtitle: z.string().max(200).default(""),
-  imageUrl: z.string().url().or(z.literal("")).default(""),
+  // Antes `z.string().url()`, que RECHAZABA `/arte/…`: una plantilla no podía
+  // traer su propia portada. Ver `imagenUrlSchema`.
+  imageUrl: imagenUrlOpcionalSchema,
   ctaLabel: z.string().max(40).default(""),
   // El velo sobre la foto del hero estaba HARDCODEADO en `rgba(0,0,0,.45)`, lo
   // que contradice la disciplina del velo MÍNIMO medido por imagen
@@ -198,6 +235,16 @@ export const heroConfigSchema = z.object({
   // 0.45 a proposito: es el valor que tenian las invitaciones ya guardadas, y
   // cambiarlo les moveria el render.
   overlay: z.number().min(0).max(1).default(0.45),
+  // Composición de la portada (Fase 11 · P3). El hero tenía UNA sola: texto
+  // centrado sobre foto a sangre. `centered` es esa, y es el defecto, así que
+  // las 50 no se mueven.
+  //
+  //   centered  · la de siempre
+  //   offset    · misma foto a sangre, texto abajo a un lado (referencia: Joy)
+  //   split     · foto a la mitad, texto en la otra (familia F1 del research)
+  //   editorial · sin foto a sangre: tipografía grande y foto contenida
+  //   plain     · sólo tipografía, IGNORA la foto (familia F4, cero licencias)
+  variant: z.enum(HERO_VARIANTS).default("centered"),
 });
 
 export const countdownConfigSchema = objetoConLayout({
@@ -321,7 +368,9 @@ export const GALLERY_LAYOUT_LABELS: Record<GalleryLayout, string> = {
 
 export const galleryConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Galería"),
-  images: z.array(z.string().url()).max(20).default([]),
+  // Mismo motivo que el hero: una plantilla tiene que poder sembrar sus
+  // imágenes desde `public/`.
+  images: z.array(imagenUrlSchema).max(20).default([]),
   layout: z.enum(GALLERY_LAYOUTS).default("grid"),
   lightbox: z.boolean().default(true),
   kenBurns: z.boolean().default(false),
