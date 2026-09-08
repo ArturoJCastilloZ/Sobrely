@@ -86,11 +86,13 @@ describe("P5 · marco de papelería", () => {
     expect(src.slice(i, src.indexOf("};", i))).toMatch(/none:\s*""/);
   });
 
-  it("sin marco no se emite `style` en el contenedor", () => {
-    // React omite el atributo con `undefined`, y por eso el HTML por defecto es
-    // idéntico byte a byte.
+  it("sin marco NO se añade ninguna envoltura", () => {
+    // Antes el marco vivía en el contenedor y esto comprobaba que no se emitía
+    // `style`. Desde que envuelve el contenido —para que no toque los bordes en
+    // móvil— la propiedad equivalente, y la que sostiene el «cero píxeles», es
+    // que con `none` el contenido pase TAL CUAL, sin un div de más.
     const src = leer("../../components/modules/previews.tsx");
-    expect(src).toContain('frame === "none"\n            ? undefined');
+    expect(src).toMatch(/frame === "none" \?\s*\(?\s*cuerpo/);
   });
 
   it("el color del marco sale del tema de la INVITACIÓN, no de un gris fijo", () => {
@@ -99,8 +101,8 @@ describe("P5 · marco de papelería", () => {
     // constantes PRIMARY y TINT del principio del archivo, así que buscarlo en
     // el archivo entero pasaba en verde con el color cambiado a un gris fijo.
     // Cazado por mutación.
-    const i = src.indexOf('frame === "none"');
-    const bloque = src.slice(i, src.indexOf("}\n      >", i));
+    const i = src.indexOf("FRAME_CLASSES[frame])");
+    const bloque = src.slice(i, src.indexOf("}}", i));
     expect(bloque).toContain("var(--inv-primary");
     expect(bloque).toContain("borderColor");
     expect(bloque).toContain("outlineColor");

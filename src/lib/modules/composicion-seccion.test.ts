@@ -82,7 +82,13 @@ describe("el defecto no emite ni una clase", () => {
     // Acotado al `cn(` y NO al cuerpo de la función: `className,` aparece
     // ANTES, como parámetro desestructurado de la firma, y medir contra esa
     // posición dejaba pasar la inversión — cazado por mutación.
-    const i = src.indexOf("className={cn(", src.indexOf("function Section("));
+    // Ojo con el ancla: desde que el MARCO envuelve el contenido, dentro de
+    // `Section` hay DOS `className={cn(` y el primero es el del marco. Hay que
+    // buscar el del contenedor, que es el que lleva ALIGN/BLEED.
+    const i = src.indexOf(
+      "className={cn(",
+      src.indexOf("ALIGN_CLASSES[align]", src.indexOf("function Section(")) - 900,
+    );
     const cuerpo = src.slice(i, src.indexOf(")}", i));
     const posClassName = cuerpo.indexOf("className,");
     const posAlign = cuerpo.indexOf("ALIGN_CLASSES[align]");

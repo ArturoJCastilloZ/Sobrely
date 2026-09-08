@@ -228,11 +228,43 @@ function Section({
   // el de antes, sin una envoltura de más. Es lo que permite comprobar por md5
   // que las 50 no se mueven.
   const conMedia = Boolean(media && media.position !== "none" && media.url);
-  const contenido = conMedia ? (
+  const cuerpo = conMedia ? (
     <ConMedia media={media!}>{children}</ConMedia>
   ) : (
     children
   );
+
+  // El marco envuelve el CONTENIDO, no el contenedor de la seccion.
+  //
+  // Estaba al reves y se veia solo en movil: el contenedor es a sangre por
+  // debajo del breakpoint, asi que el borde tocaba los dos lados de la pantalla
+  // y la pieza dejaba de leerse como tarjeta. Medido sobre `xv-seda`: a 1200 px
+  // el marco media 896 con 152 de margen a cada lado; a 375 px media 375 con
+  // margen CERO.
+  //
+  // Envolviendo el contenido, el marco queda dentro del `px-6`/`px-10` del
+  // contenedor y se separa de los bordes en CUALQUIER ancho, sin pelearse con
+  // el `mx-auto` que centra la seccion — un `mx-4` habria BORRADO ese
+  // `mx-auto`, porque tailwind-merge los pone en el mismo grupo.
+  //
+  // `w-full` porque casi todos los sitios de llamada son `flex items-center`, y
+  // sin el el marco se encogeria al ancho de su contenido.
+  const contenido =
+    frame === "none" ? (
+      cuerpo
+    ) : (
+      <div
+        className={cn("w-full", FRAME_CLASSES[frame])}
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--inv-primary, #888) 35%, transparent)",
+          outlineColor:
+            "color-mix(in srgb, var(--inv-primary, #888) 35%, transparent)",
+        }}
+      >
+        {cuerpo}
+      </div>
+    );
 
   return (
     <section
@@ -253,23 +285,10 @@ function Section({
           // resultado es, literalmente, el de antes.
           ALIGN_CLASSES[align],
           BLEED_CLASSES[bleed],
-          FRAME_CLASSES[frame],
           // `relative` solo con fondo: es el bloque contenedor de la capa
           // absoluta. Condicional para no tocar el camino por defecto.
           conMedia && media!.position === "background" && "relative",
         )}
-        // `undefined` sin marco: React omite el atributo y el HTML es el mismo
-        // de antes, byte a byte.
-        style={
-          frame === "none"
-            ? undefined
-            : {
-                borderColor:
-                  "color-mix(in srgb, var(--inv-primary, #888) 35%, transparent)",
-                outlineColor:
-                  "color-mix(in srgb, var(--inv-primary, #888) 35%, transparent)",
-              }
-        }
       >
         {contenido}
       </div>

@@ -132,7 +132,7 @@ describe("sin imagen, el árbol es el de antes", () => {
     // contenido pasa TAL CUAL. Es lo que sostiene la igualdad de md5.
     expect(cuerpo).toContain('media.position !== "none"');
     expect(cuerpo).toContain("media.url");
-    expect(cuerpo).toMatch(/contenido = conMedia \?/);
+    expect(cuerpo).toMatch(/cuerpo = conMedia \?/);
   });
 
   it("los 12 <Section> reciben el slot", () => {

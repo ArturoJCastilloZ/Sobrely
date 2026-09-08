@@ -861,8 +861,9 @@ catálogo entero.
 
 ## 19.3 Recomendación
 
-1. **Arreglar el marco en móvil** antes de decidir nada más: es barato y mueve la
-   columna MP de siete plantillas. Después, **repuntuar**.
+1. ~~**Arreglar el marco en móvil**: es barato y mueve la columna MP de siete
+   plantillas; probablemente sube 3 o 4 al umbral.~~ **HECHO, y la predicción
+   falló: subieron CERO.** Ver §19.5.
 2. **No promover ninguna F4 al catálogo grande** con su forma actual. O se les da
    ilustración de verdad —lo que significa dibujar, no texturizar— o se convierten
    a F1/F3 con fotografía.
@@ -892,6 +893,52 @@ catálogo entero.
 - **Cinta** (5.5) — La más floja. Sin foto y sin textura, todo el peso cae en el título; y ningún elemento la ancla a una comunión.
 - **Diploma** (8.0) — Lectura inmediata del evento. Premium flojo: el confeti dorado tira a genérico.
 - **Retícula** (7.7) — La única alineada a la izquierda, y eso la distingue. Se queda a un pelo por el marco en móvil.
+
+---
+
+## 19.5 Repuntuación tras arreglar el marco (2026-09-08)
+
+El §19.3 recomendaba arreglar el marco en móvil y repuntuar, y predecía que
+*«probablemente sube 3 o 4 de ellas al umbral»*.
+
+**Esa predicción era falsa. Cruzaron el umbral CERO. Sigue 7 de 15.**
+
+El arreglo funciona —medido sobre `xv-seda`, el marco pasa de 375 px con margen
+**0** a 327 px con margen **24** a cada lado, y de 896/152 a 816/192 en
+escritorio— y sube Mobile Potential de 6 a 8 en las siete que lo tenían
+penalizado. Pero no alcanza, y el motivo importa:
+
+> **El déficit de las F4 no estaba en el móvil.** Está en Uniqueness, Event
+> Relevance y Premium Feel, tres columnas que un margen no toca. `comunion-cinta`
+> pasa de 5.5 a 5.8 y sigue siendo la peor; `revelacion-dos-sobres` y
+> `baby-nube-de-algodon` se quedan en 6.3 porque siguen siendo la misma pieza.
+
+Las dos más cercanas se quedan a las puertas: `corporativo-reticula` **7.8** y
+`xv-seda` **7.7**.
+
+| plantilla | fam. | MP antes → ahora | prom antes | **prom ahora** | |
+|---|---|---|---|---|---|
+| `xv-corona` | F3 | 8 → 8 | 8.7 | **8.7** | ✅ |
+| `boda-jardin-partido` | F1 | 8 → 8 | 8.5 | **8.5** | ✅ |
+| `baby-punto-y-flor` | F1 | 8 → 8 | 8.2 | **8.2** | ✅ |
+| `revelacion-coral` | F3 | 8 → 8 | 8.0 | **8.0** | ✅ |
+| `cumpleanos-arco` | F1 | 8 → 8 | 8.0 | **8.0** | ✅ |
+| `bautizo-cera-blanca` | F3 | 8 → 8 | 8.0 | **8.0** | ✅ |
+| `graduacion-diploma` | F1 | 8 → 8 | 8.0 | **8.0** | ✅ |
+| `corporativo-reticula` | F4 | 7 → 8 | 7.7 | **7.8** | ❌ |
+| `xv-seda` | F4 | 6 → 8 | 7.3 | **7.7** | ❌ |
+| `boda-papel-y-lino` | F4 | 6 → 8 | 7.2 | **7.5** | ❌ |
+| `cumpleanos-papel-picado` | F4 | 6 → 8 | 6.3 | **6.7** | ❌ |
+| `baby-nube-de-algodon` | F4 | 6 → 8 | 6.0 | **6.3** | ❌ |
+| `revelacion-dos-sobres` | F4 | 6 → 8 | 6.0 | **6.3** | ❌ |
+| `boda-marco-nuestro` | F5 | 7 → 8 | 6.0 | **6.2** | ❌ |
+| `comunion-cinta` | F4 | 6 → 8 | 5.5 | **5.8** | ❌ |
+
+**Lo que esto confirma:** el problema de la familia F4 es de CONTENIDO, no de
+maquetación. Arreglar la presentación era barato y correcto —y había que
+hacerlo—, pero no convierte una pieza sin nada que mirar en una pieza premium.
+La recomendación del §19.3 se mantiene y se endurece: **o ilustración de verdad,
+o fotografía.**
 
 ---
 
