@@ -17,6 +17,27 @@ import { join } from "node:path";
  * base), así que se ancla lo que sí es verificable: que las dos rutas
  * coincidan, y que los archivos que hay en disco cumplan ese patrón.
  */
+/**
+ * La superficie del catálogo son DOS archivos desde el marketplace (Fase 4):
+ * `page.tsx` hace la consulta y `template-marketplace.tsx` pinta la tarjeta con
+ * la miniatura. El guard lee los dos JUNTOS a propósito.
+ *
+ * La versión anterior leía sólo `page.tsx`, y al mover el markup de la tarjeta
+ * al componente se puso roja — correctamente, porque desde su punto de vista la
+ * revisión había desaparecido del catálogo. Reapuntarla a un único archivo
+ * nuevo la dejaría igual de frágil ante el siguiente movimiento; leer la
+ * superficie entera es lo que la hace resistir un refactor sin dejar de
+ * defender. Las aserciones NEGATIVAS también ganan: ahora cubren los dos.
+ */
+function leerCatalogo(): string {
+  return [
+    join(RAIZ, "src", "app", "dashboard", "templates", "page.tsx"),
+    join(RAIZ, "src", "components", "dashboard", "template-marketplace.tsx"),
+  ]
+    .map((f) => readFileSync(f, "utf8"))
+    .join("\n");
+}
+
 const RAIZ = fileURLToPath(new URL("../../../", import.meta.url));
 const DIR_MINIATURAS = join(RAIZ, "public", "previews", "plantillas");
 
@@ -51,10 +72,7 @@ describe("la proporción es UNA sola fuente", () => {
     join(RAIZ, "src", "lib", "invitations", "template-preview.ts"),
     "utf8",
   );
-  const catalogo = readFileSync(
-    join(RAIZ, "src", "app", "dashboard", "templates", "page.tsx"),
-    "utf8",
-  );
+  const catalogo = leerCatalogo();
 
   it("el alto de captura se DERIVA de la proporción, no se escribe a mano", () => {
     expect(preview).toMatch(/PROPORCION_MINIATURA/);
@@ -72,10 +90,7 @@ describe("la proporción es UNA sola fuente", () => {
 });
 
 describe("la caché del optimizador no puede servir miniaturas viejas", () => {
-  const catalogo = readFileSync(
-    join(RAIZ, "src", "app", "dashboard", "templates", "page.tsx"),
-    "utf8",
-  );
+  const catalogo = leerCatalogo();
   const config = readFileSync(join(RAIZ, "next.config.ts"), "utf8");
   const preview = readFileSync(
     join(RAIZ, "src", "lib", "invitations", "template-preview.ts"),

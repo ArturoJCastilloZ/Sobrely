@@ -1,38 +1,19 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-// La proporción se importa del MISMO sitio del que la lee el script de
-// captura: si el hueco reservado aquí y la imagen capturada se separan,
-// `object-cover` recorta el diseño sin que falle nada.
-import {
-  PROPORCION_MINIATURA,
-  REVISION_MINIATURAS,
-} from "@/lib/invitations/template-preview";
-import { UseTemplateButton } from "@/components/dashboard/use-template-button";
+import { TemplateMarketplace } from "@/components/dashboard/template-marketplace";
+import type { PlantillaMarketplace } from "@/lib/templates/marketplace";
 
 export const metadata: Metadata = { title: "Plantillas" };
 
-type Template = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  event_type: string | null;
-  preview_image_url: string | null;
-};
-
-export default async function TemplatesPage() {
+export default async function TemplatesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ evento?: string; q?: string }>;
+}) {
+  const { evento, q } = await searchParams;
   const supabase = await createClient();
   const { data: templates } = await supabase
     .from("templates")
@@ -43,7 +24,22 @@ export default async function TemplatesPage() {
     .eq("is_active", true)
     .order("name", { ascending: true });
 
-  const list = (templates ?? []) as Template[];
+  const list = (templates ?? []) as PlantillaMarketplace[];
+
+  /*
+    El filtro se aplica en cliente (§12: son 50 filas), pero el estado inicial
+    se lee de la URL AQUI, en el servidor, para que un enlace con `?evento=` se
+    pueda compartir y para que recargar no pierda el filtro.
+
+    `evento` se VALIDA contra los tipos que existen de verdad en los datos, en
+    vez de pasarse tal cual: un `?evento=cualquier-cosa` dejaria la rejilla
+    vacia con todas las pastillas en «Todas», que se lee como un catalogo roto
+    y no como un filtro invalido.
+  */
+  const tiposReales = new Set(
+    list.map((t) => t.event_type).filter((t): t is string => Boolean(t)),
+  );
+  const eventoInicial = evento && tiposReales.has(evento) ? evento : null;
 
   return (
     <div className="space-y-6">
@@ -61,6 +57,10 @@ export default async function TemplatesPage() {
           El estado vacio decia «Ejecuta la migración de seed de plantillas» —
           una instruccion de desarrollo mostrada a un cliente que paga. Ahora
           dice lo que el cliente puede HACER, y le deja una salida.
+
+          Este es el catalogo VACIO de verdad, distinto del «ninguna coincide»
+          que vive en el marketplace: sin plantillas no hay nada que filtrar,
+          asi que ni el buscador ni las pastillas se pintan.
         */
         <div className="rounded-lg border border-dashed p-10 text-center">
           <p className="font-medium">Todavía no hay plantillas para mostrar</p>
@@ -78,68 +78,11 @@ export default async function TemplatesPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((tpl, i) => (
-            <Card key={tpl.id} className="flex flex-col overflow-clip pt-0">
-              {/*
-                Miniatura a sangre: `pt-0` en la tarjeta y `overflow-clip` para
-                que la imagen llegue al borde redondeado. `overflow-clip` y no
-                `hidden` por lo mismo que en el editor — no crea contenedor de
-                scroll.
-              */}
-              {tpl.preview_image_url && (
-                <Link
-                  href={`/plantilla/${tpl.slug}`}
-                  target="_blank"
-                  style={{ aspectRatio: `${PROPORCION_MINIATURA[0]} / ${PROPORCION_MINIATURA[1]}` }}
-                  className="relative block w-full bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                >
-                  <Image
-                    // `?v=` con la revision de la tanda. La cache del
-                    // optimizador de Next se indexa por URL y las miniaturas
-                    // se regeneran EN SU SITIO, asi que sin esto sirve las
-                    // viejas hasta 4h — medido, con `X-Nextjs-Cache: HIT` de
-                    // una entrada anterior a la regeneracion. La query esta
-                    // declarada en `images.localPatterns` del next.config.
-                    src={`${tpl.preview_image_url}?v=${REVISION_MINIATURAS}`}
-                    // El nombre YA esta como titulo justo debajo, asi que un
-                    // alt que lo repita solo hace que un lector de pantalla lo
-                    // lea dos veces. El enlace es lo que necesita nombre.
-                    alt=""
-                    fill
-                    // Tres columnas en lg, dos en sm, una en movil: se le dice
-                    // a `next/image` para que no sirva la imagen de ancho
-                    // completo en una rejilla de tres.
-                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    // Las tres primeras son las candidatas a LCP: la rejilla
-                    // es de tres columnas en escritorio, asi que estan sobre
-                    // el pliegue. `next/image` avisaba en consola —«detected
-                    // as the Largest Contentful Paint, add loading=eager»—
-                    // porque por defecto van en `lazy`, y eso retrasa la
-                    // primera pintura util del catalogo. El resto se quedan
-                    // perezosas: son 50 imagenes y cargarlas todas de golpe
-                    // seria peor que el problema.
-                    priority={i < 3}
-                    className="object-cover object-top"
-                  />
-                  <span className="sr-only">Ver {tpl.name} en grande</span>
-                </Link>
-              )}
-              <CardHeader className="pt-4">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base">{tpl.name}</CardTitle>
-                  {tpl.event_type && (
-                    <Badge variant="secondary">{tpl.event_type}</Badge>
-                  )}
-                </div>
-                <CardDescription>{tpl.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="mt-auto">
-                <UseTemplateButton templateId={tpl.id} />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <TemplateMarketplace
+          plantillas={list}
+          eventoInicial={eventoInicial}
+          consultaInicial={q ?? ""}
+        />
       )}
     </div>
   );
