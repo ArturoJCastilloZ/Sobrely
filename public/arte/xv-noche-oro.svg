@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <defs>
+    <linearGradient id="noche" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#2a1533"/>
+      <stop offset="52%" stop-color="#43203f"/>
+      <stop offset="100%" stop-color="#1d0f26"/>
+    </linearGradient>
+    <linearGradient id="oro" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e6c877"/><stop offset="45%" stop-color="#b8923f"/>
+      <stop offset="70%" stop-color="#f0dda3"/><stop offset="100%" stop-color="#a67f33"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#f3d9a0" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#f3d9a0" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="grano">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="5"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <!-- Esquina art deco: dos arcos y tres rayos. Es el vocabulario de los XV
+         y basta con insinuarlo. -->
+    <g id="esquina">
+      <path d="M0 96 C0 43 43 0 96 0" fill="none" stroke="url(#oro)" stroke-width="1.6"/>
+      <path d="M0 74 C0 33 33 0 74 0" fill="none" stroke="url(#oro)" stroke-width="0.7" opacity="0.75"/>
+      <path d="M12 12 L34 34 M26 6 L42 22 M6 26 L22 42" stroke="url(#oro)" stroke-width="0.9" opacity="0.7"/>
+    </g>
+  </defs>
+
+  <rect width="420" height="900" fill="url(#noche)"/>
+  <rect width="420" height="900" fill="url(#halo)"/>
+
+  <!-- Polvo de estrellas, denso arriba y ralo abajo: imita profundidad sin
+       tener que dibujar un cielo. -->
+  <g fill="#f6e6bd">
+    <circle cx="42" cy="66" r="1.5" opacity="0.9"/><circle cx="118" cy="38" r="1" opacity="0.7"/>
+    <circle cx="196" cy="72" r="1.8" opacity="0.95"/><circle cx="268" cy="44" r="1.1" opacity="0.75"/>
+    <circle cx="348" cy="84" r="1.4" opacity="0.85"/><circle cx="82" cy="128" r="1" opacity="0.6"/>
+    <circle cx="302" cy="146" r="1.2" opacity="0.7"/><circle cx="152" cy="176" r="0.9" opacity="0.5"/>
+    <circle cx="378" cy="212" r="1" opacity="0.55"/><circle cx="58" cy="242" r="0.8" opacity="0.45"/>
+    <circle cx="238" cy="286" r="0.9" opacity="0.4"/><circle cx="330" cy="352" r="0.8" opacity="0.32"/>
+    <circle cx="96" cy="404" r="0.7" opacity="0.28"/><circle cx="286" cy="486" r="0.7" opacity="0.22"/>
+  </g>
+
+  <g transform="translate(26 26)"><use href="#esquina"/></g>
+  <g transform="translate(394 26) scale(-1 1)"><use href="#esquina"/></g>
+  <g transform="translate(26 874) scale(1 -1)"><use href="#esquina"/></g>
+  <g transform="translate(394 874) scale(-1 -1)"><use href="#esquina"/></g>
+
+  <rect width="420" height="900" filter="url(#grano)" opacity="0.06"/>
+</svg>
