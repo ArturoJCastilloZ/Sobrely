@@ -1,0 +1,88 @@
+# Los gates que hasta hoy solo existian en mi terminal.
+#
+# Este repo NO tenia `.github/workflows`: `tsc`, `eslint`, `vitest` y
+# `next build` se corrian a mano y nada impedia empujar una rama que no
+# compilara. Esto es la red, y va primero porque protege todo lo demas.
+name: CI
+
+on:
+  # Solo `push`, y a TODAS las ramas. Añadir `pull_request` duplicaria cada
+  # corrida: un PR desde una rama de este mismo repo dispara los dos eventos y
+  # se pagan dos veces los mismos cuatro gates. `push: ["**"]` ya cubre toda
+  # rama en la que se trabaja, la del PR incluida. Si algun dia entran
+  # contribuciones desde un FORK —que `push` no ve—, ahi si hay que añadirlo.
+  push:
+    branches: ["**"]
+
+# Un push nuevo cancela la corrida anterior de la misma rama: sin esto, una
+# tanda de commits seguidos deja cuatro corridas compitiendo y la que termina
+# ultima no es necesariamente la del ultimo commit.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Las dos son PUBLICAS —viajan al navegador en cada carga—, asi que van
+      # como `vars` del repo y no como `secrets`: marcarlas secretas daria una
+      # falsa sensacion de confidencialidad y ademas las enmascara en los logs,
+      # que estorba al depurar.
+      #
+      # MEDIDO el 2026-09-08 en un checkout limpio SIN `.env.local`: `next
+      # build` pasa con SOLO estas dos. Ni Mercado Pago ni la service role hacen
+      # falta para construir, porque se leen dentro de funciones y no en el
+      # modulo.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # `pnpm/action-setup` lee la version del campo `packageManager` del
+      # package.json (hoy `pnpm@11.11.0`), asi que no se repite aqui: dos sitios
+      # con la misma version es un sitio que se queda viejo.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # `.nvmrc` es la unica fuente de la version de Node, compartida con la
+          # maquina del dev. Node 26 hace falta de verdad: los scripts son
+          # `.mts` y se ejecutan sin transpilar.
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # Un fallo por variable ausente aparece como un error de Supabase a mitad
+      # del build y se diagnostica fatal. Mejor caer aqui diciendo exactamente
+      # que falta y donde se pone.
+      - name: Comprobar que estan las variables publicas
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Faltan las variables publicas del repo."
+            echo "Settings -> Secrets and variables -> Actions -> Variables:"
+            echo "  NEXT_PUBLIC_SUPABASE_URL"
+            echo "  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+            exit 1
+          fi
+          echo "Las dos variables publicas estan presentes."
+
+      - run: pnpm install --frozen-lockfile
+
+      # Los cuatro gates, cada uno en su paso para que el log diga CUAL fallo.
+      # Nada de `cmd | head && echo OK`: el estado de salida de una tuberia es
+      # el del ultimo comando, y ese gate no comprueba nada (§7).
+      - name: Tipos
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Pruebas
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

@@ -1,0 +1,172 @@
+# Regenera las 50 miniaturas del catalogo con `scripts/capturar-miniaturas.mts`.
+#
+# MANUAL a proposito (`workflow_dispatch`), no en cada push. Una miniatura solo
+# cambia cuando cambia el diseño de las plantillas, y regenerarlas en cada
+# commit gastaria ~4 minutos de runner para reescribir 50 JPEGs identicos.
+#
+# NO ES UN GATE DE DERIVA, y conviene saber por que. En la maquina del dev las
+# miniaturas regeneradas salieron BYTE A BYTE identicas a las commiteadas —el
+# reloj congelado hace la captura determinista—, asi que comparar bytes suena
+# tentador. Pero el propio script documenta que usa el Chrome DEL SISTEMA
+# (`playwright-core` + `channel: "chrome"`, para no descargar 150 MB desde un
+# CDN externo y romper la regla de cero phone-home), y el Chrome del runner no
+# es el del dev: un antialiasing distinto cambia los bytes sin que el diseño
+# haya cambiado. Un gate asi gritaria en falso, y un gate que grita sin razon
+# acaba borrado — con el, la proteccion real (§7).
+#
+# Ningun secreto de escritura: el script lee las plantillas con la llave
+# PUBLICABLE porque `templates` es de lectura publica por RLS. Lo unico que
+# escribe es en ESTE repo, con el GITHUB_TOKEN de la corrida.
+name: Miniaturas
+
+on:
+  workflow_dispatch:
+    inputs:
+      slugs:
+        description: "Slugs separados por espacio (vacio = las 50)"
+        required: false
+        default: ""
+      commitear:
+        description: "Commitear el resultado a la rama"
+        type: boolean
+        required: false
+        default: true
+
+concurrency:
+  group: miniaturas-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  capturar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      BASE_URL: http://localhost:3000
+    steps:
+      # `main` despliega a produccion, donde hay usuarios reales, y la regla
+      # dura del proyecto es que nada entra a `main` sin que el dev lo pida en
+      # el momento. Un workflow que commitea solo a `main` seria exactamente
+      # eso, automatizado.
+      - name: Negarse a commitear a main
+        if: inputs.commitear && github.ref == 'refs/heads/main'
+        run: |
+          echo "::error::Este workflow no commitea a main. Dispara sobre una rama"
+          echo "de trabajo, o vuelve a lanzarlo con commitear=false."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Comprobar que estan las variables publicas
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Faltan las variables publicas del repo (ver ci.yml)."
+            exit 1
+          fi
+
+      # El script usa el Chrome del sistema. Si no estuviera, `playwright-core`
+      # falla con un mensaje sobre un ejecutable ausente que no dice que hacer;
+      # esto cae antes y dice exactamente que pasa.
+      - name: Comprobar que hay Chrome
+        run: |
+          if ! command -v google-chrome >/dev/null 2>&1; then
+            echo "::error::No hay google-chrome en el runner. El script usa el"
+            echo "Chrome del sistema (channel: chrome) para no descargar Chromium."
+            exit 1
+          fi
+          google-chrome --version
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      # Servidor de PRODUCCION, no `pnpm dev`. Contra `dev`, Next pinta su
+      # indicador —un circulo con la "N"— que queda QUEMADO en la miniatura; el
+      # script lo oculta por CSS, pero no hay razon para depender de eso.
+      - name: Levantar el servidor
+        run: |
+          pnpm start > /tmp/servidor.log 2>&1 &
+          echo $! > /tmp/servidor.pid
+
+      # Espera por CONDICION, no por `sleep`. Un `sleep 10` falla el dia que el
+      # runner va lento y pasa de largo el dia que va rapido; esto pregunta si
+      # la pagina responde y se rinde diciendolo.
+      - name: Esperar a que responda
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null "$BASE_URL/"; then
+              echo "El servidor responde tras ${i}s."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::El servidor no respondio en 60s."
+          cat /tmp/servidor.log
+          exit 1
+
+      - name: Capturar
+        # El input NO se interpola en el `run`: `${{ inputs.slugs }}` dentro de
+        # un script es inyeccion de comandos de manual —GitHub sustituye el
+        # texto ANTES de que bash lo vea, asi que un `; rm -rf ...` se
+        # ejecutaria. Pasa por `env`, donde bash lo trata como dato. Se deja sin
+        # comillas a proposito para que varios slugs se separen en palabras, y
+        # se valida el formato antes de usarlo.
+        env:
+          SLUGS: ${{ inputs.slugs }}
+        run: |
+          if [ -n "$SLUGS" ] && ! printf '%s' "$SLUGS" | grep -qE '^[a-z0-9 -]+$'; then
+            echo "::error::Slugs con caracteres no permitidos. Solo [a-z0-9-] separados por espacios."
+            exit 1
+          fi
+          node scripts/capturar-miniaturas.mts $SLUGS
+
+      - name: Parar el servidor
+        if: always()
+        # Por PID y no con `pkill -f`: el patron coincide con la linea de
+        # comando de CUALQUIER proceso, y esa leccion ya costo tumbarle al dev
+        # un servidor de otro proyecto en el mismo puerto (§7).
+        run: kill "$(cat /tmp/servidor.pid)" 2>/dev/null || true
+
+      # Se sube siempre, tambien cuando NO se commitea: si el dev lanzo el
+      # workflow para mirar el resultado antes de aceptarlo, tiene que poder
+      # descargarlo.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: miniaturas
+          path: |
+            public/previews/plantillas/
+            src/lib/invitations/template-preview.ts
+          retention-days: 7
+
+      # El bump de REVISION_MINIATURAS va en el MISMO commit que los JPEGs, y no
+      # es un detalle: las miniaturas se regeneran EN SU SITIO —el archivo cambia
+      # y la ruta no— y `next/image` cachea por URL con 4 h de vida. Commitear
+      # las imagenes sin la revision deja el catalogo sirviendo las viejas, que
+      # es exactamente el fallo que ya ocurrio en vivo (§7).
+      - name: Commitear el resultado
+        if: inputs.commitear
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/previews/plantillas src/lib/invitations/template-preview.ts
+          if git diff --cached --quiet; then
+            echo "Nada cambio: ni un JPEG ni la revision. No se commitea."
+            exit 0
+          fi
+          git commit \
+            -m "chore(miniaturas): regeneradas por CI" \
+            -m "Tanda de $(date -u +%Y-%m-%dT%H:%MZ) sobre ${GITHUB_SHA}." \
+            -m "Incluye el bump de REVISION_MINIATURAS: sin el, next/image sigue sirviendo las miniaturas cacheadas hasta 4h."
+          git push origin HEAD:${{ github.ref_name }}
