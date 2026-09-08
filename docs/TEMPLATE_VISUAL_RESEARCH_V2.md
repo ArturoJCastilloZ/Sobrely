@@ -942,6 +942,84 @@ o fotografía.**
 
 ---
 
+## 19.6 Repuntuación tras convertir las F4 a fotografía (2026-09-08)
+
+Seis de las ocho que fallaban se convirtieron (`0035`). `comunion-cinta` no, y
+`boda-marco-nuestro` no es F4. Además se corrigió la proporción del hero en las
+seis que ya tenían foto y la recortaban entre un 38 % y un 50 %.
+
+**De 7 de 15 a 12 de 15.** Cruzaron el umbral cinco: `boda-papel-y-lino`,
+`baby-nube-de-algodon`, `revelacion-dos-sobres`, `cumpleanos-papel-picado` y
+`corporativo-reticula`.
+
+| plantilla | cat. | fam. | VQ | Uniq | ER | Comp | PF | MP | antes | **ahora** | |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `boda-papel-y-lino` | Boda | F4→F3 | 9 | 8 | 9 | 9 | 9 | 8 | 7.5 | **8.7** | ✅ |
+| `xv-corona` | XV años | F3 | 9 | 9 | 8 | 9 | 9 | 8 | 8.7 | **8.7** | ✅ |
+| `boda-jardin-partido` | Boda | F1 | 9 | 8 | 8 | 9 | 9 | 8 | 8.5 | **8.5** | ✅ |
+| `revelacion-dos-sobres` | Gender reveal | F4→F2 | 9 | 9 | 7 | 9 | 9 | 8 | 6.3 | **8.5** | ✅ |
+| `corporativo-reticula` | Corporativo | F4→F1 | 9 | 9 | 7 | 9 | 9 | 8 | 7.8 | **8.5** | ✅ |
+| `baby-punto-y-flor` | Baby shower | F1 | 9 | 8 | 8 | 8 | 8 | 8 | 8.2 | **8.2** | ✅ |
+| `revelacion-coral` | Gender reveal | F3 | 8 | 9 | 7 | 9 | 8 | 8 | 8.0 | **8.2** | ✅ |
+| `cumpleanos-arco` | Cumpleaños | F1 | 8 | 8 | 9 | 9 | 7 | 8 | 8.0 | **8.2** | ✅ |
+| `baby-nube-de-algodon` | Baby shower | F4→F3 | 8 | 8 | 8 | 8 | 8 | 8 | 6.3 | **8.0** | ✅ |
+| `cumpleanos-papel-picado` | Cumpleaños | F4→F3 | 8 | 8 | 9 | 8 | 7 | 8 | 6.7 | **8.0** | ✅ |
+| `bautizo-cera-blanca` | Bautizo | F3 | 9 | 8 | 5 | 9 | 9 | 8 | 8.0 | **8.0** | ✅ |
+| `graduacion-diploma` | Graduación | F1 | 8 | 8 | 9 | 8 | 7 | 8 | 8.0 | **8.0** | ✅ |
+| `xv-seda` | XV años | F4→F1 | 8 | 7 | 6 | 8 | 8 | 8 | 7.7 | **7.5** | ❌ |
+| `boda-marco-nuestro` | Boda | F5 | 7 | 7 | 7 | 8 | 7 | 8 | 6.2 | **7.3** | ❌ |
+| `comunion-cinta` | Primera comunión | F4 | 6 | 5 | 4 | 6 | 6 | 8 | 5.8 | **5.8** | ❌ |
+
+### Las tres que siguen fuera comparten un patrón, y es el resultado útil
+
+| plantilla | por qué |
+|---|---|
+| `comunion-cinta` (5.8) | **no tiene fotografía**, y se decidió no forzársela |
+| `xv-seda` (7.5) | su foto es una **TEXTURA**, no un objeto del evento |
+| `boda-marco-nuestro` (7.3) | su foto es un **MARCADOR** pensado para sustituirse |
+
+> **La conversión funciona cuando la fotografía muestra un OBJETO del evento.**
+> Textura y marcador no cuentan: `xv-seda` subió sólo de 7.7 a 7.5 —bajó, de
+> hecho, al puntuar su relevancia con honestidad— porque la seda rosa es bonita
+> pero no dice «XV años». Es la misma lección que el §19.1 sacó de las F4:
+> el problema es de CONTENIDO, y una imagen sin sujeto no lo resuelve.
+
+### Lo que se ganó por arreglar el recorte, y no aparece en las notas
+
+Cuatro plantillas no cambian de nota pero sí de contenido visible:
+`boda-jardin-partido` enseña la papelería entera en vez de la mitad,
+`cumpleanos-arco` el arco completo, `revelacion-coral` y `xv-corona` dejan de
+perder la mitad vertical. Eran defectos que la puntuación anterior no penalizó
+**porque no los vi**: el sujeto llenaba el encuadre y el recorte no se notaba.
+
+### Nota por plantilla
+
+- **boda-papel-y-lino** (7.5 → 8.7) — Los anillos sobre papel son inequívocamente boda, y la composición vertical con aire es lo que F3 prometía.
+- **boda-marco-nuestro** (6.2 → 7.3) — Deja de ser una losa beige —ya se ve el marco floral— pero su foto sigue siendo un MARCADOR pensado para que el anfitrión lo sustituya, y el catálogo se vende con la miniatura.
+- **boda-jardin-partido** (8.5 → 8.5) — Sin cambio de nota, pero ahora enseña la papelería entera en vez de la mitad.
+- **xv-seda** (7.7 → 7.5) — La seda es más rica que el degradado que tenía, pero es una TEXTURA: no dice XV por sí sola. La conversión no arregló lo que fallaba.
+- **xv-corona** (8.7 → 8.7) — La tiara, ya sin el 44 % de recorte vertical.
+- **baby-nube-de-algodon** (6.3 → 8.0) — Los juguetes de madera la separan del punto y la flor de su hermana, y dicen «bebé» sin decirlo.
+- **baby-punto-y-flor** (8.2 → 8.2) — Sin cambios.
+- **revelacion-dos-sobres** (6.3 → 8.5) — La única a sangre del catálogo, y por eso la más distinta. Relevancia 7: la tinta rosa y azul es la semántica del evento, pero abstracta.
+- **revelacion-coral** (8.0 → 8.2) — Los globos, ya sin el 50 % de recorte vertical.
+- **cumpleanos-papel-picado** (6.7 → 8.0) — Las velas dicen cumpleaños al instante. Premium sigue siendo lo más flojo: velas de colores tiran a genérico.
+- **cumpleanos-arco** (8.0 → 8.2) — El arco completo, ya sin el 45 % de recorte lateral.
+- **bautizo-cera-blanca** (8.0 → 8.0) — Sin cambio: sigue sostenida por la composición y hundida por un 5 en relevancia. Es un bodegón blanco que podría ser boda o memorial.
+- **comunion-cinta** (5.8 → 5.8) — NO se convirtió, a propósito. Sigue siendo la peor del piloto y la única sin fotografía.
+- **graduacion-diploma** (8.0 → 8.0) — Sin cambios.
+- **corporativo-reticula** (7.8 → 8.5) — La retícula de hormigón no se parece a nada del catálogo. Relevancia 7: la arquitectura dice «corporativo» de forma indirecta.
+
+### Honestidad sobre esta puntuación
+
+La escribí yo, puntúo mi propio trabajo y el umbral también es mío. Lo que la
+hace utilizable, igual que en §19.5: **Mobile Potential sale de una medición** y
+los saltos de esta ronda están anclados en hechos verificables —qué porcentaje
+de cada fotografía se estaba tirando, y qué muestra ahora la miniatura—, no en
+la impresión de que «se ve mejor».
+
+---
+
 ## ⛔ FIN DE LA INVESTIGACIÓN
 
 No se ha modificado ninguna plantilla, ni descargado ninguna imagen, ni tocado
