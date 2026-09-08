@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <defs>
+    <radialGradient id="alegria" cx="50%" cy="4%" r="62%">
+      <stop offset="0%" stop-color="#ffe9b8" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#ffe9b8" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Serpentina: una curva con trazo grueso y punta redonda. Dibujar cintas
+         como poligonos rellenos se ve rigido; el trazo curvo se lee como papel
+         cayendo. -->
+    <g id="cinta"><path d="M0 0 C10 -14 -6 -24 4 -38 C14 -52 -2 -60 8 -74" fill="none" stroke-width="4.5" stroke-linecap="round"/></g>
+  </defs>
+
+  <rect width="420" height="900" fill="#fffaf2"/>
+  <rect width="420" height="900" fill="url(#alegria)"/>
+
+  <!-- El confeti se concentra ARRIBA y se va apagando: imita algo que acaba de
+       caer, y deja el centro limpio para el texto. Cuatro colores y no diez:
+       mas paleta se vuelve ruido. -->
+  <g>
+    <g stroke="#f2867f"><use href="#cinta" transform="translate(38 118) rotate(-12)"/></g>
+    <g stroke="#6fb3d9"><use href="#cinta" transform="translate(96 92) rotate(14) scale(0.85)"/></g>
+    <g stroke="#f6c445"><use href="#cinta" transform="translate(330 106) rotate(-16) scale(0.9)"/></g>
+    <g stroke="#8bc98b"><use href="#cinta" transform="translate(388 132) rotate(10) scale(0.8)"/></g>
+  </g>
+  <g>
+    <rect x="60" y="34" width="9" height="14" rx="2" fill="#f2867f" transform="rotate(24 64 41)"/>
+    <rect x="146" y="20" width="8" height="13" rx="2" fill="#6fb3d9" transform="rotate(-32 150 26)"/>
+    <circle cx="204" cy="46" r="4.5" fill="#f6c445"/>
+    <rect x="256" y="26" width="9" height="14" rx="2" fill="#8bc98b" transform="rotate(40 260 33)"/>
+    <circle cx="316" cy="30" r="4" fill="#f2867f"/>
+    <rect x="368" y="44" width="8" height="12" rx="2" fill="#6fb3d9" transform="rotate(-18 372 50)"/>
+    <circle cx="110" cy="160" r="3.5" fill="#8bc98b" opacity="0.8"/>
+    <rect x="244" y="150" width="7" height="11" rx="2" fill="#f6c445" opacity="0.8" transform="rotate(28 247 155)"/>
+    <circle cx="46" cy="212" r="3" fill="#6fb3d9" opacity="0.6"/>
+    <circle cx="382" cy="228" r="3" fill="#f2867f" opacity="0.55"/>
+    <circle cx="70" cy="838" r="3.5" fill="#f6c445" opacity="0.5"/>
+    <rect x="330" y="852" width="8" height="12" rx="2" fill="#8bc98b" opacity="0.45" transform="rotate(-22 334 858)"/>
+  </g>
+</svg>

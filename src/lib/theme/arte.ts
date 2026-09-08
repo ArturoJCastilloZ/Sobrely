@@ -62,6 +62,55 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0.05,
   },
+  {
+    clave: "boda-lino-sello",
+    nombre: "Lino y sello",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0.05,
+  },
+  {
+    clave: "xv-rosa-polvo",
+    nombre: "Rosa polvo",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0.05,
+  },
+  {
+    clave: "cumple-confeti",
+    nombre: "Confeti",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0.05,
+  },
+  {
+    clave: "cumple-neon",
+    nombre: "Neón",
+    eventos: ["Cumpleaños"],
+    polaridad: "claro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-cielo",
+    nombre: "Cielo",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0.05,
+  },
+  {
+    clave: "corp-lineas",
+    nombre: "Retícula",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0.05,
+  },
+  {
+    clave: "corp-noche",
+    nombre: "Marino",
+    eventos: ["Corporativo"],
+    polaridad: "claro",
+    overlay: 0,
+  },
 ] as const;
 
 /** Ruta pública del SVG de un arte. */

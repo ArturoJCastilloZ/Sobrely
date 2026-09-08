@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <defs>
+    <linearGradient id="marino" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#0b1a33"/><stop offset="50%" stop-color="#12294d"/><stop offset="100%" stop-color="#081221"/>
+    </linearGradient>
+    <radialGradient id="foco" cx="50%" cy="0%" r="70%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.2"/><stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="reticN" width="34" height="34" patternUnits="userSpaceOnUse">
+      <path d="M34 0 H0 V34" fill="none" stroke="#7dd3fc" stroke-width="0.4" opacity="0.1"/>
+    </pattern>
+    <filter id="granoC"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="53"/><feColorMatrix type="saturate" values="0"/></filter>
+  </defs>
+
+  <rect width="420" height="900" fill="url(#marino)"/>
+  <rect width="420" height="900" fill="url(#reticN)"/>
+  <rect width="420" height="900" fill="url(#foco)"/>
+
+  <!-- Lineas de conexion: nodos unidos, el vocabulario visual de un evento de
+       tecnologia. Concentradas arriba y con opacidad baja para no pelear con
+       el texto claro que va encima. -->
+  <g stroke="#38bdf8" fill="#7dd3fc" opacity="0.42">
+    <path d="M40 60 L128 116 L226 74 L318 138 L400 92" fill="none" stroke-width="0.8"/>
+    <path d="M128 116 L152 208 L268 186 L318 138" fill="none" stroke-width="0.6" opacity="0.7"/>
+    <circle cx="40" cy="60" r="2.6"/><circle cx="128" cy="116" r="3.2"/><circle cx="226" cy="74" r="2.4"/>
+    <circle cx="318" cy="138" r="3"/><circle cx="400" cy="92" r="2.2"/>
+    <circle cx="152" cy="208" r="2.2" opacity="0.8"/><circle cx="268" cy="186" r="2" opacity="0.75"/>
+  </g>
+
+  <rect x="0" y="0" width="420" height="4" fill="#38bdf8" opacity="0.6"/>
+  <rect width="420" height="900" filter="url(#granoC)" opacity="0.06"/>
+</svg>

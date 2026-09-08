@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <defs>
+    <linearGradient id="antro" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#1a0f2e"/><stop offset="45%" stop-color="#2d1246"/>
+      <stop offset="100%" stop-color="#120a1f"/>
+    </linearGradient>
+    <!-- Bokeh: circulos difusos, no nitidos. Un punto de luz nitido se lee
+         como estrella; difuso se lee como luz fuera de foco, que es lo que
+         hace una pista de baile. -->
+    <filter id="fuera-de-foco"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="fuera-de-foco2"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="granoN"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="41"/><feColorMatrix type="saturate" values="0"/></filter>
+  </defs>
+
+  <rect width="420" height="900" fill="url(#antro)"/>
+
+  <!-- Luces concentradas arriba y disueltas abajo: la banda central se queda
+       oscura y uniforme, que es lo que deja pasar el texto CLARO. -->
+  <g filter="url(#fuera-de-foco2)" opacity="0.5">
+    <circle cx="72" cy="92" r="42" fill="#e0559b"/>
+    <circle cx="322" cy="66" r="46" fill="#4ea8de"/>
+    <circle cx="212" cy="176" r="38" fill="#8b5cf6"/>
+  </g>
+  <g filter="url(#fuera-de-foco)" opacity="0.62">
+    <circle cx="128" cy="52" r="15" fill="#f472b6"/>
+    <circle cx="268" cy="118" r="13" fill="#38bdf8"/>
+    <circle cx="378" cy="158" r="17" fill="#a78bfa"/>
+    <circle cx="40" cy="196" r="12" fill="#f472b6"/>
+    <circle cx="196" cy="286" r="11" fill="#38bdf8" opacity="0.6"/>
+    <circle cx="352" cy="368" r="10" fill="#a78bfa" opacity="0.45"/>
+    <circle cx="66" cy="792" r="14" fill="#e0559b" opacity="0.4"/>
+    <circle cx="344" cy="846" r="12" fill="#4ea8de" opacity="0.35"/>
+  </g>
+
+  <rect width="420" height="900" filter="url(#granoN)" opacity="0.07"/>
+</svg>

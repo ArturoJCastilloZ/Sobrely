@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <defs>
+    <!-- Retícula de plano tecnico, en DOS escalas: la fina da textura y la
+         gruesa da estructura. Con una sola escala se lee como papel
+         milimetrado; con dos, como un plano. La version anterior tenia una
+         sola y al 11% no se veia: la lamina salia en blanco. -->
+    <pattern id="fina" width="14" height="14" patternUnits="userSpaceOnUse">
+      <path d="M14 0 H0 V14" fill="none" stroke="#1e3a8a" stroke-width="0.3" opacity="0.13"/>
+    </pattern>
+    <pattern id="gruesa" width="70" height="70" patternUnits="userSpaceOnUse">
+      <path d="M70 0 H0 V70" fill="none" stroke="#1e3a8a" stroke-width="0.7" opacity="0.2"/>
+    </pattern>
+    <linearGradient id="acento" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1d4ed8"/><stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="cunia" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.08"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="420" height="900" fill="#f4f7fc"/>
+  <rect width="420" height="900" fill="url(#fina)"/>
+  <rect width="420" height="900" fill="url(#gruesa)"/>
+
+  <!-- Cuña diagonal en la esquina superior: el unico gesto de color y la
+       identidad al primer golpe de vista, dentro de la banda visible. -->
+  <path d="M420 0 L420 210 L232 0 Z" fill="url(#cunia)"/>
+  <path d="M420 0 L420 96 L330 0 Z" fill="#1d4ed8" opacity="0.16"/>
+  <path d="M232 0 L420 210" stroke="#1d4ed8" stroke-width="0.9" opacity="0.35"/>
+
+  <!-- Barra superior: el remate que dice "documento corporativo". -->
+  <rect x="0" y="0" width="420" height="7" fill="url(#acento)"/>
+
+  <!-- Cotas al margen izquierdo, como en un plano: tres marcas cortas y una
+       regla. Anclan la composicion en un eje, que es lo que separa
+       "documento" de "cartel". -->
+  <g stroke="#1e3a8a" opacity="0.3">
+    <path d="M30 150 V750" stroke-width="1"/>
+    <path d="M24 150 H36 M24 450 H36 M24 750 H36" stroke-width="1"/>
+  </g>
+  <g opacity="0.12"><path d="M0 900 L0 772 L142 900 Z" fill="#1d4ed8"/></g>
+</svg>
