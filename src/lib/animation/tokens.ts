@@ -1,16 +1,17 @@
 import type { AnimationIntensity } from "./types";
 
 /**
- * Motion tokens — the single source for durations, easings and intensity
- * scales. Presets are built by combining tokens so the whole system stays
- * consistent and tunable from one place.
+ * Motion tokens — the single source for easings and intensity scales. Presets
+ * are built by combining tokens so the whole system stays consistent and
+ * tunable from one place.
+ *
+ * La tabla `DURATIONS` (fast/base/slow) vivía aquí y se quitó al pasar la
+ * velocidad a un deslizador continuo: su único consumidor era `SPEED_OPTIONS`,
+ * los tres botones fijos. La duración ahora es un número libre (0.2–2 s en la
+ * UI, 0.1–3 en el esquema) y su valor por defecto vive donde se persiste,
+ * en `animationConfigSchema`. Se borró en vez de dejarla huérfana: un token
+ * que nadie lee deja de ser una fuente de verdad y pasa a ser una trampa.
  */
-
-export const DURATIONS = {
-  fast: 0.4,
-  base: 0.6,
-  slow: 0.9,
-} as const;
 
 /** CSS easing strings (also usable as cubic-bezier arrays for Framer in 5.3). */
 export const EASINGS = {
@@ -46,13 +47,6 @@ export const INTENSITY_LABELS: Record<AnimationIntensity, string> = {
   moderate: "Moderada",
   expressive: "Llamativa",
 };
-
-/** Simple speed choices mapped to a duration (seconds). */
-export const SPEED_OPTIONS = [
-  { key: "slow", label: "Lenta", duration: DURATIONS.slow },
-  { key: "normal", label: "Normal", duration: DURATIONS.base },
-  { key: "fast", label: "Rápida", duration: DURATIONS.fast },
-] as const;
 
 export const TRIGGER_LABELS: Record<string, string> = {
   scroll: "Al entrar en pantalla",

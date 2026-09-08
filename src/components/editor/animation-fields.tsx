@@ -9,9 +9,12 @@ import {
 } from "@/lib/animation/types";
 import {
   INTENSITY_LABELS,
-  SPEED_OPTIONS,
+  INTENSITY_SCALE,
   TRIGGER_LABELS,
+  clampDuration,
 } from "@/lib/animation/tokens";
+import { pedirReplayDeAnimacion } from "@/lib/animation/replay";
+import { PlayIcon } from "lucide-react";
 import {
   ANIMATION_REGISTRY,
   CSS_REVEAL_PRESETS,
@@ -66,12 +69,6 @@ export function AnimationFields({
   const delay = value.delay ?? defaults.delay;
   const staggerOn = (value.stagger ?? defaults.stagger) > 0;
 
-  const activeSpeed =
-    SPEED_OPTIONS.reduce((best, opt) =>
-      Math.abs(opt.duration - duration) < Math.abs(best.duration - duration)
-        ? opt
-        : best,
-    ).key;
 
   return (
     <div className="space-y-3">
@@ -101,6 +98,25 @@ export function AnimationFields({
       </div>
       )}
 
+      {/*
+        Reproducir. Es lo que hace ajustable el resto: la animacion ya se
+        re-reproduce sola al cambiar un ajuste, pero DURA ~300ms y arranca en
+        el mismo instante en que pulsas un boton que esta en el panel OPUESTO
+        al lienzo, asi que se acaba antes de que muevas la vista. Medido: entre
+        Sutil y Llamativa hay 9x de diferencia de recorrido (8px contra 72px) y
+        aun asi las tres se percibian iguales.
+      */}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="w-full"
+        onClick={pedirReplayDeAnimacion}
+      >
+        <PlayIcon className="size-3.5" aria-hidden />
+        Reproducir en el lienzo
+      </Button>
+
       {/* Intensity */}
       <div className="space-y-1.5">
         <Label className="text-xs">Intensidad</Label>
@@ -117,23 +133,57 @@ export function AnimationFields({
             </Button>
           ))}
         </div>
+        {/*
+          La magnitud, dicha en claro. Las tres etiquetas son adjetivos y no
+          dejan ver que la diferencia es de 8 a 72 px; con el numero delante,
+          la eleccion se puede razonar sin tener que adivinar.
+        */}
+        <p className="text-[length:var(--ed-text-mini)] text-muted-foreground">
+          Se desliza {INTENSITY_SCALE[intensity].distance} px al aparecer.
+        </p>
       </div>
 
-      {/* Speed */}
+      {/*
+        Velocidad como deslizador continuo y no tres botones: `duration` ya es
+        un numero en el esquema (0.1-3s), asi que los tres valores fijos eran
+        una limitacion de la UI, no del modelo. Pedido por el dev, con el mismo
+        patron que el zoom del lienzo.
+      */}
       <div className="space-y-1.5">
-        <Label className="text-xs">Velocidad</Label>
-        <div className="grid grid-cols-3 gap-1">
-          {SPEED_OPTIONS.map((opt) => (
-            <Button
-              key={opt.key}
-              type="button"
-              size="sm"
-              variant={activeSpeed === opt.key ? "default" : "outline"}
-              onClick={() => onPatch({ duration: opt.duration })}
-            >
-              {opt.label}
-            </Button>
-          ))}
+        <div className="flex items-center justify-between">
+          <Label className="text-xs" htmlFor="anim-velocidad">
+            Velocidad
+          </Label>
+          <span className="text-[length:var(--ed-text-mini)] text-muted-foreground tabular-nums">
+            {duration.toFixed(2)}s
+          </span>
+        </div>
+        <input
+          id="anim-velocidad"
+          type="range"
+          // En milisegundos para que el paso sea entero: con un `step` de 0.05
+          // en segundos, el valor acumula error de coma flotante y el numero
+          // de al lado acaba mostrando 0.6500000000000001.
+          //
+          // El rango es EXACTAMENTE el del esquema (0.1-3s) y no uno mas
+          // estrecho "razonable": un `<input type=range>` con un `value` fuera
+          // de [min,max] lo clava en el extremo SIN avisar, asi que un valor
+          // persistido de 2.5s se veria como 2s, la etiqueta diria otra cosa
+          // que el pulgar, y el primer roce lo bajaria a 2s sin que nadie lo
+          // pidiera. Acotar la UI mas que el modelo es una forma silenciosa de
+          // corromper el dato.
+          min={100}
+          max={3000}
+          step={50}
+          value={Math.round(duration * 1000)}
+          onChange={(e) =>
+            onPatch({ duration: clampDuration(Number(e.target.value) / 1000) })
+          }
+          className="h-1 w-full cursor-pointer accent-primary"
+        />
+        <div className="flex justify-between text-[length:var(--ed-text-mini)] text-muted-foreground">
+          <span>Rapida</span>
+          <span>Lenta</span>
         </div>
       </div>
 

@@ -19,6 +19,7 @@ import {
   resolveAnimation,
   readModuleAnimationOverride,
 } from "@/lib/animation/schema";
+import { useReplayDeAnimacion } from "@/lib/animation/replay";
 
 export function PreviewPane({
   modules,
@@ -183,7 +184,13 @@ export function PreviewPane({
   // override. Keying the module list by this remounts it, so the "load" reveal
   // runs again; otherwise nothing replays once modules have appeared. Non-anim
   // edits (colors, module text) don't change this key, so they don't replay.
+  // Peticiones explicitas de replay desde los paneles de animacion. Entra en
+  // la clave de remonte: cambiarla es lo que hace que la animacion arranque
+  // desde su estado oculto otra vez.
+  const replayPedido = useReplayDeAnimacion();
+
   const replayKey = [
+    String(replayPedido),
     JSON.stringify(theme.animation),
     String(theme.animations),
     ...visible.map((m) =>
