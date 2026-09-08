@@ -6,6 +6,11 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    // Node EXIGE la extension `.ts` explicita al ejecutar TypeScript directo
+    // (`node scripts/*.mts`), y `tsc` la rechaza sin esta bandera. Se activa
+    // en vez de excluir `scripts/` del chequeo: un script que genera arte para
+    // el catalogo merece tener tipos, no quedarse fuera del gate.
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

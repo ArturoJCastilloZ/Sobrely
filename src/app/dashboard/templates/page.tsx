@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,22 +10,33 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+// La proporción se importa del MISMO sitio del que la lee el script de
+// captura: si el hueco reservado aquí y la imagen capturada se separan,
+// `object-cover` recorta el diseño sin que falle nada.
+import { PROPORCION_MINIATURA } from "@/lib/invitations/template-preview";
 import { UseTemplateButton } from "@/components/dashboard/use-template-button";
 
 export const metadata: Metadata = { title: "Plantillas" };
 
 type Template = {
   id: string;
+  slug: string;
   name: string;
   description: string | null;
   event_type: string | null;
+  preview_image_url: string | null;
 };
 
 export default async function TemplatesPage() {
   const supabase = await createClient();
   const { data: templates } = await supabase
     .from("templates")
-    .select("id, name, description, event_type")
+    // `preview_image_url` llevaba desde la `0001` sin pedirse aqui: la columna
+    // existia, las miniaturas no se mostraban, y la galeria de un producto de
+    // diseño no enseñaba ni un diseño.
+    .select("id, slug, name, description, event_type, preview_image_url")
     .eq("is_active", true)
     .order("name", { ascending: true });
 
@@ -41,15 +54,60 @@ export default async function TemplatesPage() {
       </div>
 
       {list.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-          No hay plantillas disponibles. Ejecuta la migración de seed de
-          plantillas.
+        /*
+          El estado vacio decia «Ejecuta la migración de seed de plantillas» —
+          una instruccion de desarrollo mostrada a un cliente que paga. Ahora
+          dice lo que el cliente puede HACER, y le deja una salida.
+        */
+        <div className="rounded-lg border border-dashed p-10 text-center">
+          <p className="font-medium">Todavía no hay plantillas para mostrar</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+            Puedes empezar con una invitación en blanco y elegir la temática
+            desde el editor.
+          </p>
+          {/*
+            `buttonVariants` sobre el Link, y no `<Button asChild>`: el Button
+            de este proyecto no implementa `asChild`, asi que envolverlo
+            habria compilado en apariencia y roto el enlace.
+          */}
+          <Link href="/dashboard" className={cn(buttonVariants(), "mt-4")}>
+            Crear invitación en blanco
+          </Link>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((tpl) => (
-            <Card key={tpl.id} className="flex flex-col">
-              <CardHeader>
+            <Card key={tpl.id} className="flex flex-col overflow-clip pt-0">
+              {/*
+                Miniatura a sangre: `pt-0` en la tarjeta y `overflow-clip` para
+                que la imagen llegue al borde redondeado. `overflow-clip` y no
+                `hidden` por lo mismo que en el editor — no crea contenedor de
+                scroll.
+              */}
+              {tpl.preview_image_url && (
+                <Link
+                  href={`/plantilla/${tpl.slug}`}
+                  target="_blank"
+                  style={{ aspectRatio: `${PROPORCION_MINIATURA[0]} / ${PROPORCION_MINIATURA[1]}` }}
+                  className="relative block w-full bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                >
+                  <Image
+                    src={tpl.preview_image_url}
+                    // El nombre YA esta como titulo justo debajo, asi que un
+                    // alt que lo repita solo hace que un lector de pantalla lo
+                    // lea dos veces. El enlace es lo que necesita nombre.
+                    alt=""
+                    fill
+                    // Tres columnas en lg, dos en sm, una en movil: se le dice
+                    // a `next/image` para que no sirva la imagen de ancho
+                    // completo en una rejilla de tres.
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover object-top"
+                  />
+                  <span className="sr-only">Ver {tpl.name} en grande</span>
+                </Link>
+              )}
+              <CardHeader className="pt-4">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-base">{tpl.name}</CardTitle>
                   {tpl.event_type && (
