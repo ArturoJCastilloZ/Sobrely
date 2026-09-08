@@ -59,7 +59,10 @@ export function PublicInvitationView({
   return (
     <ThemeScope
       theme={theme}
-      className="@container/inv relative min-h-svh w-full overflow-x-hidden"
+      // El clip horizontal lo pone ThemeScope (`overflow-x-clip`): con
+      // `overflow-x-hidden` aquí, este nodo se vuelve contenedor de scroll y
+      // el telón sticky deja de quedarse quieto.
+      className="@container/inv relative min-h-svh w-full"
     >
       {theme.animations && theme.decoration.enabled && (
         <DecorationLayer

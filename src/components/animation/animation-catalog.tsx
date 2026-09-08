@@ -115,7 +115,10 @@ export function AnimationCatalog() {
               <CardContent className="py-2">
                 <ThemeScope
                   theme={defaultTheme()}
-                  className="relative h-32 overflow-hidden rounded-md border"
+                  // `overflow-clip` y no `overflow-hidden`: tailwind-merge los
+                  // pone en el mismo grupo que el `overflow-x-clip` del scope,
+                  // así que `hidden` aquí lo BORRA y el telón sticky se rompe.
+                  className="relative h-32 overflow-clip rounded-md border"
                 >
                   <DecorationLayer variant={v} count={10} />
                   <div className="absolute inset-0 grid place-items-center text-xs opacity-70">

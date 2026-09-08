@@ -149,13 +149,17 @@ export function PreviewPane({
       </div>
       <div
         className={cn(
-          "mx-auto overflow-hidden rounded-2xl border shadow-sm",
+          // `overflow-clip` y no `overflow-hidden`: recorta igual para el
+          // borde redondeado, pero no se vuelve contenedor de scroll — si lo
+          // fuera, el telón sticky del ThemeScope de abajo quedaría anclado a
+          // este marco, que nunca scrollea, y no se quedaría quieto.
+          "mx-auto overflow-clip rounded-2xl border shadow-sm",
           desktop ? "w-full" : "w-full max-w-[420px]",
         )}
       >
         <ThemeScope
           theme={theme}
-          className={cn("relative overflow-hidden", desktop && "@container/inv")}
+          className={cn("relative", desktop && "@container/inv")}
         >
         {theme.animations && theme.decoration.enabled && (
           <DecorationLayer
