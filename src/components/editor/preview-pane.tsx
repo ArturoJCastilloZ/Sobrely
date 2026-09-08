@@ -218,7 +218,19 @@ export function PreviewPane({
       {visible.length > 1 && <div aria-hidden className="h-14" />}
 
       {visible.length > 1 && (
-        <div className="pointer-events-none sticky bottom-3 -mt-11 flex justify-center">
+        // `z-40` NO es decorativo: sin z-index la barra queda en `auto` y
+        // pierde contra DOS capas del preview, porque el `-mt-11` la mete
+        // fisicamente dentro del marco de la invitacion. Medido en el editor
+        // real: en el centro del paginador ganaba la capa de stickers
+        // (`absolute inset-0 z-30` de `sticker-editor-layer`), y el contenido
+        // de la invitacion (`relative z-10`) tambien quedaba por encima.
+        //
+        // Y no era solo visual: `elementFromPoint` sobre la flecha devolvia la
+        // capa de stickers, o sea que **los botones no recibian el clic**.
+        // Con `z-40` el hit-test devuelve el boton. La escalera queda:
+        // contenido 10 < stickers 30 < paginador 40 < modal de plan 50, que es
+        // el orden que se quiere (un modal SI debe tapar el paginador).
+        <div className="pointer-events-none sticky bottom-3 -mt-11 z-40 flex justify-center">
           <div className="pointer-events-auto flex items-center gap-1 rounded-full border bg-background/95 px-1.5 py-1 shadow-(--ed-shadow-menu) backdrop-blur">
             <Button
               variant="ghost"
