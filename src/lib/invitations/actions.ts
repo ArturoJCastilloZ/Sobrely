@@ -82,7 +82,18 @@ export async function createInvitation(
     });
   }
 
-  await supabase.from("invitation_modules").insert(modules);
+  // Mismo motivo que en createFromTemplate: Supabase devuelve { error } en vez
+  // de lanzar, y sin comprobarlo el usuario aterriza en un editor vacio.
+  const { error: modErr } = await supabase
+    .from("invitation_modules")
+    .insert(modules);
+
+  if (modErr) {
+    await supabase.from("invitations").delete().eq("id", invitation.id);
+    throw new Error(
+      `No se pudieron crear las secciones iniciales: ${modErr.message}`,
+    );
+  }
 
   revalidatePath("/dashboard");
   redirect(`/editor/${invitation.id}`);
@@ -140,7 +151,9 @@ export async function createFromTemplate(templateId: string) {
   const modules = doc.modules;
 
   if (modules.length > 0) {
-    await supabase.from("invitation_modules").insert(
+    // Supabase NO lanza: devuelve { error }. Ignorarlo dejaba la invitacion
+    // creada SIN secciones y al usuario en un editor vacio, sin ningun aviso.
+    const { error: modErr } = await supabase.from("invitation_modules").insert(
       modules.map((m) => ({
         invitation_id: invitation.id,
         module_type: m.module_type,
@@ -149,6 +162,16 @@ export async function createFromTemplate(templateId: string) {
         config: m.config,
       })),
     );
+
+    if (modErr) {
+      // No hay transaccion entre las dos llamadas, asi que la invitacion a
+      // medias se deshace a mano. Si el borrado tambien falla se sigue
+      // lanzando: mejor un error visible que un editor vacio en silencio.
+      await supabase.from("invitations").delete().eq("id", invitation.id);
+      throw new Error(
+        `No se pudieron crear las secciones de la plantilla: ${modErr.message}`,
+      );
+    }
   }
 
   revalidatePath("/dashboard");

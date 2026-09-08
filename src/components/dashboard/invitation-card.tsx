@@ -1,5 +1,6 @@
 "use client";
 
+import { unstable_rethrow } from "next/navigation";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -51,7 +52,10 @@ export function InvitationCard({
       try {
         await deleteInvitation(invitation.id);
         toast.success("Invitación eliminada.");
-      } catch {
+      } catch (e) {
+        // deleteInvitation hace redirect("/login") con la sesion caducada: sin
+        // esto se iria al login pintando "No se pudo eliminar".
+        unstable_rethrow(e);
         toast.error("No se pudo eliminar.");
       }
     });

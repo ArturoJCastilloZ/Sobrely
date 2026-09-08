@@ -1,5 +1,6 @@
 "use client";
 
+import { unstable_rethrow } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,10 @@ export function NewInvitationButton() {
     startTransition(async () => {
       try {
         await createInvitation(mode);
-      } catch {
+      } catch (e) {
+        // Mismo defecto que use-template-button: createInvitation acaba en
+        // redirect() y el NEXT_REDIRECT cae en este catch.
+        unstable_rethrow(e);
         toast.error("No se pudo crear la invitación.");
       }
     });
