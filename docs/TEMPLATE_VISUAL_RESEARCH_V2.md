@@ -1020,6 +1020,38 @@ la impresión de que «se ve mejor».
 
 ---
 
+## 19.7 `xv-seda` con un objeto de XV (2026-09-08)
+
+Última pieza del ciclo. La `0035` la había convertido a fotografía y **empeoró**
+—de 7.7 a 7.5—, la única del piloto que bajó, porque su imagen era una TEXTURA.
+La `0036` le pone un OBJETO: el pastel de tres pisos con el **15**.
+
+| | VQ | Uniq | ER | Comp | PF | MP | prom | |
+|---|---|---|---|---|---|---|---|---|
+| antes (seda rosa) | 8 | 7 | **6** | 8 | 8 | 8 | 7.5 | ❌ |
+| ahora (pastel del 15) | 8 | 8 | **9** | 8 | 8 | 8 | **8.2** | ✅ |
+
+El salto está donde tenía que estar: **Event Relevance de 6 a 9**. Las otras
+cinco columnas se mueven poco o nada, que es justo lo que valida el diagnóstico
+del §19.6 — el problema de esta plantilla no era la calidad de la imagen ni la
+composición, era que la imagen no decía de qué evento hablaba.
+
+**El piloto queda en 13 de 15.**
+
+Siguen fuera dos, y por razones distintas:
+
+| plantilla | prom | por qué |
+|---|---|---|
+| `boda-marco-nuestro` | 7.3 | su foto es un **marcador** para que el anfitrión la sustituya: la miniatura no vende lo que la plantilla es |
+| `comunion-cinta` | 5.8 | **sin fotografía**, y se decidió no forzársela: el stock de primera comunión son menores |
+
+Las dos necesitan una decisión de producto, no otra iteración de lo mismo:
+la primera, si una plantilla puede venderse con una foto que está para
+sustituirse; la segunda, si se invierte en ilustración —la vía que el §19.1 dejó
+abierta y que nadie ha tomado.
+
+---
+
 ## ⛔ FIN DE LA INVESTIGACIÓN
 
 No se ha modificado ninguna plantilla, ni descargado ninguna imagen, ni tocado
