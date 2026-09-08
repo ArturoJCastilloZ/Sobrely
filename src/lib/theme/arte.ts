@@ -262,6 +262,51 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0.55,
   },
+  // ---- 3.ª tanda (Fase 11) — conversión de las F4 a fotografía ------------
+  //
+  // Descargadas el 2026-09-08 con autorización explícita del dev, tras la
+  // puntuación del piloto (§19 del research): 7 de 7 con fotografía aprobaron y
+  // 0 de 8 sin ella. Procedencia y licencia en `PROCEDENCIA.md`.
+  {
+    clave: "boda-anillos-papel",
+    tipo: "foto",
+    nombre: "Anillos sobre papel",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0.55,
+  },
+  {
+    clave: "baby-juguetes-madera",
+    tipo: "foto",
+    nombre: "Juguetes de madera",
+    eventos: ["Baby shower"],
+    polaridad: "claro",
+    overlay: 0.55,
+  },
+  {
+    clave: "revelacion-tinta",
+    tipo: "foto",
+    nombre: "Tinta rosa y azul",
+    eventos: ["Gender reveal"],
+    polaridad: "oscuro",
+    overlay: 0.25,
+  },
+  {
+    clave: "cumple-velas-espiral",
+    tipo: "foto",
+    nombre: "Velas de espiral",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0.4,
+  },
+  {
+    clave: "corp-reticula-hormigon",
+    tipo: "foto",
+    nombre: "Retícula de hormigón",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0.55,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */

@@ -27,7 +27,9 @@ const MIGRACIONES = [
 
 const leerMigracion = (nombre: string) =>
   readFileSync(
-    fileURLToPath(new URL(`../../../supabase/migrations/${nombre}`, import.meta.url)),
+    fileURLToPath(
+      new URL(`../../../supabase/migrations/${nombre}`, import.meta.url),
+    ),
     "utf8",
   );
 
@@ -125,9 +127,10 @@ describe("el seed del piloto es legible por el producto", () => {
         // `parseConfig` DESCARTA en silencio lo que no valida, así que
         // comparar campo a campo es la única forma de saber que llegó entero.
         for (const [campo, valor] of Object.entries(declarado)) {
-          expect(leido[campo], `${f.slug} · ${m.module_type} · ${campo}`).toEqual(
-            valor,
-          );
+          expect(
+            leido[campo],
+            `${f.slug} · ${m.module_type} · ${campo}`,
+          ).toEqual(valor);
         }
       }
     },
@@ -146,7 +149,9 @@ describe("el arte referenciado existe y su velo es el MEDIDO", () => {
     );
 
     // El velo no se pone a ojo: sale de `verificar-contraste-arte.mts`.
-    const clave = url.replace(/^\/arte\/(foto\/)?/, "").replace(/\.(svg|jpg)$/, "");
+    const clave = url
+      .replace(/^\/arte\/(foto\/)?/, "")
+      .replace(/\.(svg|jpg)$/, "");
     const arte = buscarArte(clave);
     expect(arte, `${clave} no está en arte.ts`).toBeTruthy();
     expect(t.backgroundImage.overlay, `${f.slug} · velo`).toBe(arte!.overlay);
@@ -162,13 +167,17 @@ describe("el arte referenciado existe y su velo es el MEDIDO", () => {
           imageUrl?: string;
           media?: { url?: string };
         };
-        return [c.imageUrl, c.media?.url].filter((u): u is string => Boolean(u));
+        return [c.imageUrl, c.media?.url].filter((u): u is string =>
+          Boolean(u),
+        );
       }),
     );
     expect(urls.length).toBeGreaterThanOrEqual(8);
     for (const url of urls) {
       expect(url.startsWith("/"), `${url} no la sirve la app`).toBe(true);
-      expect(existsSync(RAIZ_PUBLIC + url), `${url} no existe en disco`).toBe(true);
+      expect(existsSync(RAIZ_PUBLIC + url), `${url} no existe en disco`).toBe(
+        true,
+      );
       const clave = url
         .replace(/^\/arte\/(foto\/)?/, "")
         .replace(/\.(svg|jpg)$/, "");
@@ -186,10 +195,19 @@ function medidasJpeg(ruta: string): { w: number; h: number } | null {
   if (b[0] !== 0xff || b[1] !== 0xd8) return null;
   let i = 2;
   while (i < b.length) {
-    if (b[i] !== 0xff) { i++; continue; }
+    if (b[i] !== 0xff) {
+      i++;
+      continue;
+    }
     const marca = b[i + 1];
     // SOF0..SOF15, saltando DHT(c4), JPG(c8) y DAC(cc), que no llevan medidas.
-    if (marca >= 0xc0 && marca <= 0xcf && marca !== 0xc4 && marca !== 0xc8 && marca !== 0xcc) {
+    if (
+      marca >= 0xc0 &&
+      marca <= 0xcf &&
+      marca !== 0xc4 &&
+      marca !== 0xc8 &&
+      marca !== 0xcc
+    ) {
       return { h: b.readUInt16BE(i + 5), w: b.readUInt16BE(i + 7) };
     }
     i += 2 + b.readUInt16BE(i + 2);
@@ -198,22 +216,49 @@ function medidasJpeg(ruta: string): { w: number; h: number } | null {
 }
 
 /**
- * Correcciones posteriores del piloto, leídas del SQL y no escritas a mano.
+ * Estado EFECTIVO del piloto: los seeds, con lo que sobrescriben las
+ * migraciones posteriores.
  *
- * La `0034` arregla la proporción de dos slots. Como la `0033` YA está aplicada
- * y una migración aplicada no se edita, el estado efectivo es «lo que dice la
- * 0033, con lo que la 0034 sobrescribe encima» — y eso es lo que esta prueba
- * tiene que juzgar.
+ * Una migración aplicada no se edita, así que la verdad no vive en un solo
+ * archivo: es la `0032`/`0033` más lo que corrigen la `0034` (proporción del
+ * slot de media) y la `0035` (conversión de las F4 y proporción del hero). Todo
+ * se PARSEA del SQL — una lista escrita a mano aquí se quedaría vieja sin
+ * avisar.
  */
-function ratiosCorregidos(): Map<string, string> {
-  const sql = leerMigracion("0034_fix_proporcion_media_piloto.sql");
-  const valor = /'\{1,config,media,ratio\}',\s*'"([^"]+)"'/.exec(sql)?.[1];
-  const slugs = /where slug in \(([^)]+)\)/.exec(sql)?.[1] ?? "";
-  const m = new Map<string, string>();
-  if (valor) {
-    for (const s of slugs.match(/'([a-z0-9-]+)'/g) ?? [])
-      m.set(s.replace(/'/g, ""), valor);
+type Sobrescritura = {
+  mediaRatio?: string;
+  variant?: string;
+  imageUrl?: string;
+  imageRatio?: string;
+};
+
+function sobrescrituras(): Map<string, Sobrescritura> {
+  const m = new Map<string, Sobrescritura>();
+  const poner = (slug: string, s: Sobrescritura) =>
+    m.set(slug, { ...(m.get(slug) ?? {}), ...s });
+
+  const s34 = leerMigracion("0034_fix_proporcion_media_piloto.sql");
+  const r34 = /'\{1,config,media,ratio\}',\s*'"([^"]+)"'/.exec(s34)?.[1];
+  if (r34) {
+    const lista = /where slug in \(([^)]+)\)/.exec(s34)?.[1] ?? "";
+    for (const g of lista.match(/'([a-z0-9-]+)'/g) ?? [])
+      poner(g.replace(/'/g, ""), { mediaRatio: r34 });
   }
+
+  const s35 = leerMigracion("0035_convertir_f4_a_fotografia.sql")
+    .split("\n")
+    .filter((l) => !l.trim().startsWith("--"))
+    .join("\n");
+  for (const t of s35.matchAll(
+    /\('([a-z0-9-]+)',\s*'([a-z]+)',\s*'([^']+)',\s*'([0-9/]+)'\)/g,
+  ))
+    poner(t[1], { variant: t[2], imageUrl: t[3], imageRatio: t[4] });
+  for (const t of s35.matchAll(/\('([a-z0-9-]+)',\s*'([0-9/]+)'\)/g))
+    poner(t[1], { imageRatio: t[2] });
+  const solo = /slug = '([a-z0-9-]+)'/.exec(s35)?.[1];
+  const foto = /'"(\/arte\/foto\/[^"]+)"'::jsonb/.exec(s35)?.[1];
+  if (solo && foto) poner(solo, { variant: "centered", imageUrl: foto });
+
   return m;
 }
 
@@ -223,38 +268,67 @@ describe("la proporción del slot coincide con la de la fotografía", () => {
   // en silencio. En `baby-punto-y-flor` costaba el 50 % del ancho, y como el
   // sujeto está a un lado y el recorte es CENTRADO, la miniatura salía con la
   // pared vacía. Sólo se vio mirándola; ahora lo caza la suite.
-  const CORREGIDOS = ratiosCorregidos();
+  const OVER = sobrescrituras();
+
+  /** Proporción efectiva de la figura del hero cuando dice `auto`. */
+  const AUTO: Record<string, string> = { split: "3/4", editorial: "4/3" };
 
   const slots = FILAS.flatMap((f) =>
-    f.modulos
-      .map((m) => (m.config as { media?: { url?: string; ratio?: string } }).media)
-      .filter((md): md is { url: string; ratio: string } => Boolean(md?.url))
-      .map((md) => ({
-        slug: f.slug,
-        url: md.url,
-        ratio: CORREGIDOS.get(f.slug) ?? md.ratio,
-      })),
+    f.modulos.flatMap((m) => {
+      const o = OVER.get(f.slug) ?? {};
+      const c = m.config as {
+        media?: { url?: string; ratio?: string };
+        imageUrl?: string;
+        variant?: string;
+        imageRatio?: string;
+      };
+      const out: { slug: string; url: string; ratio: string; donde: string }[] =
+        [];
+      if (c.media?.url) {
+        out.push({
+          slug: f.slug,
+          url: c.media.url,
+          ratio: o.mediaRatio ?? c.media.ratio ?? "4/3",
+          donde: "media",
+        });
+      }
+      // El HERO también recorta, y ese era el hueco: `boda-jardin-partido`
+      // perdía el 50 % del ancho y la prueba no lo miraba porque sólo cubría el
+      // slot de media.
+      const url = o.imageUrl ?? c.imageUrl;
+      const variant = o.variant ?? c.variant;
+      // `centered` pinta la foto A SANGRE, no dentro de una figura: no hay caja
+      // que pueda desencajar, así que esa variante no entra aquí.
+      if (url && (variant === "split" || variant === "editorial")) {
+        const decl = o.imageRatio ?? c.imageRatio;
+        const r = decl && decl !== "auto" ? decl : AUTO[variant];
+        out.push({ slug: f.slug, url, ratio: r, donde: `hero/${variant}` });
+      }
+      return out;
+    }),
   );
 
   it("hay slots que comprobar", () => {
     expect(slots.length).toBeGreaterThanOrEqual(2);
   });
 
-  it.each(slots.map((s) => [`${s.slug} · ${s.ratio}`, s] as const))(
-    "%s no recorta más del 15 % del ancho",
-    (_t, s) => {
-      const med = medidasJpeg(RAIZ_PUBLIC + s.url);
-      expect(med, `${s.url} no es un JPEG legible`).toBeTruthy();
-      const [a, b] = s.ratio.split("/").map(Number);
-      const pCaja = a / b;
-      const pFuente = med!.w / med!.h;
-      const recorte = pCaja < pFuente ? 1 - pCaja / pFuente : 0;
-      expect(
-        Math.round(recorte * 100),
-        `${s.slug}: caja ${pCaja.toFixed(2)} vs fuente ${pFuente.toFixed(2)}`,
-      ).toBeLessThanOrEqual(15);
-    },
-  );
+  it.each(
+    slots.map((s) => [`${s.slug} · ${s.donde} · ${s.ratio}`, s] as const),
+  )("%s no recorta más del 15 %", (_t, s) => {
+    const med = medidasJpeg(RAIZ_PUBLIC + s.url);
+    expect(med, `${s.url} no es un JPEG legible`).toBeTruthy();
+    const [a, b] = s.ratio.split("/").map(Number);
+    const pCaja = a / b;
+    const pFuente = med!.w / med!.h;
+    // LOS DOS EJES. La primera versión sólo miraba el recorte lateral, y una
+    // caja MÁS ANCHA que la fuente recorta igual, sólo que por arriba y abajo.
+    const recorte = pCaja < pFuente ? 1 - pCaja / pFuente : 1 - pFuente / pCaja;
+    const eje = pCaja < pFuente ? "lateral" : "vertical";
+    expect(
+      Math.round(recorte * 100),
+      `${s.slug} · ${s.donde}: caja ${pCaja.toFixed(2)} vs fuente ${pFuente.toFixed(2)} (${eje})`,
+    ).toBeLessThanOrEqual(15);
+  });
 });
 
 describe("no pisa lo que ya existe", () => {

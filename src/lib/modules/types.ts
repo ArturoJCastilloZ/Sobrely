@@ -132,6 +132,13 @@ export const MEDIA_RATIOS = [
   "3/2",
   "2/3",
   "16/9",
+  // Entró con la 3.ª tanda de fotos: `boda-anillos-papel` es 1600x2843 (0.563)
+  // y ninguna de las otras la calzaba sin recortar más del 15 %.
+  "9/16",
+  // `1/2` calza las dos piezas de 840x1800 de la 1.ª investigación (0.467) al
+  // 6.6 %. Se añadió en vez de subir el umbral del pre-vuelo para que pasaran,
+  // que era la salida fácil.
+  "1/2",
 ] as const;
 export type MediaRatio = (typeof MEDIA_RATIOS)[number];
 
@@ -245,6 +252,19 @@ export const heroConfigSchema = z.object({
   //   editorial · sin foto a sangre: tipografía grande y foto contenida
   //   plain     · sólo tipografía, IGNORA la foto (familia F4, cero licencias)
   variant: z.enum(HERO_VARIANTS).default("centered"),
+  /**
+   * Proporción de la figura en `split` y `editorial` (Fase 11 · P3).
+   *
+   * Estaba HARDCODEADA —3/4 en split, 4/3 en editorial— y eso recortaba a
+   * ciegas, igual que pasó con el slot de media: medido, `boda-jardin-partido`
+   * perdía el **50 %** del ancho de su fotografía y `cumpleanos-arco` el 45 %,
+   * las dos ya en producción y las dos aprobadas en la puntuación sin que se
+   * notara, porque el sujeto llena el encuadre.
+   *
+   * `auto` conserva EXACTAMENTE el valor por variante de antes, así que ninguna
+   * invitación guardada se mueve.
+   */
+  imageRatio: z.enum(["auto", ...MEDIA_RATIOS]).default("auto"),
 });
 
 export const countdownConfigSchema = objetoConLayout({

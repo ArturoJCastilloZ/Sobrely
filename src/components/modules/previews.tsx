@@ -389,7 +389,17 @@ export function HeroPreview({
                 "relative order-2 w-full overflow-hidden rounded-lg @2xl/inv:order-1 @2xl/inv:w-1/2"
               : "relative order-2 w-full max-w-md overflow-hidden rounded-lg"
           }
-          style={{ aspectRatio: config.variant === "split" ? "3/4" : "4/3" }}
+          style={{
+            // `auto` = el valor de siempre por variante. Cualquier otro lo pone
+            // la plantilla, para que la caja coincida con la fuente y no se
+            // recorte a ciegas.
+            aspectRatio:
+              config.imageRatio !== "auto"
+                ? config.imageRatio
+                : config.variant === "split"
+                  ? "3/4"
+                  : "4/3",
+          }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

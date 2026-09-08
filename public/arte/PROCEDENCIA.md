@@ -104,6 +104,38 @@ del repo que lo cumple es `foto/boda-marco-floral.jpg`, con 0.10.
   el fondo es **rojo intenso de tela de iglesia**: choca con la dirección blanca
   y serena de la categoría y falla el criterio de consistencia interna.
 
+## 3.ª tanda (Fase 11) — conversión de las F4 a fotografía
+
+Descargadas el **2026-09-08** con autorización explícita del dev, después de que
+la puntuación del piloto diera **7 de 7 aprobadas con fotografía y 0 de 8 sin
+ella** (§19 del research). Mismas licencias, leídas ese día.
+
+| archivo | fuente | autor | licencia | velo medido |
+|---|---|---|---|---|
+| `foto/boda-anillos-papel.jpg` | Pexels [36254873](https://www.pexels.com/photo/elegant-wedding-rings-on-pastel-paper-background-36254873/) | Svitlana Bazhiv | Free to use | **0.55** |
+| `foto/baby-juguetes-madera.jpg` | Pexels [7269619](https://www.pexels.com/photo/a-wooden-toys-on-white-surface-7269619/) | Kaboompics | Free to use | **0.55** (texto claro) |
+| `foto/revelacion-tinta.jpg` | Pexels [9807346](https://www.pexels.com/photo/pink-and-blue-smoke-on-air-9807346/) | Engin Akyurt | Free to use | **0.25** |
+| `foto/cumple-velas-espiral.jpg` | Pexels [4397823](https://www.pexels.com/photo/multicolored-spircal-candles-with-holders-on-white-surface-4397823/) | Kaboompics | Free to use | **0.40** |
+| `foto/corp-reticula-hormigon.jpg` | Pexels [38374701](https://www.pexels.com/photo/abstract-concrete-grid-ceiling-architecture-38374701/) | wal_172619 | Free to use | **0.55** |
+
+### `revelacion-tinta` es la primera que sirve de TELÓN
+
+De las **trece** fotografías del repo, es la **única** cuyo velo mínimo baja del
+umbral de 0.35 que fija el research: **0.25**. Un telón exige rango de luminancia
+estrecho y centro vacío, y la tinta rosa y azul sobre blanco lo cumple. Por eso
+`revelacion-dos-sobres` se convierte a **F2 (telón total)** y no a figura
+contenida — y por eso la familia F2, que el piloto tenía vacía, por fin tiene
+representante.
+
+### Un descarte de esta tanda
+
+- **Vestidos de gala colgados** para XV años: todos los resultados son vestidos
+  de NOVIA blancos, que leerían como Boda. Es el problema nº 7 del research
+  («podría pertenecer a cualquier categoría»), agravado porque además apunta a la
+  categoría equivocada. `xv-seda` usa `foto/xv-seda-rosa.jpg`, que ya estaba en
+  el repo desde la 1.ª investigación y **ninguna plantilla usaba** — cero
+  licencias nuevas para esa conversión.
+
 ## Los SVG
 
 Las otras diez direcciones (`arte/*.svg`) están **dibujadas a mano en este
