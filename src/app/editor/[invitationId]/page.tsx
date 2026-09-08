@@ -35,6 +35,21 @@ export default async function EditorPage({
 
   if (!invitation) notFound();
 
+  // El token de bloqueo optimista se pide APARTE, y no en el select de arriba,
+  // porque PostgREST falla la consulta ENTERA si la columna no existe: medido
+  // contra la BD real, `select=id,version` responde `42703 column
+  // invitations.version does not exist`. Metido en el select principal, el
+  // editor daria 404 en TODAS las invitaciones en el hueco entre desplegar
+  // este codigo y aplicar la migracion `0027` — no un guardado degradado, la
+  // pantalla completa. Aislado aqui, ese hueco deja el editor USABLE (con la
+  // version en 1) y solo el guardado responde error hasta que el SQL corra.
+  const { data: versionRow } = await supabase
+    .from("invitations")
+    .select("version")
+    .eq("id", invitationId)
+    .maybeSingle();
+  const initialVersion = (versionRow?.version as number | null) ?? 1;
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("username")
@@ -74,6 +89,7 @@ export default async function EditorPage({
   return (
     <InvitationEditor
       initialInvitation={initialInvitation}
+      initialVersion={initialVersion}
       initialModules={initialModules}
       initialTheme={parseTheme(invitation.theme_config)}
       username={profile?.username ?? ""}

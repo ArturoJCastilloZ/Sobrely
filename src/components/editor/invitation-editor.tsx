@@ -127,12 +127,15 @@ function Gutter({
 
 export function InvitationEditor({
   initialInvitation,
+  initialVersion,
   initialModules,
   initialTheme,
   username,
   userId,
 }: {
   initialInvitation: EditorInvitation;
+  /** Token de bloqueo optimista de la invitacion (columna `version`, `0027`). */
+  initialVersion: number;
   initialModules: EditorModule[];
   initialTheme: ThemeConfig;
   username: string;
@@ -151,6 +154,15 @@ export function InvitationEditor({
     (action: EditorAction) => despachar({ type: "aplicar", action }),
     [],
   );
+
+  // Bloqueo optimista. La version vive en una REF y no en el documento: no se
+  // edita, y meterla en el reducer la volveria parte del historial (un ⌘Z
+  // retrocederia el token y el guardado siguiente choparia contra si mismo).
+  const versionRef = useRef(initialVersion);
+  // Cuando el servidor rechaza por conflicto, el editor deja de guardar. No es
+  // un toast y seguir: reintentar un conflicto no lo resuelve, y cada reintento
+  // repite el aviso mientras el trabajo del otro sigue en riesgo.
+  const [conflicto, setConflicto] = useState(false);
 
   const uploadCtx = { userId, invitationId: initialInvitation.id };
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
@@ -275,6 +287,7 @@ export function InvitationEditor({
 
     const result = await saveEditor({
       invitationId: enviado.invitation.id,
+      version: versionRef.current,
       settings: {
         title: enviado.invitation.title,
         slug: cleanSlug,
@@ -292,9 +305,20 @@ export function InvitationEditor({
     });
 
     if (!result.ok) {
+      if (result.conflict) {
+        setConflicto(true);
+        // Sin `duration: Infinity` el aviso se va solo y el usuario sigue
+        // editando creyendo que se guarda. El banner de arriba queda fijo.
+        toast.error(result.error, { duration: Infinity });
+        return;
+      }
       toast.error(result.error);
       return;
     }
+
+    // Se adopta la version que dejo el servidor. Si se quedara con la vieja,
+    // el guardado siguiente chocaria contra su propio guardado anterior.
+    versionRef.current = result.version;
 
     // Solo se remapean los IDS temporales a su uuid real. Reemplazar los
     // modulos enteros con los del servidor —lo que hacia antes— borraba
@@ -317,7 +341,14 @@ export function InvitationEditor({
     setSelectedId((cur) => (cur && mapa[cur] ? mapa[cur] : cur));
   }, []);
 
-  const { guardarAhora } = useAutosave({ hayCambios: dirty, guardar: guardarDocumento });
+  const { guardarAhora } = useAutosave({
+    hayCambios: dirty,
+    guardar: guardarDocumento,
+    // `pausado` y no `hayCambios: dirty && !conflicto`: el usuario SIGUE
+    // teniendo cambios sin guardar, asi que el aviso al cerrar la pestana debe
+    // seguir vivo. Lo que se apaga es el reintento.
+    pausado: conflicto,
+  });
 
   // Deshacer / rehacer. `metaKey` para macOS, `ctrlKey` para el resto.
   useEffect(() => {
@@ -525,6 +556,43 @@ export function InvitationEditor({
 
         </div>
       </header>
+
+      {/*
+        Conflicto de version. Es un banner FIJO y no solo un toast: el toast se
+        va (o el usuario lo cierra) y entonces sigue editando creyendo que se
+        guarda, que es el fallo silencioso que este bloqueo viene a cerrar.
+        Se le dice lo que pasa, lo que se hizo por el y la unica salida segura.
+      */}
+      {conflicto && (
+        <div
+          role="alert"
+          // `warning` y no `destructive`: esto no es una operacion que fallo,
+          // es un "detente". Y es el token que SI tiene el par superficie +
+          // primer plano con contraste AA verificado por prueba
+          // (`semantic-colors.test.ts`); `destructive` no tiene `-surface`,
+          // asi que `bg-destructive-surface` no existiria y el banner saldria
+          // transparente.
+          className="shrink-0 border-b border-warning/40 bg-warning-surface px-4 py-3 text-sm"
+        >
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="font-medium text-warning-fg">
+              Otra pestaña guardó cambios más nuevos.
+            </span>
+            <span className="text-muted-foreground">
+              Dejamos de guardar para no borrar ese trabajo. Tus cambios siguen
+              en pantalla; recarga para ver la versión más nueva.
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-auto"
+              onClick={() => window.location.reload()}
+            >
+              Recargar
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/*
         Tres columnas: riel de secciones, canvas y panel de propiedades.

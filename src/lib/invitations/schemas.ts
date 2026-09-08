@@ -68,6 +68,16 @@ export const editorModuleSchema = z
 
 export const saveEditorSchema = z.object({
   invitationId: z.string().uuid(),
+  /**
+   * Versión que el editor cree que tiene la invitación (bloqueo optimista).
+   * El servidor la compara y la incrementa en la misma sentencia; si no
+   * coincide, rechaza el guardado en vez de pisar el trabajo de otra pestaña.
+   *
+   * Es OBLIGATORIA a propósito: con `.optional()` un cliente viejo que no la
+   * mande se saltaría el bloqueo entero, que es precisamente el fallo
+   * silencioso que esto viene a cerrar.
+   */
+  version: z.number().int().positive(),
   settings: invitationSettingsSchema,
   theme: themeSchema,
   modules: z.array(editorModuleSchema).max(50),

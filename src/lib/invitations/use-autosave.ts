@@ -21,16 +21,25 @@ import { useCallback, useEffect, useRef } from "react";
  *   perder, y la gente aprende a ignorar el aviso.
  * - El temporizador se limpia al desmontar, pero un guardado ya disparado NO se
  *   cancela: cancelarlo sería exactamente perder el trabajo que esto protege.
+ * - `pausado` apaga el TEMPORIZADOR y deja vivo el aviso al cerrar la pestaña.
+ *   Son dos cosas distintas y compartían un solo flag: cuando el servidor
+ *   rechaza un guardado por conflicto de versión, hay que dejar de reintentar
+ *   (reintentar no lo resuelve, solo repite el aviso) pero el usuario SIGUE
+ *   teniendo cambios sin guardar, así que quitarle el `beforeunload` sería
+ *   cambiar un fallo silencioso por otro.
  */
 export function useAutosave({
   hayCambios,
   guardar,
   esperaMs = 1200,
+  pausado = false,
 }: {
   hayCambios: boolean;
   /** Debe resolver cuando el guardado terminó. Los errores se manejan dentro. */
   guardar: () => Promise<void>;
   esperaMs?: number;
+  /** Detiene el autoguardado sin tocar el aviso al cerrar la pestaña. */
+  pausado?: boolean;
 }) {
   // La ref se sincroniza en un EFECTO, no durante el render: escribir una ref
   // mientras se renderiza rompe el modelo concurrente de React (y el lint lo
@@ -59,7 +68,7 @@ export function useAutosave({
   }, []);
 
   useEffect(() => {
-    if (!hayCambios) return;
+    if (!hayCambios || pausado) return;
     temporizador.current = setTimeout(() => {
       void guardarAhora();
     }, esperaMs);
@@ -68,7 +77,7 @@ export function useAutosave({
     };
     // `hayCambios` cambia en cada edición, así que el temporizador se reinicia
     // mientras el usuario sigue escribiendo: guarda cuando hace una pausa.
-  }, [hayCambios, esperaMs, guardarAhora]);
+  }, [hayCambios, pausado, esperaMs, guardarAhora]);
 
   useEffect(() => {
     if (!hayCambios) return;

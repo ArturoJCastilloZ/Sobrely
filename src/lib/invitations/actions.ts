@@ -316,8 +316,14 @@ export type SavedModule = {
 };
 
 export type SaveEditorResult =
-  | { ok: true; modules: SavedModule[] }
-  | { ok: false; error: string };
+  | { ok: true; modules: SavedModule[]; version: number }
+  /**
+   * `conflict` distingue "otra pestaña guardó antes que tú" de un error
+   * cualquiera. El editor lo necesita para PARAR de guardar en vez de mostrar
+   * un toast y seguir reintentando: reintentar un conflicto no lo resuelve,
+   * solo repite el aviso.
+   */
+  | { ok: false; error: string; conflict?: true };
 
 /**
  * Persists the full editor state: invitation settings + the module list.
@@ -333,7 +339,7 @@ export async function saveEditor(
       error: parsed.error.issues[0]?.message ?? "Datos inválidos.",
     };
   }
-  const { invitationId, settings, theme, modules } = parsed.data;
+  const { invitationId, version, settings, theme, modules } = parsed.data;
 
   const supabase = await createClient();
   const {
@@ -341,10 +347,14 @@ export async function saveEditor(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sesión expirada." };
 
-  // Verify ownership up front (defense in depth alongside RLS).
+  // Verify ownership up front (defense in depth alongside RLS). Trae también
+  // la versión, solo para poder distinguir "no es tuya / ya no existe" de
+  // "otra pestaña se te adelantó" cuando el compare-and-set de abajo no
+  // afecte ninguna fila. Este chequeo es INFORMATIVO: la defensa real es el
+  // `where version = ...` de la sentencia siguiente.
   const { data: owned, error: ownErr } = await supabase
     .from("invitations")
-    .select("id")
+    .select("id, version")
     .eq("id", invitationId)
     .eq("user_id", user.id)
     .single();
@@ -352,8 +362,18 @@ export async function saveEditor(
     return { ok: false, error: "No tienes acceso a esta invitación." };
   }
 
-  // 1) Update invitation settings.
-  const { error: updErr } = await supabase
+  // 1) Update invitation settings — compare-and-set de la versión.
+  //
+  // El `where version = <esperada>` y el `version = <esperada> + 1` van en la
+  // MISMA sentencia, así que de N guardados concurrentes con la misma versión
+  // esperada pasa exactamente uno: los demás afectan 0 filas. Leer la versión
+  // en una consulta y escribirla en otra no defendería nada — es la lección
+  // que dejó el contador de intentos del reporte con PIN (`0020`).
+  //
+  // `select().maybeSingle()` es lo que permite CONTAR las filas afectadas: sin
+  // el select, PostgREST no devuelve el cuerpo y un update que no tocó nada es
+  // indistinguible de uno que sí.
+  const { data: bumped, error: updErr } = await supabase
     .from("invitations")
     .update({
       title: settings.title,
@@ -361,15 +381,31 @@ export async function saveEditor(
       event_type: settings.eventType || null,
       event_date: settings.eventDate || null,
       theme_config: theme,
+      version: version + 1,
     })
     .eq("id", invitationId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("version", version)
+    .select("version")
+    .maybeSingle();
 
   if (updErr) {
     if (updErr.code === "23505") {
       return { ok: false, error: "Ya tienes otra invitación con ese slug." };
     }
     return { ok: false, error: updErr.message };
+  }
+
+  // 0 filas afectadas con la invitación existente y siendo tuya = la versión
+  // no coincidió. Se responde ANTES de tocar los módulos, así que un conflicto
+  // no deja nada escrito a medias: ni ajustes, ni borrados, ni inserciones.
+  if (!bumped) {
+    return {
+      ok: false,
+      conflict: true,
+      error:
+        "Otra pestaña o dispositivo guardó cambios más nuevos. Recarga para no borrar ese trabajo.",
+    };
   }
 
   // 2) Reconcile modules.
@@ -439,5 +475,8 @@ export async function saveEditor(
   return {
     ok: true,
     modules: (fresh ?? []) as SavedModule[],
+    // La versión que dejó el compare-and-set. El cliente la adopta; si se
+    // quedara con la vieja, su siguiente guardado chocaría contra sí mismo.
+    version: bumped.version as number,
   };
 }
