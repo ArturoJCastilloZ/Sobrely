@@ -22,11 +22,29 @@ export function ThemeScope({
    * whose scrollport is a panel rather than the window passes its own length.
    */
   backdropHeight = "100svh",
+  /**
+   * Si el telón se queda pegado al scrollport (`true`, el comportamiento
+   * público) o se ancla arriba del scope (`false`).
+   *
+   * Existe por el zoom del editor. `position: sticky` dentro de un ancestro
+   * con `transform` calcula su desplazamiento en el espacio SIN escalar y
+   * luego se escala, así que el telón DERIVA. Medido en el editor real, con
+   * el mismo recorrido de scroll en ambos casos:
+   *
+   *   zoom 100% → top 49 → 16 → 16   (deriva 33: se pega)
+   *   zoom 150% → top 50 → 166 → 332 (deriva 282: se va con el contenido)
+   *
+   * Derivar se ve como un fallo, no como un efecto. Con el zoom fuera del
+   * 100 % el editor pasa a `false`: el telón se queda arriba y quieto, que es
+   * predecible. La página pública no tiene `transform` y no se entera.
+   */
+  backdropSticky = true,
   children,
 }: {
   theme: ThemeConfig;
   className?: string;
   backdropHeight?: string;
+  backdropSticky?: boolean;
   children: React.ReactNode;
 }) {
   const bgImage = theme.backgroundImage?.url;
@@ -70,13 +88,30 @@ export function ThemeScope({
         <div
           aria-hidden
           data-testid="inv-backdrop"
-          className="pointer-events-none sticky top-0 z-0 h-0"
+          data-sticky={backdropSticky ? "si" : "no"}
+          className={cn(
+            "pointer-events-none top-0 z-0",
+            // Ninguna de las dos empuja el contenido: la sticky es de alto
+            // CERO con las capas absolutas dentro, y la anclada es `absolute`,
+            // que tampoco ocupa flujo.
+            //
+            // La anclada cubre TODO el scope, no una altura de viewport. Se
+            // probaron las tres y esta es la menos mala con el zoom activo:
+            //   sticky        -> deriva (medido 282px sobre 663 de scroll)
+            //   anclada arriba-> se va del todo (deriva 719 = TODO el
+            //                    recorrido) y las secciones de abajo quedan
+            //                    SIN fondo
+            //   cubriendo todo-> estirada, pero nunca desnuda
+            // Con el zoom fuera del 100% se está inspeccionando el layout, no
+            // juzgando el fondo; que no falte pesa más que que no se estire.
+            backdropSticky ? "sticky h-0" : "absolute inset-0",
+          )}
         >
           <div
             className="absolute top-0 left-0 w-full bg-cover bg-center"
             style={{
               backgroundImage: `url("${bgImage}")`,
-              height: backdropHeight,
+              height: backdropSticky ? backdropHeight : "100%",
             }}
           />
           {/* Overlay of the surface color keeps text legible over the photo. */}
@@ -85,7 +120,7 @@ export function ThemeScope({
             style={{
               backgroundColor: theme.colors.background,
               opacity: theme.backgroundImage.overlay,
-              height: backdropHeight,
+              height: backdropSticky ? backdropHeight : "100%",
             }}
           />
         </div>

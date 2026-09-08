@@ -133,10 +133,24 @@ describe("telón de fondo — el sticky no admite ancestros que recorten", () =>
     expect(sinComentarios(scope)).not.toMatch(CLIP_ROTO);
   });
 
-  it("el telón es sticky y no ocupa alto en el flujo", () => {
+  it("el telón no ocupa alto en el flujo, en sus DOS variantes", () => {
     // `h-0`: las capas van absolutas dentro, así que el telón no empuja el
-    // contenido hacia abajo (medido: alto del wrapper = 0).
-    expect(sinComentarios(scope)).toMatch(/sticky\s+top-0\s+z-0\s+h-0/);
+    // contenido hacia abajo (medido: alto del wrapper = 0). Vale para las dos
+    // variantes — si una de ellas dejara de ser `h-0`, empujaría la invitación
+    // hacia abajo justo en el sitio donde nadie lo esperaría.
+    const s = sinComentarios(scope);
+    expect(s).toMatch(/pointer-events-none top-0 z-0/);
+    // Ninguna ocupa flujo, por razones distintas: la sticky por `h-0` con las
+    // capas absolutas dentro, la anclada por ser `absolute`. Se afirman las
+    // dos juntas para que cambiar una obligue a pensar en la otra.
+    expect(s).toMatch(/backdropSticky\s*\?\s*"sticky h-0"\s*:\s*"absolute inset-0"/);
+  });
+
+  it("por DEFECTO el telón es sticky (lo que quiere la página pública)", () => {
+    // La variante anclada existe solo por el `transform` del zoom del editor.
+    // Si el default se invirtiera, las invitaciones publicadas perderían el
+    // telón en silencio: seguirían pintando el fondo, pero quieto arriba.
+    expect(sinComentarios(scope)).toMatch(/backdropSticky\s*=\s*true/);
   });
 
   it("el telón NO usa background-attachment: fixed", () => {
