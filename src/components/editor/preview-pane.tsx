@@ -206,9 +206,16 @@ export function PreviewPane({
       </ThemeScope>
       </div>
 
+      {/*
+        Reserva del alto del paginador. Sin esto la barra se monta ENCIMA del
+        ultimo contenido —el dev lo vio tapando el boton "Confirmar"—: `sticky`
+        no ocupa espacio propio, flota sobre lo que hay debajo.
+      */}
+      {visible.length > 1 && <div aria-hidden className="h-14" />}
+
       {visible.length > 1 && (
-        <div className="sticky bottom-0 mt-3 flex justify-center">
-          <div className="flex items-center gap-1 rounded-full border bg-background/95 px-1.5 py-1 shadow-(--ed-shadow-sm) backdrop-blur">
+        <div className="pointer-events-none sticky bottom-3 -mt-11 flex justify-center">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-full border bg-background/95 px-1.5 py-1 shadow-(--ed-shadow-menu) backdrop-blur">
             <Button
               variant="ghost"
               size="icon-sm"

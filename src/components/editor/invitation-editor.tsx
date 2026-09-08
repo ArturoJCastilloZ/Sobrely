@@ -57,6 +57,7 @@ import { GuestManager } from "@/components/dashboard/guest-manager";
 import type { ThemeConfig } from "@/lib/theme/theme";
 import {
   Undo2Icon, Redo2Icon, LayersIcon, MousePointerClickIcon, ArrowLeftIcon, PlusIcon,
+  ExternalLinkIcon,
   PaletteIcon, UsersIcon, SettingsIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -484,6 +485,29 @@ export function InvitationEditor({
               >
                 <Redo2Icon />
               </Button>
+              {/*
+                "Ver" vive aqui y no dentro de Ajustes. Es la accion que mas se
+                repite mientras editas —mirar como va quedando de verdad— y
+                enterrarla dos clics adentro la volvia invisible. Solo aparece
+                publicada, porque antes de eso el enlace no lleva a ningun lado.
+              */}
+              {invitation.is_published && username && invitation.slug && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  nativeButton={false}
+                  render={
+                    <a
+                      href={`/${username}/${invitation.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  }
+                >
+                  <ExternalLinkIcon />
+                  Ver
+                </Button>
+              )}
               <Button
                 onClick={handlePublishToggle}
                 disabled={isPublishing}
