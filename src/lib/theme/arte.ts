@@ -130,6 +130,22 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "claro",
     overlay: 0,
   },
+  {
+    clave: "cumple-guirnalda",
+    tipo: "svg",
+    nombre: "Guirnalda",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0.05,
+  },
+  {
+    clave: "corp-papel",
+    tipo: "svg",
+    nombre: "Papel",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0.05,
+  },
   // ---- Fotografía (Pexels, descargada y auto-hospedada) ------------------
   //
   // El `overlay` de estas NO es una preferencia estética: es el velo MÍNIMO

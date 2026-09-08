@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <defs>
+    <radialGradient id="calido" cx="50%" cy="6%" r="55%">
+      <stop offset="0%" stop-color="#ffe4ec" stop-opacity="0.8"/><stop offset="100%" stop-color="#ffe4ec" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Banderin triangular: el vocabulario mas reconocible de un cumpleaños,
+         y a diferencia del confeti tiene ESTRUCTURA — cuelga de una cuerda, asi
+         que ordena el borde superior en vez de salpicarlo. Es la diferencia
+         con `cumple-confeti`, que es su hermana en el mismo tipo de evento. -->
+    <g id="banderin"><path d="M-11 0 L11 0 L0 26 Z"/></g>
+    <g id="globo">
+      <ellipse rx="13" ry="16" />
+      <path d="M0 16 L-3 21 L3 21 Z"/>
+    </g>
+  </defs>
+
+  <rect width="420" height="900" fill="#fffdf9"/>
+  <rect width="420" height="900" fill="url(#calido)"/>
+
+  <!-- Cuerda con caida, no recta: una linea horizontal se lee como regla; la
+       curva se lee como cuerda colgada. -->
+  <path d="M-6 34 Q210 88 426 34" fill="none" stroke="#c9b8a8" stroke-width="1.6"/>
+  <g>
+    <g fill="#f4a7b9"><use href="#banderin" transform="translate(24 39) rotate(-9)"/></g>
+    <g fill="#f7cf72"><use href="#banderin" transform="translate(70 52) rotate(-6)"/></g>
+    <g fill="#8ec6de"><use href="#banderin" transform="translate(117 63) rotate(-3)"/></g>
+    <g fill="#a8d8a8"><use href="#banderin" transform="translate(164 71)"/></g>
+    <g fill="#f4a7b9"><use href="#banderin" transform="translate(210 74)"/></g>
+    <g fill="#f7cf72"><use href="#banderin" transform="translate(256 71)"/></g>
+    <g fill="#8ec6de"><use href="#banderin" transform="translate(303 63) rotate(3)"/></g>
+    <g fill="#a8d8a8"><use href="#banderin" transform="translate(350 52) rotate(6)"/></g>
+    <g fill="#f4a7b9"><use href="#banderin" transform="translate(396 39) rotate(9)"/></g>
+  </g>
+
+  <!-- Globos en las esquinas de arriba, con cordel: cierran la composicion sin
+       entrar en el centro, que es del nombre. -->
+  <g opacity="0.9">
+    <g fill="#f6bfcc"><use href="#globo" transform="translate(36 142)"/></g>
+    <path d="M36 163 C30 186 42 206 34 228" fill="none" stroke="#d8c3b4" stroke-width="0.9"/>
+    <g fill="#bfe0ee"><use href="#globo" transform="translate(66 170) scale(0.82)"/></g>
+    <path d="M66 187 C61 204 70 218 64 234" fill="none" stroke="#d8c3b4" stroke-width="0.8"/>
+    <g fill="#fbe2a4"><use href="#globo" transform="translate(384 146) scale(0.95)"/></g>
+    <path d="M384 166 C390 188 379 206 387 228" fill="none" stroke="#d8c3b4" stroke-width="0.9"/>
+  </g>
+  <g opacity="0.4">
+    <g fill="#f6bfcc"><use href="#globo" transform="translate(40 832) scale(0.8)"/></g>
+    <g fill="#bfe0ee"><use href="#globo" transform="translate(380 856) scale(0.72)"/></g>
+  </g>
+</svg>

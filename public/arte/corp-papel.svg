@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <defs>
+    <!-- Papel de algodon: grano fino y sin color. Es el registro opuesto a
+         `corp-lineas`, que es plano tecnico; esta es papeleria ejecutiva. -->
+    <filter id="algodonP"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" seed="61"/><feColorMatrix type="saturate" values="0"/></filter>
+    <linearGradient id="grafito" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#334155"/><stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+    <!-- Relieve seco: dos lineas, una clara y una oscura desplazadas 1px. Es
+         como se simula un embozado sin usar sombras. -->
+    <g id="relieve">
+      <path d="M0 0 H120" stroke="#ffffff" stroke-width="1.4" opacity="0.9"/>
+      <path d="M0 1.4 H120" stroke="#94a3b8" stroke-width="0.9" opacity="0.45"/>
+    </g>
+  </defs>
+
+  <rect width="420" height="900" fill="#f7f6f3"/>
+
+  <!-- Bloque de encabezado: un rectangulo mas claro con relieve, como el
+       membrete gofrado de un papel corporativo. Toda la identidad en la banda
+       superior, que es la visible en la miniatura. -->
+  <rect x="0" y="0" width="420" height="168" fill="#fbfaf8"/>
+  <g transform="translate(150 168)"><use href="#relieve"/></g>
+  <g transform="translate(150 176) scale(0.55 1)"><use href="#relieve"/></g>
+
+  <!-- Barra de grafito fina arriba y un cuadro geometrico sobrio: sin color
+       corporativo inventado, que es lo que hace que sirva para CUALQUIER
+       empresa. -->
+  <rect x="0" y="0" width="420" height="3" fill="url(#grafito)"/>
+  <g fill="none" stroke="#475569" opacity="0.3">
+    <rect x="176" y="52" width="68" height="68"/>
+    <rect x="190" y="66" width="40" height="40"/>
+    <path d="M176 52 L244 120 M244 52 L176 120" stroke-width="0.6" opacity="0.6"/>
+  </g>
+
+  <rect x="26" y="212" width="368" height="662" fill="none" stroke="#475569" stroke-width="0.6" opacity="0.22"/>
+  <rect width="420" height="900" filter="url(#algodonP)" opacity="0.055"/>
+</svg>
