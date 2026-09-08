@@ -180,6 +180,83 @@ describe("el arte referenciado existe y su velo es el MEDIDO", () => {
   });
 });
 
+/** Ancho y alto de un JPEG, leídos de sus marcadores SOF. Sin dependencias. */
+function medidasJpeg(ruta: string): { w: number; h: number } | null {
+  const b = readFileSync(ruta);
+  if (b[0] !== 0xff || b[1] !== 0xd8) return null;
+  let i = 2;
+  while (i < b.length) {
+    if (b[i] !== 0xff) { i++; continue; }
+    const marca = b[i + 1];
+    // SOF0..SOF15, saltando DHT(c4), JPG(c8) y DAC(cc), que no llevan medidas.
+    if (marca >= 0xc0 && marca <= 0xcf && marca !== 0xc4 && marca !== 0xc8 && marca !== 0xcc) {
+      return { h: b.readUInt16BE(i + 5), w: b.readUInt16BE(i + 7) };
+    }
+    i += 2 + b.readUInt16BE(i + 2);
+  }
+  return null;
+}
+
+/**
+ * Correcciones posteriores del piloto, leídas del SQL y no escritas a mano.
+ *
+ * La `0034` arregla la proporción de dos slots. Como la `0033` YA está aplicada
+ * y una migración aplicada no se edita, el estado efectivo es «lo que dice la
+ * 0033, con lo que la 0034 sobrescribe encima» — y eso es lo que esta prueba
+ * tiene que juzgar.
+ */
+function ratiosCorregidos(): Map<string, string> {
+  const sql = leerMigracion("0034_fix_proporcion_media_piloto.sql");
+  const valor = /'\{1,config,media,ratio\}',\s*'"([^"]+)"'/.exec(sql)?.[1];
+  const slugs = /where slug in \(([^)]+)\)/.exec(sql)?.[1] ?? "";
+  const m = new Map<string, string>();
+  if (valor) {
+    for (const s of slugs.match(/'([a-z0-9-]+)'/g) ?? [])
+      m.set(s.replace(/'/g, ""), valor);
+  }
+  return m;
+}
+
+describe("la proporción del slot coincide con la de la fotografía", () => {
+  // El hueco que dejó pasar el fallo: el slot pinta con `object-fit: cover`, así
+  // que declarar una proporción que no es la de la fuente NO da error — recorta
+  // en silencio. En `baby-punto-y-flor` costaba el 50 % del ancho, y como el
+  // sujeto está a un lado y el recorte es CENTRADO, la miniatura salía con la
+  // pared vacía. Sólo se vio mirándola; ahora lo caza la suite.
+  const CORREGIDOS = ratiosCorregidos();
+
+  const slots = FILAS.flatMap((f) =>
+    f.modulos
+      .map((m) => (m.config as { media?: { url?: string; ratio?: string } }).media)
+      .filter((md): md is { url: string; ratio: string } => Boolean(md?.url))
+      .map((md) => ({
+        slug: f.slug,
+        url: md.url,
+        ratio: CORREGIDOS.get(f.slug) ?? md.ratio,
+      })),
+  );
+
+  it("hay slots que comprobar", () => {
+    expect(slots.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it.each(slots.map((s) => [`${s.slug} · ${s.ratio}`, s] as const))(
+    "%s no recorta más del 15 % del ancho",
+    (_t, s) => {
+      const med = medidasJpeg(RAIZ_PUBLIC + s.url);
+      expect(med, `${s.url} no es un JPEG legible`).toBeTruthy();
+      const [a, b] = s.ratio.split("/").map(Number);
+      const pCaja = a / b;
+      const pFuente = med!.w / med!.h;
+      const recorte = pCaja < pFuente ? 1 - pCaja / pFuente : 0;
+      expect(
+        Math.round(recorte * 100),
+        `${s.slug}: caja ${pCaja.toFixed(2)} vs fuente ${pFuente.toFixed(2)}`,
+      ).toBeLessThanOrEqual(15);
+    },
+  );
+});
+
 describe("no pisa lo que ya existe", () => {
   it("es re-ejecutable", () => {
     expect(SQL).toContain("on conflict (slug) do nothing");
