@@ -24,8 +24,17 @@
 export type PolaridadArte = "oscuro" | "claro" | "ambos";
 
 export type DireccionArte = {
-  /** Clave estable; el archivo es `public/arte/<clave>.svg`. */
+  /** Clave estable. El archivo depende de `tipo` — ver `rutaArte`. */
   clave: string;
+  /**
+   * `svg` = dibujado a mano aquí. `foto` = fotografía de Pexels DESCARGADA y
+   * auto-hospedada en `public/arte/foto/`.
+   *
+   * Nunca se enlaza a `images.pexels.com`: eso seria un CDN en runtime y
+   * rompe la regla de cero phone-home. La descarga es de una vez, como una
+   * dependencia. Procedencia y autoria en `public/arte/PROCEDENCIA.md`.
+   */
+  tipo: "svg" | "foto";
   /** Nombre para el panel de tema, cuando se exponga al usuario. */
   nombre: string;
   /** Tipos de evento para los que el arte es idiomático. */
@@ -43,6 +52,7 @@ export type DireccionArte = {
 export const ARTE: readonly DireccionArte[] = [
   {
     clave: "boda-botanica",
+    tipo: "svg",
     nombre: "Botánica",
     eventos: ["Boda"],
     polaridad: "oscuro",
@@ -50,6 +60,7 @@ export const ARTE: readonly DireccionArte[] = [
   },
   {
     clave: "xv-noche-oro",
+    tipo: "svg",
     nombre: "Noche y oro",
     eventos: ["XV años"],
     polaridad: "claro",
@@ -57,6 +68,7 @@ export const ARTE: readonly DireccionArte[] = [
   },
   {
     clave: "revelacion-acuarela",
+    tipo: "svg",
     nombre: "Acuarela",
     eventos: ["Baby shower", "Revelación de género"],
     polaridad: "oscuro",
@@ -64,6 +76,7 @@ export const ARTE: readonly DireccionArte[] = [
   },
   {
     clave: "boda-lino-sello",
+    tipo: "svg",
     nombre: "Lino y sello",
     eventos: ["Boda"],
     polaridad: "oscuro",
@@ -71,6 +84,7 @@ export const ARTE: readonly DireccionArte[] = [
   },
   {
     clave: "xv-rosa-polvo",
+    tipo: "svg",
     nombre: "Rosa polvo",
     eventos: ["XV años"],
     polaridad: "oscuro",
@@ -78,6 +92,7 @@ export const ARTE: readonly DireccionArte[] = [
   },
   {
     clave: "cumple-confeti",
+    tipo: "svg",
     nombre: "Confeti",
     eventos: ["Cumpleaños"],
     polaridad: "oscuro",
@@ -85,6 +100,7 @@ export const ARTE: readonly DireccionArte[] = [
   },
   {
     clave: "cumple-neon",
+    tipo: "svg",
     nombre: "Neón",
     eventos: ["Cumpleaños"],
     polaridad: "claro",
@@ -92,6 +108,7 @@ export const ARTE: readonly DireccionArte[] = [
   },
   {
     clave: "baby-cielo",
+    tipo: "svg",
     nombre: "Cielo",
     eventos: ["Baby shower"],
     polaridad: "oscuro",
@@ -99,6 +116,7 @@ export const ARTE: readonly DireccionArte[] = [
   },
   {
     clave: "corp-lineas",
+    tipo: "svg",
     nombre: "Retícula",
     eventos: ["Corporativo"],
     polaridad: "oscuro",
@@ -106,16 +124,58 @@ export const ARTE: readonly DireccionArte[] = [
   },
   {
     clave: "corp-noche",
+    tipo: "svg",
     nombre: "Marino",
     eventos: ["Corporativo"],
     polaridad: "claro",
     overlay: 0,
   },
+  // ---- Fotografía (Pexels, descargada y auto-hospedada) ------------------
+  //
+  // El `overlay` de estas NO es una preferencia estética: es el velo MÍNIMO
+  // que `scripts/verificar-contraste-arte.mts` midió para que el peor píxel
+  // del centro llegue a AA. Una foto tiene mucho más rango de luminancia que
+  // un SVG, así que desnuda ninguna de las tres admitía texto legible: 4.15,
+  // 3.44 y 2.37 en el peor píxel.
+  //
+  // Se descartó una cuarta (`boda-flores-cinta`) porque exigía 0.55 de velo:
+  // a esa opacidad la foto queda medio borrada y ya no estás mostrando una
+  // foto, estás mostrando un color. Regla de selección que deja: fotos de
+  // rango de luminancia ESTRECHO y centro vacío — un flat-lay sobre fondo
+  // claro funciona, un claroscuro dramático no.
+  {
+    clave: "boda-marco-floral",
+    tipo: "foto",
+    nombre: "Marco floral",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    // 0.10 medido. Es la mejor de las tres: la foto sobrevive casi intacta.
+    overlay: 0.1,
+  },
+  {
+    clave: "xv-seda-rosa",
+    tipo: "foto",
+    nombre: "Seda rosa",
+    eventos: ["XV años"],
+    polaridad: "claro",
+    // 0.20 medido con texto claro. Con texto oscuro exigia 0.60.
+    overlay: 0.2,
+  },
+  {
+    clave: "xv-brillo-rosa",
+    tipo: "foto",
+    nombre: "Brillo rosa",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    // 0.35 medido. Aceptable: la textura de brillo aguanta el velo.
+    overlay: 0.35,
+  },
 ] as const;
 
-/** Ruta pública del SVG de un arte. */
+/** Ruta pública de un arte, según sea SVG dibujado o fotografía. */
 export function rutaArte(clave: string): string {
-  return `/arte/${clave}.svg`;
+  const a = buscarArte(clave);
+  return a?.tipo === "foto" ? `/arte/foto/${clave}.jpg` : `/arte/${clave}.svg`;
 }
 
 export function buscarArte(clave: string): DireccionArte | undefined {

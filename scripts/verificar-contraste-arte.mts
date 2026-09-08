@@ -24,13 +24,38 @@
  * las esquinas decoradas.
  */
 import { chromium, type Browser } from "playwright-core";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ARTE } from "../src/lib/theme/arte.ts";
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DIR_ARTE = join(RAIZ, "public", "arte");
+const DIR_FOTO = join(DIR_ARTE, "foto");
+
+/**
+ * Las piezas a medir: los SVG dibujados y las FOTOS auto-hospedadas de Pexels.
+ * Se miden igual y con el mismo umbral. Una foto tiene mucho mas rango de
+ * luminancia, asi que es donde el "peor pixel" muerde de verdad: un fondo
+ * fotografico casi nunca admite texto sin un velo detras.
+ */
+function fuentes(): { nombre: string; dataUri: string }[] {
+  const out: { nombre: string; dataUri: string }[] = [];
+  for (const f of readdirSync(DIR_ARTE).filter((x) => x.endsWith(".svg")).sort()) {
+    const svg = readFileSync(join(DIR_ARTE, f), "utf8");
+    out.push({
+      nombre: f,
+      dataUri: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg),
+    });
+  }
+  if (existsSync(DIR_FOTO)) {
+    for (const f of readdirSync(DIR_FOTO).filter((x) => /\.jpe?g$/i.test(x)).sort()) {
+      const b64 = readFileSync(join(DIR_FOTO, f)).toString("base64");
+      out.push({ nombre: "foto/" + f, dataUri: "data:image/jpeg;base64," + b64 });
+    }
+  }
+  return out;
+}
 
 /** Umbral WCAG AA para texto normal. El mismo que usa `contrast.ts`. */
 const AA_NORMAL = 4.5;
@@ -43,6 +68,44 @@ const TEXTOS = {
   oscuro: [31, 41, 55] as const,
   claro: [248, 250, 252] as const,
 };
+
+/**
+ * El color con el que se vela el fondo. Es `theme.colors.background` del pack,
+ * y va emparejado con la polaridad: un pack de texto oscuro tiene fondo claro,
+ * y al contrario. Se toman valores representativos porque el velo se calcula
+ * ANTES de saber a qué pack exacto ira el arte.
+ */
+const VELOS = {
+  oscuro: [250, 247, 242] as const,
+  claro: [26, 21, 32] as const,
+};
+
+/** Compone `velo` sobre `pixel` con opacidad alfa. */
+function componer(pixel: readonly number[], velo: readonly number[], alfa: number): number[] {
+  return [0, 1, 2].map((i) => alfa * velo[i] + (1 - alfa) * pixel[i]);
+}
+
+/**
+ * El velo MÍNIMO que hace legible el peor pixel, o null si ni al 95% alcanza.
+ *
+ * Devolver el minimo y no un valor fijo es lo que evita las dos formas de
+ * equivocarse: un velo corto deja texto ilegible, y uno largo borra la foto que
+ * acabamos de traer. Es el mismo criterio con el que la Fase 0 eligio el umbral
+ * de oscurecimiento del CTA: lo decidio la medicion, no el gusto.
+ */
+function veloMinimo(
+  muestras: number[][],
+  texto: readonly number[],
+  velo: readonly number[],
+): number | null {
+  for (let alfa = 0; alfa <= 0.95; alfa += 0.05) {
+    const peor = Math.min(
+      ...muestras.map((p) => contraste(texto, componer(p, velo, alfa))),
+    );
+    if (peor >= AA_NORMAL) return +alfa.toFixed(2);
+  }
+  return null;
+}
 
 function luminancia(p: readonly number[]): number {
   const f = (c: number) => {
@@ -59,23 +122,33 @@ function contraste(a: readonly number[], b: readonly number[]): number {
 }
 
 async function main() {
-  const svgs = readdirSync(DIR_ARTE).filter((f) => f.endsWith(".svg")).sort();
-  if (svgs.length === 0) throw new Error(`No hay SVG en ${DIR_ARTE}`);
+  const piezas = fuentes();
+  if (piezas.length === 0) throw new Error(`No hay arte en ${DIR_ARTE}`);
 
   let browser: Browser | undefined;
-  const filas: { arte: string; oscuro: number; claro: number; veredicto: string; declarado: string; coincide: boolean }[] = [];
+  const filas: {
+    arte: string;
+    oscuro: number;
+    claro: number;
+    veredicto: string;
+    declarado: string;
+    coincide: boolean;
+    overlayDeclarado: number | null;
+    veloNecesario: number | null;
+    overlayCorto: boolean;
+  }[] = [];
 
   try {
     browser = await chromium.launch({ channel: "chrome" });
     const page = await browser.newPage();
 
-    for (const svg of svgs) {
-      const fuente = readFileSync(join(DIR_ARTE, svg), "utf8");
-      const muestras: number[][] = await page.evaluate(async (texto) => {
+    for (const pieza of piezas) {
+      const svg = pieza.nombre;
+      const muestras: number[][] = await page.evaluate(async (uri) => {
         const img = new Image();
         // Data URI para no depender de un servidor: tiene que poder correr sin
-        // `pnpm dev` levantado.
-        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(texto);
+        // `pnpm dev` levantado. Sirve igual para SVG y para JPEG.
+        img.src = uri;
         await img.decode();
         const c = document.createElement("canvas");
         c.width = 420;
@@ -92,7 +165,7 @@ async function main() {
           }
         }
         return out;
-      }, fuente);
+      }, pieza.dataUri);
 
       if (muestras.length < 100) {
         throw new Error(`SONDA INVALIDA en ${svg}: ${muestras.length} muestras`);
@@ -101,6 +174,12 @@ async function main() {
       // El PEOR pixel, no el promedio.
       const oscuro = Math.min(...muestras.map((p) => contraste(TEXTOS.oscuro, p)));
       const claro = Math.min(...muestras.map((p) => contraste(TEXTOS.claro, p)));
+      // Si el arte no aguanta desnudo, se calcula CUANTO velo hace falta en
+      // vez de dejarlo en "no sirve": el velo es `backgroundImage.overlay`,
+      // que ya existe en el esquema.
+      const veloOscuro = oscuro >= AA_NORMAL ? 0 : veloMinimo(muestras, TEXTOS.oscuro, VELOS.oscuro);
+      const veloClaro = claro >= AA_NORMAL ? 0 : veloMinimo(muestras, TEXTOS.claro, VELOS.claro);
+
       const veredicto =
         oscuro >= AA_NORMAL
           ? claro >= AA_NORMAL
@@ -108,15 +187,40 @@ async function main() {
             : "solo texto OSCURO"
           : claro >= AA_NORMAL
             ? "solo texto CLARO"
-            : "NINGUNO - necesita velo";
+            : veloOscuro !== null || veloClaro !== null
+              ? `velo ${veloOscuro !== null ? `oscuro ${veloOscuro}` : ""}${veloOscuro !== null && veloClaro !== null ? " / " : ""}${veloClaro !== null ? `claro ${veloClaro}` : ""}`
+              : "NINGUNO - ni con velo";
 
       // Se COMPARA con lo declarado en el registro. Sin esto la tabla de
       // `arte.ts` podria decir "oscuro" mientras el SVG solo admite claro, y
       // la asignacion quedaria mal fundada sin que nada avisara.
-      const clave = svg.replace(/\.svg$/, "");
+      const clave = svg.replace(/^foto\//, "").replace(/\.(svg|jpe?g)$/i, "");
       const declarado = ARTE.find((a) => a.clave === clave);
       const medido: string =
-        oscuro >= AA_NORMAL ? (claro >= AA_NORMAL ? "ambos" : "oscuro") : claro >= AA_NORMAL ? "claro" : "ninguno";
+        oscuro >= AA_NORMAL
+          ? claro >= AA_NORMAL
+            ? "ambos"
+            : "oscuro"
+          : claro >= AA_NORMAL
+            ? "claro"
+            : // Con velo, la polaridad la decide cual de los dos velos es
+              // viable y menor. Es como una FOTO llega a ser utilizable.
+              veloOscuro !== null && (veloClaro === null || veloOscuro <= veloClaro)
+              ? "oscuro"
+              : veloClaro !== null
+                ? "claro"
+                : "ninguno";
+
+      // El `overlay` declarado tiene que ALCANZAR el velo minimo medido. Si se
+      // queda corto, el texto no llega a AA sobre esa foto y la asignacion
+      // quedaria mal fundada sin que nada avisara — es el mismo agujero que el
+      // cruce de polaridad tapa, un nivel mas fino.
+      const veloNecesario = declarado?.polaridad === "claro" ? veloClaro : veloOscuro;
+      const overlayCorto =
+        declarado != null &&
+        veloNecesario != null &&
+        veloNecesario > 0 &&
+        declarado.overlay + 1e-9 < veloNecesario;
 
       filas.push({
         arte: svg,
@@ -124,7 +228,10 @@ async function main() {
         claro: +claro.toFixed(2),
         veredicto,
         declarado: declarado ? declarado.polaridad : "SIN DECLARAR",
-        coincide: declarado ? declarado.polaridad === medido : false,
+        coincide: declarado ? declarado.polaridad === medido && !overlayCorto : false,
+        overlayDeclarado: declarado?.overlay ?? null,
+        veloNecesario: veloNecesario ?? null,
+        overlayCorto,
       });
     }
   } finally {
@@ -154,7 +261,14 @@ async function main() {
       `\n${discrepan.length} arte(s) no coinciden con lo declarado en src/lib/theme/arte.ts:`,
     );
     for (const f of discrepan) {
-      console.error(`  ${f.arte}: medido "${f.veredicto}", declarado "${f.declarado}"`);
+      if (f.overlayCorto) {
+        console.error(
+          `  ${f.arte}: el overlay declarado (${f.overlayDeclarado}) NO alcanza ` +
+            `el velo minimo medido (${f.veloNecesario}) para texto ${f.declarado}`,
+        );
+      } else {
+        console.error(`  ${f.arte}: medido "${f.veredicto}", declarado "${f.declarado}"`);
+      }
     }
     console.error(
       "\nLa tabla de `arte.ts` es la que gobierna la asignacion a plantillas.\n" +
