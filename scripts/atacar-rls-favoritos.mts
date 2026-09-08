@@ -78,6 +78,25 @@ function juzgar(clausula: string, esperado: string, ok: boolean, observado: stri
   );
 }
 
+/**
+ * QUE CERRADURA paro el ataque. Sin esto el informe dice «PASA» y se lee como
+ * «la politica defiende», cuando en la primera corrida real los CUATRO rechazos
+ * anonimos fueron `42501` —permiso de tabla, o sea el `revoke`— y RLS no llego
+ * a evaluarse ni una vez. Un verde que no distingue la cerradura exterior de la
+ * interior deja las politicas sin verificar creyendo lo contrario.
+ *
+ * Comprobado que la distincion es real y no teorica: `invitations`, que tiene
+ * RLS Y grant a anon, responde HTTP 200 con fila a la misma llave. O sea que el
+ * anonimo SI alcanza RLS donde tiene privilegio.
+ */
+function cerradura(r: Res): string {
+  const t = JSON.stringify(r.body ?? "");
+  if (t.includes("42501") || t.includes("permission denied")) return "PRIVILEGIO (revoke) — RLS NO ejercitada";
+  if (r.status === 401 || r.status === 403) return "RLS o auth";
+  if (Array.isArray(r.body) && r.body.length === 0) return "RLS (0 filas)";
+  return "—";
+}
+
 /** Un resultado cuenta como DENEGADO si da error de permisos o 0 filas. */
 function denegado(r: Res): boolean {
   if (r.status === 401 || r.status === 403) return true;
@@ -221,14 +240,23 @@ async function main() {
     const n = Array.isArray(queda.body) ? queda.body.length : -1;
     console.log(filas.join("\n"));
     console.log(`\nLIMPIEZA          quedan ${n} fila(s) en la tabla (deben ser 0)`);
+    const soloPerimetro = filas.some((f) => f.includes("PRIVILEGIO (revoke)")) && !TOKEN;
     console.log(fallos === 0 ? "\nRESULTADO: ninguna clausula cedio." : `\nRESULTADO: ${fallos} CLAUSULA(S) CEDIERON.`);
+    if (soloPerimetro) {
+      console.log(
+        "\nAVISO: los rechazos anonimos vinieron del PRIVILEGIO de tabla, no de RLS.\n" +
+        "El perimetro aguanta, pero las POLITICAS siguen SIN VERIFICAR: sus clausulas\n" +
+        "(user_id = auth.uid(), el with check, la ausencia de update) solo son\n" +
+        "alcanzables con sesion. Corre esto otra vez con TOKEN_SESION=<access token>.",
+      );
+    }
     process.exit(fallos === 0 ? 0 : 1);
   }
 }
 
 function resumen(r: Res): string {
-  const b = Array.isArray(r.body) ? `${r.body.length} filas` : JSON.stringify(r.body)?.slice(0, 70);
-  return `HTTP ${r.status} ${b}`;
+  const b = Array.isArray(r.body) ? `${r.body.length} filas` : "";
+  return `HTTP ${r.status} ${b} [freno: ${cerradura(r)}]`;
 }
 
 await main();
