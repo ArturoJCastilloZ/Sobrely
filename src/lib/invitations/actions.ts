@@ -3,12 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import {
-  defaultConfigFor,
-  MODULE_TYPES,
-  parseConfig,
-  type ModuleType,
-} from "@/lib/modules/types";
+import { defaultConfigFor, type ModuleType } from "@/lib/modules/types";
 import { saveEditorSchema, type SaveEditorInput } from "@/lib/invitations/schemas";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -17,7 +12,7 @@ import {
   isOwnerComped,
 } from "@/lib/billing/entitlements";
 import { getPlan, resolveExpiry } from "@/lib/billing/plans";
-import { resolveTemplateTheme } from "@/lib/invitations/template-theme";
+import { templateToDocument } from "@/lib/invitations/template-render";
 import type { PlanCode } from "@/lib/billing/types";
 
 /** Short random suffix to keep slugs unique per user without a lookup loop. */
@@ -93,13 +88,6 @@ export async function createInvitation(
   redirect(`/editor/${invitation.id}`);
 }
 
-type TemplateModule = {
-  module_type: ModuleType;
-  sort_order: number;
-  is_visible: boolean;
-  config: Record<string, unknown>;
-};
-
 /**
  * Creates a new invitation from a template, copying its theme and modules,
  * then redirects into the editor.
@@ -125,6 +113,11 @@ export async function createFromTemplate(templateId: string) {
 
   const slug = `invitacion-${randomSuffix()}`;
 
+  // UNA sola fuente para "que produce esta plantilla". La galeria captura sus
+  // miniaturas con esta misma funcion, asi que lo que se ve en el catalogo es
+  // por construccion lo que se recibe al elegirla.
+  const doc = templateToDocument(template);
+
   const { data: invitation, error } = await supabase
     .from("invitations")
     .insert({
@@ -135,9 +128,7 @@ export async function createFromTemplate(templateId: string) {
       event_type: template.event_type ?? null,
       status: "draft",
       is_published: false,
-      // La plantilla guarda solo la clave del pack; aquí se expande a su
-      // paleta. Sin esto la invitación nacía con los colores por defecto.
-      theme_config: resolveTemplateTheme(template.theme_config),
+      theme_config: doc.theme,
     })
     .select("id")
     .single();
@@ -146,25 +137,7 @@ export async function createFromTemplate(templateId: string) {
     throw new Error(error?.message ?? "No se pudo crear la invitación.");
   }
 
-  // Copy modules from the template config, normalizing each config.
-  const rawModules = Array.isArray(template.modules_config)
-    ? (template.modules_config as unknown[])
-    : [];
-
-  const modules: TemplateModule[] = rawModules
-    .map((raw, index) => {
-      const m = (raw ?? {}) as Record<string, unknown>;
-      const type = m.module_type as ModuleType;
-      if (!MODULE_TYPES.includes(type)) return null;
-      return {
-        module_type: type,
-        sort_order:
-          typeof m.sort_order === "number" ? m.sort_order : index,
-        is_visible: m.is_visible !== false,
-        config: parseConfig(type, m.config),
-      };
-    })
-    .filter((m): m is TemplateModule => m !== null);
+  const modules = doc.modules;
 
   if (modules.length > 0) {
     await supabase.from("invitation_modules").insert(

@@ -68,11 +68,32 @@ describe("cableado: createFromTemplate resuelve el theme", () => {
   // ejercitar sin base de datos.
   const src = readFileSync("src/lib/invitations/actions.ts", "utf8");
 
-  it("createFromTemplate usa resolveTemplateTheme", () => {
-    expect(src).toContain("resolveTemplateTheme(template.theme_config)");
+  const render = readFileSync("src/lib/invitations/template-render.ts", "utf8");
+
+  it("createFromTemplate escribe el theme que produce templateToDocument", () => {
+    // La expansion del pack se movio a `templateToDocument` para que las
+    // miniaturas de la galeria usen la MISMA logica. La propiedad que importa
+    // no cambia: el call site tiene que escribir el theme EXPANDIDO.
+    expect(src).toContain("templateToDocument(template)");
+    expect(src).toContain("theme_config: doc.theme");
+  });
+
+  it("y templateToDocument es quien expande el pack", () => {
+    // Sin este eslabon, la cadena de arriba podria escribir un theme sin
+    // expandir y las dos aserciones seguirian pasando.
+    expect(render).toContain("resolveTemplateTheme(template.theme_config)");
   });
 
   it("ya NO copia el theme_config de la plantilla en crudo", () => {
     expect(src).not.toContain("theme_config: template.theme_config");
+  });
+
+  it("la galeria y la creacion comparten la MISMA normalizacion", () => {
+    // Es la invariante que impide que una miniatura muestre algo distinto de
+    // lo que el usuario recibe al elegir esa plantilla. Si alguien vuelve a
+    // normalizar `modules_config` a mano en `actions.ts`, las dos copias
+    // pueden divergir y la galeria empieza a mentir.
+    expect(src).not.toContain("template.modules_config");
+    expect(render).toContain("modules_config");
   });
 });
