@@ -3,6 +3,22 @@
 > Documento de traspaso. Registra lo hecho, lo pendiente y lo que sigue.
 > No es memoria del agente ni se guarda en ningún brain — vive en el repo.
 
+> ## ⚠️ ESTE ARCHIVO ESTÁ DESACTUALIZADO — leer antes de creerle nada
+>
+> La entrada más reciente de aquí abajo es de **2026-08-14**. Desde entonces el
+> proyecto avanzó mucho (Niveles 2 y 3, el rediseño completo hasta la Fase 4, el
+> CI) y **el handoff canónico se movió fuera del repo**:
+>
+> - **`~/.claude/plans/sobrely-roadmap.md`** — estado, reglas del entorno,
+>   lecciones, fases, bugs abiertos y el prompt para retomar. **Es la fuente de
+>   verdad.**
+> - **`~/.claude/plans/sobrely-research-v2.md`** — brief de la Fase 11.
+> - En el repo siguen siendo válidos `docs/DESIGN_RESEARCH.md` y
+>   `docs/REDESIGN_PLAN.md` (las doce fases, 0–11).
+>
+> Lo de abajo se conserva como registro histórico. **No lo tomes como el estado
+> actual**: las ramas, los SHA y los conteos que menciona están viejos.
+
 ---
 
 # Sesión 2026-08-14 — Invitados personalizados con QR (lista de invitados)

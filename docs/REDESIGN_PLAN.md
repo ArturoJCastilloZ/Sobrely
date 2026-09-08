@@ -7,6 +7,14 @@
 > **Regla de ejecución, absoluta:** cada fase **se detiene al terminar**. Ninguna
 > fase arranca la siguiente automáticamente, ni siquiera si sobra tiempo. Nunca se
 > asume aprobación.
+>
+> **Actualizado el 2026-09-08:** añadida la **Fase 11 — Research V2** (assets
+> visuales por evento) a petición del dueño. Son doce fases, 0–11. La Fase 4
+> quedó CERRADA ese día: miniatura a sangre, filtros por tipo de evento,
+> búsqueda y favoritos con RLS atacada cláusula por cláusula. El filtro por
+> ESTILO se descartó con el dueño porque **no hay dato** — medido, las 13 artes
+> de la `0030` viven cada una dentro de un solo tipo de evento, así que como
+> faceta paralela daría 0 resultados en la mayoría de combinaciones.
 
 ---
 
@@ -16,7 +24,7 @@ Estas no son preferencias; son las condiciones bajo las que este código vive.
 
 | Regla | Qué implica en la práctica |
 |---|---|
-| **Producción es la única base de datos.** 11 usuarios y 12 invitaciones reales. | Ninguna fase siembra datos sin nombrar explícitamente el `user_id` del dev (`d1f1dc44-aca7-4a96-8fd8-0b97242940f6`). Nunca un `limit 1`. |
+| **Producción es la única base de datos.** 11 usuarios y **14** invitaciones reales (medido el 2026-09-08; eran 12 el 09-07). De ellas **sólo CUATRO están PUBLICADAS** — el «12» de versiones anteriores de este doc era el total, no las públicas. | Ninguna fase siembra datos sin nombrar explícitamente el `user_id` del dev (`d1f1dc44-aca7-4a96-8fd8-0b97242940f6`). Nunca un `limit 1`. |
 | **Las migraciones las corre el dev a mano.** | Ningún commit con migración entra a `main` antes de que su SQL esté aplicado. El commit puede existir en la rama; lo que espera es el merge. |
 | **Nada llega a `main` sin petición explícita del dev.** | Se entrega en rama y se pushea para que él pruebe. El fast-forward, cuando lo pida, se hace en el servidor con `git push origin <rama>:main` si su checkout tiene la rama tomada. |
 | **RLS no está terminada hasta atacarla con la llave pública**, cláusula por cláusula, incluido el caso legítimo. | Aplica a cualquier fase que toque políticas. |
@@ -345,7 +353,7 @@ invitaciones reales**, una por una.
 
 **Dependencias.** Fases 1 y 2.
 
-**Criterios de aceptación.** Las 12 invitaciones existentes se ven **idénticas**
+**Criterios de aceptación.** Las invitaciones existentes se ven **idénticas**
 tras el cambio, comparadas por captura. Las 50 plantillas se ven distintas y
 mejores. Los 80 pares pasan AA.
 
@@ -508,8 +516,10 @@ en esa rama.
    contenido pasa y asomar en cada sección sin imagen propia. **No usar
    `background-attachment: fixed`** — se rompe en Safari móvil y aquí el scroll
    ocurre dentro de un contenedor; la técnica es una capa `sticky` a altura de
-   viewport dentro del scope. ⚠️ Toca `ThemeScope`, que pinta las **12
-   invitaciones publicadas**: antes de mergear, capturas antes/después de las 12.
+   viewport dentro del scope. ⚠️ Toca `ThemeScope`, que pinta **todas** las
+   invitaciones: antes de mergear, capturas antes/después de las **4
+   PUBLICADAS** (medido el 2026-09-07 contando `is_published`; este doc decía
+   «las 12» y 12 es el total de invitaciones, no las públicas).
 2. **Analizar el editor de Invitio.** Bloqueado: redirige a login y el agente no
    maneja contraseñas. El dev inicia sesión y deja el editor abierto.
 3. **Bloqueo optimista en `saveEditor`** — dos pestañas se pisan en silencio.
@@ -524,3 +534,90 @@ en esa rama.
 - **Nada del editor se ha verificado con sesión real.** Todo se midió montando
   componentes en rutas desechables con datos inventados; la capa autenticada la
   tiene que probar el dev.
+
+---
+
+## Fase 11 — RESEARCH V2 · Assets visuales por evento y rediseño de plantillas
+
+**Añadida el 2026-09-08 a peticion del dueño. NO EMPEZADA.**
+
+> El brief normativo COMPLETO es el plan canónico del proyecto y **no vive en
+> este repo**: `~/.claude/plans/sobrely-research-v2.md`. Lo de aquí es el
+> resumen que encaja la fase en el plan de rediseño; ante cualquier duda, manda
+> el plan canónico.
+
+**Objetivo.** Que el catálogo deje de venderse por color y empiece a venderse
+por diseño. Hoy las plantillas dependen de color, gradiente, tipografía y fondos
+abstractos, y tienen muy poca imagen relacionada con el evento; el resultado se
+siente genérico, repetitivo y más de MVP que de producto premium.
+
+**Es una SEGUNDA investigación de imágenes, no un reemplazo.** La primera —3
+fotos de Pexels descargadas el 2026-09-07, auto-hospedadas, con licencia leída
+en la fuente y manifiesto en `public/arte/PROCEDENCIA.md`, más las 10
+direcciones SVG de `src/lib/theme/arte.ts`— **no se borra ni se sustituye.**
+
+**Alcance — dentro:** análisis de las plantillas actuales · benchmark visual
+editorial (revistas, wedding stationery, luxury invitations, packaging) ·
+investigación nueva y profunda en Pexels **y Unsplash** con búsquedas de
+objetos/decoración/ambiente en vez de términos genéricos · criterios de
+selección de imagen (13 puntos, con el espacio negativo como eje) · dirección
+artística · catálogo de layouts (15 tipos de composición) · sistema de assets
+con metadata · estrategia de licencias · propuesta de templates por categoría
+con ficha y puntuación · selección piloto.
+
+**Alcance — FUERA (explícito):** no se modifica ninguna plantilla existente, no
+se reemplaza nada automáticamente, no se borra ningún template, no se hacen
+cambios masivos.
+
+**Reglas duras de la fase.**
+- Prioridad visual: `EVENTO > OBJETOS > AMBIENTE > DECORACIÓN > PERSONAS`. Las
+  plantillas no dependen de modelos posando. *(Coincide con la regla que ya
+  existía por licencia: nada de caras identificables.)*
+- **CALIDAD > CANTIDAD.** Mejor 40 excelentes que 150 mediocres. El rango de
+  referencia (44–62 en 9 categorías) **no es una meta**: si una categoría sólo
+  da 5 conceptos diferenciados, son 5.
+- **Regla de diferenciación:** si la única diferencia con otro template de la
+  misma categoría es el color, la fuente, la fotografía o el texto, **no se
+  crea**.
+- Puntuación 1–10 en Visual Quality, Uniqueness, Event Relevance, Composition,
+  Premium Feel y Mobile Potential. **Promedio < 8/10 → rediseñar o descartar.**
+- **Cero phone-home sigue vigente:** las imágenes se descargan y auto-hospedan;
+  nunca se enlaza a `images.pexels.com` ni a `images.unsplash.com`.
+- **Unsplash tiene licencia DISTINTA de Pexels** y hay que leerla en la fuente.
+  Prohíbe compilar fotos para replicar un servicio similar, que es justo el
+  riesgo de una "biblioteca de assets". Licencia dudosa → no se usa, y se marca
+  `LICENSE_REVIEW_REQUIRED`.
+- Toda foto candidata pasa por `scripts/verificar-contraste-arte.mts` antes de
+  aprobarse: el velo mínimo para WCAG AA lo fija la medición, no el gusto.
+
+**Entregable.** `docs/TEMPLATE_VISUAL_RESEARCH_V2.md`, con las 18 secciones que
+enumera el plan canónico.
+
+**Piloto.** 15 templates: 3 boda · 2 XV · 2 baby shower · 2 gender reveal ·
+2 cumpleaños · 1 bautizo · 1 primera comunión · 1 graduación · 1 corporativo.
+Valida dirección visual, sistema de assets, calidad, arquitectura, responsive,
+performance, editor y percepción premium.
+
+**Riesgos y tensiones que hay que resolver ANTES de gastar trabajo.**
+1. **Choca en parte con la Fase 7.** El objetivo declarado de la Fase 7 es *"que
+   las 50 plantillas se vean bien sin comprar arte"* (tokens, pairing
+   tipográfico, grano con `feTurbulence`, "cero arte"), y la Fase 11 sostiene que
+   eso no basta. Hay que decidir orden y alcance con el dueño, o una fase
+   deshace trabajo de la otra.
+2. **Introduce 4 categorías nuevas.** Hoy `event_type` tiene 5 valores; la Fase
+   11 añade Gender Reveal, Bautizo, Primera Comunión y Graduación. Eso toca el
+   seed, el filtro del marketplace y probablemente el asistente de creación.
+3. **Composición editorial dentro del modelo MODULAR.** Sobrely gana a Invitio
+   precisamente por no usar un lienzo absoluto de 900 px; los layouts
+   asimétricos y de tipo magazine hay que expresarlos en módulos con responsive
+   real, no volviendo al canvas.
+4. Cada template nuevo necesita miniatura, y `REVISION_MINIATURAS` tiene que
+   subir en la misma tanda o `next/image` sirve las viejas hasta 4 h.
+
+**Dependencias.** Fase 4 (cerrada: el marketplace ya filtra, busca y guarda
+favoritos) y, por resolver, su relación con la Fase 7.
+
+⛔ **GATE DE APROBACIÓN.** Esta fase es RESEARCH + DESIGN + ASSET DISCOVERY +
+PROPOSAL. Al terminar se **DETIENE**. No se implementa nada hasta que el dueño
+escriba la frase exacta **«APROBADO TEMPLATE RESEARCH V2»**, y aun entonces sólo
+el conjunto piloto, nunca todas las plantillas de golpe.
