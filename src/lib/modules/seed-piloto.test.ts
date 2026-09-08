@@ -245,6 +245,8 @@ function sobrescrituras(): Map<string, Sobrescritura> {
       poner(g.replace(/'/g, ""), { mediaRatio: r34 });
   }
 
+  // 0035 · conversiones en tuplas (slug, variante, foto, proporción) y ajustes
+  // de proporción (slug, proporción).
   const s35 = leerMigracion("0035_convertir_f4_a_fotografia.sql")
     .split("\n")
     .filter((l) => !l.trim().startsWith("--"))
@@ -255,9 +257,33 @@ function sobrescrituras(): Map<string, Sobrescritura> {
     poner(t[1], { variant: t[2], imageUrl: t[3], imageRatio: t[4] });
   for (const t of s35.matchAll(/\('([a-z0-9-]+)',\s*'([0-9/]+)'\)/g))
     poner(t[1], { imageRatio: t[2] });
-  const solo = /slug = '([a-z0-9-]+)'/.exec(s35)?.[1];
-  const foto = /'"(\/arte\/foto\/[^"]+)"'::jsonb/.exec(s35)?.[1];
-  if (solo && foto) poner(solo, { variant: "centered", imageUrl: foto });
+
+  // Sentencias sueltas de un solo slug (la conversión a telón de la 0035, y la
+  // 0036 entera). Se parsean GENÉRICAMENTE —sentencia a sentencia, cada una con
+  // su `where slug = '…'` y sus literales— en vez de con un caso especial por
+  // migración, que es lo que se queda viejo.
+  for (const archivo of [
+    "0035_convertir_f4_a_fotografia.sql",
+    "0036_xv_seda_a_pastel_de_quince.sql",
+  ]) {
+    const limpio = leerMigracion(archivo)
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("--"))
+      .join("\n");
+    for (const sent of limpio.split(";")) {
+      const slug = /where slug = '([a-z0-9-]+)'/.exec(sent)?.[1];
+      if (!slug) continue;
+      const cambio: Sobrescritura = {};
+      for (const t of sent.matchAll(
+        /'\{0,config,(variant|imageUrl|imageRatio)\}',\s*'"([^"]+)"'/g,
+      )) {
+        if (t[1] === "variant") cambio.variant = t[2];
+        if (t[1] === "imageUrl") cambio.imageUrl = t[2];
+        if (t[1] === "imageRatio") cambio.imageRatio = t[2];
+      }
+      if (Object.keys(cambio).length) poner(slug, cambio);
+    }
+  }
 
   return m;
 }

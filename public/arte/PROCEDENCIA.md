@@ -127,6 +127,24 @@ estrecho y centro vacío, y la tinta rosa y azul sobre blanco lo cumple. Por eso
 contenida — y por eso la familia F2, que el piloto tenía vacía, por fin tiene
 representante.
 
+### 4.ª tanda — el objeto de XV años
+
+| archivo | fuente | autor | licencia | velo medido |
+|---|---|---|---|---|
+| `foto/xv-pastel-quince.jpg` | Pexels [20016137](https://www.pexels.com/photo/15-birthday-cake-20016137/) | Vidal Balielo Jr. | Free to use | **0.60** |
+
+Descargada el 2026-09-08. Entra porque la repuntuación (§19.6) dejó claro que
+`xv-seda` no había mejorado: su fotografía era una **textura** —seda rosa— y una
+textura no dice «XV años». Ésta sí: pastel de tres pisos con el **15** y flores,
+el objeto más reconocible de la categoría después de la tiara, que ya usa
+`xv-corona`.
+
+> **Sobre el «15» y el criterio E2.** El research veta imágenes con datos
+> horneados —una vela con un «5», un calendario de 2021— porque una plantilla es
+> genérica y el dato la contradice. El «15» **no varía** entre invitaciones de XV
+> años: es la categoría. Excluirlo sería aplicar la regla por su letra en contra
+> de su motivo.
+
 ### Un descarte de esta tanda
 
 - **Vestidos de gala colgados** para XV años: todos los resultados son vestidos

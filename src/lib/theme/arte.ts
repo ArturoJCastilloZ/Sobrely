@@ -307,6 +307,14 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0.55,
   },
+  {
+    clave: "xv-pastel-quince",
+    tipo: "foto",
+    nombre: "Pastel de quince",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0.6,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */
