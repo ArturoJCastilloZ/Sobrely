@@ -76,7 +76,7 @@ export default async function TemplatesPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((tpl) => (
+          {list.map((tpl, i) => (
             <Card key={tpl.id} className="flex flex-col overflow-clip pt-0">
               {/*
                 Miniatura a sangre: `pt-0` en la tarjeta y `overflow-clip` para
@@ -102,6 +102,15 @@ export default async function TemplatesPage() {
                     // a `next/image` para que no sirva la imagen de ancho
                     // completo en una rejilla de tres.
                     sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    // Las tres primeras son las candidatas a LCP: la rejilla
+                    // es de tres columnas en escritorio, asi que estan sobre
+                    // el pliegue. `next/image` avisaba en consola —«detected
+                    // as the Largest Contentful Paint, add loading=eager»—
+                    // porque por defecto van en `lazy`, y eso retrasa la
+                    // primera pintura util del catalogo. El resto se quedan
+                    // perezosas: son 50 imagenes y cargarlas todas de golpe
+                    // seria peor que el problema.
+                    priority={i < 3}
                     className="object-cover object-top"
                   />
                   <span className="sr-only">Ver {tpl.name} en grande</span>

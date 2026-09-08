@@ -88,14 +88,20 @@ export const MODULE_REGISTRY: Record<ModuleType, ModuleEntry> = {
     Editor: ({ config, onChange, eventDate, onSetEventDate }) => (
       <CountdownEditor config={config} onChange={onChange} eventDate={eventDate} onSetEventDate={onSetEventDate} />
     ),
-    Preview: ({ config, eventDate }) => (
-      <CountdownPreview config={config as never} eventDate={eventDate ?? ""} />
+    Preview: ({ config, eventDate, editorHint }) => (
+      <CountdownPreview
+        config={config as never}
+        eventDate={eventDate ?? ""}
+        editorHint={editorHint}
+      />
     ),
   },
   map: {
     Icon: MapPinIcon,
     Editor: ({ config, onChange }) => <MapEditor config={config} onChange={onChange} />,
-    Preview: ({ config }) => <MapPreview config={config as never} />,
+    Preview: ({ config, editorHint }) => (
+      <MapPreview config={config as never} editorHint={editorHint} />
+    ),
   },
   gallery: {
     Icon: ImagesIcon,

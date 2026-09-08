@@ -170,9 +170,16 @@ export function WelcomePreview({ config }: { config: WelcomeConfig }) {
 export function CountdownPreview({
   config,
   eventDate = "",
+  editorHint = false,
 }: {
   config: CountdownConfig;
   eventDate?: string;
+  /**
+   * Solo el EDITOR muestra los avisos dirigidos al anfitrión. En la página
+   * pública —y en las miniaturas del catálogo, que se capturan contra ella—
+   * un módulo sin datos no debe pedirle nada al invitado.
+   */
+  editorHint?: boolean;
 }) {
   const [now, setNow] = useState<number>(0);
 
@@ -210,30 +217,60 @@ export function CountdownPreview({
     </div>
   );
 
+  // Sin fecha valida no hay cuenta atras que mostrar. En el editor se explica
+  // por que; en publico el modulo se OMITE entero, porque «Faltan» seguido de
+  // nada parece un error y una instruccion al anfitrion no es asunto del
+  // invitado.
+  //
+  // Se vio mirando el catalogo con las miniaturas puestas. Las cifras, para
+  // que nadie las infle: **40 de 50 plantillas** tienen el modulo de mapa sin
+  // direccion —y por tanto exhibian la instruccion en su pagina publica—, pero
+  // al regenerar solo cambiaron **4 miniaturas**, las del seed original con
+  // contenido mas escueto, porque en las demas el modulo cae por debajo del
+  // recorte de 560px. Plantillas afectadas y miniaturas afectadas NO son el
+  // mismo numero.
+  if (!valid) {
+    if (!editorHint) return null;
+    return (
+      <Section tint className="flex flex-col items-center gap-4 text-center">
+        <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
+          {config.title || "Faltan"}
+        </h3>
+        <p className="text-sm opacity-70">
+          Define la fecha del evento para activar la cuenta regresiva.
+        </p>
+      </Section>
+    );
+  }
+
   return (
     <Section tint className="flex flex-col items-center gap-4 text-center">
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Faltan"}
       </h3>
-      {valid ? (
-        <div className="flex flex-wrap justify-center gap-2 @2xl/inv:gap-4">
-          {cell(days, "días")}
-          {cell(hours, "hrs")}
-          {cell(minutes, "min")}
-          {cell(seconds, "seg")}
-        </div>
-      ) : (
-        <p className="text-sm opacity-70">
-          Define la fecha del evento para activar la cuenta regresiva.
-        </p>
-      )}
+      <div className="flex flex-wrap justify-center gap-2 @2xl/inv:gap-4">
+        {cell(days, "días")}
+        {cell(hours, "hrs")}
+        {cell(minutes, "min")}
+        {cell(seconds, "seg")}
+      </div>
     </Section>
   );
 }
 
 // ---- Map ------------------------------------------------------------------
 
-export function MapPreview({ config }: { config: MapConfig }) {
+export function MapPreview({
+  config,
+  editorHint = false,
+}: {
+  config: MapConfig;
+  /** Ver `CountdownPreview`: los avisos al anfitrión son solo del editor. */
+  editorHint?: boolean;
+}) {
+  // Sin direccion NI nombre del lugar el modulo no tiene contenido: en publico
+  // se omite, en el editor se explica.
+  if (!config.address && !config.venueName && !editorHint) return null;
   const mapsUrl = config.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config.address)}`
     : "";
@@ -263,7 +300,11 @@ export function MapPreview({ config }: { config: MapConfig }) {
           </a>
         </>
       ) : (
-        <p className="text-sm opacity-70">Agrega la dirección del lugar.</p>
+        // El nombre del lugar SI es contenido util para el invitado, asi que
+        // se conserva arriba; lo que se calla en publico es la instruccion.
+        editorHint && (
+          <p className="text-sm opacity-70">Agrega la dirección del lugar.</p>
+        )
       )}
     </Section>
   );
