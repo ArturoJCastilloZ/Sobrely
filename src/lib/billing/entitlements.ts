@@ -10,6 +10,7 @@ import {
   planHasFeature,
 } from "@/lib/billing/plans";
 import { parseTheme } from "@/lib/theme/theme";
+import { esArteDeLaApp } from "@/lib/theme/arte";
 import { isThemePackPremium } from "@/lib/theme/theme-packs";
 
 /**
@@ -232,12 +233,18 @@ export async function canPublishInvitation(
     !planHasFeature(plan, "advanced_personalization");
   const premiumThemePackUsed = themePackGated ? themePackKey : undefined;
 
-  // Gate de arte propio (B2, Premium): fondo de imagen, stickers o imagen de
-  // decoración propia.
+  // Gate de arte PROPIO (B2, Premium): fondo de imagen, stickers o imagen de
+  // decoración que subió el USUARIO. El arte que sirve la app —el de las
+  // plantillas, que la `0030` puso en las 50— no es arte propio y no se cobra:
+  // ver `esArteDeLaApp`. Sin esa distinción el catálogo entero exigía
+  // Celebración (medido: 0/50 publicables en Free, 10 que antes sí lo eran).
+  const usaArtePropio = (url: string | undefined | null) =>
+    Boolean(url) && !esArteDeLaApp(url);
+
   const usesCustomArt =
-    Boolean(parsedTheme.backgroundImage?.url) ||
-    (parsedTheme.stickers?.length ?? 0) > 0 ||
-    Boolean(parsedTheme.decoration?.imageUrl);
+    usaArtePropio(parsedTheme.backgroundImage?.url) ||
+    (parsedTheme.stickers ?? []).some((s) => usaArtePropio(s.url)) ||
+    usaArtePropio(parsedTheme.decoration?.imageUrl);
   const customArtGated = usesCustomArt && !planHasFeature(plan, "custom_art");
 
   // El modo lista de invitados NO gatea la publicación: está disponible en

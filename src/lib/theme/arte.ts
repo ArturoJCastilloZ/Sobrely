@@ -197,3 +197,25 @@ export function rutaArte(clave: string): string {
 export function buscarArte(clave: string): DireccionArte | undefined {
   return ARTE.find((a) => a.clave === clave);
 }
+
+/**
+ * ¿Esta URL de imagen la puso el USUARIO, o la sirve la app?
+ *
+ * El entitlement `custom_art` se llama, literalmente, «Arte propio (fondo e
+ * imágenes)»: cobra por subir arte TUYO, no por el que trae el producto. La
+ * `0030` puso `backgroundImage` en las 50 plantillas y el gate no distinguía
+ * las dos cosas, así que el catálogo entero quedó detrás de Celebración —
+ * medido: 0 de 50 plantillas publicables en Free, y 10 que antes sí lo eran.
+ *
+ * El criterio es el ORIGEN, no la extensión ni el directorio: lo que sirve la
+ * app es una ruta relativa a la raíz (`/arte/…`, `/previews/…`); lo que sube el
+ * usuario es una URL absoluta al Storage de Supabase.
+ *
+ * `//host/x.png` NO cuenta como de la app aunque empiece por `/`: es una URL
+ * relativa al protocolo, o sea un origen externo — cobrarla es lo de menos, lo
+ * importante es que no se cuele como propia y rompa el «cero phone-home».
+ */
+export function esArteDeLaApp(url: string | undefined | null): boolean {
+  if (!url) return false;
+  return url.startsWith("/") && !url.startsWith("//");
+}
