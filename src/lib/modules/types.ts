@@ -27,6 +27,48 @@ const optionalUrl = z
   .union([z.string().trim().url(), z.literal("")])
   .default("");
 
+// ---- Composición de sección (Fase 11 · P1) --------------------------------
+
+export const SECTION_ALIGNS = ["start", "center", "end"] as const;
+export type SectionAlign = (typeof SECTION_ALIGNS)[number];
+
+export const SECTION_BLEEDS = ["contained", "full"] as const;
+export type SectionBleed = (typeof SECTION_BLEEDS)[number];
+
+export const SECTION_ALIGN_LABELS: Record<SectionAlign, string> = {
+  start: "Izquierda",
+  center: "Centrado",
+  end: "Derecha",
+};
+
+export const SECTION_BLEED_LABELS: Record<SectionBleed, string> = {
+  contained: "Con márgenes",
+  full: "A sangre",
+};
+
+/**
+ * Perillas de composición que comparten TODOS los módulos que se pintan dentro
+ * de `Section`.
+ *
+ * El research midió que el renderer sólo sabe hacer una columna centrada: 14
+ * `text-center` contra 2 `text-left`, y un único eje horizontal en 652 líneas.
+ * Esto abre el primer eje.
+ *
+ * Los defectos son los valores de HOY (`center` / `contained`) y `Section` los
+ * trata como "no emitas nada", así que una config vieja renderiza idéntica.
+ *
+ * `hero` NO los lleva: su composición no pasa por `Section` y es trabajo de P3
+ * (`variant`). Meterle estos campos sería config muerta.
+ */
+const layoutShape = {
+  align: z.enum(SECTION_ALIGNS).default("center"),
+  bleed: z.enum(SECTION_BLEEDS).default("contained"),
+};
+
+/** `z.object` + las perillas de composición, para no repetirlas en 11 sitios. */
+const objetoConLayout = <T extends z.ZodRawShape>(shape: T) =>
+  z.object({ ...shape, ...layoutShape });
+
 // ---- Per-module config schemas -------------------------------------------
 
 export const heroConfigSchema = z.object({
@@ -36,7 +78,7 @@ export const heroConfigSchema = z.object({
   ctaLabel: z.string().max(40).default(""),
 });
 
-export const countdownConfigSchema = z.object({
+export const countdownConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Faltan"),
   // ISO datetime string; empty means "not set yet"
   targetDate: z.string().default(""),
@@ -45,7 +87,7 @@ export const countdownConfigSchema = z.object({
   useEventDate: z.boolean().default(false),
 });
 
-export const mapConfigSchema = z.object({
+export const mapConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Ubicación"),
   venueName: z.string().max(160).default(""),
   address: z.string().max(300).default(""),
@@ -102,7 +144,7 @@ export function isAnswerableQuestion(q: RsvpQuestion): boolean {
   return q.type !== "choice" || q.options.length > 0;
 }
 
-export const rsvpConfigSchema = z.object({
+export const rsvpConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Confirma tu asistencia"),
   description: z.string().max(400).default(""),
   deadline: z.string().default(""),
@@ -119,7 +161,7 @@ export const SIGNATURES_PAGE_SIZE = 30;
  * solo-dueño por RLS. Viven en su propia tabla (`invitation_signatures`,
  * migración 0023), igual que las respuestas del RSVP.
  */
-export const signaturesConfigSchema = z.object({
+export const signaturesConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Libro de firmas"),
   description: z
     .string()
@@ -135,7 +177,7 @@ export const signaturesConfigSchema = z.object({
   requireApproval: z.boolean().default(false),
 });
 
-export const welcomeConfigSchema = z.object({
+export const welcomeConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Bienvenidos"),
   message: z.string().max(1000).default(""),
 });
@@ -155,7 +197,7 @@ export const GALLERY_LAYOUT_LABELS: Record<GalleryLayout, string> = {
   carousel: "Carrusel",
 };
 
-export const galleryConfigSchema = z.object({
+export const galleryConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Galería"),
   images: z.array(z.string().url()).max(20).default([]),
   layout: z.enum(GALLERY_LAYOUTS).default("grid"),
@@ -163,12 +205,12 @@ export const galleryConfigSchema = z.object({
   kenBurns: z.boolean().default(false),
 });
 
-export const videoConfigSchema = z.object({
+export const videoConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Video"),
   url: optionalUrl, // YouTube o Vimeo
 });
 
-export const itineraryConfigSchema = z.object({
+export const itineraryConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Itinerario"),
   items: z
     .array(
@@ -198,7 +240,7 @@ export const DRESSCODE_LABELS: Record<DresscodeLevel, string> = {
   custom: "Personalizado",
 };
 
-export const dresscodeConfigSchema = z.object({
+export const dresscodeConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Código de vestimenta"),
   level: z.enum(DRESSCODE_LEVELS).default("formal"),
   description: z.string().max(400).default(""),
@@ -207,7 +249,7 @@ export const dresscodeConfigSchema = z.object({
   imageUrl: optionalUrl,
 });
 
-export const giftsConfigSchema = z.object({
+export const giftsConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Mesa de regalos"),
   description: z.string().max(400).default(""),
   links: z
@@ -221,7 +263,7 @@ export const giftsConfigSchema = z.object({
     .default([]),
 });
 
-export const musicConfigSchema = z.object({
+export const musicConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Música"),
   url: optionalUrl, // Spotify, YouTube o audio
 });

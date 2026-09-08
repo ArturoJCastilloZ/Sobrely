@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type {
+  SectionAlign,
+  SectionBleed,
   CountdownConfig,
   DresscodeConfig,
   GalleryConfig,
@@ -37,16 +39,39 @@ const TINT = "color-mix(in srgb, var(--inv-primary, #888) 7%, transparent)";
  * only fire under the public `@container/inv` context, so the editor preview
  * (which has no such container) keeps its narrow mobile layout unchanged.
  */
+/**
+ * Clases de alineación (Fase 11 · P1).
+ *
+ * `center` es la cadena VACÍA a propósito, y es lo que hace que esto sea un
+ * cambio de cero píxeles: con el valor por defecto `Section` no emite nada y
+ * los 11 sitios de llamada conservan intacto el `className` que ya traían
+ * —que no son todos iguales: `WelcomePreview` es un bloque, no un flex—.
+ */
+const ALIGN_CLASSES: Record<SectionAlign, string> = {
+  start: "items-start text-left",
+  center: "",
+  end: "items-end text-right",
+};
+
+const BLEED_CLASSES: Record<SectionBleed, string> = {
+  contained: "",
+  full: "max-w-none px-0 @2xl/inv:max-w-none @2xl/inv:px-0",
+};
+
 function Section({
   children,
   tint = false,
   wide = false,
+  align = "center",
+  bleed = "contained",
   className,
 }: {
   children: React.ReactNode;
   tint?: boolean;
   /** Media-heavy modules (gallery/video) use more of the desktop width. */
   wide?: boolean;
+  align?: SectionAlign;
+  bleed?: SectionBleed;
   className?: string;
 }) {
   return (
@@ -61,6 +86,13 @@ function Section({
             ? "@2xl/inv:max-w-5xl"
             : "@2xl/inv:max-w-2xl @4xl/inv:max-w-3xl @5xl/inv:max-w-4xl",
           className,
+          // DESPUÉS del className del llamador, y no antes: `cn` resuelve con
+          // tailwind-merge y gana la última, así que una alineación explícita
+          // tiene que poder BORRAR el `items-center text-center` que el sitio
+          // de llamada trae escrito. Con los defectos ambas son "" y el
+          // resultado es, literalmente, el de antes.
+          ALIGN_CLASSES[align],
+          BLEED_CLASSES[bleed],
         )}
       >
         {children}
@@ -116,7 +148,9 @@ export function HeroPreview({
         {config.subtitle && (
           <p
             className="text-base @2xl/inv:text-xl @4xl/inv:text-2xl @5xl/inv:text-3xl"
-            style={{ color: config.imageUrl ? "rgba(255,255,255,.9)" : "inherit" }}
+            style={{
+              color: config.imageUrl ? "rgba(255,255,255,.9)" : "inherit",
+            }}
           >
             {config.subtitle}
           </p>
@@ -152,7 +186,7 @@ export function HeroPreview({
 
 export function WelcomePreview({ config }: { config: WelcomeConfig }) {
   return (
-    <Section className="text-center">
+    <Section align={config.align} bleed={config.bleed} className="text-center">
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Bienvenidos"}
       </h3>
@@ -232,7 +266,12 @@ export function CountdownPreview({
   if (!valid) {
     if (!editorHint) return null;
     return (
-      <Section tint className="flex flex-col items-center gap-4 text-center">
+      <Section
+        align={config.align}
+        bleed={config.bleed}
+        tint
+        className="flex flex-col items-center gap-4 text-center"
+      >
         <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
           {config.title || "Faltan"}
         </h3>
@@ -244,7 +283,12 @@ export function CountdownPreview({
   }
 
   return (
-    <Section tint className="flex flex-col items-center gap-4 text-center">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      tint
+      className="flex flex-col items-center gap-4 text-center"
+    >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Faltan"}
       </h3>
@@ -275,7 +319,11 @@ export function MapPreview({
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config.address)}`
     : "";
   return (
-    <Section className="flex flex-col items-center gap-2 text-center">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      className="flex flex-col items-center gap-2 text-center"
+    >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Ubicación"}
       </h3>
@@ -320,7 +368,12 @@ export function GalleryPreview({
   animate?: boolean;
 }) {
   return (
-    <Section wide className="flex flex-col items-center gap-3 text-center">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      wide
+      className="flex flex-col items-center gap-3 text-center"
+    >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Galería"}
       </h3>
@@ -368,7 +421,12 @@ export function toEmbedUrl(url: string): string {
 export function VideoPreview({ config }: { config: VideoConfig }) {
   const embed = toEmbedUrl(config.url);
   return (
-    <Section wide className="flex flex-col items-center gap-3 text-center">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      wide
+      className="flex flex-col items-center gap-3 text-center"
+    >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Video"}
       </h3>
@@ -383,9 +441,7 @@ export function VideoPreview({ config }: { config: VideoConfig }) {
           />
         </div>
       ) : (
-        <p className="text-sm opacity-70">
-          Pega un enlace de YouTube o Vimeo.
-        </p>
+        <p className="text-sm opacity-70">Pega un enlace de YouTube o Vimeo.</p>
       )}
     </Section>
   );
@@ -402,7 +458,12 @@ export function ItineraryPreview({
 }) {
   const items = config.items.filter((i) => i.time || i.label);
   return (
-    <Section tint className="flex flex-col items-center gap-3 text-center">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      tint
+      className="flex flex-col items-center gap-3 text-center"
+    >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Itinerario"}
       </h3>
@@ -445,7 +506,11 @@ export function ItineraryPreview({
  */
 export function SignaturesPreview({ config }: { config: SignaturesConfig }) {
   return (
-    <Section className="flex flex-col items-center gap-3 text-center">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      className="flex flex-col items-center gap-3 text-center"
+    >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Libro de firmas"}
       </h3>
@@ -482,7 +547,11 @@ export function SignaturesPreview({ config }: { config: SignaturesConfig }) {
 export function DresscodePreview({ config }: { config: DresscodeConfig }) {
   const level = config.level;
   return (
-    <Section className="flex flex-col items-center gap-3 text-center">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      className="flex flex-col items-center gap-3 text-center"
+    >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Código de vestimenta"}
       </h3>
@@ -527,7 +596,12 @@ export function GiftsPreview({
 }) {
   const links = config.links.filter((l) => l.url);
   return (
-    <Section tint className="flex flex-col items-center gap-3 text-center">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      tint
+      className="flex flex-col items-center gap-3 text-center"
+    >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Mesa de regalos"}
       </h3>
@@ -564,7 +638,11 @@ export function GiftsPreview({
 
 export function MusicPreview({ config }: { config: MusicConfig }) {
   return (
-    <Section className="flex flex-col items-center gap-2 text-center">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      className="flex flex-col items-center gap-2 text-center"
+    >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Música"}
       </h3>
@@ -579,7 +657,9 @@ export function MusicPreview({ config }: { config: MusicConfig }) {
           ▶ Escuchar
         </a>
       ) : (
-        <p className="text-sm opacity-70">Pega un enlace de Spotify o YouTube.</p>
+        <p className="text-sm opacity-70">
+          Pega un enlace de Spotify o YouTube.
+        </p>
       )}
     </Section>
   );
@@ -598,7 +678,12 @@ export function RsvpPreview({
 }) {
   const deadline = formatDate(config.deadline);
   return (
-    <Section tint className="flex flex-col items-center gap-4">
+    <Section
+      align={config.align}
+      bleed={config.bleed}
+      tint
+      className="flex flex-col items-center gap-4"
+    >
       <div className="text-center">
         <h3 className="text-lg font-semibold">
           {config.title || "Confirma tu asistencia"}
@@ -618,12 +703,21 @@ export function RsvpPreview({
         </div>
         <div className="space-y-1.5">
           <Label>Correo (opcional)</Label>
-          <Input disabled={!interactive} type="email" placeholder="tu@correo.com" />
+          <Input
+            disabled={!interactive}
+            type="email"
+            placeholder="tu@correo.com"
+          />
         </div>
         {config.allowGuestCount && (
           <div className="space-y-1.5">
             <Label>Número de invitados</Label>
-            <Input disabled={!interactive} type="number" min={1} defaultValue={1} />
+            <Input
+              disabled={!interactive}
+              type="number"
+              min={1}
+              defaultValue={1}
+            />
           </div>
         )}
         <div className="space-y-1.5">
