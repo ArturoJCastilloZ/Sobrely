@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, SearchX, X } from "lucide-react";
+import { Heart, Search, SearchX, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,8 @@ import {
   type PlantillaMarketplace,
 } from "@/lib/templates/marketplace";
 import { UseTemplateButton } from "@/components/dashboard/use-template-button";
+import { toggleFavorite } from "@/lib/templates/favorites-actions";
+import { toast } from "sonner";
 
 /**
  * El MARKETPLACE de plantillas (Fase 4): pastillas por tipo de evento y
@@ -48,13 +50,47 @@ export function TemplateMarketplace({
   plantillas,
   eventoInicial,
   consultaInicial,
+  favoritosIniciales,
+  soloFavoritosInicial,
 }: {
   plantillas: PlantillaMarketplace[];
   eventoInicial: string | null;
   consultaInicial: string;
+  favoritosIniciales: string[];
+  soloFavoritosInicial: boolean;
 }) {
   const [evento, setEvento] = React.useState<string | null>(eventoInicial);
   const [consulta, setConsulta] = React.useState(consultaInicial);
+  const [soloFavoritos, setSoloFavoritos] = React.useState(soloFavoritosInicial);
+  /*
+    Los favoritos viven en estado local para poder marcarlos de forma OPTIMISTA:
+    la acción va al servidor y vuelve, y esperar el viaje para pintar el corazón
+    hace que el botón se sienta roto. Si el servidor dice que no, se revierte y
+    se avisa — nunca se deja la marca mintiendo.
+  */
+  const [favoritos, setFavoritos] = React.useState<Set<string>>(
+    () => new Set(favoritosIniciales),
+  );
+
+  const alternarFavorito = (id: string) => {
+    const estaba = favoritos.has(id);
+    setFavoritos((prev) => {
+      const s = new Set(prev);
+      if (estaba) s.delete(id);
+      else s.add(id);
+      return s;
+    });
+    void toggleFavorite(id).then((r) => {
+      if (r.ok) return;
+      setFavoritos((prev) => {
+        const s = new Set(prev);
+        if (estaba) s.add(id);
+        else s.delete(id);
+        return s;
+      });
+      toast.error("No se pudo guardar el favorito.");
+    });
+  };
 
   /*
     El conteo se calcula sobre la lista COMPLETA, nunca sobre la ya filtrada:
@@ -63,8 +99,8 @@ export function TemplateMarketplace({
   */
   const conteo = React.useMemo(() => contarPorEvento(plantillas), [plantillas]);
   const visibles = React.useMemo(
-    () => filtrarPlantillas(plantillas, { evento, q: consulta }),
-    [plantillas, evento, consulta],
+    () => filtrarPlantillas(plantillas, { evento, q: consulta, soloFavoritos, favoritos }),
+    [plantillas, evento, consulta, soloFavoritos, favoritos],
   );
 
   /*
@@ -81,18 +117,21 @@ export function TemplateMarketplace({
     else params.delete("evento");
     if (consulta.trim()) params.set("q", consulta);
     else params.delete("q");
+    if (soloFavoritos) params.set("favoritas", "1");
+    else params.delete("favoritas");
     const qs = params.toString();
     window.history.replaceState(
       null,
       "",
       qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
     );
-  }, [evento, consulta]);
+  }, [evento, consulta, soloFavoritos]);
 
-  const hayFiltro = evento !== null || consulta.trim() !== "";
+  const hayFiltro = evento !== null || consulta.trim() !== "" || soloFavoritos;
   const limpiar = () => {
     setEvento(null);
     setConsulta("");
+    setSoloFavoritos(false);
   };
 
   const tipos = [...conteo.keys()].sort((a, b) => a.localeCompare(b, "es"));
@@ -174,6 +213,28 @@ export function TemplateMarketplace({
           ))}
         </div>
         {/*
+          «Favoritas» NO va dentro del radiogroup: es un interruptor
+          independiente que se combina con el tipo de evento, no una opción
+          más del grupo. Por eso es `aria-pressed` y no `role="radio"`.
+        */}
+        <button
+          type="button"
+          aria-pressed={soloFavoritos}
+          onClick={() => setSoloFavoritos((v) => !v)}
+          className={cn(
+            "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+            soloFavoritos
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background text-foreground hover:bg-muted",
+          )}
+        >
+          <Heart
+            aria-hidden="true"
+            className={cn("size-3.5", soloFavoritos && "fill-current")}
+          />
+          Favoritas <Cuenta n={favoritos.size} />
+        </button>
+        {/*
           La salida sólo aparece cuando hay algo que quitar. Va aquí y no sólo
           en el estado vacío porque un filtro activo CON resultados también
           esconde parte del catálogo, y sin este botón la única forma de volver
@@ -194,9 +255,17 @@ export function TemplateMarketplace({
 
       {visibles.length === 0 ? (
         <EmptyState
-          icon={<SearchX />}
-          title="Ninguna plantilla coincide"
-          description="Prueba con otras palabras o quita el filtro de tipo de evento."
+          icon={soloFavoritos && favoritos.size === 0 ? <Heart /> : <SearchX />}
+          title={
+            soloFavoritos && favoritos.size === 0
+              ? "Todavía no has guardado ninguna"
+              : "Ninguna plantilla coincide"
+          }
+          description={
+            soloFavoritos && favoritos.size === 0
+              ? "Toca el corazón de una plantilla para tenerla a mano aquí."
+              : "Prueba con otras palabras o quita el filtro de tipo de evento."
+          }
           action={
             <Button variant="outline" onClick={limpiar}>
               Quitar filtros
@@ -206,7 +275,7 @@ export function TemplateMarketplace({
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibles.map((tpl, i) => (
-            <Card key={tpl.id} className="flex flex-col overflow-clip pt-0">
+            <Card key={tpl.id} className="relative flex flex-col overflow-clip pt-0">
               {/*
                 Miniatura a sangre: `pt-0` en la tarjeta y `overflow-clip` para
                 que la imagen llegue al borde redondeado. `overflow-clip` y no
@@ -248,6 +317,38 @@ export function TemplateMarketplace({
                   <span className="sr-only">Ver {tpl.name} en grande</span>
                 </Link>
               )}
+              {/*
+                El corazón va FUERA del `<Link>` de la miniatura, no dentro:
+                anidar un botón en un enlace es HTML inválido y el clic acabaría
+                navegando a la plantilla en vez de marcarla. Se posiciona sobre
+                la tarjeta, que ya es el contexto de apilamiento.
+
+                `aria-pressed` + nombre explícito: un corazón sin texto no dice
+                a un lector de pantalla ni qué plantilla es ni en qué estado
+                está.
+              */}
+              <button
+                type="button"
+                aria-pressed={favoritos.has(tpl.id)}
+                aria-label={
+                  favoritos.has(tpl.id)
+                    ? `Quitar ${tpl.name} de favoritas`
+                    : `Guardar ${tpl.name} en favoritas`
+                }
+                onClick={() => alternarFavorito(tpl.id)}
+                className="absolute top-2 right-2 z-10 flex size-9 items-center justify-center rounded-full bg-background/85 text-foreground backdrop-blur transition-colors hover:bg-background focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                <Heart
+                  aria-hidden="true"
+                  className={cn(
+                    "size-4",
+                    // El relleno es la señal, no el color: en tema oscuro un
+                    // rojo sobre superficie translúcida pierde contraste, y el
+                    // corazón lleno se distingue del vacío por FORMA.
+                    favoritos.has(tpl.id) && "fill-current",
+                  )}
+                />
+              </button>
               <CardHeader className="pt-4">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-base">{tpl.name}</CardTitle>

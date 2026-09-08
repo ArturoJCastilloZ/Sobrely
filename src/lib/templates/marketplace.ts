@@ -29,6 +29,10 @@ export type FiltroMarketplace = {
   evento?: string | null;
   /** Texto libre sobre nombre + descripción. */
   q?: string | null;
+  /** Cuando es `true`, deja sólo las que están en `favoritos`. */
+  soloFavoritos?: boolean;
+  /** Ids de plantilla marcadas por el usuario de la sesión. */
+  favoritos?: ReadonlySet<string>;
 };
 
 /**
@@ -65,7 +69,15 @@ export function filtrarPlantillas(
   // entera fallaría porque las dos palabras nunca están juntas en un campo.
   const terminos = consulta ? consulta.split(/\s+/) : [];
 
+  /*
+    Un `soloFavoritos` activo SIN conjunto de favoritos devuelve lista vacía, y
+    es lo correcto: significa «no tengo ninguno», no «enséñamelas todas».
+    Tratarlo como filtro inactivo mostraría las 50 con el filtro encendido.
+  */
+  const favoritos = filtro.favoritos ?? new Set<string>();
+
   return lista.filter((tpl) => {
+    if (filtro.soloFavoritos && !favoritos.has(tpl.id)) return false;
     if (evento && tpl.event_type !== evento) return false;
     if (terminos.length === 0) return true;
     const heno = normalizar(`${tpl.name} ${tpl.description ?? ""}`);

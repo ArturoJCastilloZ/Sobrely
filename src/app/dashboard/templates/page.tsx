@@ -11,9 +11,9 @@ export const metadata: Metadata = { title: "Plantillas" };
 export default async function TemplatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ evento?: string; q?: string }>;
+  searchParams: Promise<{ evento?: string; q?: string; favoritas?: string }>;
 }) {
-  const { evento, q } = await searchParams;
+  const { evento, q, favoritas } = await searchParams;
   const supabase = await createClient();
   const { data: templates } = await supabase
     .from("templates")
@@ -40,6 +40,24 @@ export default async function TemplatesPage({
     list.map((t) => t.event_type).filter((t): t is string => Boolean(t)),
   );
   const eventoInicial = evento && tiposReales.has(evento) ? evento : null;
+
+  /*
+    Los favoritos se piden en su propia consulta y no con un join sobre
+    `templates`: un join los volveria un filtro implicito y una plantilla sin
+    favorito podria desaparecer del catalogo segun como resolviera PostgREST la
+    relacion. Aqui el catalogo es siempre las 50 y los favoritos son una capa
+    encima.
+
+    Se consulta SIN `user_id` en el `where` a proposito: la politica
+    `template_favorites_select_own` ya devuelve solo las del dueño —medido, ve
+    1 de 2 filas con dos usuarios en la tabla—, asi que repetir el filtro aqui
+    seria escribir en el cliente una condicion que ya impone la base. Sin
+    sesion la consulta devuelve vacio y el catalogo funciona igual.
+  */
+  const { data: favs } = await supabase
+    .from("template_favorites")
+    .select("template_id");
+  const favoritosIniciales = (favs ?? []).map((f) => f.template_id as string);
 
   return (
     <div className="space-y-6">
@@ -82,6 +100,8 @@ export default async function TemplatesPage({
           plantillas={list}
           eventoInicial={eventoInicial}
           consultaInicial={q ?? ""}
+          favoritosIniciales={favoritosIniciales}
+          soloFavoritosInicial={favoritas === "1"}
         />
       )}
     </div>

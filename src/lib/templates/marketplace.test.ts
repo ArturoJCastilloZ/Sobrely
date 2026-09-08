@@ -132,3 +132,51 @@ describe("contarPorEvento", () => {
     expect(c.size).toBe(4);
   });
 });
+
+describe("filtrarPlantillas · favoritos", () => {
+  const FAVS = new Set(["boda-lino", "cumple-confeti"]);
+
+  it("soloFavoritos deja unicamente las marcadas", () => {
+    const r = filtrarPlantillas(LISTA, { soloFavoritos: true, favoritos: FAVS });
+    expect(r.map((t) => t.id).sort()).toEqual(["boda-lino", "cumple-confeti"]);
+  });
+
+  it("sin soloFavoritos el conjunto no filtra nada", () => {
+    // Pasar `favoritos` no debe acotar por si solo: el que acota es el flag.
+    expect(filtrarPlantillas(LISTA, { favoritos: FAVS })).toHaveLength(
+      LISTA.length,
+    );
+  });
+
+  it("soloFavoritos sin conjunto devuelve VACIO, no la lista entera", () => {
+    // El modo de fallo que esto cierra: tratar «no tengo favoritos» como
+    // «filtro inactivo» mostraria las 50 con el filtro encendido.
+    expect(filtrarPlantillas(LISTA, { soloFavoritos: true })).toHaveLength(0);
+  });
+
+  it("favoritos se combina con el evento", () => {
+    const r = filtrarPlantillas(LISTA, {
+      soloFavoritos: true,
+      favoritos: FAVS,
+      evento: "Boda",
+    });
+    expect(r.map((t) => t.id)).toEqual(["boda-lino"]);
+  });
+
+  it("favoritos se combina con la busqueda", () => {
+    const r = filtrarPlantillas(LISTA, {
+      soloFavoritos: true,
+      favoritos: FAVS,
+      q: "confeti",
+    });
+    expect(r.map((t) => t.id)).toEqual(["cumple-confeti"]);
+  });
+
+  it("un favorito que ya no esta en la lista no inventa filas", () => {
+    const r = filtrarPlantillas(LISTA, {
+      soloFavoritos: true,
+      favoritos: new Set(["plantilla-borrada"]),
+    });
+    expect(r).toHaveLength(0);
+  });
+});
