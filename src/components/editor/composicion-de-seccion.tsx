@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  MOSTRAR_MOVIMIENTO_LIBRE,
   SECTION_ALIGNS,
   SECTION_ALIGN_LABELS,
   SECTION_BLEEDS,
@@ -53,8 +54,9 @@ export function ComposicionDeSeccion({
       </p>
 
       {/* El MISMO interruptor que la portada, en las 11 secciones. Vive en
-          `layoutShape`, así que el esquema lo heredan todas. */}
-      <div className="space-y-1.5">
+          `layoutShape`, así que el esquema lo heredan todas.
+          OCULTO por ahora — ver `MOSTRAR_MOVIMIENTO_LIBRE`. */}
+      <div className="space-y-1.5" hidden={!MOSTRAR_MOVIMIENTO_LIBRE}>
         <div className="flex items-center justify-between gap-3">
           <Label htmlFor="libre-seccion">Movimiento libre del texto</Label>
           <Switch

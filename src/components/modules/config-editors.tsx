@@ -10,6 +10,7 @@ import type {
   RsvpQuestionType,
 } from "@/lib/modules/types";
 import {
+  MOSTRAR_MOVIMIENTO_LIBRE,
   HERO_VARIANTS,
   HERO_VARIANT_LABELS,
   parcheDeComposicionDePortada,
@@ -201,8 +202,12 @@ function ComposicionDePortada({
 
       {/* El interruptor va SEPARADO del combo, no como una sexta opción: el
           diseño elegido se mantiene y esto sólo permite empujar los textos
-          encima. Es el mismo control que llevan las 11 secciones. */}
-      <div className="space-y-1.5 border-t pt-3">
+          encima. Es el mismo control que llevan las 11 secciones.
+          OCULTO por ahora — ver `MOSTRAR_MOVIMIENTO_LIBRE`. */}
+      <div
+        className="space-y-1.5 border-t pt-3"
+        hidden={!MOSTRAR_MOVIMIENTO_LIBRE}
+      >
         <div className="flex items-center justify-between gap-3">
           <Label htmlFor="libre-portada">Movimiento libre del texto</Label>
           <Switch

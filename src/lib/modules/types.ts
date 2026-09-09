@@ -528,6 +528,22 @@ export function parcheDeDesplazamiento(
   return { textOffsets: base };
 }
 
+/**
+ * ¿Se MUESTRA el interruptor de movimiento libre?
+ *
+ * Apagado a petición del dev (2026-09-08): el arrastre no le funciona en su
+ * navegador y no he conseguido reproducirlo —tres métodos distintos dicen que
+ * sí, incluido montar el `PreviewPane` real con su propia config y arrastrar
+ * con el ratón—, así que se esconde en vez de dejarle un control que no
+ * responde. Es peor un control muerto que ninguno.
+ *
+ * Lo que se esconde es SÓLO la interfaz. El esquema, el render y las guardas
+ * siguen en su sitio y probados, así que:
+ *   · una invitación que ya tenga `freeMove` guardado sigue pintándose igual;
+ *   · reactivarlo es cambiar este booleano, sin migración y sin recuperar nada.
+ */
+export const MOSTRAR_MOVIMIENTO_LIBRE = false;
+
 /** Los tres textos que la portada ya tiene. No se puede añadir un cuarto. */
 export const HERO_BLOQUES = ["title", "subtitle", "cta"] as const;
 export type HeroBloque = (typeof HERO_BLOQUES)[number];

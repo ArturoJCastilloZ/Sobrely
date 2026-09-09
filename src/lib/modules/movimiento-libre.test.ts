@@ -9,6 +9,7 @@ import {
   paresSolapados,
   estiloDeDesplazamiento,
   parcheDeDesplazamiento,
+  MOSTRAR_MOVIMIENTO_LIBRE,
   heroConfigSchema,
 } from "@/lib/modules/types";
 
@@ -304,5 +305,34 @@ describe("el interruptor está en el esquema de los 12 módulos", () => {
     expect(c.textOffsets.title).toEqual({ dx: 0.1, dy: 0.2 });
     // Los que no se declaran quedan sin desplazar, no undefined.
     expect(c.textOffsets.cta).toEqual({ dx: 0, dy: 0 });
+  });
+});
+
+describe("el interruptor está OCULTO pero el motor intacto", () => {
+  it("la interfaz no lo muestra", () => {
+    expect(MOSTRAR_MOVIMIENTO_LIBRE).toBe(false);
+  });
+
+  it("una invitación que YA lo tenga guardado se sigue pintando igual", () => {
+    // Es lo que hace que esconder la interfaz sea seguro: apagar el control no
+    // apaga el motor, así que nadie pierde una colocación hecha antes.
+    const c = heroConfigSchema.parse({
+      freeMove: true,
+      textOffsets: { title: { dx: 0.2, dy: -0.1 } },
+    });
+    expect(c.freeMove).toBe(true);
+    expect(estiloDeDesplazamiento(c.freeMove, c.textOffsets.title)).toEqual({
+      touchAction: "none",
+      transform: "translate(20cqw, -10cqw)",
+    });
+  });
+
+  it("reactivarlo es cambiar el booleano: nada mas depende de el", () => {
+    // El esquema y las guardas no lo consultan — sólo la interfaz. Si alguna
+    // lógica lo mirara, esconder el control cambiaría el comportamiento y no
+    // sólo la visibilidad.
+    for (const f of [true, false]) {
+      expect(heroConfigSchema.parse({ freeMove: f }).freeMove).toBe(f);
+    }
   });
 });
