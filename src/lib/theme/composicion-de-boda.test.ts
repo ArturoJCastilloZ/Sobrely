@@ -8,32 +8,33 @@ import {
 } from "@/lib/modules/types";
 
 /**
- * Contrato de la migración `0042`, que reparte la composición de las 13 bodas.
+ * Contrato de la composición de BODA, repartida por la `0042` y corregida por
+ * la `0043`.
  *
- * Por qué se prueba un `.sql`: sus valores son cadenas sueltas dentro de un
- * `values (...)`, sin tipos que las respalden. Un `'centred'` o un `'lines'`
- * no lo caza `tsc` ni el linter — se descubriría al aplicar la migración en
- * PRODUCCIÓN, y el `jsonb_set` la escribiría igual porque a Postgres le da lo
- * mismo. El esquema zod la rechazaría después, al LEER, y la plantilla
- * perdería su config.
+ * Por qué se prueban los `.sql`: sus valores son cadenas sueltas dentro de un
+ * `values (...)`, sin tipos que las respalden. Un `'centred'` o un `'lines'` no
+ * lo caza `tsc` ni el linter, Postgres lo escribiría igual, y el esquema zod
+ * tiraría la config al LEER — la plantilla perdería su composición en silencio.
  *
- * Y lo segundo que se comprueba es la razón de ser de la migración: que las 13
- * combinaciones sean DISTINTAS. Si dos coinciden, el trabajo no sirvió para
- * nada y nadie lo notaría hasta comparar miniaturas a ojo.
+ * Se comprueba el estado RESULTANTE de aplicar las dos en orden, no cada
+ * archivo por su cuenta: lo que llega a producción es la suma.
  */
 
-const SQL = readFileSync(
-  join(process.cwd(), "supabase/migrations/0042_boda_composicion_distinta.sql"),
+const dir = join(process.cwd(), "supabase/migrations");
+const SQL_0042 = readFileSync(
+  join(dir, "0042_boda_composicion_distinta.sql"),
+  "utf8",
+);
+const SQL_0043 = readFileSync(
+  join(dir, "0043_editorial_y_offset_tambien_piden_foto.sql"),
   "utf8",
 );
 
 type Fila = { slug: string; variant: string; frame: string; align: string };
 
-/** Extrae las tuplas del bloque `values (...)`, que es la fuente de verdad. */
-function filas(): Fila[] {
-  const re =
-    /\('(boda-[a-z-]+)',\s*'([a-z]+)',\s*'([a-z]+)',\s*'([a-z]+)'\)/g;
-  return [...SQL.matchAll(re)].map((m) => ({
+function tuplas(sql: string): Fila[] {
+  const re = /\('(boda-[a-z-]+)',\s*'([a-z]+)',\s*'([a-z]+)',\s*'([a-z]+)'\)/g;
+  return [...sql.matchAll(re)].map((m) => ({
     slug: m[1],
     variant: m[2],
     frame: m[3],
@@ -41,68 +42,91 @@ function filas(): Fila[] {
   }));
 }
 
-describe("0042 · composición de las bodas", () => {
-  it("declara las 13 bodas", () => {
-    expect(filas()).toHaveLength(13);
-  });
+/** Estado final: la `0043` pisa a la `0042` en las filas que toca. */
+function estadoFinal(): Fila[] {
+  const m = new Map(tuplas(SQL_0042).map((f) => [f.slug, f]));
+  for (const f of tuplas(SQL_0043)) m.set(f.slug, f);
+  return [...m.values()];
+}
 
-  it("no repite ninguna plantilla", () => {
-    const slugs = filas().map((f) => f.slug);
-    expect(new Set(slugs).size).toBe(slugs.length);
+/**
+ * Las variantes cuyo peso visual lo lleva la FOTOGRAFÍA. Sin imagen, `split`
+ * reserva media caja vacía y `editorial`/`offset` dejan el título pequeño y a
+ * un lado, sin nada que lo sostenga: se lee como el encabezado de un documento
+ * y no como una portada.
+ *
+ * La `0042` sólo guardaba `split`. Era correcto e INCOMPLETO — las otras dos
+ * se colaron y hubo que verlo MIRANDO las miniaturas, no leyendo el código.
+ */
+const PIDEN_FOTO = ["split", "editorial", "offset"] as const;
+
+/**
+ * Las bodas que tienen `hero.imageUrl`. Medido contra la BD el 2026-09-09; si
+ * alguna gana o pierde su foto, esta lista miente y hay que actualizarla — por
+ * eso la migración lleva ADEMÁS su propia guarda en SQL.
+ */
+const CON_FOTO = [
+  "boda-jardin-partido",
+  "boda-marco-nuestro",
+  "boda-papel-y-lino",
+];
+
+describe("composición de las bodas · 0042 + 0043", () => {
+  it("cubre las 13 bodas", () => {
+    expect(estadoFinal()).toHaveLength(13);
   });
 
   it("cada combinación es única — que es el objetivo entero", () => {
-    const combos = filas().map((f) => `${f.variant}|${f.frame}|${f.align}`);
+    const combos = estadoFinal().map(
+      (f) => `${f.variant}|${f.frame}|${f.align}`,
+    );
     const repetidas = combos.filter((c, i) => combos.indexOf(c) !== i);
     expect(repetidas).toEqual([]);
   });
 
-  it("toda variante existe en HERO_VARIANTS", () => {
-    const malas = filas().filter(
-      (f) => !(HERO_VARIANTS as readonly string[]).includes(f.variant),
-    );
-    expect(malas).toEqual([]);
+  it("toda variante, marco y alineación existe en su enum", () => {
+    for (const f of estadoFinal()) {
+      expect(HERO_VARIANTS as readonly string[], f.slug).toContain(f.variant);
+      expect(SECTION_FRAMES as readonly string[], f.slug).toContain(f.frame);
+      expect(SECTION_ALIGNS as readonly string[], f.slug).toContain(f.align);
+    }
   });
 
-  it("todo marco existe en SECTION_FRAMES", () => {
-    const malos = filas().filter(
-      (f) => !(SECTION_FRAMES as readonly string[]).includes(f.frame),
-    );
-    expect(malos).toEqual([]);
-  });
-
-  it("toda alineación existe en SECTION_ALIGNS", () => {
-    const malas = filas().filter(
-      (f) => !(SECTION_ALIGNS as readonly string[]).includes(f.align),
-    );
-    expect(malas).toEqual([]);
-  });
-
-  it("`split` sólo se usa en las dos que tienen foto de portada", () => {
-    // Sin imagen, `split` reserva media caja para una figura que no existe.
-    // La migración lleva además una guarda SQL, pero el reparto ya no debería
-    // proponerlo: esto lo fija por escrito.
-    const conSplit = filas().filter((f) => f.variant === "split").map((f) => f.slug);
-    expect(conSplit.sort()).toEqual(["boda-jardin-partido", "boda-marco-nuestro"]);
+  it("ninguna plantilla SIN foto usa una variante que la necesita", () => {
+    const infractoras = estadoFinal()
+      .filter((f) => (PIDEN_FOTO as readonly string[]).includes(f.variant))
+      .filter((f) => !CON_FOTO.includes(f.slug))
+      .map((f) => `${f.slug}:${f.variant}`);
+    expect(infractoras).toEqual([]);
   });
 
   it("la minimalista va sin adornos, como dice su descripción", () => {
-    const m = filas().find((f) => f.slug === "boda-minimalista")!;
-    expect(m.frame).toBe("none");
+    const m = estadoFinal().find((f) => f.slug === "boda-minimalista")!;
     expect(m.variant).toBe("plain");
+    expect(m.frame).toBe("none");
   });
 
-  it("la migración conserva la guarda de foto para `split`", () => {
-    // OJO: la primera versión de esta prueba buscaba la palabra `imageUrl`
-    // suelta y SOBREVIVIÓ a un mutante que borraba la guarda entera — porque
-    // la palabra sigue apareciendo en los comentarios y en el bloque de
-    // verificación. Se comprueba la CLÁUSULA, no el vocabulario: la condición
-    // completa, con sus espacios y saltos normalizados, y sólo en el cuerpo del
-    // `update` (antes del primer comentario de cierre).
-    const cuerpo = SQL.slice(0, SQL.indexOf("-- ====", SQL.indexOf("values")));
-    const plano = cuerpo.replace(/\s+/g, " ");
-    expect(plano).toContain(
+  it("la 0042 conserva su guarda SQL de foto para `split`", () => {
+    // OJO: la primera versión buscaba la palabra `imageUrl` suelta y SOBREVIVIÓ
+    // a un mutante que borraba la guarda entera — la palabra sigue en los
+    // comentarios y en el bloque de verificación. Se comprueba la CLÁUSULA
+    // completa, con espacios normalizados y sólo dentro del cuerpo del update.
+    const cuerpo = SQL_0042.slice(
+      0,
+      SQL_0042.indexOf("-- ====", SQL_0042.indexOf("values")),
+    );
+    expect(cuerpo.replace(/\s+/g, " ")).toContain(
       "and (v.variant <> 'split' or coalesce(t.modules_config #>> '{0,config,imageUrl}', '') <> '')",
+    );
+  });
+
+  it("la 0043 sólo toca las que están en la variante equivocada", () => {
+    const cuerpo = SQL_0043.slice(
+      0,
+      SQL_0043.indexOf("-- ====", SQL_0043.indexOf("values")),
+    );
+    expect(cuerpo.replace(/\s+/g, " ")).toContain(
+      "and t.modules_config #>> '{0,config,variant}' in ('editorial', 'offset')",
     );
   });
 });
