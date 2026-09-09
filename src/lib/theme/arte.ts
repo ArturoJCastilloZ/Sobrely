@@ -702,6 +702,93 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0,
   },
+  // ——— Categoría CORPORATIVO, 2026-09-09 ———
+  // Nueve compartían fondo: cinco `corp-lineas.svg` y cuatro `corp-papel.svg`.
+  //
+  // Es el PEOR caso de paleta repetida del catálogo: **cuatro** plantillas con
+  // el mismo azul marino del pack `corporativo-limpio` —no dos como en las
+  // otras categorías—. Las cuatro siluetas tuvieron que separarse entre sí:
+  //   completo            línea de tiempo con hitos
+  //   conferencia-agenda  marcas horarias
+  //   congreso-video      pantalla de proyección con haz
+  //   taller              cuadrícula milimetrada
+  //
+  // Y un par más: `evento-corporativo` comparte el azul de
+  // `corporativo-sencillo`, que ya lleva la greca griega; le toca el circuito.
+  {
+    // Ojo: esta usa el pack `boda-lujo`, cruzando de categoría. El arte va en
+    // su dorado, pero la paleta prestada sigue siendo una deuda anotada.
+    clave: "corporativo-cena-fin-de-ano-arte",
+    tipo: "svg",
+    nombre: "Guirnalda",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "corporativo-completo-arte",
+    tipo: "svg",
+    nombre: "Línea de tiempo",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "corporativo-con-sede-arte",
+    tipo: "svg",
+    nombre: "Plano",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "corporativo-conferencia-agenda-arte",
+    tipo: "svg",
+    nombre: "Marcas horarias",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "corporativo-congreso-video-arte",
+    tipo: "svg",
+    nombre: "Proyección",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "corporativo-junta-resultados-arte",
+    tipo: "svg",
+    nombre: "Barras",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "corporativo-lanzamiento-arte",
+    tipo: "svg",
+    nombre: "Haz de foco",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "corporativo-taller-arte",
+    tipo: "svg",
+    nombre: "Cuadrícula",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "evento-corporativo-arte",
+    tipo: "svg",
+    nombre: "Circuito",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */

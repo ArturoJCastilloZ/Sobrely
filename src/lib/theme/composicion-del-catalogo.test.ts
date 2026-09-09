@@ -25,6 +25,8 @@ const leer = (f: string) => readFileSync(join(DIR, f), "utf8");
 type Fila = { slug: string; variant: string; frame: string; align: string };
 
 function tuplas(sql: string, prefijo: string): Fila[] {
+  // `prefijo` puede ser un literal (`boda-`) o una alternancia ya formada,
+  // porque `evento-corporativo` no comparte prefijo con su categoría.
   const re = new RegExp(
     `\\('(${prefijo}[a-z-]*)',\\s*'([a-z]+)',\\s*'([a-z]+)',\\s*'([a-z]+)'\\)`,
     "g",
@@ -95,6 +97,15 @@ const CATEGORIAS = [
     // la portada, y las variantes que piden foto miran `hero.imageUrl`.
     conFoto: ["baby-nube-de-algodon"],
   },
+  {
+    nombre: "Corporativo",
+    // Ojo: el prefijo no puede ser `corporativo-`, porque `evento-corporativo`
+    // no lo lleva. Se listan por sufijo común.
+    prefijo: "(?:corporativo-[a-z-]+|evento-corporativo)",
+    esperadas: 11,
+    migraciones: ["0052_corporativo_composicion_distinta.sql"],
+    conFoto: ["corporativo-reticula"],
+  },
 ] as const;
 
 describe.each(CATEGORIAS)(
@@ -155,6 +166,8 @@ describe("las migraciones nuevas son ejecutables de una sola vez", () => {
     "0048_xv_composicion_distinta.sql",
     "0049_arte_propio_de_baby_shower.sql",
     "0050_baby_shower_composicion_distinta.sql",
+    "0051_arte_propio_de_corporativo.sql",
+    "0052_corporativo_composicion_distinta.sql",
   ];
 
   it.each(ARCHIVOS)("%s es UNA sola sentencia", (f) => {
@@ -206,6 +219,7 @@ describe("guardas SQL de las migraciones de composición", () => {
     "0045_cumpleanos_composicion_distinta.sql",
     "0048_xv_composicion_distinta.sql",
     "0050_baby_shower_composicion_distinta.sql",
+    "0052_corporativo_composicion_distinta.sql",
   ])("%s guarda LAS TRES variantes que piden foto, no sólo `split`", (f) => {
     // La lección de la 0043, ya incorporada de entrada en las dos categorías
     // posteriores.
@@ -214,7 +228,11 @@ describe("guardas SQL de las migraciones de composición", () => {
     );
   });
 
-  it.each(["0047_arte_propio_de_xv.sql", "0049_arte_propio_de_baby_shower.sql"])(
+  it.each([
+    "0047_arte_propio_de_xv.sql",
+    "0049_arte_propio_de_baby_shower.sql",
+    "0051_arte_propio_de_corporativo.sql",
+  ])(
     "%s no usa CTE: cada fila se toca UNA vez",
     (f) => {
       // La 0044 metió `cumpleanos-moderno` en DOS ramas de un CTE. Actualizar
