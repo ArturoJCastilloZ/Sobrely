@@ -49,6 +49,22 @@ export type ThemePackTheme = {
     text: string;
   };
   font: FontKey;
+  /**
+   * Par tipográfico heading/body (Fase 11 · P4). **OBLIGATORIO a propósito.**
+   *
+   * `font` es UNA familia para todo, y era una de las causas medidas de que las
+   * 50 plantillas se vieran iguales. El pack es la fuente de verdad del tema de
+   * 30 de ellas (ver `resolveTemplateTheme`), así que el par tiene que vivir
+   * AQUÍ para que un cambio alcance a todas a la vez.
+   *
+   * Se declara requerido y no opcional para que el compilador liste los packs
+   * que falten en vez de que se cuele uno sin par y herede `font` en silencio.
+   *
+   * Regla dura: **`body` nunca es `script`.** Seis packs usaban `script` para
+   * TODO —titulares y cuerpo— y `script` es una familia de display; en un
+   * párrafo destruye la legibilidad. La prueba lo obliga.
+   */
+  typography: { heading: FontKey; body: FontKey };
   spacing: SpacingKey;
   /** Superficie clara u oscura (C2). Opcional: por defecto "light". */
   mode?: "light" | "dark";
@@ -95,6 +111,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#111111",
       },
       font: "sans",
+      typography: { heading: "sans", body: "sans" },
       spacing: "relaxed",
       stylePreset: "minimal-elegant",
       decoration: { enabled: false, variant: "floating", symbol: "❀" },
@@ -114,6 +131,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#4a3b3b",
       },
       font: "script",
+      typography: { heading: "script", body: "serif" },
       spacing: "normal",
       stylePreset: "soft-floral",
       decoration: { enabled: true, variant: "floating", symbol: "🌸" },
@@ -133,6 +151,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#2a2724",
       },
       font: "elegant",
+      typography: { heading: "elegant", body: "sans" },
       spacing: "relaxed",
       stylePreset: "luxury-wedding",
       decoration: { enabled: true, variant: "ambient-gradient", symbol: "❀" },
@@ -152,6 +171,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#2e3a2c",
       },
       font: "serif",
+      typography: { heading: "serif", body: "sans" },
       spacing: "normal",
       stylePreset: "soft-floral",
       decoration: { enabled: true, variant: "floating", symbol: "🍃" },
@@ -172,6 +192,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#2a2320",
       },
       font: "elegant",
+      typography: { heading: "elegant", body: "serif" },
       spacing: "relaxed",
       stylePreset: "luxury-wedding",
       decoration: { enabled: true, variant: "sparkle", symbol: "✦" },
@@ -191,6 +212,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#2a1a33",
       },
       font: "script",
+      typography: { heading: "script", body: "sans" },
       spacing: "normal",
       stylePreset: "modern-celebration",
       decoration: { enabled: true, variant: "sparkle", symbol: "✦" },
@@ -211,6 +233,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#1a1a2e",
       },
       font: "sans",
+      typography: { heading: "sans", body: "sans" },
       spacing: "normal",
       stylePreset: "playful-birthday",
       decoration: { enabled: true, variant: "sparkle", symbol: "⚡" },
@@ -230,6 +253,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#1e1b3a",
       },
       font: "sans",
+      typography: { heading: "sans", body: "sans" },
       spacing: "normal",
       stylePreset: "modern-celebration",
       decoration: { enabled: true, variant: "sparkle", symbol: "✦" },
@@ -249,6 +273,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#5a4a52",
       },
       font: "script",
+      typography: { heading: "script", body: "sans" },
       spacing: "normal",
       stylePreset: "kids-party",
       decoration: { enabled: true, variant: "floating", symbol: "💖" },
@@ -272,6 +297,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#33475b",
       },
       font: "sans",
+      typography: { heading: "script", body: "sans" },
       spacing: "relaxed",
       stylePreset: "soft-floral",
       decoration: { enabled: true, variant: "floating", symbol: "☁️" },
@@ -291,6 +317,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#33382f",
       },
       font: "serif",
+      typography: { heading: "serif", body: "sans" },
       spacing: "relaxed",
       stylePreset: "minimal-elegant",
       decoration: { enabled: false, variant: "ambient-gradient", symbol: "❀" },
@@ -310,6 +337,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#4a3a2c",
       },
       font: "script",
+      typography: { heading: "script", body: "sans" },
       spacing: "normal",
       stylePreset: "kids-party",
       decoration: { enabled: true, variant: "floating", symbol: "🌿" },
@@ -329,6 +357,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#3f3a44",
       },
       font: "sans",
+      typography: { heading: "script", body: "sans" },
       spacing: "normal",
       stylePreset: "modern-celebration",
       decoration: { enabled: true, variant: "sparkle", symbol: "✨" },
@@ -349,6 +378,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#1a2230",
       },
       font: "sans",
+      typography: { heading: "sans", body: "sans" },
       spacing: "compact",
       stylePreset: "corporate-clean",
       decoration: { enabled: false, variant: "ambient-gradient", symbol: "❀" },
@@ -369,6 +399,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#4a3f30",
       },
       font: "script",
+      typography: { heading: "script", body: "sans" },
       spacing: "normal",
       stylePreset: "soft-floral",
       decoration: { enabled: true, variant: "floating", symbol: "🌿" },
@@ -388,6 +419,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#26331f",
       },
       font: "sans",
+      typography: { heading: "sans", body: "sans" },
       spacing: "normal",
       stylePreset: "playful-birthday",
       decoration: { enabled: true, variant: "floating", symbol: "🦕" },
@@ -407,6 +439,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#123b3f",
       },
       font: "script",
+      typography: { heading: "script", body: "serif" },
       spacing: "normal",
       stylePreset: "modern-celebration",
       decoration: { enabled: true, variant: "floating", symbol: "🌴" },
@@ -426,6 +459,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#14261b",
       },
       font: "sans",
+      typography: { heading: "sans", body: "sans" },
       spacing: "normal",
       stylePreset: "playful-birthday",
       decoration: { enabled: true, variant: "sparkle", symbol: "⚽" },
@@ -445,6 +479,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#3d2c22",
       },
       font: "serif",
+      typography: { heading: "serif", body: "sans" },
       spacing: "normal",
       stylePreset: "soft-floral",
       decoration: { enabled: true, variant: "floating", symbol: "🍂" },
@@ -464,6 +499,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
         text: "#eef1f7",
       },
       font: "elegant",
+      typography: { heading: "elegant", body: "sans" },
       spacing: "relaxed",
       mode: "dark",
       stylePreset: "luxury-wedding",
@@ -503,6 +539,13 @@ export function applyThemePack(theme: ThemeConfig, key: string): ThemeConfig {
     ...withStyle,
     colors: { ...pack.theme.colors },
     font: pack.theme.font,
+    // SIEMPRE se escribe, nunca condicional. `applyThemePack` hace spread del
+    // theme entrante, así que si el par se omitiera cuando un pack no lo trae,
+    // cambiar de pack DEJARÍA el par del anterior — el titular del pack viejo
+    // sobre los colores del nuevo. Por eso el campo es obligatorio en
+    // `ThemePackTheme`: no hay pack sin par y no hay rama que pueda heredar uno
+    // rancio. Comprobado con una prueba que cambia de pack.
+    typography: { ...pack.theme.typography },
     spacing: pack.theme.spacing,
     mode: pack.theme.mode ?? "light",
     decoration: { imageUrl: "", ...pack.theme.decoration },

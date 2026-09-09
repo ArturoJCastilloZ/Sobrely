@@ -9,7 +9,13 @@ import {
   THEME_PACK_CATEGORIES,
   THEME_PACK_CATEGORY_LABELS,
 } from "@/lib/theme/theme-packs";
-import { defaultTheme, parseTheme, themeSchema } from "@/lib/theme/theme";
+import {
+  defaultTheme,
+  parseTheme,
+  themeSchema,
+  FONT_KEYS,
+  resolveTypography,
+} from "@/lib/theme/theme";
 
 const KEYS = Object.keys(THEME_PACKS);
 
@@ -141,5 +147,73 @@ describe("helpers", () => {
     expect(isThemePackPremium("boda-lujo")).toBe(true);
     expect(isThemePackPremium(undefined)).toBe(false);
     expect(isThemePackPremium("no-existe")).toBe(false);
+  });
+});
+
+describe("par tipográfico de los packs (Fase 11 · P4 aplicada a los 20)", () => {
+  // Por qué vive aquí y no en la plantilla: 30 de las 50 originales guardan SOLO
+  // `{themePack, backgroundImage}` y heredan color y tipografía del pack, que
+  // `resolveTemplateTheme` expande. Medido contra la BD el 2026-09-08. Así que el
+  // pack es el punto donde un cambio alcanza a 30 plantillas de una vez.
+
+  it("hay 20 packs que comprobar", () => {
+    // Control de conteo: si el catálogo se vaciara, los `for` de abajo pasarían
+    // sin comprobar nada. Ya pasó en esta suite con un `it.each` sobre lista
+    // vacía.
+    expect(KEYS.length).toBe(20);
+  });
+
+  it("los 20 declaran par heading/body", () => {
+    for (const [k, pack] of Object.entries(THEME_PACKS)) {
+      expect(pack.theme.typography, `${k} sin par`).toBeDefined();
+      expect(FONT_KEYS, `${k} heading`).toContain(pack.theme.typography.heading);
+      expect(FONT_KEYS, `${k} body`).toContain(pack.theme.typography.body);
+    }
+  });
+
+  it("REGLA DURA: `body` nunca es `script`", () => {
+    // `script` es una familia de DISPLAY. Antes de esto seis packs la usaban
+    // para todo —titular y cuerpo— porque `font` es una sola familia: un
+    // párrafo entero en cursiva manuscrita no se lee. El titular sí la puede
+    // llevar, y de hecho la lleva en 8 de los 20.
+    for (const [k, pack] of Object.entries(THEME_PACKS)) {
+      expect(pack.theme.typography.body, `${k} usa script en el cuerpo`).not.toBe(
+        "script",
+      );
+    }
+  });
+
+  it("el par del pack LLEGA al theme aplicado", () => {
+    // Sin esto el par seria dato muerto en el catalogo: se declara y nadie lo
+    // emite. Se vio en rojo antes de conectarlo en `applyThemePack`.
+    for (const [k, pack] of Object.entries(THEME_PACKS)) {
+      const t = applyThemePack(defaultTheme(), k);
+      expect(t.typography, `${k}`).toEqual(pack.theme.typography);
+    }
+  });
+
+  it("cambiar de pack REEMPLAZA el par, no lo hereda", () => {
+    // El defecto que este caso defiende: `applyThemePack` hace spread del theme
+    // entrante, asi que un par escrito condicionalmente sobreviviria al cambio
+    // de pack y dejaria el titular del pack viejo sobre los colores del nuevo.
+    for (const desde of KEYS) {
+      for (const hacia of KEYS) {
+        const t = applyThemePack(applyThemePack(defaultTheme(), desde), hacia);
+        expect(t.typography, `${desde} -> ${hacia}`).toEqual(
+          THEME_PACKS[hacia].theme.typography,
+        );
+      }
+    }
+  });
+
+  it("el par sobrevive a themeSchema y a resolveTypography", () => {
+    // Que el objeto en memoria lo tenga no basta: tiene que atravesar el parse
+    // (que es lo que corre en vivo) y salir por el resolvedor que usa el render.
+    for (const k of KEYS) {
+      const t = parseTheme(applyThemePack(defaultTheme(), k));
+      expect(resolveTypography(t), `${k}`).toEqual(
+        THEME_PACKS[k].theme.typography,
+      );
+    }
   });
 });
