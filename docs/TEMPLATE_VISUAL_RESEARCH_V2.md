@@ -1113,10 +1113,39 @@ Por qué las dos aprueban de todos modos: el recorte daña **la tarjeta del
 catálogo**, no la plantilla — a 1200 px y a 375 px las dos se ven completas. Pero
 la tarjeta es donde se vende, así que se penalizó **Composition = 7** en ambas.
 
-**No se tocó**: arreglarlo significa cambiar proporciones —y eso cambia un
-recorte por otro, porque `object-fit: cover` recortará la fuente— o cambiar
-`PROPORCION_MINIATURA`, que reordena la rejilla del catálogo entero. Es decisión
-del dev.
+### ✅ ARREGLADO — la `0038`, aplicada, y las 6 recapturadas (2026-09-08)
+
+Se combinaron dos vías, porque solas no servían: recortar las 6 fotografías a
+**1600x1600** y poner `imageRatio` a **`1/1`**, su proporción exacta. Así el
+recorte queda en **0 % por `cover` Y 0 % por el viewport**, las dos cosas, sin
+tocar ningún umbral —subir sólo la proporción habría hecho que `cover` recortara
+el 33 % de la fuente, y mover ese umbral era la salida fácil—. Se descartó
+cambiar `PROPORCION_MINIATURA`: para que cupiera una figura 2/3 la tarjeta
+tendría que ser ~4:7.
+
+**Recorte real, medido en el DOM antes y después:**
+
+| plantilla | antes | ahora |
+|---|---|---|
+| `boda-papel-y-lino` | 43 % | **0 %** |
+| `bautizo-cera-blanca` · `boda-marco-nuestro` · `comunion-cinta` · `revelacion-coral` | 33 % | **0 %** |
+| `xv-corona` | 24 % | **0 %** |
+
+Y **cero figuras verticales** quedan en el catálogo activo. El guard nuevo del
+pre-vuelo lo impide en adelante: comprueba que la figura del hero cabe en la
+tarjeta, con la geometría derivada de `ANCHO_CAPTURA`/`ALTO_CAPTURA`.
+
+Miradas una por una, el objeto se lee completo — y el caso más claro no era el
+que motivó el arreglo: **`boda-papel-y-lino` enseñaba UNA alianza** y ahora
+enseña las dos.
+
+**No se degradó la página**, que era el riesgo de recortar la fuente: a 1200 px
+el pastel sale más grande y completo que antes.
+
+⬜ **Repuntuación propuesta, no hecha.** El `Composition = 7` de
+`boda-marco-nuestro` y `comunion-cinta` se puso **por este recorte**, y la causa
+ya no existe (subirían a 8.3 y 8.7). No se ajusta a mano la columna que uno mismo
+penalizó: hay que volver a mirar las tres superficies de las seis.
 
 ---
 
@@ -1147,10 +1176,12 @@ miniatura, 0 archivos ausentes. Migraciones `0032`–`0036` aplicadas.
 - ✅ **CERRADO**: `boda-marco-nuestro` (7.3 → **8.2**) y `comunion-cinta`
   (5.8 → **8.5**), las dos con fotografía de un OBJETO del evento. La `0037`
   está aplicada y sus miniaturas capturadas. Ver §19.8.
-- ⚠️ **ABIERTO, y es nuevo**: la **miniatura recorta** la figura del hero en
-  **6 de las 14** con figura contenida —`boda-papel-y-lino` pierde el 43 % y
-  está aprobada con 8.5—. El pre-vuelo no lo ve porque mide caja contra fuente,
-  no figura contra viewport de captura. Ver §19.8.
+- ✅ **CERRADO**: el **recorte de la miniatura** en las 6 con figura vertical.
+  La `0038` está aplicada, las 6 fotografías van a 1600x1600 con `imageRatio`
+  `1/1`, el recorte medido en el DOM es **0 %** en las seis, y el pre-vuelo tiene
+  ya un guard que lo impide. Ver §19.8.
+- ⬜ **Repuntuar las 6** tras el arreglo: el `Composition = 7` de dos de ellas se
+  puso por un recorte que ya no existe.
 - **F2 tiene un solo representante** y por los pelos: de 13 fotografías, sólo
   `revelacion-tinta` baja del umbral de velo de 0.35.
 - El **resto del catálogo** (las 50 originales) sigue sin tocar. El piloto
