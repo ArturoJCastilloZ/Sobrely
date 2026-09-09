@@ -48,10 +48,10 @@ export function useMovimientoLibre({
     moduloId: string;
     bloque: string;
     ancho: number;
+    escala: number;
     // Centro natural del bloque (sin el desplazamiento actual), en fracciones
     // del ANCHO de la sección — la unidad de `cqw`, los dos ejes.
     centro: { x: number; y: number };
-    medio: { ancho: number; alto: number };
     extension: { ancho: number; alto: number };
     inicio: { x: number; y: number };
     base: Desplazamiento;
@@ -73,8 +73,29 @@ export function useMovimientoLibre({
       }
 
       const rs = seccion.getBoundingClientRect();
-      if (rs.width <= 0) return;
+      // ⚠️ `cqw` NO resuelve contra la caja de BORDE, resuelve contra la de
+      // CONTENIDO. La sección lleva `px-6`, así que usar el rect entero hacía
+      // que el texto se quedara ATRÁS del cursor: medido, se arrastraban 90 px
+      // y se movía 80 — el 88,5 %, que es exactamente 370/418, el contenido
+      // partido por el borde.
+      const cs = getComputedStyle(seccion);
+      const ancho =
+        seccion.clientWidth -
+        parseFloat(cs.paddingLeft || "0") -
+        parseFloat(cs.paddingRight || "0");
+      if (ancho <= 0) return;
+      // El alto de contenido, en la misma unidad, para la extensión vertical.
+      const alto =
+        seccion.clientHeight -
+        parseFloat(cs.paddingTop || "0") -
+        parseFloat(cs.paddingBottom || "0");
+      // El rect puede venir ESCALADO por el zoom del lienzo, mientras
+      // `clientWidth` viene en px CSS. El factor se necesita para convertir el
+      // movimiento del cursor —que es de pantalla— a px CSS.
+      const escala = rs.width > 0 ? seccion.clientWidth / rs.width : 1;
       const rb = destino.getBoundingClientRect();
+      const padLeft = parseFloat(cs.paddingLeft || "0");
+      const padTop = parseFloat(cs.paddingTop || "0");
       // El transform actual se descuenta para obtener el centro NATURAL: sin
       // esto, cada arrastre partiría de una base equivocada y el bloque
       // saltaría al agarrarlo por segunda vez.
@@ -83,15 +104,21 @@ export function useMovimientoLibre({
       arrastre.current = {
         moduloId: contenedor.dataset.modulo ?? "",
         bloque: destino.dataset.bloque ?? "",
-        ancho: rs.width,
+        ancho,
+        escala,
         centro: {
-          x: (rb.left + rb.width / 2 - rs.left) / rs.width - previo.dx,
-          y: (rb.top + rb.height / 2 - rs.top) / rs.width - previo.dy,
+          // Todo en px CSS y contra el origen del CONTENIDO, que es lo que
+          // `cqw` mide. `escala` deshace el zoom del lienzo.
+          x:
+            ((rb.left + rb.width / 2 - rs.left) * escala - padLeft) / ancho -
+            previo.dx,
+          y:
+            ((rb.top + rb.height / 2 - rs.top) * escala - padTop) / ancho -
+            previo.dy,
         },
-        medio: { ancho: rb.width / 2 / rs.width, alto: rb.height / 2 / rs.width },
         // El eje vertical NO llega a 1: la sección mide `alto/ancho` en
         // unidades de ancho, que es la unidad de `cqw`.
-        extension: { ancho: 1, alto: rs.height / rs.width },
+        extension: { ancho: 1, alto: alto / ancho },
         inicio: { x: e.clientX, y: e.clientY },
         base: previo,
       };
@@ -106,13 +133,13 @@ export function useMovimientoLibre({
       const a = arrastre.current;
       if (!a) return;
       const bruto: Desplazamiento = {
-        dx: a.base.dx + (e.clientX - a.inicio.x) / a.ancho,
-        dy: a.base.dy + (e.clientY - a.inicio.y) / a.ancho,
+        dx: a.base.dx + ((e.clientX - a.inicio.x) * a.escala) / a.ancho,
+        dy: a.base.dy + ((e.clientY - a.inicio.y) * a.escala) / a.ancho,
       };
       onOffset(
         a.moduloId,
         a.bloque,
-        limitarDesplazamiento(bruto, a.centro, a.medio, a.extension),
+        limitarDesplazamiento(bruto, a.centro, a.extension),
       );
     },
 

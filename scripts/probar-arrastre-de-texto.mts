@@ -11,13 +11,19 @@
  * `e.target.closest("[data-bloque]")` devuelve `null`: el arrastre no empieza
  * nunca. Ninguna prueba de render lo veía, porque el HTML era correcto.
  *
- * Qué comprueba, y qué NO. Verifica lo que falló: que desde el CONTENEDOR de
- * los módulos el evento llega con `e.target` dentro de un `[data-bloque]`, y
- * que la aritmética de fracciones produce el desplazamiento en píxeles que se
- * arrastró. La lógica va transplantada, así que **no** prueba el código de
- * React — prueba que la forma del DOM y las cuentas son las correctas. Lo que
- * no cubre nadie automáticamente sigue siendo el gesto en el editor real, que
- * pide sesión.
+ * Y un SEGUNDO fallo, reportado despues del primero («sigue sin moverse»): la
+ * seccion lleva `px-6`, y `cqw` **no** resuelve contra la caja de BORDE sino
+ * contra la de CONTENIDO. Dividiendo por el rect entero el texto se quedaba
+ * atras del cursor — medido, se arrastraban 90 px y se movia 80, el 88,5 %, que
+ * es exactamente 370/418. Por eso la seccion de esta sonda TIENE PADDING: sin
+ * el, el error no se manifiesta.
+ *
+ * Que comprueba, y que NO. Verifica lo que fallo: (1) que desde el CONTENEDOR
+ * de los modulos el evento llega con `e.target` dentro de un `[data-bloque]`, y
+ * (2) que el texto sigue al cursor 1:1. La logica va transplantada, asi que
+ * **no** prueba el codigo de React — prueba que la forma del DOM y las cuentas
+ * son las correctas. Lo que no cubre nadie automaticamente sigue siendo el
+ * gesto en el editor real, que pide sesion.
  */
 import { chromium } from "playwright-core";
 
@@ -27,7 +33,7 @@ const p = await b.newPage({ viewport: { width: 700, height: 600 } });
 await p.setContent(`
   <div id="canvas" style="position:relative">
     <div data-modulo="m1">
-      <section id="sec" style="container-type:inline-size;min-height:240px;background:#eee;display:flex;flex-direction:column;align-items:center;justify-content:center">
+      <section id="sec" style="container-type:inline-size;min-height:240px;padding:48px 24px;background:#eee;display:flex;flex-direction:column;align-items:center;justify-content:center">
         <h2 id="titulo" data-bloque="title" style="touch-action:none;background:#fff">Ana &amp; Carlos</h2>
       </section>
     </div>
@@ -40,8 +46,12 @@ await p.setContent(`
     const destino = e.target.closest("[data-bloque]");
     window.__log.push("target=" + (e.target.id || e.target.tagName) + " bloque=" + (destino ? destino.dataset.bloque : "NULL"));
     if (!destino) return;
-    const rs = destino.closest("section").getBoundingClientRect();
-    drag = { ancho: rs.width, inicio: { x: e.clientX, y: e.clientY } };
+    const sec = destino.closest("section");
+    const cs = getComputedStyle(sec);
+    // Caja de CONTENIDO, que es lo que mide cqw. Con el rect entero el texto
+    // se queda atras del cursor tanto como pese el padding.
+    const ancho = sec.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    drag = { ancho, inicio: { x: e.clientX, y: e.clientY } };
     canvas.setPointerCapture(e.pointerId);
     e.preventDefault();
   });

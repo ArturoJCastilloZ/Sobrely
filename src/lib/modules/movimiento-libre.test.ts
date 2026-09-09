@@ -13,57 +13,63 @@ import {
 } from "@/lib/modules/types";
 
 describe("limitarDesplazamiento", () => {
-  const MEDIO = { ancho: 0.2, alto: 0.1 };
+  // El criterio es que el CENTRO del bloque quede dentro del marco, NO el
+  // bloque entero. La primera version exigia que cupiera entero y fue la causa
+  // del segundo «sigue sin moverse» que reporto el dev: `h2`, `p` y el `div`
+  // del CTA son elementos de BLOQUE y su caja ocupa casi todo el ancho del
+  // contenedor, asi que no tenian a donde ir. Medido en su invitacion: el
+  // titulo ocupaba 325 px de 418 —46 px de recorrido— y con un titulo que
+  // llena el ancho el recorrido era EXACTAMENTE cero.
+  const EXT = { ancho: 1, alto: 0.8 };
 
   it("un desplazamiento que cabe se deja intacto", () => {
     expect(
-      limitarDesplazamiento({ dx: 0.1, dy: -0.05 }, { x: 0.5, y: 0.5 }, MEDIO),
+      limitarDesplazamiento({ dx: 0.1, dy: -0.05 }, { x: 0.5, y: 0.4 }, EXT),
     ).toEqual({ dx: 0.1, dy: -0.05 });
   });
 
-  it("aprieta contra el borde contando el TAMAÑO del bloque, no sólo 0..1", () => {
-    // Centro natural 0.5 y medio-ancho 0.2 -> el centro puede ir de 0.2 a 0.8,
-    // o sea dx entre -0.3 y +0.3. Un dx de +1 se recorta a +0.3, no a +0.5:
-    // clampar sólo la posición dejaría media caja fuera del marco.
-    const r = limitarDesplazamiento({ dx: 1, dy: 1 }, { x: 0.5, y: 0.5 }, MEDIO);
-    expect(r.dx).toBeCloseTo(0.3, 10);
+  it("el recorrido es el marco ENTERO, no lo que sobra del bloque", () => {
+    // Desde el centro (0.5) se puede llegar al borde derecho: dx hasta +0.5.
+    // Con el criterio viejo, un bloque de medio-ancho 0.4 solo habria podido
+    // moverse 0.1 — el sintoma exacto que el dev veia.
+    const r = limitarDesplazamiento({ dx: 9, dy: 9 }, { x: 0.5, y: 0.4 }, EXT);
+    expect(r.dx).toBeCloseTo(0.5, 10);
     expect(r.dy).toBeCloseTo(0.4, 10);
   });
 
-  it("respeta un centro natural que NO está en el medio", () => {
-    // Centro en 0.2: hacia la izquierda solo queda 0.2-0.2 = 0, hacia la
-    // derecha 0.8-0.2 = 0.6.
-    const r = limitarDesplazamiento({ dx: -1, dy: 0 }, { x: 0.2, y: 0.5 }, MEDIO);
-    expect(r.dx).toBeCloseTo(0, 10);
-    const r2 = limitarDesplazamiento({ dx: 1, dy: 0 }, { x: 0.2, y: 0.5 }, MEDIO);
-    expect(r2.dx).toBeCloseTo(0.6, 10);
+  it("no deja salir el centro por el otro lado", () => {
+    const r = limitarDesplazamiento({ dx: -9, dy: -9 }, { x: 0.5, y: 0.4 }, EXT);
+    expect(r.dx).toBeCloseTo(-0.5, 10);
+    expect(r.dy).toBeCloseTo(-0.4, 10);
   });
 
-  it("un bloque MÁS GRANDE que el contenedor se queda sin mover", () => {
-    // No hay posición válida: cualquier valor deja el bloque desbordando. 0 es
-    // determinista y no empeora nada.
-    const r = limitarDesplazamiento(
-      { dx: 0.9, dy: 0.9 },
-      { x: 0.5, y: 0.5 },
-      { ancho: 0.7, alto: 0.6 },
-    );
-    expect(r).toEqual({ dx: 0, dy: 0 });
+  it("respeta un centro natural que NO esta en el medio", () => {
+    // Centro en 0.2: a la izquierda queda 0.2, a la derecha 0.8.
+    expect(
+      limitarDesplazamiento({ dx: -9, dy: 0 }, { x: 0.2, y: 0.4 }, EXT).dx,
+    ).toBeCloseTo(-0.2, 10);
+    expect(
+      limitarDesplazamiento({ dx: 9, dy: 0 }, { x: 0.2, y: 0.4 }, EXT).dx,
+    ).toBeCloseTo(0.8, 10);
+  });
+
+  it("el bloque puede quedar medio fuera, pero NUNCA perderse del todo", () => {
+    // Es la contrapartida aceptada de dar recorrido de verdad: con el centro
+    // en el borde, la mitad del texto sigue dentro del marco. Perderlo
+    // entero seria un estado del que el usuario no sabria salir.
+    const r = limitarDesplazamiento({ dx: 99, dy: 99 }, { x: 0.5, y: 0.4 }, EXT);
+    expect(r.dx + 0.5).toBeLessThanOrEqual(EXT.ancho);
+    expect(r.dy + 0.4).toBeLessThanOrEqual(EXT.alto);
   });
 
   it("el eje VERTICAL se limita contra alto/ancho, no contra 1", () => {
     // La unidad es el ANCHO de la seccion en los dos ejes (`cqw`), medido en el
     // navegador: `top` en % da 0 con `min-height`, y `cqw` sobre la propia
-    // seccion si resuelve sin sacar el contenido del flujo. Asi que una seccion
-    // de 380x300 tiene extension vertical 300/380 = 0.789, NO 1. Si el
-    // limitador asumiera 1, dejaria bajar el texto fuera de la portada.
+    // seccion si resuelve sin sacar el contenido del flujo. Una seccion de
+    // 380x300 tiene extension vertical 300/380 = 0.789, NO 1.
     const ext = { ancho: 1, alto: 300 / 380 };
-    const r = limitarDesplazamiento(
-      { dx: 0, dy: 1 },
-      { x: 0.5, y: 0.4 },
-      { ancho: 0.2, alto: 0.06 },
-      ext,
-    );
-    expect(r.dy).toBeCloseTo(ext.alto - 0.06 - 0.4, 10);
+    const r = limitarDesplazamiento({ dx: 0, dy: 9 }, { x: 0.5, y: 0.4 }, ext);
+    expect(r.dy).toBeCloseTo(ext.alto - 0.4, 10);
     expect(r.dy).toBeLessThan(1);
   });
 
@@ -72,7 +78,6 @@ describe("limitarDesplazamiento", () => {
       const r = limitarDesplazamiento(
         { dx: 0.2, dy: 0.2 },
         { x: 0.5, y: 0.3 },
-        { ancho: 0.1, alto: 0.05 },
         { ancho: 1, alto },
       );
       expect(r.dy).toBe(0);
@@ -83,8 +88,8 @@ describe("limitarDesplazamiento", () => {
     for (const mal of [Number.NaN, Number.POSITIVE_INFINITY]) {
       const r = limitarDesplazamiento(
         { dx: mal, dy: mal },
-        { x: 0.5, y: 0.5 },
-        MEDIO,
+        { x: 0.5, y: 0.4 },
+        EXT,
       );
       expect(Number.isFinite(r.dx)).toBe(true);
       expect(Number.isFinite(r.dy)).toBe(true);
@@ -93,7 +98,7 @@ describe("limitarDesplazamiento", () => {
 
   it("el esquema topa el rango incluso sin pasar por el limitador", () => {
     // Defensa en profundidad: el limitador es del editor, pero una config
-    // escrita a mano no pasa por él.
+    // escrita a mano no pasa por el.
     expect(desplazamientoSchema.parse({ dx: 9, dy: -9 })).toEqual({
       dx: 1,
       dy: -1,

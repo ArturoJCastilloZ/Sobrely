@@ -153,7 +153,7 @@ export type Desplazamiento = z.infer<typeof desplazamientoSchema>;
 const SIN_DESPLAZAR = { dx: 0, dy: 0 } as const;
 
 /**
- * Deja un desplazamiento DENTRO del marco contando el tamaño del bloque.
+ * Deja el CENTRO del bloque dentro del marco.
  *
  * ⚠️ Todo va en la MISMA unidad: fracciones del ANCHO de la sección, los dos
  * ejes. Es la unidad del render (`cqw`), y se eligió midiéndola:
@@ -170,24 +170,35 @@ const SIN_DESPLAZAR = { dx: 0, dy: 0 } as const;
  * Por eso hace falta `extension`: en unidades de ancho, el eje horizontal llega
  * a 1 pero el vertical llega a `alto/ancho` de la sección, que no es 1.
  *
- * Un bloque más grande que la caja en un eje no tiene desplazamiento válido en
- * ese eje: se deja en 0, que es determinista y lo menos malo.
+ * Ya no recibe el tamaño del bloque: con el centro como límite, el tamaño no
+ * entra en la cuenta. El parámetro estaba y se quitó al cambiar el criterio,
+ * en vez de dejarlo muerto en la firma.
  */
 export function limitarDesplazamiento(
   d: Desplazamiento,
   centroNatural: { x: number; y: number },
-  medio: { ancho: number; alto: number },
   extension: { ancho: number; alto: number } = { ancho: 1, alto: 1 },
 ): Desplazamiento {
-  const eje = (valor: number, centro: number, m: number, ext: number) => {
+  // Lo que se mantiene dentro del marco es el CENTRO del bloque, no el bloque
+  // ENTERO. La primera versión exigía que cupiera entero y era la causa del
+  // segundo «sigue sin moverse»: `h2`, `p` y el `div` del CTA son elementos de
+  // BLOQUE, su caja ocupa casi todo el ancho del contenedor, y un bloque de
+  // ancho casi completo **no tiene a dónde ir**. Medido en la invitación del
+  // dev: el título ocupaba 325 px de 418, o sea 46 px de recorrido; se
+  // arrastraban 90 y se movía 41. Con un título que llena el ancho, el
+  // recorrido era EXACTAMENTE cero.
+  //
+  // Con el centro dentro, el recorrido es el ancho entero de la sección y el
+  // texto puede empujarse casi fuera —como en cualquier editor de verdad— sin
+  // poder perderse nunca: al menos su mitad queda visible.
+  const eje = (valor: number, centro: number, ext: number) => {
     if (!Number.isFinite(valor)) return 0;
     if (!Number.isFinite(ext) || ext <= 0) return 0;
-    if (m * 2 >= ext) return 0;
-    return Math.min(ext - m - centro, Math.max(m - centro, valor));
+    return Math.min(ext - centro, Math.max(-centro, valor));
   };
   return {
-    dx: eje(d.dx, centroNatural.x, medio.ancho, extension.ancho),
-    dy: eje(d.dy, centroNatural.y, medio.alto, extension.alto),
+    dx: eje(d.dx, centroNatural.x, extension.ancho),
+    dy: eje(d.dy, centroNatural.y, extension.alto),
   };
 }
 
