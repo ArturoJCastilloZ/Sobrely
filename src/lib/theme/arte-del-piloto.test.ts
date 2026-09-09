@@ -65,6 +65,19 @@ describe("arte del piloto de cinco", () => {
     }
   });
 
+  it("la greca de corporativo va recortada: la plancha le imprime «140.» debajo", () => {
+    // El path 27 de Ostell arrastra el NÚMERO DE CATÁLOGO del impresor bajo el
+    // ornamento. Se coló hasta la miniatura y sólo se vio MIRANDO el render, no
+    // leyendo el código. Sin el clip, una plantilla comercial enseña la
+    // numeración de una plancha de 1848.
+    const svg = readFileSync(
+      join(RAIZ, "public", rutaArte("corporativo-sencillo-arte")),
+      "utf8",
+    );
+    expect(svg).toMatch(/<clipPath id="c27">/);
+    expect(svg).toMatch(/id="o27"[^>]*clip-path="url\(#c27\)"/);
+  });
+
   it("van con velo CERO, que es lo que se midió", () => {
     // El defecto del esquema es 0.45 y con este arte detrás lo borraría.
     for (const clave of DEL_PILOTO) {

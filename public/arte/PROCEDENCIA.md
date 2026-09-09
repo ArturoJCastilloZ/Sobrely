@@ -313,11 +313,47 @@ plantilla salvia+crema, y confeti MULTICOLOR sobre una plantilla gris entera).
 
 ### Velo medido
 
-Los cinco van con **`overlay: 0`**. La banda central se deja limpia por diseño,
-y el peor píxel da entre **10.93 y 16.62** de contraste WCAG contra el color de
-texto de cada plantilla — AA pide 4.5.
+Los cinco van con **`overlay: 0`**. La banda central se deja limpia por diseño.
 
-> ⚠️ Medido replicando el método de `scripts/verificar-contraste-arte.mts`
-> (misma banda central, mismo peor-píxel) en el navegador, porque el script no
-> se pudo ejecutar: falta el Chromium de Playwright en la máquina
-> (`npx playwright install`). **Queda pendiente correr el script de verdad.**
+Medido por `scripts/verificar-contraste-arte.mts`, que es el instrumento
+canónico — rasteriza, muestrea la banda central y compara contra el PEOR píxel:
+
+| arte | contraste con texto oscuro | declarado |
+|---|---|---|
+| `boda-carta-romantica-arte.svg` | **5.71** | oscuro |
+| `xv-manuscrita-arte.svg` | **6.19** | oscuro |
+| `corporativo-sencillo-arte.svg` | **6.92** | oscuro |
+| `baby-shower-neutro-arte.svg` | **5.50** | oscuro |
+| `cumpleanos-adulto-arte.svg` | **5.33** | oscuro |
+
+AA pide 4.5. El script sale con código 0 y su veredicto es «todas admiten texto
+legible en al menos una polaridad».
+
+> Los números bajaron respecto de la primera versión (eran 8.1–13.2) **a
+> propósito**: entonces el arte estaba colocado donde no se veía nunca (ver
+> abajo), y acercarlo al texto cuesta contraste. 5.33 sobre 4.5 es el margen que
+> el arte se ha ganado siendo visible.
+
+### El recorte del telón, que casi tira todo el trabajo
+
+El fondo se pinta con `bg-cover` sobre un contenedor de **100svh**, así que el
+SVG se escala para CUBRIR y **se recorta al centro en vertical**. Con el viewport
+de captura (420×560) sólo sobrevive la franja **y 170–730** del lienzo de 900.
+
+La primera versión puso las cenefas en **y 92 y y 808** — las dos franjas que no
+se ven jamás — y dejó limpio el centro por el contraste. Resultado: en la
+miniatura sólo se veía la banda vacía. **La decisión que protegía la
+legibilidad fue la que borró el arte.** En móvil (390×844) sí se veía casi
+entero, y por eso una maqueta de 420×900 no lo delataba.
+
+Regla para el próximo arte: **el interés va entre y 170 y 730**, y fuera de la
+banda del texto (250–650). Quedan dos franjas de unos 80 px arriba y abajo; los
+laterales, en cambio, nunca se recortan.
+
+### El número de catálogo
+
+El path 27 (greca griega) arrastra impreso el **«140.»** del catálogo del
+impresor debajo del ornamento. Llegó hasta la miniatura y sólo se vio MIRANDO el
+render. Se amputa con un `clipPath` que conserva el 58 % superior de la pieza, y
+hay una prueba que falla si alguien lo quita. Conviene revisar cualquier
+ornamento nuevo de esta plancha por lo mismo.

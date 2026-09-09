@@ -5,8 +5,8 @@
          entre la hoja clara y la oscura da volumen sin dibujar sombras. -->
     <g id="hj"><ellipse rx="10" ry="5.2"/></g>
     <g id="ramita">
-      <path d="M0 0 C34 -9 74 -13 112 -7" fill="none" stroke="#5f7358" stroke-width="1.7" stroke-opacity="0.8"/>
-      <g fill="#7c9070" fill-opacity="0.78">
+      <path d="M0 0 C34 -9 74 -13 112 -7" fill="none" stroke="#5f7358" stroke-width="1.5" stroke-opacity="0.5"/>
+      <g fill="#7c9070" fill-opacity="0.5">
         <use href="#hj" transform="translate(16 -4) rotate(-38)"/>
         <use href="#hj" transform="translate(40 -9) rotate(-30) scale(1.05)"/>
         <use href="#hj" transform="translate(66 -12) rotate(-22) scale(0.95)"/>
@@ -21,18 +21,18 @@
   </defs>
   <rect width="420" height="900" fill="#fbfaf6"/>
   <rect width="420" height="900" filter="url(#papel)" opacity="0.06"/>
-  <rect x="26" y="26" width="368" height="848" fill="none" stroke="#7c9070" stroke-opacity="0.35" stroke-width="0.9"/>
+  <rect x="26" y="120" width="368" height="660" fill="none" stroke="#7c9070" stroke-opacity="0.35" stroke-width="0.9"/>
   <!-- Guirnalda en arco superior e inferior, centro libre para el texto. -->
-  <use href="#ramita" transform="translate(46 108) scale(1.12)"/>
-  <use href="#ramita" transform="translate(374 108) scale(-1.12 1.12)"/>
-  <use href="#ramita" transform="translate(46 792) scale(1.12 -1.12)"/>
-  <use href="#ramita" transform="translate(374 792) scale(-1.12 -1.12)"/>
+  <use href="#ramita" transform="translate(46 198) scale(1.06)"/>
+  <use href="#ramita" transform="translate(374 198) scale(-1.06 1.06)"/>
+  <use href="#ramita" transform="translate(46 702) scale(1.06 -1.06)"/>
+  <use href="#ramita" transform="translate(374 702) scale(-1.06 -1.06)"/>
   <!-- Bayas claras: el punto de luz que separa el follaje del crema. -->
   <g fill="#e8ede2">
-    <circle cx="168" cy="86" r="3.4"/><circle cx="252" cy="86" r="3.4"/><circle cx="210" cy="79" r="2.6"/>
-    <circle cx="168" cy="814" r="3.4"/><circle cx="252" cy="814" r="3.4"/><circle cx="210" cy="821" r="2.6"/>
+    <circle cx="168" cy="178" r="3.4"/><circle cx="252" cy="178" r="3.4"/><circle cx="210" cy="172" r="2.6"/>
+    <circle cx="168" cy="722" r="3.4"/><circle cx="252" cy="722" r="3.4"/><circle cx="210" cy="728" r="2.6"/>
   </g>
   <g fill="#7c9070" fill-opacity="0.3">
-    <circle cx="210" cy="688" r="2.2"/><circle cx="192" cy="694" r="1.5"/><circle cx="228" cy="694" r="1.5"/>
+    <circle cx="210" cy="178" r="2.2"/><circle cx="192" cy="172" r="1.5"/><circle cx="228" cy="172" r="1.5"/>
   </g>
 </svg>
