@@ -396,6 +396,67 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0,
   },
+  // ——— Categoría BODA, 2026-09-09 ———
+  // Las seis compartían dos archivos: cuatro con `boda-botanica.svg` y dos con
+  // `boda-lino-sello.svg`, así que la categoría entera se veía igual. Cada una
+  // estrena el suyo, en SU paleta efectiva —que en cuatro casos viene del
+  // `themePack` y no de `colors`— y con SILUETA distinta, que es el techo que
+  // señala §19.9: no basta cambiar el color si la composición se repite.
+  //
+  // El peso visual va en las FRANJAS LATERALES (x<63 y x>357). Es el hallazgo
+  // que hizo utilizable esta tanda: `verificar-contraste-arte.mts` muestrea
+  // x 63..357, y el ancho del SVG nunca se recorta — así que los lados se ven
+  // siempre y no cuestan ni un punto de contraste. La primera versión, con
+  // todo el arte en el centro y muy tenue para no perder contraste, se veía
+  // MÁS vacía que el fondo que sustituía.
+  {
+    clave: "boda-botanica-arte",
+    tipo: "svg",
+    nombre: "Eucalipto",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "boda-de-lujo-arte",
+    tipo: "svg",
+    nombre: "Oro y filete",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "boda-destino-arte",
+    tipo: "svg",
+    nombre: "Sellos de viaje",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "boda-en-la-playa-arte",
+    tipo: "svg",
+    nombre: "Marea",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "boda-jardin-arte",
+    tipo: "svg",
+    nombre: "Tallo florido",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "boda-terracota-arte",
+    tipo: "svg",
+    nombre: "Hojarasca",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */

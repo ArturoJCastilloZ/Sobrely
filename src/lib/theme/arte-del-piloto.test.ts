@@ -18,22 +18,21 @@ import { ARTE, rutaArte, buscarArte } from "./arte";
  */
 
 const RAIZ = process.cwd();
-const DEL_PILOTO = [
-  "boda-carta-romantica-arte",
-  "xv-manuscrita-arte",
-  "corporativo-sencillo-arte",
-  "baby-shower-neutro-arte",
-  "cumpleanos-adulto-arte",
-] as const;
+
+/**
+ * El arte compuesto en esta línea de trabajo, por CONVENCIÓN de nombre y no por
+ * una lista a mano: cualquier pieza nueva que siga el patrón entra sola en
+ * todas las pruebas de abajo. Una lista escrita se queda vieja en silencio; el
+ * catálogo ya pagó ese modo de fallo.
+ */
+const DEL_PILOTO = ARTE.filter((a) => a.clave.endsWith("-arte")).map((a) => a.clave);
 
 /** Techo por pieza. El más pesado hoy es boda con 38.9 KB crudo. */
 const TECHO_KB = 45;
 
-describe("arte del piloto de cinco", () => {
-  it("las cinco están registradas en ARTE", () => {
-    for (const clave of DEL_PILOTO) {
-      expect(buscarArte(clave), `falta ${clave} en ARTE`).toBeDefined();
-    }
+describe("arte compuesto del catálogo", () => {
+  it("hay arte compuesto registrado (si no, las demás pruebas no miden nada)", () => {
+    expect(DEL_PILOTO.length).toBeGreaterThanOrEqual(11);
   });
 
   it("cada arte registrado tiene su archivo en disco", () => {
@@ -45,7 +44,7 @@ describe("arte del piloto de cinco", () => {
     expect(ausentes).toEqual([]);
   });
 
-  it("ninguna pieza del piloto supera el techo de peso", () => {
+  it("ninguna pieza supera el techo de peso", () => {
     const gordas = DEL_PILOTO.map((clave) => {
       const kb =
         readFileSync(join(RAIZ, "public", rutaArte(clave))).byteLength / 1024;
@@ -85,16 +84,23 @@ describe("arte del piloto de cinco", () => {
     }
   });
 
-  it("dejan limpia la banda central, que es donde cae el texto", () => {
-    // El contraste se sostiene porque no hay tinta en el centro. Se comprueba
-    // por la geometría declarada, no por el render: ningún <use> ni figura del
-    // arte cae con su centro dentro de y 250..650 del lienzo de 900.
+  it("dejan libre el RECTÁNGULO del texto, no sólo su banda vertical", () => {
+    // Antes esta prueba miraba sólo la `y`, y era demasiado estricta: el arte de
+    // las FRANJAS LATERALES (x<63, x>357) recorre el alto entero a propósito —
+    // se ve siempre, porque el ancho nunca se recorta, y no cuesta contraste
+    // porque `verificar-contraste-arte.mts` muestrea x 63..357.
+    //
+    // Lo que de verdad hay que proteger es el rectángulo donde cae el texto:
+    // y 250..650 Y x 63..357 a la vez. Con la regla vieja, las piezas de boda
+    // habrían fallado siendo correctas.
     for (const clave of DEL_PILOTO) {
       const svg = readFileSync(join(RAIZ, "public", rutaArte(clave)), "utf8");
-      const centros = [...svg.matchAll(/<use[^>]*transform="translate\([-\d.]+ ([-\d.]+)\)/g)]
-        .map((m) => Number(m[1]))
-        .filter((y) => y >= 250 && y <= 650);
-      expect(centros, `${clave} pone ornamento en la banda del texto`).toEqual([]);
+      const dentro = [
+        ...svg.matchAll(/<use[^>]*transform="translate\(([-\d.]+) ([-\d.]+)\)/g),
+      ]
+        .map((m) => ({ x: Number(m[1]), y: Number(m[2]) }))
+        .filter((p) => p.y >= 250 && p.y <= 650 && p.x >= 63 && p.x <= 357);
+      expect(dentro, `${clave} pone ornamento donde cae el texto`).toEqual([]);
     }
   });
 });
