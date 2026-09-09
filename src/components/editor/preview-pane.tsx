@@ -43,9 +43,21 @@ export function PreviewPane({
   // Sólo se engancha si ALGÚN módulo visible tiene el interruptor encendido:
   // así el resto del editor no paga ni un manejador de puntero cuando nadie
   // usa la función.
+  // Módulos donde el usuario dejó dos textos pisándose. Se avisa y no se
+  // impide: solapar puede ser deliberado —un título sobre una línea fina— y la
+  // invitación es suya. Misma postura que el aviso de la manuscrita.
+  const [solapados, setSolapados] = useState<Set<string>>(new Set());
   const arrastreDeTexto = useMovimientoLibre({
     onOffset,
     activo: visible.some((m) => Boolean(m.config?.freeMove)),
+    onSolape: (moduloId, hay) =>
+      setSolapados((prev) => {
+        if (prev.has(moduloId) === hay) return prev;
+        const next = new Set(prev);
+        if (hay) next.add(moduloId);
+        else next.delete(moduloId);
+        return next;
+      }),
   });
   const [view, setView] = useState<"mobile" | "desktop">("mobile");
   const desktop = view === "desktop";
@@ -217,6 +229,18 @@ export function PreviewPane({
     // calcularia contra su propio resultado. Esta raiz mide el espacio
     // DISPONIBLE, que es el dato que hace falta.
     <div data-columna-canvas>
+      {solapados.size > 0 && (
+        <p
+          role="status"
+          data-aviso-solape
+          className="mb-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          {solapados.size === 1
+            ? "Hay dos textos encimados en una sección."
+            : `Hay textos encimados en ${solapados.size} secciones.`}{" "}
+          Si es a propósito, ignora este aviso.
+        </p>
+      )}
       <div className="mb-2 flex justify-center gap-1">
         {(
           [
