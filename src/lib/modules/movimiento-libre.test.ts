@@ -308,9 +308,11 @@ describe("el interruptor está en el esquema de los 12 módulos", () => {
   });
 });
 
-describe("el interruptor está OCULTO pero el motor intacto", () => {
-  it("la interfaz no lo muestra", () => {
-    expect(MOSTRAR_MOVIMIENTO_LIBRE).toBe(false);
+describe("la bandera de la interfaz no toca el motor", () => {
+  it("hoy el interruptor SE MUESTRA", () => {
+    // Se apago un rato mientras se creia roto el arrastre; el dev confirmo que
+    // funciona, asi que vuelve.
+    expect(MOSTRAR_MOVIMIENTO_LIBRE).toBe(true);
   });
 
   it("una invitación que YA lo tenga guardado se sigue pintando igual", () => {

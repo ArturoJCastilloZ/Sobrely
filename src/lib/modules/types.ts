@@ -531,18 +531,23 @@ export function parcheDeDesplazamiento(
 /**
  * ¿Se MUESTRA el interruptor de movimiento libre?
  *
- * Apagado a petición del dev (2026-09-08): el arrastre no le funciona en su
- * navegador y no he conseguido reproducirlo —tres métodos distintos dicen que
- * sí, incluido montar el `PreviewPane` real con su propia config y arrastrar
- * con el ratón—, así que se esconde en vez de dejarle un control que no
- * responde. Es peor un control muerto que ninguno.
+ * Encendido. Se apagó un rato el 2026-09-08 porque el dev reportaba que el
+ * arrastre no movía nada y yo no conseguía reproducirlo, y un control muerto es
+ * peor que ninguno. Resultó que **sí funciona**: el dev lo confirmó al ver el
+ * título y el subtítulo desplazados en su propio editor.
  *
- * Lo que se esconde es SÓLO la interfaz. El esquema, el render y las guardas
- * siguen en su sitio y probados, así que:
- *   · una invitación que ya tenga `freeMove` guardado sigue pintándose igual;
- *   · reactivarlo es cambiar este booleano, sin migración y sin recuperar nada.
+ * Lo que falló fueron MIS sondas, y queda escrito porque es un patrón:
+ *   1. La primera «verificación» fue una página HTML hecha a mano que imitaba
+ *      el árbol — no tenía el `px-6` real ni el ancho de bloque de un `h2`.
+ *   2. La última leía `el.style.transform` INMEDIATAMENTE después de despachar
+ *      los eventos, y el estado de React se actualiza de forma ASÍNCRONA:
+ *      leía el valor de antes. Reportó «no se movió» mientras el texto se
+ *      movía.
+ *
+ * La bandera se queda para poder esconderlo rápido, pero NO para tapar un
+ * defecto sin diagnosticar: eso fue lo que costó un turno.
  */
-export const MOSTRAR_MOVIMIENTO_LIBRE = false;
+export const MOSTRAR_MOVIMIENTO_LIBRE = true;
 
 /** Los tres textos que la portada ya tiene. No se puede añadir un cuarto. */
 export const HERO_BLOQUES = ["title", "subtitle", "cta"] as const;
