@@ -1149,13 +1149,100 @@ penalizó: hay que volver a mirar las tres superficies de las seis.
 
 ---
 
+## 19.9 Repuntuación de las 6 tras el arreglo del recorte (2026-09-08)
+
+Pedida por el dev. Puntuadas sobre las **tres superficies** que exige la escala,
+con la `0038` aplicada: la tarjeta de 420x560, la página a 1200 px y la de
+375 px, las dos últimas en hoja de contacto para verlas juntas —que es como se
+ve el problema de diferenciación—.
+
+| plantilla | VQ | U | ER | C | PF | MP | antes | **ahora** | Δ | |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `boda-marco-nuestro` | 9 | 7 | 9 | 9 | 9 | 9 | 8.2 | **8.7** | **+0.5** | ✅ |
+| `xv-corona` | 9 | 9 | 8 | 8 | 9 | 9 | 8.7 | **8.7** | = | ✅ |
+| `boda-papel-y-lino` | 9 | 7 | 9 | 8 | 9 | 9 | 8.7 | **8.5** | −0.2 | ✅ |
+| `comunion-cinta` | 9 | 7 | 9 | 8 | 9 | 9 | 8.5 | **8.5** | = | ✅ |
+| `bautizo-cera-blanca` | 9 | 7 | 6 | 8 | 9 | 9 | 8.0 | **8.0** | = | ✅ |
+| `revelacion-coral` | 8 | 8 | 7 | 8 | 8 | 9 | 8.2 | **8.0** | −0.2 | ✅ |
+
+Promedio de las seis: **8.39**. Las seis siguen sobre el umbral, así que **el
+piloto se mantiene en 15/15**.
+
+**Sube una, bajan dos, y eso es el resultado honesto.** No todo mejora: el
+arreglo del recorte tiene un coste que sólo se ve mirando las seis juntas.
+
+### Lo que NO se movió, a propósito
+
+- **Visual Quality y Premium Feel están idénticas.** Recortar no cambia la
+  calidad ni el acabado de una fotografía: es la misma imagen. Moverlas habría
+  sido inflar la nota por un cambio que no las toca.
+- **`revelacion-coral` mantiene ER = 7** («globos sin señal explícita del
+  evento», §19.4) y **`xv-corona` mantiene ER = 8**: el recorte hace que el
+  objeto se lea COMPLETO, no que diga algo nuevo.
+
+### Lo que sube
+
+- **`MP` de 8 a 9 en las seis.** A 375 px `split` y `editorial` se pintan igual
+  —las dos apilan—, y una figura **cuadrada le sienta mucho mejor a la columna
+  estrecha que una vertical**: el objeto entra entero sin empujar el resto fuera
+  de pantalla. Mirado en la hoja de 375, es ahora la mejor superficie de las
+  tres. No se pone 10 porque ninguna hace nada especial por móvil más allá de
+  ser legible.
+- **`C` de `boda-marco-nuestro` a 9**, y es la única que se lo lleva: es la
+  **única `split`** del grupo, así que a 1200 px usa las dos mitades —foto a la
+  izquierda, tipografía a la derecha— y la tarjeta ya no recorta. De ahí su +0.5.
+- **`ER` de `bautizo-cera-blanca` de 5 a 6.** Antes la tarjeta sólo enseñaba
+  puntas de flor y la punta de la vela; ahora se ven el jarrón y el cuerpo de la
+  vela, y la vela es la señal del bautizo. **Sólo un punto**: sigue siendo un
+  bodegón blanco que podría ser boda o memorial, que es el diagnóstico del
+  §19.3 punto 4 y no lo arregla un encuadre.
+
+### ⚠️ Lo que BAJA, y por qué: el recorte tuvo dos costes
+
+**1. `C` de las cinco `editorial` se queda en 8, no en 9.** El §19.7 les había
+dado **9 sin saber que la tarjeta les recortaba** el 43 %, 33 % o 24 % — o sea
+que ese 9 estaba sobrepuntuado. Ahora la tarjeta es correcta, pero aparece el
+otro lado: la figura cuadrada es **más corta** que la vertical, así que a 1200 px
+`editorial` deja **toda la mitad derecha vacía** de forma más evidente que antes.
+Se arregló la tarjeta y se debilitó un poco el escritorio. 8 es la nota que dice
+las dos cosas.
+
+**2. `U` baja un punto en cuatro de ellas, y es el hallazgo de esta pasada.**
+En la hoja de contacto de 375 px, **cinco de las seis tienen exactamente la misma
+estructura**: título, subtítulo, filete, figura cuadrada a todo el ancho. Sólo
+las separan la paleta y el sujeto. Es el **problema nº 4 del research** —«podría
+pertenecer a cualquier categoría», el mismo que el §19.2 anotó para
+`baby-nube-de-algodon` y `revelacion-dos-sobres`— reaparecido **por LAYOUT en vez
+de por paleta**, y provocado por la propia uniformización a 1/1.
+
+Baja en `bautizo-cera-blanca`, `boda-papel-y-lino` y `comunion-cinta` (8→7) y en
+`revelacion-coral` (9→8). **No baja** en `xv-corona`, que se sostiene sola por su
+fondo negro contra un catálogo 96 % claro (§19.4), ni en `boda-marco-nuestro`,
+que es `split` y por tanto la única con otra estructura.
+
+### Lo que esto deja abierto
+
+- ⬜ **La uniformidad de `editorial` es ahora el techo de este grupo**, no la
+  fotografía. Cinco plantillas con la misma silueta compiten entre ellas en la
+  rejilla. La palanca no es otro encuadre: es **variar la composición**
+  —`split`, `offset`, alineación, marco— para que no todas apilen igual.
+- ⬜ **`editorial` a 1200 px desperdicia media página.** Afecta a las cinco y no
+  es cosa del recorte: es la variante. Merece una revisión propia.
+- ⬜ **`bautizo-cera-blanca` sigue siendo la más floja por relevancia** (ER 6) y
+  el §19.3 ya decía que hay que sustituirla en cuanto haya algo mejor. Ahora que
+  existe un método —fotografía de un OBJETO del evento— se puede: un objeto de
+  bautizo (concha, cirio pascual) en vez de un bodegón blanco genérico.
+
+---
+
 ## ✅ FASE COMPLETA — cierre del 2026-09-08
 
 Aprobada por el dev, implementada y evaluada. **El piloto cerró en 15 de 15**
 contra el umbral de 8/10; empezó en 7. Las 6 primitivas están en producción y
-las 15 plantillas están sembradas, capturadas y puntuadas cuatro veces (§19.1
-inicial, §19.5 tras el marco, §19.6 tras la conversión, §19.7 tras el objeto de
-XV, y **§19.8 tras las dos últimas, con la `0037` ya aplicada**).
+las 15 plantillas están sembradas, capturadas y puntuadas **cinco veces**
+(§19.1 inicial, §19.5 tras el marco, §19.6 tras la conversión, §19.7 tras el
+objeto de XV, §19.8 tras las dos últimas con la `0037` aplicada, y **§19.9 tras
+arreglar el recorte de la tarjeta con la `0038`**).
 
 **Estado medido al cierre:** 65 plantillas activas en 9 categorías, 0 sin
 miniatura, 0 archivos ausentes. Migraciones `0032`–`0036` aplicadas.
@@ -1180,8 +1267,15 @@ miniatura, 0 archivos ausentes. Migraciones `0032`–`0036` aplicadas.
   La `0038` está aplicada, las 6 fotografías van a 1600x1600 con `imageRatio`
   `1/1`, el recorte medido en el DOM es **0 %** en las seis, y el pre-vuelo tiene
   ya un guard que lo impide. Ver §19.8.
-- ⬜ **Repuntuar las 6** tras el arreglo: el `Composition = 7` de dos de ellas se
-  puso por un recorte que ya no existe.
+- ✅ **HECHO — las 6 repuntuadas** (§19.9): promedio **8.39**, las seis sobre el
+  umbral, **el piloto se mantiene en 15/15**. Sube `boda-marco-nuestro` (+0.5) y
+  bajan `boda-papel-y-lino` y `revelacion-coral` (−0.2 cada una).
+- ⬜ **NUEVO techo del grupo: la uniformidad de `editorial`.** Cinco de las seis
+  tienen la misma silueta en móvil (título · filete · cuadrado a todo el ancho) y
+  sólo las separan paleta y sujeto — el problema nº 4 del research por LAYOUT.
+  La palanca ya no es el encuadre, es variar la composición. Ver §19.9.
+- ⬜ **`editorial` desperdicia media página a 1200 px**, en las cinco. Es la
+  variante, no el recorte.
 - **F2 tiene un solo representante** y por los pelos: de 13 fotografías, sólo
   `revelacion-tinta` baja del umbral de velo de 0.35.
 - El **resto del catálogo** (las 50 originales) sigue sin tocar. El piloto
