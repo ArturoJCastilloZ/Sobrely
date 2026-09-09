@@ -470,6 +470,88 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0,
   },
+  // ——— Categoría CUMPLEAÑOS, 2026-09-09 ———
+  // Nueve compartían dos archivos: cinco con `cumple-guirnalda.svg` y cuatro
+  // con `cumple-confeti.svg`. Cada una estrena el suyo, en su paleta efectiva
+  // y con silueta propia. El peso va en las franjas laterales, que se ven
+  // siempre y no cuestan contraste.
+  //
+  // Tres se rehicieron tras MIRAR la hoja de contacto: las huellas de
+  // dinosaurio se leían como plantitas, y `futbol` y `con-video` estaban tan
+  // tenues que parecían vacías. Ninguna de las tres se detectaba leyendo el
+  // SVG — hay que verlas al tamaño real.
+  {
+    clave: "cumpleanos-con-video-arte",
+    tipo: "svg",
+    nombre: "Pista de vídeo",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "cumpleanos-dinosaurios-arte",
+    tipo: "svg",
+    nombre: "Huellas",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "cumpleanos-futbol-arte",
+    tipo: "svg",
+    nombre: "Cancha",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "cumpleanos-galaxia-arte",
+    tipo: "svg",
+    nombre: "Órbitas",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "cumpleanos-infantil-arte",
+    tipo: "svg",
+    nombre: "Globos",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "cumpleanos-kawaii-arte",
+    tipo: "svg",
+    nombre: "Nubes pastel",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "cumpleanos-moderno-arte",
+    tipo: "svg",
+    nombre: "Geometría",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "cumpleanos-sencillo-arte",
+    tipo: "svg",
+    nombre: "Filete",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "cumpleanos-superheroes-arte",
+    tipo: "svg",
+    nombre: "Ráfagas",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */
