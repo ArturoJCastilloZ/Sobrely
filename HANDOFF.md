@@ -18,6 +18,36 @@
 >
 > Lo de abajo se conserva como registro histórico. **No lo tomes como el estado
 > actual**: las ramas, los SHA y los conteos que menciona están viejos.
+>
+> ---
+>
+> ### Estado real al 2026-09-09 (para no tener que abrir nada más)
+>
+> - `main` (origin) = **`91b6258`** · rama de trabajo **`skarlette/rediseno`**
+>   = `77da934`. **Nada del rediseño está en `main`.**
+> - Suite **754** · `tsc`, `eslint` y `next build` limpios.
+> - Migraciones aplicadas **`0001`–`0025` · `0027`–`0038`**. La **`0026`**
+>   (álbum) está **congelada** por decisión del dev: es segura de aplicar y no
+>   sirve de nada todavía (ver §17 del roadmap).
+> - BD: **65 plantillas activas**, 0 sin miniatura · **5 invitaciones
+>   publicadas**.
+>
+> ### 🚨 Bug abierto y prioritario
+>
+> **Una invitación PUBLICADA se ve sólo con la imagen de fondo** — ni título ni
+> secciones. Es la superficie del cliente final. Está medido y diagnosticado a
+> medias en **§23 del roadmap**, con cuatro pasos de diagnóstico en orden y un
+> arreglo propuesto. El resumen: el CSS de `.anim--curtain-reveal:not(.is-revealed)`
+> (`src/app/animations.css:65`) deja el contenido con `clip-path: inset(0 0 100% 0)`
+> hasta que JavaScript añade `is-revealed`, así que **la visibilidad de una
+> invitación publicada depende de una clase que pone JS**.
+>
+> ### Lo que bloquea salir a producción, y no es el código
+>
+> De las 65 plantillas activas, **42 llevan sólo un SVG tenue de fondo** y se
+> leen como paneles de color. La decisión ya tomada (§22 del roadmap) es un lote
+> de arte —orla botánica, objeto por categoría, textura de papel— probado en 5
+> plantillas antes de extenderlo.
 
 ---
 
