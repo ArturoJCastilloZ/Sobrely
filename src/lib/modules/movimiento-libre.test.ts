@@ -207,17 +207,29 @@ describe("parcheDeDesplazamiento", () => {
 });
 
 describe("estiloDeDesplazamiento", () => {
-  it("apagado no emite NADA: una invitación que no lo usa no se mueve", () => {
+  it("APAGADO no emite NADA: una invitación que no lo usa no se mueve", () => {
     // Es la propiedad que hace esto aditivo. Si emitiera un `translate(0,0)`
     // ya estaría creando un contexto de apilamiento y tocando el render de
     // todas las invitaciones guardadas.
     expect(estiloDeDesplazamiento(false, { dx: 0.5, dy: 0.5 })).toEqual({});
-    expect(estiloDeDesplazamiento(true, undefined)).toEqual({});
-    expect(estiloDeDesplazamiento(true, { dx: 0, dy: 0 })).toEqual({});
+  });
+
+  it("encendido y SIN mover emite `touchAction`, para poder agarrarlo", () => {
+    // Un bloque sin desplazar tambien tiene que ser arrastrable, y en tactil
+    // eso exige `touch-action: none` en el propio bloque — si no, el navegador
+    // se lleva el gesto como scroll. Lo aprendi porque el arrastre no movia
+    // nada: ver la capa que lo tapaba todo.
+    expect(estiloDeDesplazamiento(true, undefined)).toEqual({
+      touchAction: "none",
+    });
+    expect(estiloDeDesplazamiento(true, { dx: 0, dy: 0 })).toEqual({
+      touchAction: "none",
+    });
   });
 
   it("encendido emite `cqw` en los dos ejes", () => {
     expect(estiloDeDesplazamiento(true, { dx: 0.25, dy: -0.1 })).toEqual({
+      touchAction: "none",
       transform: "translate(25cqw, -10cqw)",
     });
   });

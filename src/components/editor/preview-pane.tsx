@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { ModulePreview } from "@/components/modules/registry";
 import { ThemeScope } from "@/components/theme/theme-scope";
 import { StickerEditorLayer } from "@/components/editor/sticker-editor-layer";
-import { MovimientoLibreLayer } from "@/components/editor/movimiento-libre-layer";
+import { useMovimientoLibre } from "@/components/editor/movimiento-libre-layer";
 import type { Desplazamiento } from "@/lib/modules/types";
 import { AnimatedModule } from "@/components/animation/animated-module";
 import { DecorationLayer } from "@/components/animation/decoration-layer";
@@ -39,6 +39,14 @@ export function PreviewPane({
   onOffset?: (moduloId: string, bloque: string, d: Desplazamiento) => void;
 }) {
   const visible = modules.filter((m) => m.is_visible);
+
+  // Sólo se engancha si ALGÚN módulo visible tiene el interruptor encendido:
+  // así el resto del editor no paga ni un manejador de puntero cuando nadie
+  // usa la función.
+  const arrastreDeTexto = useMovimientoLibre({
+    onOffset,
+    activo: visible.some((m) => Boolean(m.config?.freeMove)),
+  });
   const [view, setView] = useState<"mobile" | "desktop">("mobile");
   const desktop = view === "desktop";
 
@@ -307,7 +315,17 @@ export function PreviewPane({
             Agrega módulos para ver la vista previa.
           </div>
         ) : (
-          <div key={replayKey} ref={canvas} className="relative z-10">
+          <div
+            key={replayKey}
+            ref={canvas}
+            className="relative z-10"
+            // Los manejadores del arrastre van AQUÍ, en el contenedor de los
+            // módulos, no en un overlay. Un overlay recibía el puntero él mismo
+            // y `closest("[data-bloque]")` daba null — el arrastre no empezaba
+            // nunca. Desde aquí el evento burbujea desde el texto y `e.target`
+            // es el bloque de verdad.
+            {...arrastreDeTexto}
+          >
             {visible.map((m, i) => {
               const resolved = resolveAnimation(
                 theme.animation,
@@ -339,12 +357,6 @@ export function PreviewPane({
             stickers={theme.stickers}
             onChange={onStickersChange}
           />
-        )}
-        {/* Sólo se monta si ALGÚN módulo visible tiene el movimiento libre
-            encendido: una capa a pantalla completa que capture punteros sin
-            hacer nada se comería los clics del resto del editor. */}
-        {onOffset && visible.some((m) => Boolean(m.config?.freeMove)) && (
-          <MovimientoLibreLayer onOffset={onOffset} />
         )}
       </ThemeScope>
       </div>

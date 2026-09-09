@@ -460,10 +460,19 @@ export const HERO_VARIANT_LABELS: Record<HeroVariant, string> = {
 export function estiloDeDesplazamiento(
   activo: boolean,
   d: Desplazamiento | undefined,
-): { transform?: string } {
-  if (!activo || !d) return {};
-  if (d.dx === 0 && d.dy === 0) return {};
-  return { transform: `translate(${d.dx * 100}cqw, ${d.dy * 100}cqw)` };
+): { transform?: string; touchAction?: "none" } {
+  if (!activo) return {};
+  // `touchAction: none` va en el BLOQUE y sólo con el interruptor encendido:
+  // en un móvil, sin esto el navegador se lleva el gesto como scroll a media
+  // colocación. Ponerlo en el contenedor entero habría matado el scroll de la
+  // vista previa; en el bloque, tocar el texto arrastra y tocar al lado sigue
+  // scrolleando.
+  //
+  // Se emite AUNQUE el desplazamiento sea cero: un bloque sin mover también
+  // tiene que poder agarrarse.
+  const base = { touchAction: "none" as const };
+  if (!d || (d.dx === 0 && d.dy === 0)) return base;
+  return { ...base, transform: `translate(${d.dx * 100}cqw, ${d.dy * 100}cqw)` };
 }
 
 /**

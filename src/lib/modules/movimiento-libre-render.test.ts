@@ -61,6 +61,18 @@ describe("la portada coloca sus tres bloques", () => {
     expect(html.match(/translate\(/g)?.length).toBe(2);
   });
 
+  it("encendido, los bloques traen `touch-action:none` para poder agarrarlos", () => {
+    // La mitad TACTIL del arrastre. Sin esto el navegador se lleva el gesto
+    // como scroll a media colocacion. Va en el BLOQUE y no en el contenedor:
+    // tocar el texto arrastra, tocar al lado sigue scrolleando la vista previa.
+    //
+    // Se comprueba que lo traen los TRES, incluido el que no se ha movido —
+    // un bloque sin desplazar tambien tiene que ser arrastrable.
+    const html = pinta("hero", { ...CFG, freeMove: true });
+    expect(html.match(/touch-action:none/g)?.length).toBe(3);
+    expect(pinta("hero", CFG)).not.toContain("touch-action");
+  });
+
   it("encendido declara el contenedor: sin él, `cqw` mediría otra caja", () => {
     // Medido en el navegador: `cqw` necesita un `container-type` para
     // resolver, y si no lo hay resuelve contra un ancestro — o contra el
