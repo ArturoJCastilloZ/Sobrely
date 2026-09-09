@@ -1052,12 +1052,81 @@ abierta y que nadie ha tomado.
 
 ---
 
+## 19.8 Las dos del umbral, con objeto del evento (2026-09-08, 2.ª sesión)
+
+La `0037` la aplicó el dev. **Verificado por efecto contra la BD antes de
+capturar**: las 2 filas, los 8 campos (`variant`/`imageUrl`/`imageRatio`/
+`overlay`), 0 desajustes, y `comunion-cinta` ya en `editorial`.
+
+Miniaturas capturadas contra un `next start` propio en el 3210 (PID comprobado
+por `lsof` + `ps -o lstart=`, y su log sin `EADDRINUSE` — ver §7 del roadmap).
+Puntuado sobre las tres superficies que pide la escala: la miniatura de 420x560,
+la página a 1200 px y la página a 375 px.
+
+| plantilla | cat | F | VQ | U | ER | C | PF | MP | §19.7 | ahora | |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `comunion-cinta` | Primera comunión | F4→F3 | 9 | 8 | 9 | 7 | 9 | 9 | 5.8 | **8.5** | ✅ |
+| `boda-marco-nuestro` | Boda | F5 | 9 | 7 | 9 | 7 | 9 | 8 | 7.3 | **8.2** | ✅ |
+
+### 🎯 EL PILOTO CIERRA EN 15 DE 15
+
+Empezó en 7. La hipótesis de la fase se confirma en la columna exacta que
+predijo: **Event Relevance 7→9 y 4→9**. Un objeto del evento mueve esa columna y
+arrastra Visual Quality y Premium Feel con ella.
+
+**Composition NO sube en ninguna de las dos**, y eso también es informativo: la
+relevancia y el acabado los da la fotografía; el reparto del espacio no. En
+`comunion-cinta` baja de hecho, porque `editorial` a 1200 px deja **media página
+vacía a la derecha** con una foto `max-w-md` y un texto corto.
+
+### ⚠️ Hallazgo: el recorte de la MINIATURA, un tercer sitio del mismo mecanismo
+
+La miniatura de `boda-marco-nuestro` enseña un trozo de pisos blancos y **no se
+lee como un pastel**. Medido: la figura del hero es 372x558 y arranca en
+`y=184`, así que del viewport de captura (420x560) sólo entran 376 px — **la
+miniatura corta el 33 %**.
+
+El pre-vuelo de la suite da **0 % y tiene razón**: mide **caja contra fuente**.
+Este es un **segundo recorte, independiente**, que el pre-vuelo no modela. Es
+exactamente el patrón que esta fase ya aprendió dos veces —el mismo defecto en
+el slot de media y en el hero— apareciendo en un tercer sitio.
+
+Y no es sólo de las dos nuevas. Medido en las 15, con el mismo umbral del 15 %:
+
+| plantilla | recorta la miniatura |
+|---|---|
+| `boda-papel-y-lino` | **43 %** — y está **APROBADA con 8.5** en §19.7 |
+| `bautizo-cera-blanca` | 33 % |
+| `boda-marco-nuestro` | 33 % |
+| `comunion-cinta` | 33 % |
+| `revelacion-coral` | 33 % |
+| `xv-corona` | 24 % |
+| las otras 8 con figura | 0–2 % |
+
+**6 de 14** con figura contenida pierden ≥ 15 %. (`revelacion-dos-sobres` no
+entra: su foto va a sangre, no en figura.) Las 8 que no pierden nada tienen la
+figura a **248 px** de alto, que cabe en los 376 disponibles. **La regla: una
+figura más alta que ~376 px se recorta**, o sea que sólo sobreviven las
+proporciones ≥ 0.99 (1/1 y más anchas).
+
+Por qué las dos aprueban de todos modos: el recorte daña **la tarjeta del
+catálogo**, no la plantilla — a 1200 px y a 375 px las dos se ven completas. Pero
+la tarjeta es donde se vende, así que se penalizó **Composition = 7** en ambas.
+
+**No se tocó**: arreglarlo significa cambiar proporciones —y eso cambia un
+recorte por otro, porque `object-fit: cover` recortará la fuente— o cambiar
+`PROPORCION_MINIATURA`, que reordena la rejilla del catálogo entero. Es decisión
+del dev.
+
+---
+
 ## ✅ FASE COMPLETA — cierre del 2026-09-08
 
-Aprobada por el dev, implementada y evaluada. **El piloto quedó en 13 de 15**
+Aprobada por el dev, implementada y evaluada. **El piloto cerró en 15 de 15**
 contra el umbral de 8/10; empezó en 7. Las 6 primitivas están en producción y
-las 15 plantillas están sembradas, capturadas y puntuadas tres veces (§19.1
-inicial, §19.5 tras el marco, §19.6 tras la conversión, §19.7 la última).
+las 15 plantillas están sembradas, capturadas y puntuadas cuatro veces (§19.1
+inicial, §19.5 tras el marco, §19.6 tras la conversión, §19.7 tras el objeto de
+XV, y **§19.8 tras las dos últimas, con la `0037` ya aplicada**).
 
 **Estado medido al cierre:** 65 plantillas activas en 9 categorías, 0 sin
 miniatura, 0 archivos ausentes. Migraciones `0032`–`0036` aplicadas.
@@ -1075,8 +1144,13 @@ miniatura, 0 archivos ausentes. Migraciones `0032`–`0036` aplicadas.
 
 ### Lo que queda abierto
 
-- `boda-marco-nuestro` (7.3) y `comunion-cinta` (5.8) — decisión de producto,
-  no otra iteración. Ver §19.7.
+- ✅ **CERRADO**: `boda-marco-nuestro` (7.3 → **8.2**) y `comunion-cinta`
+  (5.8 → **8.5**), las dos con fotografía de un OBJETO del evento. La `0037`
+  está aplicada y sus miniaturas capturadas. Ver §19.8.
+- ⚠️ **ABIERTO, y es nuevo**: la **miniatura recorta** la figura del hero en
+  **6 de las 14** con figura contenida —`boda-papel-y-lino` pierde el 43 % y
+  está aprobada con 8.5—. El pre-vuelo no lo ve porque mide caja contra fuente,
+  no figura contra viewport de captura. Ver §19.8.
 - **F2 tiene un solo representante** y por los pelos: de 13 fotografías, sólo
   `revelacion-tinta` baja del umbral de velo de 0.35.
 - El **resto del catálogo** (las 50 originales) sigue sin tocar. El piloto
