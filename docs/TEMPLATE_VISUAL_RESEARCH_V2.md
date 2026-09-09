@@ -1280,3 +1280,82 @@ miniatura, 0 archivos ausentes. Migraciones `0032`–`0036` aplicadas.
   `revelacion-tinta` baja del umbral de velo de 0.35.
 - El **resto del catálogo** (las 50 originales) sigue sin tocar. El piloto
   existía para decidir si se rehace, y ya hay con qué decidirlo.
+
+---
+
+## 19.10 Puntuación del catálogo tras la campaña de diferenciación (2026-09-09)
+
+⚠️ **ESTO ES AUTOEVALUACIÓN.** Las puntuaciones §19.1–19.9 las hizo el dev.
+Ésta la hace quien dibujó el arte, a petición suya, y hay que leerla con esa
+advertencia delante: en esta misma campaña mi juicio sobre mi propio arte
+necesitó corregirse **siete veces** —tres piezas en Cumpleaños, dos en
+Corporativo, una en XV, una en Baby—, y todas las veces el fallo salió al
+MIRAR, no al razonar.
+
+Base: las tres superficies que exige la escala. La tarjeta de 420×560 (las 65
+miniaturas, miradas por categoría), la página a **375 px** (las cinco
+categorías grandes, en hoja de contacto) y la de **1200 px** (Boda y
+Corporativo). **No miré la superficie de 1200 px de Cumpleaños, XV ni Baby
+shower**: el mecanismo de recorte es el mismo y las dos que sí vi se comportan
+igual, pero es una extrapolación y queda dicha.
+
+### El número
+
+| categoría | VQ | U | ER | C | PF | MP | promedio |
+|---|---|---|---|---|---|---|---|
+| Boda | 7 | 9 | 7 | 7 | 7 | 9 | **7.7** |
+| Cumpleaños | 7 | 9 | 8 | 6 | 6 | 9 | **7.5** |
+| XV años | 7 | 8 | 7 | 6 | 7 | 9 | **7.3** |
+| Baby shower | 7 | 9 | 8 | 6 | 7 | 9 | **7.7** |
+| Corporativo | 7 | 8 | 8 | 6 | 7 | 9 | **7.5** |
+
+**Promedio del catálogo: 7.5.** El umbral del research es **8**.
+
+Para comparar: las 15 del piloto, con fotografía, promedian **8.39** (§19.9).
+
+### Dónde gana, y no es discutible
+
+- **Uniqueness 8–9.** Es lo que la campaña venía a arreglar y lo arregló:
+  medido contra la BD, **0 fondos repetidos y 0 composiciones repetidas** en las
+  nueve categorías. Cuatro pares y un cuarteto con paleta idéntica quedaron
+  distinguibles sólo por la silueta.
+- **Mobile Potential 9.** El lienzo de 420×900 tiene casi exactamente la
+  proporción de un teléfono, así que en móvil el arte se ve **entero**: es su
+  mejor superficie, con diferencia. No es 10 porque nada hace nada *especial*
+  por móvil más allá de verse completo.
+
+### Dónde no llega, y por qué
+
+- **Composition 6.** Es el más bajo y el más honesto. Resolví la repetición de
+  MOTIVO y no la de ARQUITECTURA: las **44 piezas nuevas comparten el mismo
+  esquema** —banda lateral espejada más remate arriba y abajo, centro vacío—.
+  Es el defecto del §19.9 («comparten silueta») trasladado un nivel: ya no se
+  repite el dibujo, se repite la *estructura del dibujo*. Y el esquema no salió
+  de una decisión de diseño sino de una **restricción del instrumento**: los
+  laterales son la única zona que no cuesta contraste.
+- **Visual Quality 7 · Premium Feel 7.** El arte es vectorial, de línea fina y
+  paleta contenida. Es limpio y sobrio, pero **no tiene materialidad**: al lado
+  de una fotografía del piloto pierde. La diferencia entre 7 y 9 aquí no es
+  ejecución, es medio.
+- **Event Relevance 7–8.** Muy desigual dentro de cada categoría. Las huellas de
+  terópodo, el campo de fútbol, los globos y el móvil de cuna dicen su evento
+  alto y claro; los rombos, los filetes y las grecas podrían ser de cualquiera.
+  El promedio esconde ese rango.
+
+### Qué haría falta para llegar a 8
+
+No más piezas del mismo tipo. Las dos palancas que mueven las columnas bajas:
+
+1. **Romper la arquitectura de banda lateral** en una parte del catálogo —
+   composiciones que usen el centro alto, una esquina, un fondo teñido a
+   sangre—. Sube `Composition`, y cuesta contraste: hay que medir cada una.
+2. **Fotografía o textura real** donde el evento la admita. Es lo que separa el
+   7 del 9 en `Visual Quality` y `Premium Feel`, y está demostrado en este mismo
+   documento: las 15 con foto promedian 8.39 con el mismo renderer.
+
+### Lo que esta puntuación NO dice
+
+No dice que el catálogo esté mal. Dice que pasó de **«42 se leen como paneles de
+color»** a **«65 son distinguibles y correctas, con acabado de 7.5»**. Es una
+mejora grande y medible, y a la vez está por debajo del listón que este
+documento se puso.
