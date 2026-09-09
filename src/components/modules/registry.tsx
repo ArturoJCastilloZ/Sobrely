@@ -7,7 +7,12 @@ import {
   PenLineIcon, type LucideIcon,
 } from "lucide-react";
 
-import { MODULE_TYPES, parseConfig, type ModuleType } from "@/lib/modules/types";
+import {
+  MODULE_TYPES,
+  parseConfig,
+  tieneComposicionDeSeccion,
+  type ModuleType,
+} from "@/lib/modules/types";
 import type { AnimationConfig } from "@/lib/animation/types";
 import type { UploadContext } from "@/components/editor/image-uploader";
 
@@ -22,6 +27,7 @@ import {
   RsvpEditor, SignaturesEditor, AnimationControl,
 } from "./config-editors";
 import { defaultAnimation } from "@/lib/animation/schema";
+import { ComposicionDeSeccion } from "@/components/editor/composicion-de-seccion";
 
 /**
  * Registro de tipos de módulo: un solo lugar por tipo.
@@ -176,6 +182,15 @@ export function ModuleConfigEditor({
   return (
     <div>
       <Editor {...rest} />
+      {/*
+        Va AQUÍ y no en los once editores: el dispatcher ya centraliza el
+        despacho por tipo, así que el bloque se escribe una vez y quien decide
+        si aparece es el ESQUEMA (`tieneComposicionDeSeccion`), no una lista a
+        mano. `hero` queda fuera solo, porque compone con `variant`.
+      */}
+      {tieneComposicionDeSeccion(moduleType) ? (
+        <ComposicionDeSeccion config={rest.config} onChange={rest.onChange} />
+      ) : null}
       <AnimationControl
         config={rest.config}
         onChange={rest.onChange}

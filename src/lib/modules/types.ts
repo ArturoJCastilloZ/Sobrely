@@ -142,6 +142,69 @@ export const MEDIA_RATIOS = [
 ] as const;
 export type MediaRatio = (typeof MEDIA_RATIOS)[number];
 
+/**
+ * La proporción del catálogo más cercana a una imagen real, con el recorte que
+ * implica.
+ *
+ * Existe porque exponer `variant` en el editor sin esto reintroduce, para el
+ * usuario, el defecto que la Fase 11 pagó dos veces: `split` y `editorial`
+ * pintan la foto dentro de una FIGURA con `object-fit: cover`, y si la
+ * proporción declarada no es la de la fuente **recorta en silencio y no da
+ * error**. Con `imageRatio: "auto"` la figura usa 3/4 o 4/3 HARDCODEADOS, así
+ * que un usuario que sube una panorámica y elige «foto a la mitad» perdería la
+ * mitad de su foto sin que nada se lo diga.
+ *
+ * Devuelve también el recorte para poder DECIRLO en la interfaz en vez de
+ * dejarlo pasar. El mismo umbral del 15 % que usa el pre-vuelo del seed.
+ */
+export function proporcionMasCercana(
+  ancho: number,
+  alto: number,
+): { ratio: MediaRatio; recorte: number } | null {
+  if (!Number.isFinite(ancho) || !Number.isFinite(alto)) return null;
+  if (ancho <= 0 || alto <= 0) return null;
+  const fuente = ancho / alto;
+  let mejor: { ratio: MediaRatio; recorte: number } | null = null;
+  for (const r of MEDIA_RATIOS) {
+    const [a, b] = r.split("/").map(Number);
+    const caja = a / b;
+    // Los DOS ejes: una caja más ancha que la fuente recorta igual, por arriba
+    // y abajo. Es la mitad que la primera versión del pre-vuelo no miraba.
+    const recorte = caja < fuente ? 1 - caja / fuente : 1 - fuente / caja;
+    if (!mejor || recorte < mejor.recorte) mejor = { ratio: r, recorte };
+  }
+  return mejor;
+}
+
+/**
+ * El parche que el editor escribe al cambiar la composición de la portada.
+ *
+ * Vive aquí y no dentro del componente para que sea COMPROBABLE: es la única
+ * lógica real del selector, y el proyecto no tiene entorno de DOM para probar
+ * componentes. Sacarla es más barato que traerse `testing-library` y decidir
+ * dependencias de paso.
+ *
+ * Lo que decide, y por qué importa:
+ *
+ * - `split` y `editorial` meten la foto en una FIGURA con `object-fit: cover`.
+ *   Si `imageRatio` queda en `auto`, el renderer usa 3/4 o 4/3 HARDCODEADOS y
+ *   recorta la foto del usuario en silencio. Así que al entrar en esas
+ *   variantes se fija la proporción de la FUENTE MEDIDA.
+ * - Sin medida no se toca `imageRatio`: se prefiere la conducta de siempre a
+ *   inventar un encuadre.
+ * - Al salir a una variante sin figura se devuelve a `auto`, que es el valor
+ *   retro-compatible y no mueve nada guardado.
+ */
+export function parcheDeComposicionDePortada(
+  variant: HeroVariant,
+  medida: { w: number; h: number } | null,
+): { variant: HeroVariant; imageRatio?: "auto" | MediaRatio } {
+  const enFigura = variant === "split" || variant === "editorial";
+  if (!enFigura) return { variant, imageRatio: "auto" };
+  const r = medida ? proporcionMasCercana(medida.w, medida.h) : null;
+  return r ? { variant, imageRatio: r.ratio } : { variant };
+}
+
 export const MEDIA_FOCALS = ["top", "center", "bottom"] as const;
 export type MediaFocal = (typeof MEDIA_FOCALS)[number];
 
@@ -473,6 +536,23 @@ export const moduleConfigSchemas = {
   rsvp: rsvpConfigSchema,
   signatures: signaturesConfigSchema,
 } satisfies Record<ModuleType, z.ZodType>;
+
+/**
+ * ¿El módulo lleva las perillas de composición de sección?
+ *
+ * Se DERIVA del esquema —`objetoConLayout` es lo que las añade— en vez de
+ * mantener una lista a mano. Así un módulo nuevo que use `objetoConLayout`
+ * hereda su UI sin que nadie tenga que acordarse, y uno que no las tenga
+ * (`hero`, que compone con `variant` y no con `align`) no la muestra.
+ *
+ * Es el patrón que ya salvó un cambio transversal en esta base: emitir DESPUÉS
+ * y que el defecto sea vacío, en vez de tocar N sitios.
+ */
+export function tieneComposicionDeSeccion(tipo: ModuleType): boolean {
+  const esquema = moduleConfigSchemas[tipo];
+  const shape = (esquema as unknown as { shape?: Record<string, unknown> }).shape;
+  return Boolean(shape && "align" in shape && "bleed" in shape && "frame" in shape);
+}
 
 /**
  * Esquemas de ESCRITURA: los mismos, pero exigentes.

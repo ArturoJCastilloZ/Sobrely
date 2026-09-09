@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type {
+  HeroVariant,
   GalleryLayout,
   DresscodeLevel,
   RsvpQuestion,
   RsvpQuestionType,
 } from "@/lib/modules/types";
 import {
+  HERO_VARIANTS,
+  HERO_VARIANT_LABELS,
+  parcheDeComposicionDePortada,
+  proporcionMasCercana,
   MAX_RSVP_QUESTIONS,
   MAX_RSVP_QUESTION_OPTIONS,
   RSVP_QUESTION_TYPES,
@@ -92,6 +97,118 @@ function str(v: unknown): string {
 
 // ---- Hero -----------------------------------------------------------------
 
+/**
+ * Composición de la portada, expuesta como PRESETS y no como lienzo libre.
+ *
+ * Las cinco variantes ya existían en el esquema y en el renderer desde la Fase
+ * 11, y `HERO_VARIANT_LABELS` ya traía sus etiquetas — pero **no las usaba
+ * ningún componente**: estaban escritas para un selector que nunca se
+ * construyó. Medido el 2026-09-08. O sea que un usuario NO podía darle a su
+ * invitación ninguna de las composiciones que ve en el catálogo; sólo se
+ * conseguían creando la invitación desde una plantilla que ya las trajera.
+ *
+ * Se exponen acotadas a propósito: cada combinación posible es una que la Fase
+ * 11 ya puntuó. Un lienzo libre daría combinaciones infinitas y la mayoría
+ * feas, y las feas acaban en soporte y en las capturas del catálogo.
+ */
+function ComposicionDePortada({
+  config,
+  onChange,
+}: Pick<EditorProps, "config" | "onChange">) {
+  const variant = str(config.variant) || "centered";
+  const imageUrl = str(config.imageUrl);
+  // La medida se guarda ATADA a su URL. Así no hace falta limpiarla de forma
+  // sincrónica al cambiar de foto —lo que además ESLint prohíbe con razón— y,
+  // más importante, una medida de la foto ANTERIOR no puede usarse nunca: si no
+  // corresponde a la URL actual, se descarta al derivarla.
+  const [medido, setMedido] = useState<{
+    url: string;
+    w: number;
+    h: number;
+  } | null>(null);
+
+  // Se mide la foto REAL del usuario. Sin esto, elegir `split` o `editorial`
+  // deja `imageRatio` en `auto`, y el renderer usa 3/4 o 4/3 HARDCODEADOS: una
+  // panorámica perdería la mitad y nada lo diría. Es exactamente el defecto que
+  // la 0034/0035/0038 pagaron en las plantillas, y exponer la perilla sin medir
+  // lo trasladaría al usuario.
+  useEffect(() => {
+    if (!imageUrl) return;
+    let vivo = true;
+    const img = new Image();
+    img.onload = () => {
+      if (vivo) {
+        setMedido({ url: imageUrl, w: img.naturalWidth, h: img.naturalHeight });
+      }
+    };
+    // Un 404 o un formato ilegible dejan la medida en nulo, y sin medida NO se
+    // toca `imageRatio`: se prefiere el valor de siempre a inventar un encuadre.
+    img.onerror = () => {
+      if (vivo) setMedido(null);
+    };
+    img.src = imageUrl;
+    return () => {
+      vivo = false;
+    };
+  }, [imageUrl]);
+
+  /** Sólo vale si es de la foto que hay puesta AHORA. */
+  const medida = medido && medido.url === imageUrl ? medido : null;
+
+  /** `split` y `editorial` meten la foto en una FIGURA; las otras, no. */
+  const enFigura = variant === "split" || variant === "editorial";
+  const sugerida = medida ? proporcionMasCercana(medida.w, medida.h) : null;
+
+  return (
+    <>
+      <Field label="Composición">
+        <Select
+          value={variant}
+          // La decisión vive en `parcheDeComposicionDePortada`, que SÍ tiene
+          // pruebas: este proyecto no tiene entorno de DOM, así que dejar la
+          // lógica aquí sería dejarla sin comprobar.
+          onValueChange={(v) =>
+            onChange(
+              parcheDeComposicionDePortada(v as HeroVariant, medida),
+            )
+          }
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {HERO_VARIANTS.map((v) => (
+              <SelectItem key={v} value={v}>
+                {HERO_VARIANT_LABELS[v]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+
+      {/* Se DICE el encuadre en vez de dejarlo pasar en silencio. */}
+      {enFigura && imageUrl ? (
+        <p className="text-xs text-muted-foreground">
+          {sugerida
+            ? sugerida.recorte < 0.02
+              ? `Encuadre ${sugerida.ratio}: tu foto entra completa.`
+              : `Encuadre ${sugerida.ratio}: se recorta un ${Math.round(
+                  sugerida.recorte * 100,
+                )} % de tu foto. Para que entre completa, súbela en ${sugerida.ratio}.`
+            : "No se pudo medir la foto, así que el encuadre queda en el valor por defecto y puede recortar."}
+        </p>
+      ) : null}
+
+      {variant === "plain" && imageUrl ? (
+        <p className="text-xs text-muted-foreground">
+          Esta composición es sólo tipografía: ignora la imagen de fondo a
+          propósito.
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 export function HeroEditor({ config, onChange, ctx }: EditorProps) {
   return (
     <div className="space-y-3">
@@ -120,6 +237,7 @@ export function HeroEditor({ config, onChange, ctx }: EditorProps) {
       <Field label="Etiqueta (opcional)">
         <Input value={str(config.ctaLabel)} onChange={(e) => onChange({ ctaLabel: e.target.value })} />
       </Field>
+      <ComposicionDePortada config={config} onChange={onChange} />
     </div>
   );
 }
