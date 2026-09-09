@@ -159,6 +159,39 @@ export function resolveTypography(theme: ThemeConfig): {
   };
 }
 
+/**
+ * El parche que escribe el interruptor «titulares distintos del cuerpo».
+ *
+ * Extraído del componente para que tenga pruebas: el proyecto corre vitest en
+ * `environment: "node"` y no puede renderizar UI.
+ *
+ * - Al ACTIVARLO se siembra el par desde `font`, así el render no se mueve en
+ *   el momento de encenderlo: el usuario ve el mismo diseño y a partir de ahí
+ *   cambia una mitad. Encenderlo con un par «bonito» le movería la invitación
+ *   sin pedírselo.
+ * - Al APAGARLO se escribe `undefined`, que es lo que el esquema espera para
+ *   «sin par» (`typography` es `.optional()`), y `resolveTypography` vuelve a
+ *   caer en `font`. El parche se fusiona con spread y `JSON.stringify` elimina
+ *   la clave al guardar, así que no queda basura en la fila.
+ */
+export function parcheDeParTipografico(
+  activo: boolean,
+  font: FontKey,
+  actual?: { heading: FontKey; body: FontKey },
+): { typography?: { heading: FontKey; body: FontKey } } {
+  if (!activo) return { typography: undefined };
+  return { typography: actual ?? { heading: font, body: font } };
+}
+
+/**
+ * `script` es una familia de DISPLAY: en un párrafo destruye la legibilidad.
+ * Es la misma regla dura que gobierna los 20 theme packs, pero aquí sólo
+ * AVISA — la invitación es del usuario y no se le bloquea su gusto.
+ */
+export function cuerpoIlegible(body: FontKey): boolean {
+  return body === "script";
+}
+
 export const FONT_LABELS: Record<FontKey, string> = {
   sans: "Moderna (Sans)",
   serif: "Clásica (Serif)",

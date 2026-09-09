@@ -4,6 +4,8 @@ import { useState } from "react";
 import {
   FONT_KEYS,
   FONT_LABELS,
+  cuerpoIlegible,
+  parcheDeParTipografico,
   SPACING_KEYS,
   SPACING_LABELS,
   DECORATION_VARIANTS,
@@ -391,6 +393,90 @@ export function ThemePanel({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Par tipografico (Fase 11 · P4). Estaba en el esquema y en el renderer
+          desde septiembre y el panel no lo exponia: `resolveTypography` caia
+          siempre en `font`, o sea UNA familia para titulares y cuerpo — una de
+          las causas medidas de que las 50 plantillas se vieran iguales. */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="par-tipografico">Titulares distintos del cuerpo</Label>
+          <Switch
+            id="par-tipografico"
+            checked={Boolean(theme.typography)}
+            onCheckedChange={(v) =>
+              onChange(parcheDeParTipografico(v, theme.font, theme.typography))
+            }
+          />
+        </div>
+        {theme.typography ? (
+          <div className="space-y-1.5 pt-1">
+            <Label className="text-xs text-muted-foreground">Titulares</Label>
+            <Select
+              value={theme.typography.heading}
+              onValueChange={(v) =>
+                onChange({
+                  typography: {
+                    heading: v as FontKey,
+                    body: theme.typography!.body,
+                  },
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue>
+                  {(v: string) => FONT_LABELS[v as FontKey] ?? v}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {FONT_KEYS.map((f) => (
+                  <SelectItem key={f} value={f}>
+                    {FONT_LABELS[f]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Label className="text-xs text-muted-foreground">Cuerpo</Label>
+            <Select
+              value={theme.typography.body}
+              onValueChange={(v) =>
+                onChange({
+                  typography: {
+                    heading: theme.typography!.heading,
+                    body: v as FontKey,
+                  },
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue>
+                  {(v: string) => FONT_LABELS[v as FontKey] ?? v}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {FONT_KEYS.map((f) => (
+                  <SelectItem key={f} value={f}>
+                    {FONT_LABELS[f]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Avisa, no bloquea: la invitacion es del usuario. */}
+            {cuerpoIlegible(theme.typography.body) ? (
+              <p className="text-xs text-warning">
+                La manuscrita es una tipografía de titular: en un párrafo cuesta
+                leerla. Los 20 temas de un clic nunca la usan para el cuerpo.
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Titulares y cuerpo usan la misma tipografía.
+          </p>
+        )}
       </div>
 
       {/* Spacing */}
