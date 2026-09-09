@@ -552,6 +552,72 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0,
   },
+  // ——— Categoría XV AÑOS, 2026-09-09 ———
+  // Siete compartían fondo: tres `xv-rosa-polvo.svg` y cuatro
+  // `foto/xv-brillo-rosa.jpg`. Aquí el arte carga con más trabajo que en las
+  // otras categorías porque DOS PARES comparten la paleta EXACTA —`xv-clasico`
+  // y `xv-glam`—, así que el color no puede distinguirlos: sólo la silueta.
+  // Por eso a esos cuatro se les dio el motivo más contrastado posible entre
+  // sí (laurel contra esquinas de álbum; diafragma contra tubos de neón).
+  {
+    clave: "xv-anos-arte",
+    tipo: "svg",
+    nombre: "Greca de rombos",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "xv-con-salon-arte",
+    tipo: "svg",
+    nombre: "Arquería",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    // Cuarto motivo de vídeo del catálogo y ninguno repetido: la pista es de
+    // `cumpleanos-con-video`, el carrete de `boda-cinematografica`, los tubos
+    // de `xv-glam-moderno`. Éste es el diafragma de la lente.
+    clave: "xv-con-video-arte",
+    tipo: "svg",
+    nombre: "Diafragma",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "xv-clasicos-elegantes-arte",
+    tipo: "svg",
+    nombre: "Laurel",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "xv-con-sesion-arte",
+    tipo: "svg",
+    nombre: "Esquinas de álbum",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "xv-glam-moderno-arte",
+    tipo: "svg",
+    nombre: "Neón",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "xv-sencillos-arte",
+    tipo: "svg",
+    nombre: "Filete rosa",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */

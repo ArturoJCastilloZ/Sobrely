@@ -79,6 +79,13 @@ const CATEGORIAS = [
     migraciones: ["0045_cumpleanos_composicion_distinta.sql"],
     conFoto: ["cumpleanos-arco", "cumpleanos-papel-picado"],
   },
+  {
+    nombre: "XV años",
+    prefijo: "xv-",
+    esperadas: 12,
+    migraciones: ["0048_xv_composicion_distinta.sql"],
+    conFoto: ["xv-corona", "xv-seda"],
+  },
 ] as const;
 
 describe.each(CATEGORIAS)(
@@ -125,7 +132,7 @@ describe.each(CATEGORIAS)(
  * escriben como UNA sentencia con `returning`, para que el propio editor
  * muestre cuántas filas tocó.
  */
-describe("las migraciones de cumpleaños son ejecutables de una sola vez", () => {
+describe("las migraciones nuevas son ejecutables de una sola vez", () => {
   const SIN_COMENTARIOS = (f: string) =>
     leer(f)
       .split("\n")
@@ -135,6 +142,8 @@ describe("las migraciones de cumpleaños son ejecutables de una sola vez", () =>
   const ARCHIVOS = [
     "0044_arte_propio_de_cumpleanos.sql",
     "0045_cumpleanos_composicion_distinta.sql",
+    "0047_arte_propio_de_xv.sql",
+    "0048_xv_composicion_distinta.sql",
   ];
 
   it.each(ARCHIVOS)("%s es UNA sola sentencia", (f) => {
@@ -182,10 +191,21 @@ describe("guardas SQL de las migraciones de composición", () => {
     );
   });
 
-  it("la 0045 guarda LAS TRES variantes que piden foto, no sólo `split`", () => {
-    // La lección de la 0043, ya incorporada de entrada en Cumpleaños.
-    expect(cuerpo("0045_cumpleanos_composicion_distinta.sql")).toContain(
+  it.each([
+    "0045_cumpleanos_composicion_distinta.sql",
+    "0048_xv_composicion_distinta.sql",
+  ])("%s guarda LAS TRES variantes que piden foto, no sólo `split`", (f) => {
+    // La lección de la 0043, ya incorporada de entrada en las dos categorías
+    // posteriores.
+    expect(cuerpo(f)).toContain(
       "and (v.variant not in ('split', 'editorial', 'offset') or coalesce(t.modules_config #>> '{0,config,imageUrl}', '') <> '')",
     );
+  });
+
+  it("la 0047 no usa CTE: cada fila se toca UNA vez", () => {
+    // La 0044 metió `cumpleanos-moderno` en DOS ramas de un CTE. Actualizar la
+    // misma fila dos veces en una sentencia no está soportado: Postgres
+    // descarta una de las dos EN SILENCIO. Salieron 9 filas en vez de 10.
+    expect(cuerpo("0047_arte_propio_de_xv.sql")).not.toContain("with ");
   });
 });
