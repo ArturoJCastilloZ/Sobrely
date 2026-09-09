@@ -457,6 +457,19 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0,
   },
+  {
+    // Cierra Boda. Compartia `foto/boda-marco-floral.jpg` con otras dos, y
+    // ademas usa el MISMO pack `boda-lujo` que `boda-de-lujo`: con la paleta
+    // repetida, distinguirlas sólo puede hacerlo la silueta. El motivo de
+    // pelicula cae donde debe — las perforaciones de un carrete van en los
+    // BORDES, que es la franja que se ve siempre y no cuesta contraste.
+    clave: "boda-cinematografica-arte",
+    tipo: "svg",
+    nombre: "Carrete",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */
