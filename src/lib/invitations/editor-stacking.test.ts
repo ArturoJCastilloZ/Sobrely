@@ -91,3 +91,54 @@ describe("escalera de z-index del preview del editor", () => {
     ).toBeGreaterThan(Z.paginador!);
   });
 });
+
+/**
+ * Y la otra mitad del mismo defecto, que el orden de `z-index` no cubre.
+ *
+ * Subir el paginador a `z-40` resolvió SU caso, pero dejó la causa viva: la
+ * capa de stickers es un `inset-0` que reclama el puntero en toda la vista
+ * previa. Volvió a morder con el arrastre de texto de la portada, que vive en
+ * el contenido (`z-10`) y por definición NO puede ganar por apilamiento.
+ *
+ * Medido en el editor real con `elementsFromPoint` sobre el centro del título:
+ *
+ *   [0] DIV  "absolute inset-0 z-30"   <- la capa de stickers
+ *   [4] H2   data-bloque="title"       <- el bloque, inalcanzable
+ *   closest("[data-bloque]") desde el target -> null
+ *
+ * El arreglo es que la capa no reclame eventos donde no tiene nada:
+ * `pointer-events-none` en la capa y `auto` en cada sticker.
+ */
+describe("la capa de stickers no se come el puntero", () => {
+  it("la capa declara `pointer-events-none`", () => {
+    const i = stickers.indexOf("absolute inset-0");
+    expect(i).toBeGreaterThan(-1);
+    const ini = stickers.lastIndexOf('"', i);
+    const fin = stickers.indexOf('"', i + "absolute inset-0".length);
+    expect(stickers.slice(ini, fin)).toContain("pointer-events-none");
+  });
+
+  it("cada sticker SÍ los recibe: `pointer-events-auto`", () => {
+    // Sin esto la capa seria transparente y los stickers indraggables — el
+    // arreglo habria cambiado un defecto por otro.
+    expect(stickers).toContain("pointer-events-auto absolute");
+    expect(stickers).toContain("data-sticker=");
+  });
+
+  it("deseleccionar no depende del clic en la capa vacía", () => {
+    // Antes se hacia comparando el objetivo del clic con la propia capa dentro
+    // de un `onClick` suyo. Al volverla transparente ese clic ya no llega, asi
+    // que si el codigo siguiera dependiendo de el, deseleccionar quedaria roto
+    // en silencio.
+    //
+    // La asercion se ancla en CODIGO y no en prosa: la primera version buscaba
+    // la expresion literal y la encontro en un COMENTARIO del propio archivo,
+    // que es un error que esta base ya tiene anotado dos veces.
+    const capa = stickers.slice(
+      stickers.indexOf("pointer-events-none absolute inset-0"),
+    );
+    const cierreDeLaCapa = capa.indexOf(">");
+    expect(capa.slice(0, cierreDeLaCapa)).not.toContain("onClick");
+    expect(stickers).toContain('document.addEventListener("pointerdown"');
+  });
+});

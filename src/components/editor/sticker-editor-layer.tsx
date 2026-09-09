@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Circle, Minus, Plus, RotateCcw, RotateCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ThemeConfig } from "@/lib/theme/theme";
@@ -63,21 +63,54 @@ export function StickerEditorLayer({
     dragId.current = null;
   };
 
+  // Deseleccionar al pulsar fuera. Antes lo hacía el `onClick` de la capa
+  // comparando el objetivo del clic con la propia capa, y eso dejó de ser
+  // posible al
+  // volverla transparente al puntero: ya no recibe el clic del vacío. Se
+  // escucha en el documento y sólo mientras haya algo seleccionado, así que no
+  // cuesta un listener cuando nadie usa stickers.
+  useEffect(() => {
+    if (!selected) return;
+    const alPulsar = (e: PointerEvent) => {
+      const el = e.target as Element | null;
+      if (el?.closest?.("[data-sticker]")) return;
+      setSelected(null);
+    };
+    document.addEventListener("pointerdown", alPulsar, true);
+    return () => document.removeEventListener("pointerdown", alPulsar, true);
+  }, [selected]);
+
   return (
     <div
       ref={ref}
-      className="absolute inset-0 z-30"
+      // `pointer-events-none` en la CAPA, `auto` en cada sticker.
+      //
+      // Sin esto la capa es un `inset-0` opaco al puntero que se come TODO lo
+      // que hay debajo. Ya costó un bug —los clics del paginador, arreglado
+      // subiéndolo a `z-40`, ver `editor-stacking.test.ts`— y volvió a costar
+      // otro: el arrastre del texto de la portada no llegaba nunca al bloque.
+      // MEDIDO en el editor real con `elementsFromPoint` sobre el centro del
+      // título: el primer elemento era este DIV `z-30`, y
+      // `closest("[data-bloque]")` daba null.
+      //
+      // Subir el z-index del contenido no era opción: el contenido vive en
+      // `z-10` por debajo a propósito. Lo correcto es que la capa no reclame
+      // los eventos donde no tiene nada.
+      //
+      // El arrastre del sticker sigue funcionando porque `onPointerDown` hace
+      // `setPointerCapture` sobre la imagen: con captura, los `pointermove`
+      // van a la imagen y burbujean hasta el `onPointerMove` de la capa sin
+      // depender del hit-test.
+      className="pointer-events-none absolute inset-0 z-30"
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerLeave={endDrag}
-      onClick={(e) => {
-        if (e.target === ref.current) setSelected(null);
-      }}
     >
       {stickers.map((s) => (
         <div
           key={s.id}
-          className="absolute"
+          data-sticker={s.id}
+          className="pointer-events-auto absolute"
           style={{
             left: `${s.x * 100}%`,
             top: `${s.y * 100}%`,
