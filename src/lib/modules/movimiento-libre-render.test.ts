@@ -72,6 +72,53 @@ describe("la portada coloca sus tres bloques", () => {
   });
 });
 
+describe("no hay inyección de CSS por los desplazamientos", () => {
+  // El `transform` se construye interpolando en una cadena de CSS, así que hay
+  // que DEMOSTRAR que sólo entran números: una inyección en CSS permite
+  // exfiltrar con `url(...)`, y este proyecto tiene la regla de cero
+  // phone-home.
+  //
+  // Quién lo garantiza, con precisión: **`z.number()`**. Escribí primero que era
+  // `.catch(0)` más el recorte, y una mutación lo desmintió — al quitarlos, un
+  // `dx` de tipo string sigue sin llegar al CSS, porque `parseConfig` descarta
+  // la config entera y el módulo pinta con sus defectos. `.catch(0)` y el
+  // recorte NO defienden de la inyección: cambian el modo de FALLO, de
+  // «descarta la portada» a «degrada el desplazamiento», y eso lo cubre
+  // «un desplazamiento BASURA degrada, no borra la portada».
+  const VENENOS = [
+    "0);background:url(https://evil.tld/x",
+    "1cqw) , url(//evil.tld/y",
+    'a";}*{color:red}',
+    "javascript:alert(1)",
+    { raro: true },
+    null,
+    [],
+  ];
+
+  it.each(VENENOS.map((v, i) => [i, v] as const))(
+    "veneno %i en dx no llega al CSS",
+    (_i, veneno) => {
+      const html = renderToStaticMarkup(
+        createElement(ModulePreview, {
+          moduleType: "hero",
+          config: {
+            title: "T",
+            freeMove: true,
+            textOffsets: { title: { dx: veneno, dy: 0.1 } },
+          },
+        } as never),
+      );
+      expect(html).not.toContain("evil.tld");
+      expect(html).not.toContain("url(");
+      expect(html).not.toContain("javascript:");
+      // Y si emite algo, es un translate con números y nada más.
+      for (const t of html.match(/translate\([^)]*\)/g) ?? []) {
+        expect(t).toMatch(/^translate\(-?[0-9.]+cqw, -?[0-9.]+cqw\)$/);
+      }
+    },
+  );
+});
+
 describe("las secciones colocan por índice, y su cuenta queda FIJADA", () => {
   // Anclar por índice rompe si un renderer cambia el orden o el número de sus
   // bloques. Esta prueba convierte ese riesgo silencioso en un rojo: fija
