@@ -67,4 +67,4 @@ export const ESCALA_CAPTURA = 2;
  * optimizador y la del navegador, y evita tener que renombrar 50 archivos o
  * volver a escribir 50 URLs en la BD en cada regeneración.
  */
-export const REVISION_MINIATURAS = "202609091913";
+export const REVISION_MINIATURAS = "202609091921";
