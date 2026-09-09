@@ -14,9 +14,19 @@ import type { AnimationTrigger } from "@/lib/animation/types";
  */
 export function useReveal(
   ref: RefObject<HTMLElement | null>,
-  opts: { trigger: AnimationTrigger; once: boolean; enabled: boolean },
+  opts: {
+    trigger: AnimationTrigger;
+    once: boolean;
+    enabled: boolean;
+    /**
+     * Umbral del IntersectionObserver. Debe ser 0 para presets que ocultan
+     * recortando la caja con `clip-path`: Chrome descuenta ese recorte del
+     * area de interseccion, asi que con un umbral > 0 no disparan jamas.
+     */
+    threshold?: number;
+  },
 ): boolean {
-  const { trigger, once, enabled } = opts;
+  const { trigger, once, enabled, threshold = 0.15 } = opts;
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
@@ -49,12 +59,12 @@ export function useReveal(
           }
         }
       },
-      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" },
+      { threshold, rootMargin: "0px 0px -8% 0px" },
     );
 
     io.observe(el);
     return () => io.disconnect();
-  }, [ref, trigger, once, enabled]);
+  }, [ref, trigger, once, enabled, threshold]);
 
   return revealed;
 }

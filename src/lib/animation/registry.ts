@@ -262,6 +262,20 @@ export const CSS_REVEAL_PRESETS = new Set<AnimationPreset>([
   "image-clip",
 ]);
 
+/**
+ * Presets cuyo estado oculto recorta la caja con `clip-path` hasta dejarla con
+ * area CERO. Ojo: Chrome aplica el clip-path del propio elemento al calcular la
+ * interseccion, asi que un IntersectionObserver con threshold > 0 NUNCA los ve
+ * entrar en pantalla y el revelado queda en abrazo mortal — el elemento se
+ * esconde de quien tenia que descubrirlo. Se observan con threshold 0.
+ * Medido el 2026-09-09 sobre una invitacion publicada: 9 de 11 modulos
+ * atascados; los 2 que si revelaban eran los VACIOS (altura 0).
+ */
+export const CLIPPING_REVEAL_PRESETS = new Set<AnimationPreset>([
+  "curtain-reveal",
+  "image-clip",
+]);
+
 export function isImplemented(preset: AnimationPreset): boolean {
   return ANIMATION_REGISTRY[preset]?.implemented ?? false;
 }
