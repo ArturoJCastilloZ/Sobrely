@@ -256,3 +256,68 @@ así que el verde significa algo.
 Las otras diez direcciones (`arte/*.svg`) están **dibujadas a mano en este
 repo**: cero assets externos, cero licencias de terceros. Ver
 `src/lib/theme/arte.ts`.
+
+## 3.ª incorporación (piloto de arte, 2026-09-09) — ornamento tipográfico PD
+
+Descargado el **2026-09-09** con autorización explícita del dev, verificado en
+la fuente ANTES de usarlo, y auto-hospedado. **No es fotografía**: es ornamento
+vectorial, así que entra compuesto dentro de los SVG de arte, no como archivo
+suelto.
+
+| dato | valor |
+|---|---|
+| Obra | *Specimens of the types used in Ostell's printing office, Hart Street, Bloomsbury Square* |
+| Publicada | Londres, **1848** |
+| Autor | grabador no acreditado |
+| Archivo | [`Typographic frames - Ostell 1848.svg`](https://commons.wikimedia.org/wiki/File:Typographic_frames_-_Ostell_1848.svg) en Wikimedia Commons |
+| Licencia | **PD-old-70-expired** + Public Domain Mark 1.0 — «*This work is in the public domain in the United States because it was published before January 1, 1931*» |
+| Atribución | no exigida (se documenta igual, por la misma razón que las fotos) |
+| Verificada en la fuente | 2026-09-09, en la página del archivo |
+
+### Por qué sólo se usan los ornamentos sueltos
+
+La plancha trae cinco marcos completos y son **inservibles como fondo**: son
+escaneos vectorizados de decenas de miles de nodos. Medido:
+
+| pieza | crudo | gzip |
+|---|---|---|
+| marcos completos | 260–952 KB | **98–352 KB** |
+| ornamentos sueltos | 9–34 KB | 4–15 KB |
+
+Los SVG de arte del catálogo pesan 2–3.5 KB, así que un marco de 98 KB
+gzipeados detrás de una invitación es inaceptable en la superficie del cliente.
+De los 75 paths de la plancha salen **~12 ornamentos utilizables**; el resto es
+texto del catálogo y viñetas figurativas que no vienen a cuento.
+
+### Cómo se montan
+
+Cada `d` aparece **una sola vez**, en `<defs>`, y se reusa con `<use>` — sin
+eso, el primer prototipo pesaba 41 KB gzip y con eso baja a 16.8. El marco de
+los cuatro lados no es ornamento escaneado sino **dos rectángulos de línea**,
+que cuestan ~150 bytes. La textura de papel es `feTurbulence`: cero bytes de
+imagen.
+
+### Las piezas y su destino
+
+| plantilla | archivo | orla (path) | cartela (path) | gzip |
+|---|---|---|---|---|
+| `boda-carta-romantica` | `boda-carta-romantica-arte.svg` | 48 · cenefa floral | 59 · cartela de volutas | 16.8 KB |
+| `xv-manuscrita` | `xv-manuscrita-arte.svg` | 24 · volutas con hoja | 61 · marco caligráfico | 15.1 KB |
+| `corporativo-sencillo` | `corporativo-sencillo-arte.svg` | 27 · greca griega | 52 · filete con rombo | 12.7 KB |
+
+Las otras dos del piloto —`baby-shower-neutro-arte.svg` y
+`cumpleanos-adulto-arte.svg`— **no llevan nada de Ostell**: son dibujo propio,
+cero licencias, 0.9 y 1.0 KB gzip. Se rehicieron porque su arte anterior estaba
+en una paleta ajena a la de su propia plantilla (un cielo AZUL sobre una
+plantilla salvia+crema, y confeti MULTICOLOR sobre una plantilla gris entera).
+
+### Velo medido
+
+Los cinco van con **`overlay: 0`**. La banda central se deja limpia por diseño,
+y el peor píxel da entre **10.93 y 16.62** de contraste WCAG contra el color de
+texto de cada plantilla — AA pide 4.5.
+
+> ⚠️ Medido replicando el método de `scripts/verificar-contraste-arte.mts`
+> (misma banda central, mismo peor-píxel) en el navegador, porque el script no
+> se pudo ejecutar: falta el Chromium de Playwright en la máquina
+> (`npx playwright install`). **Queda pendiente correr el script de verdad.**

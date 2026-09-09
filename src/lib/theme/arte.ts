@@ -340,6 +340,62 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "claro",
     overlay: 0.55,
   },
+  // ——— Piloto de arte del 2026-09-09 (roadmap §22, opción A) ———
+  // Cinco plantillas, dos familias. Las tres FORMALES montan ornamento
+  // tipográfico de «Ostell 1848» (dominio público, PD-old-70-expired; ver
+  // PROCEDENCIA.md), recoloreado a la paleta de cada plantilla y compuesto
+  // aquí: la plancha original son escaneos vectorizados de 260–952 KB por
+  // marco, inservibles como fondo, así que se usan sólo los ornamentos
+  // sueltos y cada `d` va UNA vez en <defs>, reusado con <use>.
+  //
+  // Las dos TEMÁTICAS no llevan Ostell: el victoriano no le va a un baby
+  // shower ni a un cumpleaños, y además su arte anterior estaba en una paleta
+  // AJENA a la de su plantilla — `baby-shower-neutro` es salvia+crema y
+  // llevaba un cielo AZUL; `cumpleanos-adulto` es gris entero y llevaba
+  // confeti MULTICOLOR. Se redibujaron en la suya.
+  //
+  // Los cinco van con `overlay: 0`: la banda central se deja limpia por
+  // diseño, y medido da entre 10.93 y 16.62 de contraste — AA pide 4.5.
+  {
+    clave: "boda-carta-romantica-arte",
+    tipo: "svg",
+    nombre: "Orla botánica",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "xv-manuscrita-arte",
+    tipo: "svg",
+    nombre: "Voluta manuscrita",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "corporativo-sencillo-arte",
+    tipo: "svg",
+    nombre: "Greca sobria",
+    eventos: ["Corporativo"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-shower-neutro-arte",
+    tipo: "svg",
+    nombre: "Guirnalda de eucalipto",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "cumpleanos-adulto-arte",
+    tipo: "svg",
+    nombre: "Serpentina sobria",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */

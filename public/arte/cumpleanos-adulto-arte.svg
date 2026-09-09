@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <defs>
+    <filter id="papel" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="7" result="n"/><feColorMatrix in="n" type="saturate" values="0"/></filter>
+    <!-- Serpentina como trazo curvo, no poligono: el poligono se lee rigido. -->
+    <radialGradient id="halo" cx="50%" cy="3%" r="58%">
+      <stop offset="0%" stop-color="#b08d57" stop-opacity="0.13"/>
+      <stop offset="100%" stop-color="#b08d57" stop-opacity="0"/>
+    </radialGradient>
+    <g id="cinta"><path d="M0 0 C9 -13 -5 -22 4 -35 C13 -48 -2 -55 7 -68" fill="none" stroke-width="4" stroke-linecap="round"/></g>
+  </defs>
+  <rect width="420" height="900" fill="#f9fafb"/>
+  <rect width="420" height="900" fill="url(#halo)"/>
+  <rect width="420" height="900" filter="url(#papel)" opacity="0.05"/>
+  <rect x="26" y="26" width="368" height="848" fill="none" stroke="#1f2937" stroke-opacity="0.3" stroke-width="0.9"/>
+  <rect x="31" y="31" width="358" height="838" fill="none" stroke="#1f2937" stroke-opacity="0.1" stroke-width="0.5"/>
+  <!-- Cumpleanos ADULTO: la fiesta se sugiere, no se grita. Grises de la propia
+       paleta y UN acento de laton; el confeti multicolor venia de otra paleta. -->
+  <g stroke-opacity="0.72">
+    <g stroke="#9ca3af"><use href="#cinta" transform="translate(74 128) rotate(-11)"/></g>
+    <g stroke="#1f2937" stroke-opacity="0.42"><use href="#cinta" transform="translate(126 106) rotate(13) scale(0.82)"/></g>
+    <g stroke="#b08d57"><use href="#cinta" transform="translate(300 118) rotate(-15) scale(0.88)"/></g>
+    <g stroke="#9ca3af"><use href="#cinta" transform="translate(352 142) rotate(9) scale(0.76)"/></g>
+    <g stroke="#b08d57"><use href="#cinta" transform="translate(196 96) rotate(-6) scale(0.7)"/></g>
+    <g stroke="#9ca3af"><use href="#cinta" transform="translate(244 132) rotate(17) scale(0.64)"/></g>
+  </g>
+  <g>
+    <rect x="96" y="54" width="7" height="11" rx="1.6" fill="#9ca3af" transform="rotate(24 99 59)"/>
+    <circle cx="164" cy="44" r="3.2" fill="#b08d57" opacity="0.75"/>
+    <rect x="228" y="40" width="6.5" height="10" rx="1.6" fill="#1f2937" opacity="0.34" transform="rotate(-30 231 45)"/>
+    <circle cx="288" cy="56" r="2.8" fill="#9ca3af"/>
+    <rect x="330" y="66" width="6" height="10" rx="1.6" fill="#b08d57" opacity="0.6" transform="rotate(38 333 71)"/>
+    <circle cx="120" cy="182" r="2.4" fill="#9ca3af" opacity="0.7"/>
+    <circle cx="304" cy="196" r="2.2" fill="#b08d57" opacity="0.45"/>
+  </g>
+  <g opacity="0.5">
+    <circle cx="150" cy="782" r="2.4" fill="#9ca3af"/>
+    <rect x="252" y="774" width="6" height="10" rx="1.6" fill="#b08d57" opacity="0.7" transform="rotate(-20 255 779)"/>
+    <circle cx="210" cy="804" r="2" fill="#1f2937" opacity="0.4"/>
+  </g>
+</svg>
