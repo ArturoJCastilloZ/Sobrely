@@ -4,6 +4,10 @@ import { fileURLToPath } from "node:url";
 import { parseConfig, type ModuleType } from "@/lib/modules/types";
 import { parseTheme } from "@/lib/theme/theme";
 import { ARTE, buscarArte } from "@/lib/theme/arte";
+import {
+  ANCHO_CAPTURA,
+  ALTO_CAPTURA,
+} from "@/lib/invitations/template-preview";
 
 /**
  * Pre-vuelo del seed del piloto (`0032`), que está **sin aplicar**.
@@ -268,6 +272,9 @@ function sobrescrituras(): Map<string, Sobrescritura> {
     // La 0037 va DESPUÉS a propósito: reescribe el `imageRatio` que la 0035 le
     // había puesto a `boda-marco-nuestro`, y aquí gana el último que habla.
     "0037_las_dos_del_umbral_a_objeto_del_evento.sql",
+    // La 0038 va al final: reescribe el `imageRatio` de seis plantillas y aqui
+    // gana el ultimo que habla.
+    "0038_proporcion_de_tarjeta_en_las_seis.sql",
   ]) {
     const limpio = leerMigracion(archivo)
       .split("\n")
@@ -396,6 +403,49 @@ describe("la proporción del slot coincide con la de la fotografía", () => {
       ).toBe(true);
     },
   );
+
+  // ------------------------------------------------------------------------
+  // EL SEGUNDO RECORTE (§19.8). Son DOS, independientes, y esta prueba nacio
+  // midiendo solo el primero:
+  //
+  //   1. `object-fit: cover` recorta la FUENTE dentro de la caja  <- arriba
+  //   2. el viewport de la TARJETA recorta la CAJA                <- aqui
+  //
+  // El segundo no lo veia nadie, y dejaba la miniatura de `boda-marco-nuestro`
+  // mostrando un trozo de pisos blancos que no se lee como pastel, con el
+  // pre-vuelo en verde y con razon. Medido en las 15: 6 de 14 con figura
+  // perdian >= 15 %, y `boda-papel-y-lino` perdia el 43 % estando APROBADA.
+  //
+  // La geometria se deriva de las constantes de la captura para que esto siga
+  // valiendo si la tarjeta cambia de tamano:
+  const PADDING_X = 24; // `px-6` de la seccion del hero, a cada lado
+  const ANCHO_FIGURA = ANCHO_CAPTURA - PADDING_X * 2;
+  // MEDIDO en el navegador a 420 px: el bloque de titulo + subtitulo + CTA mas
+  // el `py-12` de la seccion dejan la figura arrancando en y=184. Es un valor
+  // observado, no un calculo, y por eso se nombra: un titular mucho mas largo
+  // lo empujaria mas abajo y el margen real seria menor.
+  const TOP_FIGURA_MEDIDO = 184;
+  const ALTO_DISPONIBLE = ALTO_CAPTURA - TOP_FIGURA_MEDIDO;
+
+  it("hay figuras de hero que comprobar", () => {
+    expect(slots.filter((s) => s.donde.startsWith("hero/")).length)
+      .toBeGreaterThanOrEqual(6);
+  });
+
+  it.each(
+    slots
+      .filter((s) => s.donde.startsWith("hero/"))
+      .map((s) => [`${s.slug} · ${s.ratio}`, s] as const),
+  )("%s: la figura CABE en la tarjeta", (_t, s) => {
+    const [a, b] = s.ratio.split("/").map(Number);
+    const alto = ANCHO_FIGURA / (a / b);
+    expect(
+      Math.round(alto),
+      `${s.slug}: figura de ${ANCHO_FIGURA}x${Math.round(alto)} en ${ALTO_DISPONIBLE} px disponibles ` +
+        `-> la tarjeta le corta el ${Math.round((1 - ALTO_DISPONIBLE / alto) * 100)} %. ` +
+        `En esta tarjeta solo caben proporciones >= ${(ANCHO_FIGURA / ALTO_DISPONIBLE).toFixed(3)}`,
+    ).toBeLessThanOrEqual(ALTO_DISPONIBLE);
+  });
 
   it.each(
     slots.map((s) => [`${s.slug} · ${s.donde} · ${s.ratio}`, s] as const),

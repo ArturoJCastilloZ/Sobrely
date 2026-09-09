@@ -203,6 +203,54 @@ evento, no una textura ni un marcador**:
 > recorte de presentación, no la del archivo. La proporción se mide sobre el JPEG
 > (`sips`), nunca sobre lo que dice la ficha.
 
+### Recorte a 1:1 de seis fotografías (2026-09-08, `0038`)
+
+Seis archivos se **recortaron en su sitio** a **1600x1600**. La licencia y la
+autoría no cambian —siguen siendo las de arriba—; lo que cambia es el encuadre,
+y por eso queda anotado aquí.
+
+| archivo | antes | ahora | encuadre |
+|---|---|---|---|
+| `foto/boda-pastel-rosas.jpg` | 1600x2400 | 1600x1600 | offset **y=700** |
+| `foto/comunion-caliz-lino.jpg` | 1600x2406 | 1600x1600 | centrado |
+| `foto/boda-anillos-papel.jpg` | 1600x2843 | 1600x1600 | centrado |
+| `foto/bautizo-cera-blanca.jpg` | 1600x2400 | 1600x1600 | centrado |
+| `foto/revelacion-globos-coral.jpg` | 1600x2400 | 1600x1600 | centrado |
+| `foto/xv-tiara-noche.jpg` | 1600x2133 | 1600x1600 | centrado |
+
+**Por qué.** La tarjeta del catálogo se captura a 420x560 y la figura del hero
+mide 372 px de ancho arrancando en `y=184`, así que sólo quedan **376 px** de
+alto. Una figura 2/3 mide 558: la tarjeta le cortaba el **33 %**, y a
+`boda-papel-y-lino` (9/16, 661 px) el **43 %** — estando aprobada con 8.5. En
+esta tarjeta **sólo caben proporciones ≥ 0.989**, o sea 1/1 y más anchas.
+
+Se recortó el ARCHIVO en vez de subir sólo `imageRatio` porque una caja 1/1
+sobre una fuente 2/3 recorta el 33 % de la fuente y el pre-vuelo lo rechaza con
+razón. Con el archivo a 1600x1600 y `imageRatio` a `1/1` el recorte es **0 % por
+`cover` y 0 % por el viewport**, las dos cosas a la vez, sin tocar ningún
+umbral.
+
+Se eligió **1:1 y no 4:3** porque es la proporción más alta que cabe, o sea la
+que conserva más del sujeto.
+
+**El encuadre de cada una se decidió MIRÁNDOLA.** El del pastel es el único con
+offset: centrado dejaba fuera la base dorada y el resultado se leía como un
+primer plano de pisos; con `y=700` entran los tres pisos **y** la base.
+
+**Comprobado antes de cortar** (medido, no supuesto): las 6 son exclusivas de su
+plantilla —ninguna la comparte otra— y **ninguna se usa como `backgroundImage`**
+ni en `templates` ni en las invitaciones publicadas. Recortarlas no arrastra a
+nadie más.
+
+**El velo se volvió a medir y NO cambió en ninguna de las 6**: sale del peor
+píxel de la banda central, que el recorte cuadrado conserva. Y se comprobó que
+ese gate detecta un velo mal declarado (control positivo con mutante muerto),
+así que el verde significa algo.
+
+> **Los originales sin recortar** se recuperan de dos sitios: del historial de
+> git (`git show <commit-anterior>:public/arte/foto/<archivo>`) y de su enlace de
+> Pexels de las tablas de arriba, que sigue siendo la procedencia buena.
+
 ## Los SVG
 
 Las otras diez direcciones (`arte/*.svg`) están **dibujadas a mano en este
