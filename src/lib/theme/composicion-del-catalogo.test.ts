@@ -115,6 +115,46 @@ describe.each(CATEGORIAS)(
   },
 );
 
+/**
+ * Un `update` que no llega a ejecutarse no da error: da «Success».
+ *
+ * Pasó de verdad con la primera versión de la `0044`, que eran DOS `update`
+ * sueltos separados por un bloque de comentarios. El editor de Supabase ejecuta
+ * la sentencia bajo el cursor, así que se corrió, dijo «Success» y no entró
+ * nada — y sólo se descubrió al medir la BD después. Estas migraciones se
+ * escriben como UNA sentencia con `returning`, para que el propio editor
+ * muestre cuántas filas tocó.
+ */
+describe("las migraciones de cumpleaños son ejecutables de una sola vez", () => {
+  const SIN_COMENTARIOS = (f: string) =>
+    leer(f)
+      .split("\n")
+      .filter((l) => !l.trimStart().startsWith("--"))
+      .join("\n");
+
+  const ARCHIVOS = [
+    "0044_arte_propio_de_cumpleanos.sql",
+    "0045_cumpleanos_composicion_distinta.sql",
+  ];
+
+  it.each(ARCHIVOS)("%s es UNA sola sentencia", (f) => {
+    const puntos = (SIN_COMENTARIOS(f).match(/;/g) ?? []).length;
+    expect(puntos).toBe(1);
+  });
+
+  it.each(ARCHIVOS)("CADA `update` devuelve las filas que tocó", (f) => {
+    // OJO: la primera versión buscaba la palabra `returning` en el archivo y
+    // SOBREVIVIÓ a un mutante que se la quitaba a UNO de los dos `update` —
+    // la palabra seguía estando, en el otro. Es el mismo falso verde del grep
+    // de palabra suelta que ya se pagó con la guarda de `imageUrl`. Se cuentan.
+    const sql = SIN_COMENTARIOS(f).toLowerCase();
+    const updates = (sql.match(/\bupdate\s+public\.templates\b/g) ?? []).length;
+    const returnings = (sql.match(/\breturning\b/g) ?? []).length;
+    expect(updates).toBeGreaterThan(0);
+    expect(returnings).toBe(updates);
+  });
+});
+
 describe("guardas SQL de las migraciones de composición", () => {
   /**
    * OJO: la primera versión de estas aserciones buscaba la palabra `imageUrl`
