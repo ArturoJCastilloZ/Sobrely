@@ -154,6 +154,55 @@ el objeto más reconocible de la categoría después de la tiara, que ya usa
   el repo desde la 1.ª investigación y **ninguna plantilla usaba** — cero
   licencias nuevas para esa conversión.
 
+### 5.ª tanda — las DOS que el piloto dejó fuera del umbral
+
+| archivo | fuente | autor | licencia | velo medido |
+|---|---|---|---|---|
+| `foto/boda-pastel-rosas.jpg` | Pexels [28259731](https://www.pexels.com/photo/elegant-three-tier-white-wedding-cake-with-flowers-28259731/) | Ruxanda Photography | Free to use | **0.60** (empate oscuro/claro) |
+| `foto/comunion-caliz-lino.jpg` | Pexels [8086724](https://www.pexels.com/photo/8086724/) | Anuja Tilj | Free to use | **0.55** (texto claro) |
+
+Descargadas el 2026-09-08, las dos 1600x2400 (2/3 exacto, o sea **recorte
+cero**). Entran por la `0037`, que cierra el único cabo abierto de la Fase 11:
+las dos plantillas que la §19.7 dejó por debajo de 8/10. La decisión del dev fue
+la misma para las dos, y es la lección central de la fase — **un OBJETO del
+evento, no una textura ni un marcador**:
+
+- **`boda-pastel-rosas.jpg`** reemplaza a `boda-marco-floral.jpg` en
+  `boda-marco-nuestro` (7.3). La anterior era un **marcador de posición** —un
+  crisantemo sobre beige— puesto para que el anfitrión lo sustituyera, así que el
+  catálogo vendía una miniatura que no era lo que la plantilla entrega. Un pastel
+  de boda de tres pisos sí dice «boda», y su blanco sobre pared cálida y base de
+  madera cae dentro de la paleta oro/beige que ya tenía la plantilla.
+- **`comunion-caliz-lino.jpg`** le da a `comunion-cinta` (5.8) la fotografía que
+  NO tenía. Y no faltaba por olvido: la `0032` dejó escrito que «de las 14 fotos
+  de arte ninguna es de comunión, y colarle una de boda o una corporativa sería
+  exactamente el problema nº 7 del research». El motivo era correcto; lo que
+  faltaba era el asset. Un cáliz de latón con relieve de uvas y trigo, envuelto
+  en lino blanco sobre mantel de altar: es «blanco y trigo», que es literalmente
+  como la plantilla se describe.
+
+> **Sin menores en el encuadre.** El stock de primera comunión son casi todo
+> niños, y por eso la §19.7 había dejado la categoría sin fotografía. Un
+> **objeto litúrgico** resuelve Event Relevance sin fotografiar a un menor, así
+> que no hace falta gastar en la ilustración que el §19.1 dejaba como única vía.
+
+### Dos descartes de esta tanda, los dos por MIRARLOS
+
+- **Pexels 36230878** (ramo de rosas blancas, Kadir Altıntaş): las rosas son
+  **artificiales** con pedrería —mata Premium Feel—, lleva las iniciales «S» y
+  «M» pegadas (el monograma de otra pareja, en una plantilla que dice «Ana &
+  Carlos») y el encuadre trae un foco encendido y un poste de lámpara.
+- **Rosas blancas en jarrón** (Pexels 30157724 y 36756295): bonitas y de tono
+  frío o verdoso, y sobre todo **no dicen «boda»** — un jarrón de rosas es la
+  misma trampa que la seda de `xv-seda`. Se descartaron por Event Relevance,
+  que es la columna que la fase midió como decisiva.
+
+> **Aviso de método.** La página de Pexels reportó «landscape» para dos de estas
+> candidatas y «portrait» para una tercera, y en los TRES casos el archivo
+> descargado decía lo contrario: la orientación que muestra la página es la del
+> recorte de presentación, no la del archivo. La proporción se mide sobre el JPEG
+> (`sips`), nunca sobre lo que dice la ficha.
+
 ## Los SVG
 
 Las otras diez direcciones (`arte/*.svg`) están **dibujadas a mano en este

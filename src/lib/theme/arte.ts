@@ -315,6 +315,31 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0.6,
   },
+  // 5.ª tanda (2026-09-08, cierre de la Fase 11). Las dos entran para resolver
+  // las DOS plantillas que el piloto dejo fuera del umbral, y las dos son un
+  // OBJETO del evento, que es la variable que la fase midio como decisiva: no
+  // una textura ni un marcador. Velo MEDIDO con
+  // `scripts/verificar-contraste-arte.mts`, no estimado.
+  {
+    clave: "boda-pastel-rosas",
+    tipo: "foto",
+    nombre: "Pastel de boda",
+    eventos: ["Boda"],
+    // Medido "oscuro 0.6 / claro 0.6": empate, y en empate manda `oscuro`,
+    // igual que `xv-pastel-quince`, que tiene el mismo perfil.
+    polaridad: "oscuro",
+    overlay: 0.6,
+  },
+  {
+    clave: "comunion-caliz-lino",
+    tipo: "foto",
+    nombre: "Caliz y lino",
+    eventos: ["Primera comunión"],
+    // Medido "oscuro 0.6 / claro 0.55": gana el velo MENOR, o sea `claro`.
+    // Mismo perfil exacto que `baby-juguetes-madera`, que ya se declara claro.
+    polaridad: "claro",
+    overlay: 0.55,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */
