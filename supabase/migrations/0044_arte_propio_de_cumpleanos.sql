@@ -28,7 +28,23 @@
 -- `colors: null` y sin `themePack`, o sea que se dibujaba con los colores por
 -- defecto pese a prometer «Colores vivos y estilo fresco».
 --
--- Se esperan 10 filas: 9 de `fondo` + 1 de `paleta`.
+-- Se esperaban 10 filas: 9 de `fondo` + 1 de `paleta`.
+--
+-- ----------------------------------------------------------------------------
+-- ⚠️ APLICADA, y devolvió 9 — la rama `paleta` NO entró. Ya está corregido.
+-- ----------------------------------------------------------------------------
+-- La causa es de Postgres y es mía por no verla: `cumpleanos-moderno` aparece
+-- en LAS DOS ramas del CTE, en `fondo` y en `paleta`. Actualizar la misma fila
+-- dos veces dentro de una sola sentencia **no está soportado**: sólo una de las
+-- modificaciones ocurre, y la otra se descarta en silencio — sin error y sin
+-- fila en su `returning`. Por eso salieron 9 y no 10.
+--
+-- Al fusionar dos `update` en un CTE para que el archivo fuera «un solo
+-- bloque», introduje una colisión sobre la misma fila que antes no existía.
+--
+-- El arreglo NO se hace aquí (esta migración ya está aplicada y su parte de
+-- fondos entró bien): lo hace la **`0046`**, que además resultó que no era un
+-- caso aislado sino uno de CINCO.
 -- ============================================================================
 
 with fondo as (

@@ -2,10 +2,10 @@
   <defs>
     <filter id="papel" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="43" result="n"/><feColorMatrix in="n" type="saturate" values="0"/></filter>
   </defs>
-  <rect width="420" height="900" fill="#f8fafc"/>
+  <rect width="420" height="900" fill="#ffffff"/>
   <rect width="420" height="900" filter="url(#papel)" opacity="0.03"/>
-  <g><circle cx="24" cy="220" r="16" fill="#06b6d4" fill-opacity="0.35"/><rect x="10" y="300" width="26" height="26" fill="#f43f5e" fill-opacity="0.3" transform="rotate(18 23 313)"/><path d="M24 400 L40 432 L8 432 Z" fill="#06b6d4" fill-opacity="0.28"/><circle cx="24" cy="520" r="11" fill="none" stroke="#f43f5e" stroke-opacity="0.45" stroke-width="1.6"/><rect x="12" y="600" width="24" height="8" rx="4" fill="#06b6d4" fill-opacity="0.4"/><circle cx="24" cy="690" r="13" fill="#f43f5e" fill-opacity="0.25"/></g><g transform="translate(420 0) scale(-1 1)"><circle cx="24" cy="220" r="16" fill="#06b6d4" fill-opacity="0.35"/><rect x="10" y="300" width="26" height="26" fill="#f43f5e" fill-opacity="0.3" transform="rotate(18 23 313)"/><path d="M24 400 L40 432 L8 432 Z" fill="#06b6d4" fill-opacity="0.28"/><circle cx="24" cy="520" r="11" fill="none" stroke="#f43f5e" stroke-opacity="0.45" stroke-width="1.6"/><rect x="12" y="600" width="24" height="8" rx="4" fill="#06b6d4" fill-opacity="0.4"/><circle cx="24" cy="690" r="13" fill="#f43f5e" fill-opacity="0.25"/></g>
-  <line x1="110" y1="198" x2="310" y2="198" stroke="#06b6d4" stroke-opacity="0.5" stroke-width="2.4"/>
-  <line x1="110" y1="206" x2="230" y2="206" stroke="#f43f5e" stroke-opacity="0.4" stroke-width="1.4"/>
-  <line x1="110" y1="706" x2="310" y2="706" stroke="#06b6d4" stroke-opacity="0.35" stroke-width="1.6"/>
+  <g><circle cx="24" cy="220" r="16" fill="#e11d48" fill-opacity="0.3"/><rect x="10" y="300" width="26" height="26" fill="#fb7185" fill-opacity="0.35" transform="rotate(18 23 313)"/><path d="M24 400 L40 432 L8 432 Z" fill="#e11d48" fill-opacity="0.24"/><circle cx="24" cy="520" r="11" fill="none" stroke="#fb7185" stroke-opacity="0.5" stroke-width="1.6"/><rect x="12" y="600" width="24" height="8" rx="4" fill="#e11d48" fill-opacity="0.35"/><circle cx="24" cy="690" r="13" fill="#fb7185" fill-opacity="0.3"/></g><g transform="translate(420 0) scale(-1 1)"><circle cx="24" cy="220" r="16" fill="#e11d48" fill-opacity="0.3"/><rect x="10" y="300" width="26" height="26" fill="#fb7185" fill-opacity="0.35" transform="rotate(18 23 313)"/><path d="M24 400 L40 432 L8 432 Z" fill="#e11d48" fill-opacity="0.24"/><circle cx="24" cy="520" r="11" fill="none" stroke="#fb7185" stroke-opacity="0.5" stroke-width="1.6"/><rect x="12" y="600" width="24" height="8" rx="4" fill="#e11d48" fill-opacity="0.35"/><circle cx="24" cy="690" r="13" fill="#fb7185" fill-opacity="0.3"/></g>
+  <line x1="110" y1="198" x2="310" y2="198" stroke="#e11d48" stroke-opacity="0.45" stroke-width="2.4"/>
+  <line x1="110" y1="206" x2="230" y2="206" stroke="#fb7185" stroke-opacity="0.45" stroke-width="1.4"/>
+  <line x1="110" y1="706" x2="310" y2="706" stroke="#e11d48" stroke-opacity="0.3" stroke-width="1.6"/>
 </svg>
