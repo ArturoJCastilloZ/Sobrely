@@ -86,6 +86,15 @@ const CATEGORIAS = [
     migraciones: ["0048_xv_composicion_distinta.sql"],
     conFoto: ["xv-corona", "xv-seda"],
   },
+  {
+    nombre: "Baby shower",
+    prefijo: "baby-",
+    esperadas: 12,
+    migraciones: ["0050_baby_shower_composicion_distinta.sql"],
+    // `baby-punto-y-flor` NO entra: su imagen vive en el SLOT del módulo, no en
+    // la portada, y las variantes que piden foto miran `hero.imageUrl`.
+    conFoto: ["baby-nube-de-algodon"],
+  },
 ] as const;
 
 describe.each(CATEGORIAS)(
@@ -144,6 +153,8 @@ describe("las migraciones nuevas son ejecutables de una sola vez", () => {
     "0045_cumpleanos_composicion_distinta.sql",
     "0047_arte_propio_de_xv.sql",
     "0048_xv_composicion_distinta.sql",
+    "0049_arte_propio_de_baby_shower.sql",
+    "0050_baby_shower_composicion_distinta.sql",
   ];
 
   it.each(ARCHIVOS)("%s es UNA sola sentencia", (f) => {
@@ -194,6 +205,7 @@ describe("guardas SQL de las migraciones de composición", () => {
   it.each([
     "0045_cumpleanos_composicion_distinta.sql",
     "0048_xv_composicion_distinta.sql",
+    "0050_baby_shower_composicion_distinta.sql",
   ])("%s guarda LAS TRES variantes que piden foto, no sólo `split`", (f) => {
     // La lección de la 0043, ya incorporada de entrada en las dos categorías
     // posteriores.
@@ -202,10 +214,14 @@ describe("guardas SQL de las migraciones de composición", () => {
     );
   });
 
-  it("la 0047 no usa CTE: cada fila se toca UNA vez", () => {
-    // La 0044 metió `cumpleanos-moderno` en DOS ramas de un CTE. Actualizar la
-    // misma fila dos veces en una sentencia no está soportado: Postgres
-    // descarta una de las dos EN SILENCIO. Salieron 9 filas en vez de 10.
-    expect(cuerpo("0047_arte_propio_de_xv.sql")).not.toContain("with ");
-  });
+  it.each(["0047_arte_propio_de_xv.sql", "0049_arte_propio_de_baby_shower.sql"])(
+    "%s no usa CTE: cada fila se toca UNA vez",
+    (f) => {
+      // La 0044 metió `cumpleanos-moderno` en DOS ramas de un CTE. Actualizar
+      // la misma fila dos veces en una sentencia no está soportado: Postgres
+      // descarta una de las dos EN SILENCIO. Salieron 9 filas en vez de 10.
+      expect(cuerpo(f)).not.toContain("with ");
+    },
+  );
+
 });

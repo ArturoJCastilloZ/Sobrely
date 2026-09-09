@@ -618,6 +618,90 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0,
   },
+  // ——— Categoría BABY SHOWER, 2026-09-09 ———
+  // Nueve compartían fondo: cinco `revelacion-acuarela.svg` y cuatro
+  // `baby-cielo.svg`. Es la categoría con MÁS pares de paleta idéntica —cuatro—
+  // así que la silueta carga con casi todo:
+  //   azul cielo   baby-shower (topos)        / sencillo (punteado)
+  //   marrón       animalitos (huellitas)     / con-video (móvil de cuna)
+  //   azul nubes   completo (banderines)      / nubes (estratos)
+  //   salvia       neutro (eucalipto, ya hecho) / salvia (rama de olivo)
+  //
+  // Las huellitas son REDONDAS, de gatito, para no confundirse con las de
+  // terópodo de `cumpleanos-dinosaurios`; y los estratos son alargados y
+  // planos, para no confundirse con las nubes redondas de `cumpleanos-kawaii`.
+  {
+    clave: "baby-shower-arte",
+    tipo: "svg",
+    nombre: "Lluvia de topos",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-shower-animalitos-arte",
+    tipo: "svg",
+    nombre: "Huellitas",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-shower-completo-arte",
+    tipo: "svg",
+    nombre: "Banderines",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-shower-con-video-arte",
+    tipo: "svg",
+    nombre: "Móvil de cuna",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-shower-mesa-regalos-arte",
+    tipo: "svg",
+    nombre: "Cajas con lazo",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-shower-nubes-arte",
+    tipo: "svg",
+    nombre: "Estratos",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-shower-revelacion-arte",
+    tipo: "svg",
+    nombre: "Rosa y azul",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-shower-salvia-arte",
+    tipo: "svg",
+    nombre: "Rama de olivo",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-shower-sencillo-arte",
+    tipo: "svg",
+    nombre: "Punteado",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */
