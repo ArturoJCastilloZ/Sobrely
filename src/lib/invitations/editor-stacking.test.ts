@@ -142,3 +142,64 @@ describe("la capa de stickers no se come el puntero", () => {
     expect(stickers).toContain('document.addEventListener("pointerdown"');
   });
 });
+
+/**
+ * El puntero de MANO en los controles pulsables.
+ *
+ * Tailwind v3 lo traía en su preflight; **v4 lo quitó**. Comprobado en el
+ * paquete instalado (`tailwindcss@4.3.3`): la única aparición de `cursor` en
+ * `preflight.css` es un comentario sobre Safari, no una regla. Con la subida a
+ * v4 la app entera se quedó con la flecha, y no lo cazó nadie hasta que el dev
+ * lo reportó.
+ *
+ * Medido en el editor real antes del arreglo: **57 de 68 botones** con
+ * `cursor: default`.
+ *
+ * Prueba de forma, como el resto de este archivo: el defecto es CSS global,
+ * compila, y las pruebas seguían verdes con toda la app en flecha.
+ */
+describe("los controles pulsables declaran el cursor", () => {
+  const globals = leer("../../app/globals.css");
+
+  it("hay una regla de cursor para botones", () => {
+    expect(globals).toMatch(/button:not\(:disabled\)/);
+    expect(globals).toMatch(/cursor:\s*pointer/);
+  });
+
+  it("cubre `summary`, `select` y los roles ARIA interactivos", () => {
+    // `role=switch` no es de adorno: MEDIDO en el editor real, 13 de los
+    // interruptores son `SPAN role="switch"` y la regla de `button` no los
+    // tocaba. Radix no siempre usa `<button>`.
+    for (const sel of [
+      "summary",
+      "select:not(:disabled)",
+      '[role="button"]',
+      '[role="switch"]',
+      '[role="checkbox"]',
+      '[role="radio"]',
+      '[role="menuitem"]',
+      '[role="option"]',
+      '[role="tab"]',
+    ]) {
+      expect(globals, `falta ${sel}`).toContain(sel);
+    }
+  });
+
+  it("lo deshabilitado dice `not-allowed`", () => {
+    expect(globals).toMatch(/button:disabled/);
+    expect(globals).toMatch(/cursor:\s*not-allowed/);
+  });
+
+  it("va en `base`, no en `utilities`: las utilidades tienen que ganar", () => {
+    // Si estuviera en `utilities` pisaria los `cursor-grab` de los asideros de
+    // arrastre y los `cursor-move` de los stickers. Se comprueba que la regla
+    // cae DENTRO del bloque `@layer base`.
+    const iBase = globals.indexOf("@layer base {");
+    const iRegla = globals.indexOf("button:not(:disabled)");
+    expect(iBase).toBeGreaterThan(-1);
+    expect(iRegla).toBeGreaterThan(iBase);
+    // El cierre del layer base va DESPUES de la regla.
+    const iCierre = globals.indexOf("\n}", iRegla);
+    expect(iCierre).toBeGreaterThan(iRegla);
+  });
+});

@@ -471,7 +471,7 @@ export const HERO_VARIANT_LABELS: Record<HeroVariant, string> = {
 export function estiloDeDesplazamiento(
   activo: boolean,
   d: Desplazamiento | undefined,
-): { transform?: string; touchAction?: "none" } {
+): { transform?: string; touchAction?: "none"; cursor?: "move" } {
   if (!activo) return {};
   // `touchAction: none` va en el BLOQUE y sólo con el interruptor encendido:
   // en un móvil, sin esto el navegador se lleva el gesto como scroll a media
@@ -481,7 +481,16 @@ export function estiloDeDesplazamiento(
   //
   // Se emite AUNQUE el desplazamiento sea cero: un bloque sin mover también
   // tiene que poder agarrarse.
-  const base = { touchAction: "none" as const };
+  const base = {
+    touchAction: "none" as const,
+    // El puntero tiene que DECIR que el bloque se puede mover. Sin esto queda
+    // la flecha y nada indica que sea arrastrable — lo reporto el dev, y es
+    // omision mia: puse `touch-action` y me deje el cursor.
+    //
+    // `move` y no `grab` para ser coherente con los stickers, que ya usan
+    // `cursor-move` desde antes.
+    cursor: "move" as const,
+  };
   if (!d || (d.dx === 0 && d.dy === 0)) return base;
   return { ...base, transform: `translate(${d.dx * 100}cqw, ${d.dy * 100}cqw)` };
 }

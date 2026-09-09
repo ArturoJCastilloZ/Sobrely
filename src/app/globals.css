@@ -285,6 +285,62 @@
   html {
     @apply font-sans;
   }
+
+  /*
+   * El puntero de MANO en los controles pulsables.
+   *
+   * Tailwind v3 lo traia en su preflight (`button, [role=button] { cursor:
+   * pointer }`) y **v4 lo quito** para ceñirse al defecto del navegador.
+   * Comprobado en el paquete instalado, `tailwindcss@4.3.3`: la unica
+   * aparicion de `cursor` en `preflight.css` es un COMENTARIO sobre Safari, no
+   * una regla. Con la subida a v4 la app entera se quedo con la flecha y nadie
+   * lo noto hasta que el dev lo reporto.
+   *
+   * Medido en el editor real antes de esto: **57 de 68 botones** con
+   * `cursor: default`. Los 11 restantes eran los asideros de arrastre, que
+   * traen `cursor-grab` como utilidad.
+   *
+   * Va en `base` a proposito: las UTILIDADES ganan a `base`, asi que un
+   * `cursor-grab`, `cursor-move` o `cursor-not-allowed` puesto en un
+   * componente sigue mandando. Si esto estuviera en `utilities` los pisaria.
+   *
+   * `:disabled` se excluye por correccion, aunque hoy no se note: el `Button`
+   * lleva `disabled:pointer-events-none`, y sin eventos de puntero el cursor
+   * ni se evalua.
+   */
+  button:not(:disabled),
+  summary,
+  select:not(:disabled),
+  /*
+   * Los roles ARIA interactivos, y NO son de adorno: Radix no siempre usa
+   * `<button>`. Medido en el editor real, **13 interruptores** son
+   * `SPAN role="switch"`, asi que la regla de `button` no los tocaba y se
+   * quedaban con la flecha. La lista cubre lo que este proyecto declara
+   * (`radio`) y lo que Radix renderiza por debajo.
+   */
+  [role="button"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [role="option"],
+  [role="tab"] {
+    cursor: pointer;
+  }
+
+  /*
+   * Deshabilitado: `not-allowed`. Solo se VE cuando el elemento sigue
+   * recibiendo eventos — medido, de los 4 botones deshabilitados de esta
+   * pantalla 3 llevan `pointer-events: none` (del `Button`) y uno no, y ese
+   * ultimo es el que se beneficia.
+   */
+  button:disabled,
+  select:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 /*
  * Par tipográfico de la invitación (Fase 11 · P4).

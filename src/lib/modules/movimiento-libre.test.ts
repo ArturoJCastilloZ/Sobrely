@@ -213,6 +213,13 @@ describe("parcheDeDesplazamiento", () => {
 });
 
 describe("estiloDeDesplazamiento", () => {
+  it("apagado no emite cursor: nada indica que se pueda arrastrar", () => {
+    // Simetria del interruptor: si emitiera `cursor: move` con el movimiento
+    // libre apagado, el editor prometeria un gesto que no existe.
+    expect(estiloDeDesplazamiento(false, { dx: 0.5, dy: 0.5 }).cursor).toBeUndefined();
+    expect(estiloDeDesplazamiento(true, undefined).cursor).toBe("move");
+  });
+
   it("APAGADO no emite NADA: una invitación que no lo usa no se mueve", () => {
     // Es la propiedad que hace esto aditivo. Si emitiera un `translate(0,0)`
     // ya estaría creando un contexto de apilamiento y tocando el render de
@@ -227,15 +234,18 @@ describe("estiloDeDesplazamiento", () => {
     // nada: ver la capa que lo tapaba todo.
     expect(estiloDeDesplazamiento(true, undefined)).toEqual({
       touchAction: "none",
+      cursor: "move",
     });
     expect(estiloDeDesplazamiento(true, { dx: 0, dy: 0 })).toEqual({
       touchAction: "none",
+      cursor: "move",
     });
   });
 
   it("encendido emite `cqw` en los dos ejes", () => {
     expect(estiloDeDesplazamiento(true, { dx: 0.25, dy: -0.1 })).toEqual({
       touchAction: "none",
+      cursor: "move",
       transform: "translate(25cqw, -10cqw)",
     });
   });
@@ -325,6 +335,7 @@ describe("la bandera de la interfaz no toca el motor", () => {
     expect(c.freeMove).toBe(true);
     expect(estiloDeDesplazamiento(c.freeMove, c.textOffsets.title)).toEqual({
       touchAction: "none",
+      cursor: "move",
       transform: "translate(20cqw, -10cqw)",
     });
   });
