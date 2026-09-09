@@ -265,6 +265,9 @@ function sobrescrituras(): Map<string, Sobrescritura> {
   for (const archivo of [
     "0035_convertir_f4_a_fotografia.sql",
     "0036_xv_seda_a_pastel_de_quince.sql",
+    // La 0037 va DESPUÉS a propósito: reescribe el `imageRatio` que la 0035 le
+    // había puesto a `boda-marco-nuestro`, y aquí gana el último que habla.
+    "0037_las_dos_del_umbral_a_objeto_del_evento.sql",
   ]) {
     const limpio = leerMigracion(archivo)
       .split("\n")
@@ -300,8 +303,29 @@ describe("la proporción del slot coincide con la de la fotografía", () => {
   const AUTO: Record<string, string> = { split: "3/4", editorial: "4/3" };
 
   const slots = FILAS.flatMap((f) =>
-    f.modulos.flatMap((m) => {
-      const o = OVER.get(f.slug) ?? {};
+    f.modulos.flatMap((m, i) => {
+      // Las sobrescrituras de hero son del módulo 0 y SÓLO de ése. Antes se
+      // aplicaba el objeto entero a CADA módulo, así que en cuanto una
+      // sobrescritura traía `variant`, los cuatro módulos de la plantilla
+      // pasaban el chequeo de hero con los datos del hero: 6 plantillas
+      // generaban su caso 4 veces (medido). La aserción repetida era idéntica,
+      // así que ningún veredicto salía mal — pero la prueba decía comprobar «el
+      // hero» y estaba anclada también a `welcome`, `countdown` y `rsvp`, que es
+      // el mismo mal anclaje que ya costó una sesión.
+      //
+      // Y se separan las DOS clases de sobrescritura, porque no viven en el
+      // mismo módulo: la de la 0034 es del SLOT DE MEDIA —que cuelga de un
+      // módulo que no es el hero— y las de la 0035/0036/0037 son del hero.
+      // Gatear las dos tras `esHero` dejaba al slot de media sin su
+      // sobrescritura, y la suite lo cazó en rojo: `baby-punto-y-flor` volvía a
+      // 3/4 contra una fuente 1.50, o sea el 50 % de recorte que la 0034 había
+      // arreglado.
+      const esHero = i === 0 && m.module_type === "hero";
+      const todo = OVER.get(f.slug) ?? {};
+      // Del slot de media, en cualquier módulo.
+      const oMedia = { mediaRatio: todo.mediaRatio };
+      // Del hero, y sólo del módulo 0.
+      const o = esHero ? todo : {};
       const c = m.config as {
         media?: { url?: string; ratio?: string };
         imageUrl?: string;
@@ -314,7 +338,7 @@ describe("la proporción del slot coincide con la de la fotografía", () => {
         out.push({
           slug: f.slug,
           url: c.media.url,
-          ratio: o.mediaRatio ?? c.media.ratio ?? "4/3",
+          ratio: oMedia.mediaRatio ?? c.media.ratio ?? "4/3",
           donde: "media",
         });
       }
@@ -337,6 +361,41 @@ describe("la proporción del slot coincide con la de la fotografía", () => {
   it("hay slots que comprobar", () => {
     expect(slots.length).toBeGreaterThanOrEqual(2);
   });
+
+  // HUECO CERRADO (2026-09-08). La prueba de «toda imagen referenciada existe y
+  // está registrada en arte.ts» recorre FILAS, o sea el `imageUrl` ORIGINAL del
+  // seed — y por tanto NO veía ninguna foto que llegara por `UPDATE`. Las de la
+  // 0035, la 0036 y la 0037 entraban todas por ahí: se comprobaba que el JPEG
+  // existiera (lo hace el pre-vuelo de proporción, al medirlo) pero NO que
+  // estuviera declarada en `arte.ts`, que es donde vive el velo MEDIDO y la
+  // procedencia. Una foto sobrescrita sin registrar era una foto sin licencia
+  // anotada y sin velo medido, y pasaba en verde.
+  const urlsSobrescritas = [...OVER.values()]
+    .map((o) => o.imageUrl)
+    .filter((u): u is string => Boolean(u));
+
+  it("hay sobrescrituras de imagen que comprobar", () => {
+    // Control de que el extractor no devuelve vacío: sin esto, un parser roto
+    // deja el `it.each` de abajo con cero casos y la suite en verde.
+    expect(urlsSobrescritas.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it.each(urlsSobrescritas.map((u) => [u] as const))(
+    "%s llega por UPDATE y está registrada en arte.ts",
+    (url) => {
+      expect(url.startsWith("/"), `${url} no la sirve la app`).toBe(true);
+      expect(existsSync(RAIZ_PUBLIC + url), `${url} no existe en disco`).toBe(
+        true,
+      );
+      const clave = url
+        .replace(/^\/arte\/(foto\/)?/, "")
+        .replace(/\.(svg|jpg)$/, "");
+      expect(
+        ARTE.some((x) => x.clave === clave),
+        `${clave} llega por UPDATE y NO está en arte.ts: sin velo medido ni procedencia`,
+      ).toBe(true);
+    },
+  );
 
   it.each(
     slots.map((s) => [`${s.slug} · ${s.donde} · ${s.ratio}`, s] as const),
