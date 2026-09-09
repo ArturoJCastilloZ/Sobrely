@@ -52,6 +52,7 @@ import { SettingsPanel } from "./settings-panel";
 import { PreviewPane } from "./preview-pane";
 import { ThemePanel } from "./theme-panel";
 import { ModuleConfigEditor, MODULE_REGISTRY } from "@/components/modules/registry";
+import { parcheDeDesplazamiento } from "@/lib/modules/types";
 import { RsvpModeToggle } from "@/components/dashboard/rsvp-mode-toggle";
 import { GuestManager } from "@/components/dashboard/guest-manager";
 import type { ThemeConfig } from "@/lib/theme/theme";
@@ -724,6 +725,24 @@ export function InvitationEditor({
             theme={theme}
             eventDate={invitation.event_date}
             onStickersChange={(stickers) => updateTheme({ stickers })}
+            // El arrastre escribe por la MISMA vía que los paneles
+            // (`updateConfig`), así que hereda el autoguardado, el bloqueo
+            // optimista y el deshacer sin nada nuevo. `claveDeFusion` funde por
+            // `config:<id>:textOffsets`, así que un arrastre entero es UN paso
+            // de ⌘Z y no uno por píxel.
+            onOffset={(moduloId, bloque, d) => {
+              const m = modules.find((x) => x.id === moduloId);
+              if (!m) return;
+              const patch = parcheDeDesplazamiento(
+                m.module_type === "hero",
+                (m.config as Record<string, unknown>)?.textOffsets,
+                bloque,
+                d,
+              );
+              // `null` = bloque que no encaja con la forma del módulo. Se
+              // ignora en vez de escribir en un sitio inventado.
+              if (patch) updateConfig(moduloId, patch);
+            }}
           />
         </main>
 

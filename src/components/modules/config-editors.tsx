@@ -161,7 +161,7 @@ function ComposicionDePortada({
 
   return (
     <>
-      <Field label="Composición">
+      <Field label="Diseño de la portada">
         <Select
           value={variant}
           // La decisión vive en `parcheDeComposicionDePortada`, que SÍ tiene
@@ -198,6 +198,25 @@ function ComposicionDePortada({
             : "No se pudo medir la foto, así que el encuadre queda en el valor por defecto y puede recortar."}
         </p>
       ) : null}
+
+      {/* El interruptor va SEPARADO del combo, no como una sexta opción: el
+          diseño elegido se mantiene y esto sólo permite empujar los textos
+          encima. Es el mismo control que llevan las 11 secciones. */}
+      <div className="space-y-1.5 border-t pt-3">
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="libre-portada">Movimiento libre del texto</Label>
+          <Switch
+            id="libre-portada"
+            checked={Boolean(config.freeMove)}
+            onCheckedChange={(v) => onChange({ freeMove: v })}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {config.freeMove
+            ? "Arrastra el título, el subtítulo o la etiqueta en la vista previa. El diseño elegido se mantiene."
+            : "Actívalo para colocar cada texto a mano sobre el diseño elegido."}
+        </p>
+      </div>
 
       {variant === "plain" && imageUrl ? (
         <p className="text-xs text-muted-foreground">

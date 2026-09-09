@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type {
   HeroVariant,
@@ -15,6 +15,8 @@ import type {
   GalleryConfig,
   GiftsConfig,
   HeroConfig,
+  HeroBloque,
+  Desplazamiento,
   ItineraryConfig,
   MapConfig,
   MusicConfig,
@@ -30,7 +32,10 @@ import { TextReveal } from "@/components/animation/text-reveal";
 import { StaggerGroup } from "@/components/animation/stagger-group";
 import { PhotoGallery } from "@/components/modules/photo-gallery";
 import { DresscodeFigures } from "@/components/modules/dresscode-figures";
-import { DRESSCODE_LABELS } from "@/lib/modules/types";
+import {
+  DRESSCODE_LABELS,
+  estiloDeDesplazamiento,
+} from "@/lib/modules/types";
 
 const PRIMARY = "var(--inv-primary, var(--primary))";
 const TINT = "color-mix(in srgb, var(--inv-primary, #888) 7%, transparent)";
@@ -213,6 +218,8 @@ function Section({
   frame = "none",
   media,
   className,
+  freeMove = false,
+  textOffsets,
 }: {
   children: React.ReactNode;
   tint?: boolean;
@@ -223,15 +230,44 @@ function Section({
   frame?: SectionFrame;
   media?: MediaConfig;
   className?: string;
+  /** Movimiento libre del texto (el mismo interruptor que la portada). */
+  freeMove?: boolean;
+  /**
+   * Desplazamientos por ÍNDICE del bloque. Aquí no hay nombres: cada módulo
+   * tiene un contenido distinto y `Section` es el único sitio que los ve todos,
+   * y sólo los ve como hijos en orden. La contrapartida de anclar a la posición
+   * es la prueba que fija el número de bloques de cada módulo.
+   */
+  textOffsets?: readonly Desplazamiento[];
 }) {
   // Sin imagen, `contenido === children`: el árbol renderizado es LITERALMENTE
   // el de antes, sin una envoltura de más. Es lo que permite comprobar por md5
   // que las 50 no se mueven.
   const conMedia = Boolean(media && media.position !== "none" && media.url);
+
+  // Con el interruptor APAGADO no se envuelve nada: el arbol renderizado sigue
+  // siendo literalmente el de antes. Es la misma disciplina que el comentario
+  // de arriba sobre `media`, y es lo que permite afirmar que una invitacion
+  // que no usa esto no se mueve ni un pixel.
+  const colocables = freeMove
+    ? React.Children.toArray(children).map((hijo, i) => {
+        const d = textOffsets?.[i];
+        return (
+          <div
+            key={i}
+            data-bloque={String(i)}
+            style={estiloDeDesplazamiento(true, d)}
+          >
+            {hijo}
+          </div>
+        );
+      })
+    : children;
+
   const cuerpo = conMedia ? (
-    <ConMedia media={media!}>{children}</ConMedia>
+    <ConMedia media={media!}>{colocables}</ConMedia>
   ) : (
-    children
+    colocables
   );
 
   // El marco envuelve el CONTENIDO, no el contenedor de la seccion.
@@ -341,6 +377,10 @@ const HERO_TEXTO_CLASSES: Record<HeroVariant, string> = {
   plain: "relative flex max-w-2xl flex-col items-center gap-4 @2xl/inv:gap-6",
 };
 
+/** Atajo local: la función pura vive en `types.ts` para poder probarla. */
+const desplazamientoStyle = (config: HeroConfig, bloque: HeroBloque) =>
+  estiloDeDesplazamiento(config.freeMove, config.textOffsets[bloque]);
+
 export function HeroPreview({
   config,
   animate = false,
@@ -365,7 +405,17 @@ export function HeroPreview({
       // Con la foto a sangre no hay tinte; sin ella sí. En `plain` siempre lo
       // hay, aunque la invitación traiga imagen: la variante la ignora a
       // propósito.
-      style={sobreFoto ? undefined : { backgroundColor: TINT }}
+      //
+      // `containerType` sólo con el movimiento libre encendido: es lo que hace
+      // que `cqw` de los bloques resuelva contra ESTA sección y no contra un
+      // ancestro. MEDIDO en el navegador: no saca el contenido del flujo, así
+      // que la altura de la portada no cambia y el diseño elegido se mantiene.
+      // Se pone condicional para no crear un contexto de contención en las
+      // invitaciones que no lo usan.
+      style={{
+        ...(sobreFoto ? {} : { backgroundColor: TINT }),
+        ...(config.freeMove ? { containerType: "inline-size" } : {}),
+      }}
     >
       {fotoDeFondo && conFoto && (
         <div
@@ -413,16 +463,22 @@ export function HeroPreview({
       )}
       <div className={HERO_TEXTO_CLASSES[config.variant]}>
         <h2
+          data-bloque="title"
           className="text-3xl font-bold tracking-tight @2xl/inv:text-5xl @4xl/inv:text-6xl @5xl/inv:text-7xl"
-          style={{ color: sobreFoto ? "#fff" : "inherit" }}
+          style={{
+            color: sobreFoto ? "#fff" : "inherit",
+            ...desplazamientoStyle(config, "title"),
+          }}
         >
           {animate ? <TextReveal text={title} variant="text-rise" /> : title}
         </h2>
         {config.subtitle && (
           <p
+            data-bloque="subtitle"
             className="text-base @2xl/inv:text-xl @4xl/inv:text-2xl @5xl/inv:text-3xl"
             style={{
               color: sobreFoto ? "rgba(255,255,255,.9)" : "inherit",
+              ...desplazamientoStyle(config, "subtitle"),
             }}
           >
             {config.subtitle}
@@ -430,9 +486,11 @@ export function HeroPreview({
         )}
         {config.ctaLabel && (
           <div
+            data-bloque="cta"
             className="mt-3 flex items-center gap-3 @2xl/inv:mt-5 @2xl/inv:gap-4"
             style={{
               color: sobreFoto ? "rgba(255,255,255,.92)" : PRIMARY,
+              ...desplazamientoStyle(config, "cta"),
             }}
           >
             <span
@@ -461,6 +519,8 @@ export function WelcomePreview({ config }: { config: WelcomeConfig }) {
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -547,6 +607,8 @@ export function CountdownPreview({
     return (
       <Section
         align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
         bleed={config.bleed}
         media={config.media}
         frame={config.frame}
@@ -566,6 +628,8 @@ export function CountdownPreview({
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -604,6 +668,8 @@ export function MapPreview({
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -655,6 +721,8 @@ export function GalleryPreview({
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -710,6 +778,8 @@ export function VideoPreview({ config }: { config: VideoConfig }) {
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -749,6 +819,8 @@ export function ItineraryPreview({
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -799,6 +871,8 @@ export function SignaturesPreview({ config }: { config: SignaturesConfig }) {
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -842,6 +916,8 @@ export function DresscodePreview({ config }: { config: DresscodeConfig }) {
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -893,6 +969,8 @@ export function GiftsPreview({
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -937,6 +1015,8 @@ export function MusicPreview({ config }: { config: MusicConfig }) {
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -979,6 +1059,8 @@ export function RsvpPreview({
   return (
     <Section
       align={config.align}
+      freeMove={config.freeMove}
+      textOffsets={config.textOffsets}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}

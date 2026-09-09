@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { ModulePreview } from "@/components/modules/registry";
 import { ThemeScope } from "@/components/theme/theme-scope";
 import { StickerEditorLayer } from "@/components/editor/sticker-editor-layer";
+import { MovimientoLibreLayer } from "@/components/editor/movimiento-libre-layer";
+import type { Desplazamiento } from "@/lib/modules/types";
 import { AnimatedModule } from "@/components/animation/animated-module";
 import { DecorationLayer } from "@/components/animation/decoration-layer";
 import {
@@ -26,12 +28,15 @@ export function PreviewPane({
   theme,
   eventDate = "",
   onStickersChange,
+  onOffset,
 }: {
   modules: EditorModule[];
   theme: ThemeConfig;
   eventDate?: string;
   /** When provided, the preview shows an editable (draggable) sticker layer. */
   onStickersChange?: (stickers: ThemeConfig["stickers"]) => void;
+  /** Arrastre del texto: `(moduloId, bloque, desplazamiento)`. */
+  onOffset?: (moduloId: string, bloque: string, d: Desplazamiento) => void;
 }) {
   const visible = modules.filter((m) => m.is_visible);
   const [view, setView] = useState<"mobile" | "desktop">("mobile");
@@ -334,6 +339,12 @@ export function PreviewPane({
             stickers={theme.stickers}
             onChange={onStickersChange}
           />
+        )}
+        {/* Sólo se monta si ALGÚN módulo visible tiene el movimiento libre
+            encendido: una capa a pantalla completa que capture punteros sin
+            hacer nada se comería los clics del resto del editor. */}
+        {onOffset && visible.some((m) => Boolean(m.config?.freeMove)) && (
+          <MovimientoLibreLayer onOffset={onOffset} />
         )}
       </ThemeScope>
       </div>

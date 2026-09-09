@@ -101,6 +101,127 @@ export const SECTION_BLEED_LABELS: Record<SectionBleed, string> = {
  * `hero` NO los lleva: su composición no pasa por `Section` y es trabajo de P3
  * (`variant`). Meterle estos campos sería config muerta.
  */
+// ---- Movimiento libre del texto ------------------------------------------
+
+/**
+ * Desplazamiento de un bloque respecto de su posición NATURAL, en fracciones
+ * del contenedor.
+ *
+ * Por qué desplazamientos y no posiciones absolutas — es la decisión que
+ * gobierna todo esto:
+ *
+ * 1. **La altura no se colapsa.** Si los bloques salieran del flujo, la caja de
+ *    la sección mediría 0 y habría que declararle una altura fija. Eso es lo que
+ *    hace Invitio —secciones de 900 px— o sea **renunciar al responsive**, y es
+ *    justo lo que la PoC de canvas dejó escrito que NO había que copiar.
+ * 2. **Mantiene el diseño**, que es el requisito: el preset elegido sigue
+ *    mandando y el usuario mueve piezas encima. El interruptor es un
+ *    modificador, no otro diseño.
+ * 3. **Un solo modelo para los 12 módulos.** Una sección no tiene foto de fondo
+ *    contra la que colocar; sí tiene una posición natural desde la que empujar.
+ *
+ * El rango es −1..1, o sea hasta un ancho/alto entero del contenedor en cada
+ * dirección: alcanza cualquier punto de la caja sin permitir mandar un texto a
+ * la nada. `limitarDesplazamiento` lo aprieta más, contra el tamaño real del
+ * bloque.
+ */
+/**
+ * Una fracción de desplazamiento: se RECORTA, nunca se rechaza.
+ *
+ * Es deliberado y la prueba lo cazó: `min`/`max` de zod **rechazan**, y
+ * `parseConfig` descarta la config ENTERA del módulo cuando algo no valida. O
+ * sea que un `dx: 9` escrito a mano —o guardado por una versión futura con otro
+ * rango— habría borrado el título, el subtítulo y la foto de la portada, no
+ * sólo el desplazamiento. Recortar degrada; rechazar destruye.
+ */
+const fraccionDeDesplazamiento = z
+  .number()
+  .catch(0)
+  .transform((v) => Math.min(1, Math.max(-1, v)))
+  .default(0);
+
+export const desplazamientoSchema = z
+  .object({
+    dx: fraccionDeDesplazamiento,
+    dy: fraccionDeDesplazamiento,
+  })
+  // Con defecto propio: así un `textOffsets` parcial —sólo el título— no tumba
+  // el objeto por los bloques que faltan.
+  .default({ dx: 0, dy: 0 });
+export type Desplazamiento = z.infer<typeof desplazamientoSchema>;
+
+const SIN_DESPLAZAR = { dx: 0, dy: 0 } as const;
+
+/**
+ * Deja un desplazamiento DENTRO del marco contando el tamaño del bloque.
+ *
+ * ⚠️ Todo va en la MISMA unidad: fracciones del ANCHO de la sección, los dos
+ * ejes. Es la unidad del render (`cqw`), y se eligió midiéndola:
+ *
+ * - `top` en `%` con `position: relative` da **0** cuando la caja tiene
+ *   `min-height` en vez de altura definida — comprobado en el navegador. Así
+ *   que el eje vertical no puede ir en porcentaje de la altura.
+ * - `cqw` con `container-type: inline-size` **en la propia sección** sí
+ *   resuelve, contra su ancho, y **sin sacar el contenido del flujo**: la altura
+ *   no colapsa y el diseño elegido se mantiene. Y al no depender de ningún
+ *   ancestro, mide igual en el editor móvil —que no declara `@container/inv`—
+ *   que en producción.
+ *
+ * Por eso hace falta `extension`: en unidades de ancho, el eje horizontal llega
+ * a 1 pero el vertical llega a `alto/ancho` de la sección, que no es 1.
+ *
+ * Un bloque más grande que la caja en un eje no tiene desplazamiento válido en
+ * ese eje: se deja en 0, que es determinista y lo menos malo.
+ */
+export function limitarDesplazamiento(
+  d: Desplazamiento,
+  centroNatural: { x: number; y: number },
+  medio: { ancho: number; alto: number },
+  extension: { ancho: number; alto: number } = { ancho: 1, alto: 1 },
+): Desplazamiento {
+  const eje = (valor: number, centro: number, m: number, ext: number) => {
+    if (!Number.isFinite(valor)) return 0;
+    if (!Number.isFinite(ext) || ext <= 0) return 0;
+    if (m * 2 >= ext) return 0;
+    return Math.min(ext - m - centro, Math.max(m - centro, valor));
+  };
+  return {
+    dx: eje(d.dx, centroNatural.x, medio.ancho, extension.ancho),
+    dy: eje(d.dy, centroNatural.y, medio.alto, extension.alto),
+  };
+}
+
+/**
+ * Pares de bloques que se PISAN, para poder avisar.
+ *
+ * Se avisa y no se impide: solapar puede ser deliberado —un título sobre una
+ * línea fina— y la invitación es del usuario. Pero un solape accidental deja
+ * texto ilegible y en el lienzo pequeño del editor no siempre se ve. Es la
+ * misma postura que el aviso de la manuscrita en el cuerpo del texto.
+ *
+ * Se pidió mover cada texto POR SEPARADO, y esta guarda es la contrapartida:
+ * con los tres bloques sueltos, solaparse deja de ser imposible.
+ */
+export function paresSolapados(
+  cajas: { id: string; x: number; y: number; w: number; h: number }[],
+): [string, string][] {
+  const out: [string, string][] = [];
+  for (let i = 0; i < cajas.length; i++) {
+    for (let j = i + 1; j < cajas.length; j++) {
+      const a = cajas[i];
+      const b = cajas[j];
+      // Rectángulos centrados en x/y: se pisan si se solapan en LOS DOS ejes.
+      if (
+        Math.abs(a.x - b.x) * 2 < a.w + b.w &&
+        Math.abs(a.y - b.y) * 2 < a.h + b.h
+      ) {
+        out.push([a.id, b.id]);
+      }
+    }
+  }
+  return out;
+}
+
 const layoutShape = {
   align: z.enum(SECTION_ALIGNS).default("center"),
   bleed: z.enum(SECTION_BLEEDS).default("contained"),
@@ -108,6 +229,27 @@ const layoutShape = {
   // research —la que NO gasta ninguna licencia— y la referencia es Greenvelope:
   // premium por oficio gráfico, no por fotografía. `none` no emite nada.
   frame: z.enum(SECTION_FRAMES).default("none"),
+  /**
+   * Movimiento libre del texto, el MISMO interruptor que la portada.
+   *
+   * Vive en `layoutShape`, así que lo heredan los 11 módulos que usan
+   * `objetoConLayout` sin tocar sus esquemas uno por uno — el patrón de emitir
+   * DESPUÉS y que el defecto sea vacío.
+   *
+   * Aquí los bloques se identifican por ÍNDICE y no por nombre, porque cada
+   * módulo tiene un contenido distinto (bienvenida trae título y mensaje;
+   * cuenta atrás sólo título; RSVP título y descripción...). El envoltorio
+   * `Section` es el único sitio que los ve a todos, y ahí sólo tiene los hijos
+   * en orden.
+   *
+   * ⚠️ Eso ancla a la POSICIÓN, no a la superficie, y esta base de código ya ha
+   * pagado ese error. La contrapartida es una prueba que fija el número de
+   * bloques de cada módulo: si un renderer cambia su orden o su cuenta, la
+   * suite se pone roja en vez de mover los desplazamientos guardados en
+   * silencio.
+   */
+  freeMove: z.boolean().default(false),
+  textOffsets: z.array(desplazamientoSchema).max(6).default([]),
 };
 
 // ---- Slot de media (Fase 11 · P2) ----------------------------------------
@@ -284,12 +426,96 @@ export const HERO_VARIANTS = [
 ] as const;
 export type HeroVariant = (typeof HERO_VARIANTS)[number];
 
+/**
+ * Rótulos de cara al usuario, no nombres de familia.
+ *
+ * «Partida» y «Editorial» eran jerga del research: describen la familia, no lo
+ * que el usuario obtiene. Y el control del panel se llama «Diseño de la
+ * portada», NO «Alineación del texto»: el bloque de sección ya tiene uno
+ * llamado «Alineación» (Izquierda/Centrado/Derecha) y éste mueve la FOTO además
+ * del texto. Dos controles con nombres casi iguales haciendo cosas distintas es
+ * un defecto de etiquetado que acaba en soporte.
+ */
 export const HERO_VARIANT_LABELS: Record<HeroVariant, string> = {
-  centered: "Centrada",
-  offset: "Texto a un lado",
-  split: "Partida",
-  editorial: "Editorial",
-  plain: "Sólo tipografía",
+  centered: "Texto centrado sobre la foto",
+  offset: "Texto abajo a un lado",
+  split: "Foto a un lado, texto al otro",
+  editorial: "Texto arriba, foto abajo",
+  plain: "Sólo texto, sin foto",
+};
+
+/**
+ * El `transform` de un bloque desplazado, o nada.
+ *
+ * Vive aquí y no en el componente para poder probarla: el proyecto corre
+ * vitest sin entorno de DOM. Apagado o sin desplazamiento devuelve `{}`, así
+ * que el render de una invitación que no usa esto **no cambia ni un píxel** —
+ * es lo que hace que la función sea aditiva y no toque nada guardado.
+ *
+ * `cqw` en los DOS ejes, o sea fracciones del ANCHO de la sección. Medido en
+ * el navegador: `top` en `%` da 0 con `min-height`, y `cqw` sobre la propia
+ * sección resuelve sin sacar el contenido del flujo. Ver
+ * `limitarDesplazamiento`.
+ */
+export function estiloDeDesplazamiento(
+  activo: boolean,
+  d: Desplazamiento | undefined,
+): { transform?: string } {
+  if (!activo || !d) return {};
+  if (d.dx === 0 && d.dy === 0) return {};
+  return { transform: `translate(${d.dx * 100}cqw, ${d.dy * 100}cqw)` };
+}
+
+/**
+ * El patch que escribe un arrastre.
+ *
+ * Las dos formas de guardar desplazamientos conviven a propósito y esta función
+ * es la única que sabe de las dos: la portada los guarda por NOMBRE —tiene tres
+ * bloques fijos y nombrarlos es más robusto que su orden— y las secciones por
+ * ÍNDICE, porque cada módulo tiene un contenido distinto y `Section` sólo ve
+ * hijos en orden.
+ *
+ * Devuelve `null` si el bloque no encaja con la forma esperada, en vez de
+ * escribir en un sitio inventado: un `data-bloque` que no reconoce no debe
+ * corromper los desplazamientos que ya hay.
+ */
+export function parcheDeDesplazamiento(
+  esPortada: boolean,
+  actual: unknown,
+  bloque: string,
+  d: Desplazamiento,
+): { textOffsets: unknown } | null {
+  if (esPortada) {
+    if (!(HERO_BLOQUES as readonly string[]).includes(bloque)) return null;
+    const base =
+      actual && typeof actual === "object" && !Array.isArray(actual)
+        ? (actual as Record<string, Desplazamiento>)
+        : {};
+    return { textOffsets: { ...base, [bloque]: d } };
+  }
+
+  // `/^\d+$/` y no `Number(...)`: `Number("")` es **0**, así que un
+  // `data-bloque` vacío se colaba como índice 0 y escribía en el primer bloque.
+  // Lo cazó la prueba.
+  if (!/^\d+$/.test(bloque)) return null;
+  const i = Number(bloque);
+  if (i > 5) return null;
+  const base = Array.isArray(actual) ? [...(actual as Desplazamiento[])] : [];
+  // Los huecos se rellenan sin desplazar: un array disperso no sobrevive a
+  // JSON y dejaría `null` donde el esquema espera un objeto.
+  while (base.length <= i) base.push({ dx: 0, dy: 0 });
+  base[i] = d;
+  return { textOffsets: base };
+}
+
+/** Los tres textos que la portada ya tiene. No se puede añadir un cuarto. */
+export const HERO_BLOQUES = ["title", "subtitle", "cta"] as const;
+export type HeroBloque = (typeof HERO_BLOQUES)[number];
+
+export const HERO_BLOQUE_LABELS: Record<HeroBloque, string> = {
+  title: "Título",
+  subtitle: "Subtítulo",
+  cta: "Etiqueta",
 };
 
 export const heroConfigSchema = z.object({
@@ -328,6 +554,31 @@ export const heroConfigSchema = z.object({
    * invitación guardada se mueve.
    */
   imageRatio: z.enum(["auto", ...MEDIA_RATIOS]).default("auto"),
+  /**
+   * Interruptor del movimiento libre. Va SEPARADO de `variant` a propósito:
+   * el diseño elegido se mantiene y esto sólo permite empujar los textos
+   * encima. Meterlo como una sexta variante habría obligado a elegir entre
+   * diseño y libertad, y son cosas distintas.
+   */
+  freeMove: z.boolean().default(false),
+  /**
+   * Los desplazamientos se guardan SIEMPRE, aunque el interruptor esté
+   * apagado: así apagarlo y volverlo a encender no pierde la colocación. Y
+   * apagado no afecta al render, así que una invitación vieja se ve igual.
+   */
+  textOffsets: z
+    .object({
+      title: desplazamientoSchema,
+      subtitle: desplazamientoSchema,
+      cta: desplazamientoSchema,
+    })
+    // Defecto explícito y completo: esta versión de zod pide el objeto de
+    // SALIDA entero, el mismo patrón que `media` y `backgroundImage`.
+    .default({
+      title: SIN_DESPLAZAR,
+      subtitle: SIN_DESPLAZAR,
+      cta: SIN_DESPLAZAR,
+    }),
 });
 
 export const countdownConfigSchema = objetoConLayout({

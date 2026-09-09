@@ -9,6 +9,7 @@ import {
   SECTION_FRAME_LABELS,
 } from "@/lib/modules/types";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -50,6 +51,24 @@ export function ComposicionDeSeccion({
       <p className="text-xs font-medium text-muted-foreground">
         Composición de la sección
       </p>
+
+      {/* El MISMO interruptor que la portada, en las 11 secciones. Vive en
+          `layoutShape`, así que el esquema lo heredan todas. */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="libre-seccion">Movimiento libre del texto</Label>
+          <Switch
+            id="libre-seccion"
+            checked={Boolean(config.freeMove)}
+            onCheckedChange={(v) => onChange({ freeMove: v })}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {config.freeMove
+            ? "Arrastra los textos de esta sección en la vista previa."
+            : "Actívalo para colocar los textos a mano."}
+        </p>
+      </div>
 
       <div className="space-y-1.5">
         <Label>Alineación</Label>
