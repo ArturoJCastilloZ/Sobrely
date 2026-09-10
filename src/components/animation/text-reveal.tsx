@@ -115,7 +115,13 @@ export function TextReveal({
           >
             {word}
           </motion.span>
-          {i < words.length - 1 ? " " : ""}
+          {/* U+00A0, NO un espacio normal. Cada palabra vive en un
+              `inline-block`, y un espacio ORDINARIO al final de una caja
+              inline-block se RECORTA: medido, las palabras quedaban a
+              0.0 px cuando el espacio de esta tipografia mide 6.5 px, o sea
+              «UnoDosTresCuatro». El cambio es invisible en un diff y en una
+              revision a ojo, por eso hay una prueba que fija el codepoint. */}
+          {i < words.length - 1 ? " " : ""}
         </span>
       ))}
     </span>

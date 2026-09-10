@@ -343,7 +343,68 @@ export async function deleteInvitation(invitationId: string) {
     throw new Error("Esa invitación ya no existe.");
   }
 
+  // Las imagenes NO se van con la fila. El `on delete cascade` limpia las
+  // tablas hijas, pero Storage es otro sistema y nadie lo tocaba: medido en el
+  // E2E, la foto de una invitacion borrada seguia sirviendose en HTTP 200
+  // desde un bucket PUBLICO. O sea que el arte que un cliente subio a su
+  // invitacion, y que borro, seguia descargable por quien tuviera la URL.
+  //
+  // Va DESPUES del borrado de la fila y a proposito: si se hiciera antes y el
+  // borrado fallara, se habrian destruido las imagenes de una invitacion que
+  // sigue viva. Y no se lanza si falla: la invitacion YA no existe, asi que
+  // hacer fracasar la accion mentiria sobre lo que paso. Se registra.
+  await borrarImagenesDeLaInvitacion(supabase, user.id, invitationId);
+
   revalidatePath("/dashboard");
+}
+
+/**
+ * Vacia `invitation-images/<user_id>/<invitation_id>/`.
+ *
+ * La policy de borrado de la `0005` deja al dueno borrar lo de su carpeta con
+ * su propia sesion, asi que no hace falta el cliente admin.
+ */
+async function borrarImagenesDeLaInvitacion(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  invitationId: string,
+): Promise<void> {
+  const carpeta = `${userId}/${invitationId}`;
+  const bucket = supabase.storage.from("invitation-images");
+  const rutas: string[] = [];
+
+  // Se pagina de verdad. `list` tiene tope, y quedarse con la primera pagina
+  // dejaria huerfanos justo en las invitaciones con mas fotos — que son las que
+  // mas ocupan.
+  const TAM = 100;
+  for (let offset = 0; ; offset += TAM) {
+    const { data, error } = await bucket.list(carpeta, {
+      limit: TAM,
+      offset,
+    });
+    if (error) {
+      console.error("[invitations] listar imagenes:", error.message);
+      return;
+    }
+    if (!data || data.length === 0) break;
+    for (const obj of data) rutas.push(`${carpeta}/${obj.name}`);
+    if (data.length < TAM) break;
+  }
+
+  if (rutas.length === 0) return;
+
+  const { data: borradas, error: rmErr } = await bucket.remove(rutas);
+  if (rmErr) {
+    console.error("[invitations] borrar imagenes:", rmErr.message);
+    return;
+  }
+  // `remove` tampoco falla por una ruta que ya no existe, asi que se compara
+  // lo pedido con lo devuelto en vez de dar por hecho que se limpio.
+  if ((borradas?.length ?? 0) !== rutas.length) {
+    console.error(
+      `[invitations] imagenes huerfanas en ${carpeta}: se pidieron ${rutas.length}, se borraron ${borradas?.length ?? 0}`,
+    );
+  }
 }
 
 export type SavedModule = {

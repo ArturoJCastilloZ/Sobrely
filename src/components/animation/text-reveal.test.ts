@@ -115,3 +115,32 @@ describe("el mecanismo que congelaba el texto ya no está en el cuerpo", () => {
     );
   });
 });
+
+describe("el separador entre palabras es un NBSP, no un espacio normal", () => {
+  // Cada palabra vive en un `inline-block`, y un espacio ORDINARIO al final de
+  // una caja inline-block se RECORTA. Medido en el navegador tras cambiarlo sin
+  // darme cuenta: hueco entre palabras 0.0 px, cuando el espacio de esa
+  // tipografia a 30 px mide 6.5 px — el titulo se leia «UnoDosTresCuatro».
+  // La diferencia entre U+00A0 y U+0020 es INVISIBLE en un diff y en una
+  // revision a ojo, asi que la fija una maquina.
+  const fuente = readFileSync(
+    new URL("./text-reveal.tsx", import.meta.url),
+    "utf8",
+  );
+
+  it("usa U+00A0 como separador", () => {
+    const m = fuente.match(/words\.length - 1 \? "(.*?)" : ""/);
+    expect(m, "no se encontró el separador entre palabras").not.toBeNull();
+    const sep = m![1];
+    expect(
+      [...sep].map((c) => c.codePointAt(0)),
+      `separador inesperado: ${JSON.stringify(sep)}`,
+    ).toEqual([0x00a0]);
+  });
+
+  it("y no queda ningún espacio ordinario suelto en esa posición", () => {
+    // Control de que la aserción de arriba no se satisface con otra cosa: el
+    // literal de un espacio normal no debe aparecer como separador.
+    expect(fuente).not.toMatch(/words\.length - 1 \? " " : ""/);
+  });
+});
