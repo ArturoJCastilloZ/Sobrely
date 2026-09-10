@@ -84,16 +84,32 @@ describe("arte compuesto del catálogo", () => {
     }
   });
 
-  it("dejan libre el RECTÁNGULO del texto, no sólo su banda vertical", () => {
-    // Antes esta prueba miraba sólo la `y`, y era demasiado estricta: el arte de
-    // las FRANJAS LATERALES (x<63, x>357) recorre el alto entero a propósito —
-    // se ve siempre, porque el ancho nunca se recorta, y no cuesta contraste
-    // porque `verificar-contraste-arte.mts` muestrea x 63..357.
+  it("los ornamentos colocados por <use> no caen donde cae el texto", () => {
+    // ⚠️ ALCANCE REAL, MEDIDO el 2026-09-09 (3.ª sesión): esta aserción sólo
+    // inspecciona las piezas que colocan ornamentos con `<use transform=
+    // "translate(...)">`, que son **14 de las 46**. Para las otras 32 el filtro
+    // sale vacío y la prueba pasa SIN COMPROBAR NADA. Queda con el nombre
+    // acotado a lo que de verdad mira, en vez de sonar a contrato del catálogo.
     //
-    // Lo que de verdad hay que proteger es el rectángulo donde cae el texto:
-    // y 250..650 Y x 63..357 a la vez. Con la regla vieja, las piezas de boda
-    // habrían fallado siendo correctas.
-    for (const clave of DEL_PILOTO) {
+    // Y el rectángulo `y 250..650 × x 63..357` estaba SUPUESTO. Medido con
+    // `scripts/medir-cajas-de-texto.mts` sobre las 65 plantillas y las tres
+    // superficies, el texto cae en `y 53..900 × x 17..403`: la caja real es más
+    // ancha por los dos lados, así que las franjas «libres» son de 17 px y no
+    // de 63. Aquí NO se ensancha el rectángulo a la medida por una razón: la
+    // legibilidad la decide el gate que MIDE (`verificar-contraste-arte.mts`),
+    // y con la caja real ensanchada esta regla geométrica prohibiría arte
+    // TONAL en el centro que mide 7.6–10.7 de contraste y es correcto. Una
+    // regla demasiado estricta no es más segura: bloquea la solución buena.
+    const conUse = DEL_PILOTO.filter((clave) =>
+      /<use[^>]*transform="translate\(/.test(
+        readFileSync(join(RAIZ, "public", rutaArte(clave)), "utf8"),
+      ),
+    );
+    // Sin esta guarda, el día que nadie use `<use>` la prueba pasaría en vacío
+    // para las 46 y nadie se enteraría. Es el `it.each` sobre lista vacía.
+    expect(conUse.length, "ninguna pieza usa <use>: esta prueba no mide nada").toBeGreaterThan(0);
+
+    for (const clave of conUse) {
       const svg = readFileSync(join(RAIZ, "public", rutaArte(clave)), "utf8");
       const dentro = [
         ...svg.matchAll(/<use[^>]*transform="translate\(([-\d.]+) ([-\d.]+)\)/g),
