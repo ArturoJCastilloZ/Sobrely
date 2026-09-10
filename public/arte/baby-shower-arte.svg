@@ -1,10 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <!-- ARQUITECTURA DIAGONAL (2026-09-09, 3.a sesion). Escalada por decision
+       del dev tras el piloto de tres. Rompe el esquema de banda lateral
+       espejada que compartian las 46 piezas: aqui NO hay eje de simetria.
+       Medido antes: esta pieza tenia 0.00 % de tinta en el centro de la
+       franja que la pagina a 1200 px enseña (y 293..608).
+       Variante de esta pieza: descendente media, dos bandas desiguales.
+       La composicion es TONAL, no de trazo: el piso de luminancia para
+       pasar AA contra texto oscuro es ~0.28 y estos tintes estan muy por
+       encima, asi que cruzar el centro no cuesta contraste. -->
   <defs>
     <filter id="papel" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="71" result="n"/><feColorMatrix in="n" type="saturate" values="0"/></filter>
   </defs>
   <rect width="420" height="900" fill="#f0f9ff"/>
-  <rect width="420" height="900" filter="url(#papel)" opacity="0.05"/>
-  <g><circle cx="16" cy="184" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="211" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="238" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="265" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="292" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="319" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="346" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="373" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="400" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="427" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="454" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="481" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="508" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="535" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="562" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="589" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="616" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="643" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="670" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="697" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="724" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/></g><g transform="translate(420 0) scale(-1 1)"><circle cx="16" cy="184" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="211" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="238" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="265" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="292" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="319" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="346" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="373" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="400" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="427" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="454" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="481" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="508" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="535" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="562" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="589" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="616" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="643" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="16" cy="670" r="5.5" fill="#0ea5e9" fill-opacity="0.34"/><circle cx="27" cy="697" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/><circle cx="38" cy="724" r="3.4" fill="#0ea5e9" fill-opacity="0.22"/></g>
-  <g fill="#bae6fd"><circle cx="150" cy="196" r="5"/><circle cx="210" cy="188" r="7"/><circle cx="270" cy="196" r="5"/></g>
-  <line x1="120" y1="706" x2="300" y2="706" stroke="#0ea5e9" stroke-opacity="0.28" stroke-width="1.2"/>
+    <path d="M0 398 L420 848 L420 888 L0 438 Z" fill="#e9f5fd"/>
+  <path d="M0 250 L420 700 L420 790 L0 340 Z" fill="#d9edfb"/>
+  <line x1="0" y1="250" x2="420" y2="700" stroke="#0ea5e9" stroke-opacity="0.25" stroke-width="1.4"/>
+  <circle cx="108" cy="640" r="44" fill="none" stroke="#0ea5e9" stroke-opacity="0.2" stroke-width="1.4"/><circle cx="108" cy="640" r="3.2" fill="#0ea5e9" fill-opacity="0.3"/>
+  <rect width="420" height="900" filter="url(#papel)" opacity="0.03"/>
 </svg>

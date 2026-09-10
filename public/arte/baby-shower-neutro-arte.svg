@@ -1,38 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <!-- ARQUITECTURA DIAGONAL (2026-09-09, 3.a sesion). Escalada por decision
+       del dev tras el piloto de tres. Rompe el esquema de banda lateral
+       espejada que compartian las 46 piezas: aqui NO hay eje de simetria.
+       Medido antes: esta pieza tenia 0.00 % de tinta en el centro de la
+       franja que la pagina a 1200 px enseña (y 293..608).
+       Variante de esta pieza: ascendente pronunciada, dos bandas.
+       La composicion es TONAL, no de trazo: el piso de luminancia para
+       pasar AA contra texto oscuro es ~0.28 y estos tintes estan muy por
+       encima, asi que cruzar el centro no cuesta contraste. -->
   <defs>
     <filter id="papel" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="7" result="n"/><feColorMatrix in="n" type="saturate" values="0"/></filter>
-    <!-- DOS verdes: una rama de un tono solo se lee como silueta. El contraste
-         entre la hoja clara y la oscura da volumen sin dibujar sombras. -->
-    <g id="hj"><ellipse rx="10" ry="5.2"/></g>
-    <g id="ramita">
-      <path d="M0 0 C34 -9 74 -13 112 -7" fill="none" stroke="#5f7358" stroke-width="1.5" stroke-opacity="0.5"/>
-      <g fill="#7c9070" fill-opacity="0.5">
-        <use href="#hj" transform="translate(16 -4) rotate(-38)"/>
-        <use href="#hj" transform="translate(40 -9) rotate(-30) scale(1.05)"/>
-        <use href="#hj" transform="translate(66 -12) rotate(-22) scale(0.95)"/>
-        <use href="#hj" transform="translate(92 -11) rotate(-14) scale(0.8)"/>
-      </g>
-      <g fill="#cfd9c6" fill-opacity="1">
-        <use href="#hj" transform="translate(27 -1) rotate(34) scale(0.9)"/>
-        <use href="#hj" transform="translate(53 -6) rotate(28)"/>
-        <use href="#hj" transform="translate(79 -9) rotate(22) scale(0.85)"/>
-      </g>
-    </g>
   </defs>
   <rect width="420" height="900" fill="#fbfaf6"/>
-  <rect width="420" height="900" filter="url(#papel)" opacity="0.06"/>
-  <rect x="26" y="120" width="368" height="660" fill="none" stroke="#7c9070" stroke-opacity="0.35" stroke-width="0.9"/>
-  <!-- Guirnalda en arco superior e inferior, centro libre para el texto. -->
-  <use href="#ramita" transform="translate(46 198) scale(1.06)"/>
-  <use href="#ramita" transform="translate(374 198) scale(-1.06 1.06)"/>
-  <use href="#ramita" transform="translate(46 702) scale(1.06 -1.06)"/>
-  <use href="#ramita" transform="translate(374 702) scale(-1.06 -1.06)"/>
-  <!-- Bayas claras: el punto de luz que separa el follaje del crema. -->
-  <g fill="#e8ede2">
-    <circle cx="168" cy="178" r="3.4"/><circle cx="252" cy="178" r="3.4"/><circle cx="210" cy="172" r="2.6"/>
-    <circle cx="168" cy="722" r="3.4"/><circle cx="252" cy="722" r="3.4"/><circle cx="210" cy="728" r="2.6"/>
-  </g>
-  <g fill="#7c9070" fill-opacity="0.3">
-    <circle cx="210" cy="178" r="2.2"/><circle cx="192" cy="172" r="1.5"/><circle cx="228" cy="172" r="1.5"/>
-  </g>
+    <path d="M0 1046 L420 466 L420 520 L0 1100 Z" fill="#eef2e7"/>
+  <path d="M0 830 L420 250 L420 440 L0 1020 Z" fill="#e4ead9"/>
+  <line x1="0" y1="830" x2="420" y2="250" stroke="#7c9070" stroke-opacity="0.22" stroke-width="1.4"/>
+  <circle cx="88" cy="250" r="3.4" fill="#5f7358" fill-opacity="0.34"/><circle cx="110" cy="280" r="2.2" fill="#5f7358" fill-opacity="0.22"/>
+  <rect width="420" height="900" filter="url(#papel)" opacity="0.03"/>
 </svg>

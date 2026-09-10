@@ -1,16 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 900" preserveAspectRatio="xMidYMid slice" width="420" height="900">
+  <!-- ARQUITECTURA DIAGONAL (2026-09-09, 3.a sesion). Escalada por decision
+       del dev tras el piloto de tres. Rompe el esquema de banda lateral
+       espejada que compartian las 46 piezas: aqui NO hay eje de simetria.
+       Medido antes: esta pieza tenia 0.00 % de tinta en el centro de la
+       franja que la pagina a 1200 px enseña (y 293..608).
+       Variante de esta pieza: ascendente pronunciada, banda ancha.
+       La composicion es TONAL, no de trazo: el piso de luminancia para
+       pasar AA contra texto oscuro es ~0.28 y estos tintes estan muy por
+       encima, asi que cruzar el centro no cuesta contraste. -->
   <defs>
     <filter id="papel" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="37" result="n"/><feColorMatrix in="n" type="saturate" values="0"/></filter>
-    <g id="es"><path d="M0 -6 L1.5 -1.5 L6 0 L1.5 1.5 L0 6 L-1.5 1.5 L-6 0 L-1.5 -1.5 Z"/></g>
   </defs>
   <rect width="420" height="900" fill="#f5f3ff"/>
-  <rect width="420" height="900" filter="url(#papel)" opacity="0.05"/>
-  <g><ellipse cx="20" cy="200" rx="26" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.45" stroke-width="1.1" transform="rotate(-24 20 200)"/><circle cx="20" cy="200" r="2.6" fill="#312e81" fill-opacity="0.45"/><ellipse cx="20" cy="286" rx="21" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.37" stroke-width="1.1" transform="rotate(-15 20 286)"/><circle cx="20" cy="286" r="2.6" fill="#312e81" fill-opacity="0.45"/><ellipse cx="20" cy="372" rx="16" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.29000000000000004" stroke-width="1.1" transform="rotate(-6 20 372)"/><circle cx="20" cy="372" r="2.6" fill="#312e81" fill-opacity="0.45"/><ellipse cx="20" cy="458" rx="26" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.45" stroke-width="1.1" transform="rotate(3 20 458)"/><circle cx="20" cy="458" r="2.6" fill="#312e81" fill-opacity="0.45"/><ellipse cx="20" cy="544" rx="21" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.37" stroke-width="1.1" transform="rotate(12 20 544)"/><circle cx="20" cy="544" r="2.6" fill="#312e81" fill-opacity="0.45"/><ellipse cx="20" cy="630" rx="16" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.29000000000000004" stroke-width="1.1" transform="rotate(21 20 630)"/><circle cx="20" cy="630" r="2.6" fill="#312e81" fill-opacity="0.45"/></g><g transform="translate(420 0) scale(-1 1)"><ellipse cx="20" cy="200" rx="26" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.45" stroke-width="1.1" transform="rotate(-24 20 200)"/><circle cx="20" cy="200" r="2.6" fill="#312e81" fill-opacity="0.45"/><ellipse cx="20" cy="286" rx="21" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.37" stroke-width="1.1" transform="rotate(-15 20 286)"/><circle cx="20" cy="286" r="2.6" fill="#312e81" fill-opacity="0.45"/><ellipse cx="20" cy="372" rx="16" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.29000000000000004" stroke-width="1.1" transform="rotate(-6 20 372)"/><circle cx="20" cy="372" r="2.6" fill="#312e81" fill-opacity="0.45"/><ellipse cx="20" cy="458" rx="26" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.45" stroke-width="1.1" transform="rotate(3 20 458)"/><circle cx="20" cy="458" r="2.6" fill="#312e81" fill-opacity="0.45"/><ellipse cx="20" cy="544" rx="21" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.37" stroke-width="1.1" transform="rotate(12 20 544)"/><circle cx="20" cy="544" r="2.6" fill="#312e81" fill-opacity="0.45"/><ellipse cx="20" cy="630" rx="16" ry="9" fill="none" stroke="#6d28d9" stroke-opacity="0.29000000000000004" stroke-width="1.1" transform="rotate(21 20 630)"/><circle cx="20" cy="630" r="2.6" fill="#312e81" fill-opacity="0.45"/></g>
-  <use href="#es" transform="translate(120 196) scale(1.0)" fill="#6d28d9" fill-opacity="0.5"/>
-  <use href="#es" transform="translate(168 182) scale(0.7)" fill="#6d28d9" fill-opacity="0.4"/>
-  <use href="#es" transform="translate(252 188) scale(0.85)" fill="#6d28d9" fill-opacity="0.45"/>
-  <use href="#es" transform="translate(300 202) scale(0.6)" fill="#6d28d9" fill-opacity="0.35"/>
-  <use href="#es" transform="translate(150 714) scale(0.7)" fill="#6d28d9" fill-opacity="0.35"/>
-  <use href="#es" transform="translate(210 724) scale(0.9)" fill="#6d28d9" fill-opacity="0.4"/>
-  <use href="#es" transform="translate(276 712) scale(0.65)" fill="#6d28d9" fill-opacity="0.3"/>
+    <path d="M0 1098 L420 458 L420 528 L0 1168 Z" fill="#efecfd"/>
+  <path d="M0 880 L420 240 L420 440 L0 1080 Z" fill="#e6e1fb"/>
+  <line x1="0" y1="880" x2="420" y2="240" stroke="#6d28d9" stroke-opacity="0.22" stroke-width="1.4"/>
+  <circle cx="322" cy="596" r="44" fill="none" stroke="#6d28d9" stroke-opacity="0.2" stroke-width="1.4"/><circle cx="322" cy="596" r="3.2" fill="#6d28d9" fill-opacity="0.3"/>
+  <rect width="420" height="900" filter="url(#papel)" opacity="0.03"/>
 </svg>
