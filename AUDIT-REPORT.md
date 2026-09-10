@@ -483,9 +483,20 @@ referido.
 
 ## 8. No verificado, y por qué
 
-> ⚠️ **Esta sección quedó parcialmente superada el 2026-09-10.** El primer punto
-> ya se ejecutó; lo que sigue sin verificarse está actualizado abajo y, con más
-> detalle, al final de **E2E REAL EXECUTION**.
+> ⚠️ **Esta sección quedó parcialmente superada.** El 2026-09-10 se ejecutó el
+> E2E y luego se corrigieron los once puntos de la §7 — ver la **§6-bis**. Lo
+> que sigue SIN verificar, al cierre de esa campaña, es esto:
+>
+> | Sigue sin verificar | Por qué |
+> |---|---|
+> | **El punto 8 (dinero)** | Escrito en `388d2af` y **no probado por efecto**: no se tocó Mercado Pago ni se ejecutó ninguna operación financiera. La evidencia es de pruebas y mutación, no de un pago. Exige revisión humana. |
+> | **El muro de pago entero** | La cuenta del dev es admin y está *comped* (`invitation_owner_is_comped` → `true`, plan efectivo `premium`), así que `canPublishInvitation` nunca llegó a negar nada. Hace falta una cuenta NO admin. |
+> | **Admin en runtime** | Exige sesión de admin en el navegador. |
+> | **Multipestaña** | El conflicto de versión con dos editores abiertos sobre la misma invitación. |
+> | **El modo «lista de invitados»** | Todo el E2E se hizo en `Confirmación abierta`. El puenteo descrito en §5.8 no se volvió a probar. |
+> | **El editor en móvil** | Exige la sesión, que vive en la ventana del dev; su ancho mínimo real fue 530 px. |
+> | **El build de producción** | Todo se midió contra `next dev`. El 200 de `/editor/*` debe reconfirmarse con `next build && next start`. |
+> | **La `0056`** | Bloqueada por un duplicado real de cliente; decidir cuál de las dos filas se queda es del dev. |
 
 - ~~**Todo el E2E autenticado**~~ → **EJECUTADO** el 2026-09-10: dashboard,
   editor, publicación, RSVP real, doble submit, refresh y atrás/adelante. Lo que
