@@ -89,6 +89,9 @@ export async function createInvitation(
     .insert(modules);
 
   if (modErr) {
+    // filas-no-verificadas: es una REVERSION. Se lanza igual justo despues, asi
+    // que comprobar filas aqui solo podria enmascarar el error original, que es
+    // el que el usuario necesita ver.
     await supabase.from("invitations").delete().eq("id", invitation.id);
     throw new Error(
       `No se pudieron crear las secciones iniciales: ${modErr.message}`,
@@ -167,6 +170,8 @@ export async function createFromTemplate(templateId: string) {
       // No hay transaccion entre las dos llamadas, asi que la invitacion a
       // medias se deshace a mano. Si el borrado tambien falla se sigue
       // lanzando: mejor un error visible que un editor vacio en silencio.
+      // filas-no-verificadas: es una REVERSION, mismo motivo que en
+      // `createInvitation`.
       await supabase.from("invitations").delete().eq("id", invitation.id);
       throw new Error(
         `No se pudieron crear las secciones de la plantilla: ${modErr.message}`,
@@ -204,12 +209,19 @@ export async function setPublished(
 
   // Despublicar: solo apaga la bandera.
   if (!published) {
-    const { error } = await supabase
+    const { data: filas, error } = await supabase
       .from("invitations")
       .update({ is_published: false, status: "draft" })
       .eq("id", invitationId)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .select("id");
     if (error) return { ok: false, error: error.message };
+    // 0 filas = no es tuya o ya no existe. Antes devolvia
+    // `{ ok: true, is_published: false }` y el editor se pintaba como
+    // despublicado sin que la base hubiera cambiado.
+    if (!filas || filas.length === 0) {
+      return { ok: false, error: "No tienes acceso a esta invitación." };
+    }
     revalidatePath(`/editor/${invitationId}`);
     revalidatePath("/dashboard");
     return { ok: true, is_published: false };
@@ -257,8 +269,22 @@ export async function setPublished(
       .select("id")
       .eq("code", "free")
       .maybeSingle();
-    if (planRow) {
-      await admin.from("invitation_entitlements").upsert(
+    // FAIL-CLOSED, y esto es el origen del defecto U-2. Antes: si no habia
+    // `planRow` el bloque se saltaba en silencio, y si el upsert fallaba
+    // tampoco se miraba — pero la invitacion se publicaba igual dos lineas mas
+    // abajo. Resultado: `is_published = true` para el anfitrion y 404 para sus
+    // invitados, porque `get_public_invitation` exige el entitlement vigente
+    // (0012:61). Las dos verdades no se reconciliaban y nadie avisaba a nadie.
+    // Mejor un error visible al publicar que un enlace repartido que no abre.
+    if (!planRow) {
+      return {
+        ok: false,
+        error: "No se pudo preparar la publicación. Inténtalo de nuevo.",
+      };
+    }
+    const { data: entFilas, error: entErr } = await admin
+      .from("invitation_entitlements")
+      .upsert(
         {
           invitation_id: invitationId,
           plan_id: planRow.id,
@@ -268,16 +294,26 @@ export async function setPublished(
           guest_limit: free.maxGuests,
         },
         { onConflict: "invitation_id" },
-      );
+      )
+      .select("invitation_id");
+    if (entErr || !entFilas || entFilas.length === 0) {
+      return {
+        ok: false,
+        error: "No se pudo preparar la publicación. Inténtalo de nuevo.",
+      };
     }
   }
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitations")
     .update({ is_published: true, status: "published" })
     .eq("id", invitationId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "No tienes acceso a esta invitación." };
+  }
 
   revalidatePath(`/editor/${invitationId}`);
   revalidatePath("/dashboard");
@@ -292,13 +328,20 @@ export async function deleteInvitation(invitationId: string) {
   if (!user) redirect("/login");
 
   // RLS also enforces ownership; the explicit filter keeps intent clear.
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitations")
     .delete()
     .eq("id", invitationId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) throw new Error(error.message);
+  // Se LANZA en vez de devolver: la tarjeta ya captura y muestra el mensaje,
+  // y devolver en silencio es justo lo que hacia que "Invitación eliminada."
+  // saliera sobre un borrado de 0 filas.
+  if (!filas || filas.length === 0) {
+    throw new Error("Esa invitación ya no existe.");
+  }
 
   revalidatePath("/dashboard");
 }
@@ -420,6 +463,10 @@ export async function saveEditor(
   if (toDelete.length > 0) {
     const { error: delErr } = await supabase
       .from("invitation_modules")
+      // filas-no-verificadas: `toDelete` se acaba de derivar de un `select` de
+      // esta misma tabla, asi que 0 filas solo puede pasar si otra pestana
+      // borro el modulo en el hueco entre las dos sentencias — y eso lo caza
+      // antes el bloqueo optimista de la version.
       .delete()
       .in("id", toDelete);
     if (delErr) return { ok: false, error: delErr.message };
@@ -430,6 +477,8 @@ export async function saveEditor(
     if (existingIds.has(mod.id)) {
       const { error } = await supabase
         .from("invitation_modules")
+        // filas-no-verificadas: mismo motivo que el delete de arriba; el id
+        // viene de `existingIds`, leido en esta misma peticion.
         .update({
           module_type: mod.module_type,
           sort_order: mod.sort_order,

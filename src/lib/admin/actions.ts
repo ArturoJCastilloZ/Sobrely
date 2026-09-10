@@ -40,13 +40,20 @@ export async function updateServiceRequestStatus(
   }
 
   const admin = createAdminClient();
-  const { error } = await admin
+  const { data: filas, error } = await admin
     .from("service_requests")
     .update({ status: status as ServiceStatus })
-    .eq("id", id);
+    .eq("id", id)
+    // `.select()` es lo que hace que PostgREST devuelva las filas AFECTADAS.
+    // Sin el, un `id` que ya no existe da `error: null` y esta accion
+    // respondia "actualizado" sin haber tocado nada.
+    .select("id");
   if (error) {
     console.error("[admin] update service_request:", error.message);
     return { ok: false, error: "No se pudo actualizar la solicitud." };
+  }
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Esa solicitud ya no existe." };
   }
 
   revalidatePath("/admin");
@@ -77,11 +84,17 @@ export async function grantAdmin(email: string): Promise<AdminActionResult> {
   }
 
   const admin = createAdminClient();
-  const { error } = await admin
+  const { data: filas, error } = await admin
     .from("admin_users")
-    .upsert({ user_id: uid }, { onConflict: "user_id" });
+    .upsert({ user_id: uid }, { onConflict: "user_id" })
+    .select("user_id");
   if (error) {
     console.error("[admin] grant admin:", error.message);
+    return { ok: false, error: "No se pudo otorgar admin." };
+  }
+  if (!filas || filas.length === 0) {
+    // Un upsert que no devuelve fila no es normal: mejor decirlo que dar por
+    // hecho que hay un admin nuevo cuando quiza no lo hay.
     return { ok: false, error: "No se pudo otorgar admin." };
   }
 
@@ -98,13 +111,17 @@ export async function revokeAdmin(userId: string): Promise<AdminActionResult> {
   }
 
   const admin = createAdminClient();
-  const { error } = await admin
+  const { data: filas, error } = await admin
     .from("admin_users")
     .delete()
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .select("user_id");
   if (error) {
     console.error("[admin] revoke admin:", error.message);
     return { ok: false, error: "No se pudo revocar admin." };
+  }
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Ese usuario ya no tenía acceso admin." };
   }
 
   revalidatePath("/admin");

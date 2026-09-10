@@ -751,9 +751,12 @@ export function MapPreview({
 export function GalleryPreview({
   config,
   animate = false,
+  editorHint = false,
 }: {
   config: GalleryConfig;
   animate?: boolean;
+  /** Ver `MapPreview`: los avisos al anfitrión son solo del editor. */
+  editorHint?: boolean;
 }) {
   return (
     <Section
@@ -770,7 +773,9 @@ export function GalleryPreview({
         {config.title || "Galería"}
       </h3>
       {config.images.length === 0 ? (
-        <p className="text-sm opacity-70">Agrega fotos a tu galería.</p>
+        editorHint ? (
+          <p className="text-sm opacity-70">Agrega fotos a tu galería.</p>
+        ) : null
       ) : (
         <PhotoGallery
           images={config.images}
@@ -810,7 +815,14 @@ export function toEmbedUrl(url: string): string {
   return "";
 }
 
-export function VideoPreview({ config }: { config: VideoConfig }) {
+export function VideoPreview({
+  config,
+  editorHint = false,
+}: {
+  config: VideoConfig;
+  /** Ver `MapPreview`: los avisos al anfitrión son solo del editor. */
+  editorHint?: boolean;
+}) {
   const embed = toEmbedUrl(config.url);
   return (
     <Section
@@ -836,9 +848,9 @@ export function VideoPreview({ config }: { config: VideoConfig }) {
             allowFullScreen
           />
         </div>
-      ) : (
+      ) : editorHint ? (
         <p className="text-sm opacity-70">Pega un enlace de YouTube o Vimeo.</p>
-      )}
+      ) : null}
     </Section>
   );
 }
@@ -848,9 +860,12 @@ export function VideoPreview({ config }: { config: VideoConfig }) {
 export function ItineraryPreview({
   config,
   animate = false,
+  editorHint = false,
 }: {
   config: ItineraryConfig;
   animate?: boolean;
+  /** Ver `MapPreview`: los avisos al anfitrión son solo del editor. */
+  editorHint?: boolean;
 }) {
   const items = config.items.filter((i) => i.time || i.label);
   return (
@@ -868,7 +883,9 @@ export function ItineraryPreview({
         {config.title || "Itinerario"}
       </h3>
       {items.length === 0 ? (
-        <p className="text-sm opacity-70">Agrega los horarios del evento.</p>
+        editorHint ? (
+          <p className="text-sm opacity-70">Agrega los horarios del evento.</p>
+        ) : null
       ) : (
         <StaggerGroup
           enabled={animate}
@@ -948,7 +965,14 @@ export function SignaturesPreview({ config }: { config: SignaturesConfig }) {
 
 // ---- Dress code -----------------------------------------------------------
 
-export function DresscodePreview({ config }: { config: DresscodeConfig }) {
+export function DresscodePreview({
+  config,
+  editorHint = false,
+}: {
+  config: DresscodeConfig;
+  /** Ver `MapPreview`: los avisos al anfitrión son solo del editor. */
+  editorHint?: boolean;
+}) {
   const level = config.level;
   return (
     <Section
@@ -981,7 +1005,7 @@ export function DresscodePreview({ config }: { config: DresscodeConfig }) {
         />
       ) : level !== "custom" ? (
         <DresscodeFigures level={level} />
-      ) : config.description ? null : (
+      ) : config.description || !editorHint ? null : (
         <p className="text-sm opacity-70">Indica el código de vestimenta.</p>
       )}
       {config.description && (
@@ -1048,7 +1072,14 @@ export function GiftsPreview({
 
 // ---- Music ----------------------------------------------------------------
 
-export function MusicPreview({ config }: { config: MusicConfig }) {
+export function MusicPreview({
+  config,
+  editorHint = false,
+}: {
+  config: MusicConfig;
+  /** Ver `MapPreview`: los avisos al anfitrión son solo del editor. */
+  editorHint?: boolean;
+}) {
   return (
     <Section
       align={config.align}
@@ -1072,11 +1103,11 @@ export function MusicPreview({ config }: { config: MusicConfig }) {
         >
           ▶ Escuchar
         </a>
-      ) : (
+      ) : editorHint ? (
         <p className="text-sm opacity-70">
           Pega un enlace de Spotify o YouTube.
         </p>
-      )}
+      ) : null}
     </Section>
   );
 }

@@ -112,22 +112,30 @@ export const MODULE_REGISTRY: Record<ModuleType, ModuleEntry> = {
   gallery: {
     Icon: ImagesIcon,
     Editor: ({ config, onChange, ctx }) => <GalleryEditor config={config} onChange={onChange} ctx={ctx} />,
-    Preview: ({ config, animate }) => <GalleryPreview config={config as never} animate={animate} />,
+    Preview: ({ config, animate, editorHint }) => (
+      <GalleryPreview config={config as never} animate={animate} editorHint={editorHint} />
+    ),
   },
   video: {
     Icon: FilmIcon,
     Editor: ({ config, onChange }) => <VideoEditor config={config} onChange={onChange} />,
-    Preview: ({ config }) => <VideoPreview config={config as never} />,
+    Preview: ({ config, editorHint }) => (
+      <VideoPreview config={config as never} editorHint={editorHint} />
+    ),
   },
   itinerary: {
     Icon: CalendarClockIcon,
     Editor: ({ config, onChange }) => <ItineraryEditor config={config} onChange={onChange} />,
-    Preview: ({ config, animate }) => <ItineraryPreview config={config as never} animate={animate} />,
+    Preview: ({ config, animate, editorHint }) => (
+      <ItineraryPreview config={config as never} animate={animate} editorHint={editorHint} />
+    ),
   },
   dresscode: {
     Icon: ShirtIcon,
     Editor: ({ config, onChange, ctx }) => <DresscodeEditor config={config} onChange={onChange} ctx={ctx} />,
-    Preview: ({ config }) => <DresscodePreview config={config as never} />,
+    Preview: ({ config, editorHint }) => (
+      <DresscodePreview config={config as never} editorHint={editorHint} />
+    ),
   },
   gifts: {
     Icon: GiftIcon,
@@ -137,7 +145,9 @@ export const MODULE_REGISTRY: Record<ModuleType, ModuleEntry> = {
   music: {
     Icon: MusicIcon,
     Editor: ({ config, onChange }) => <MusicEditor config={config} onChange={onChange} />,
-    Preview: ({ config }) => <MusicPreview config={config as never} />,
+    Preview: ({ config, editorHint }) => (
+      <MusicPreview config={config as never} editorHint={editorHint} />
+    ),
   },
   rsvp: {
     Icon: CheckCircle2Icon,

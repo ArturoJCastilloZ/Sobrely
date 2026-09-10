@@ -91,7 +91,7 @@ export async function updateRsvp(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sesión expirada." };
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("rsvp_responses")
     .update({
       guest_name: v.guestName,
@@ -100,9 +100,13 @@ export async function updateRsvp(
       guest_count: v.guestCount,
       message: v.message || null,
     })
-    .eq("id", v.id);
+    .eq("id", v.id)
+    .select("id");
 
   if (error) return { ok: false, error: error.message };
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Esa respuesta ya no existe." };
+  }
 
   return { ok: true };
 }
@@ -115,8 +119,18 @@ export async function deleteRsvp(id: string): Promise<RsvpActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sesión expirada." };
 
-  const { error } = await supabase.from("rsvp_responses").delete().eq("id", id);
+  // `.select()` devuelve las filas AFECTADAS. Sin el, borrar una respuesta que
+  // ya no existe —o de otra invitacion, que RLS filtra— daba `error: null` y la
+  // tabla decia "eliminada" sin haber borrado nada.
+  const { data: filas, error } = await supabase
+    .from("rsvp_responses")
+    .delete()
+    .eq("id", id)
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Esa respuesta ya no existe." };
+  }
 
   return { ok: true };
 }
