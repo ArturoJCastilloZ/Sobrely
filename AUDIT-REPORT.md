@@ -386,6 +386,62 @@ referido.
 
 ---
 
+## 6-bis. ESTADO DE LAS CORRECCIONES — 2026-09-10
+
+> Los once puntos del orden de abajo, atendidos, en `skarlette/rediseno`.
+> `main` intacto en `91b6258`. `tsc`, `eslint` y **939** pruebas en verde.
+> Cada bloque cerrado por EFECTO OBSERVADO salvo donde se dice lo contrario.
+
+| §7 | Qué | Commit | Estado |
+|---|---|---|---|
+| 1 | Fuga de `invitations` / `invitation_modules` | `c47233f` | ✅ migración `0053` **aplicada**: de 7 y 46 filas legibles por `anon` a **0** |
+| 2 | El autoguardado dejaba de guardar para siempre | `e63cb20` `ae2be99` | ✅ |
+| 3 | U-2 · «Esta invitación ha caducado» + el panel dice la verdad | `1ef7915` | ✅ `0054` aplicada |
+| 4 | RSVP idempotente por correo | `1ef7915` | ✅ `0055` aplicada · `0056` bloqueada |
+| 5 | U-3 · el itinerario invisible | `2b88960` | ✅ |
+| 6 | El título perdía todas las palabras menos la primera | `c5f0b71` `4233d7d` | ✅ |
+| 7 | «`ok:true` con 0 filas» — 8 sitios + 1 nuevo | `c5f0b71` | ✅ |
+| 8 | `fulfillment.ts` — dinero | `388d2af` | ⚠️ **pendiente de revisión humana** |
+| 9 | Copy de editor en la pública · `meta robots` · username | `c47233f` `c5f0b71` | ✅ (5 sitios, no 3) |
+| 10 | Imágenes huérfanas al borrar | `4233d7d` | ✅ |
+| 11 | Títulos de `/dashboard/billing` y `/referrals` | `c47233f` | ✅ |
+
+### Tres cosas de este informe que resultaron FALSAS al corregirlas
+
+1. **El punto 1 del orden de abajo rompía producción.** «Retirar esas dos
+   policies, porque toda la lectura pública ya pasa por las RPC» es cierto del
+   código de la aplicación y falso de la base: `rsvp_insert_published_public`
+   (`0001:328`) y `signatures_public_select` (`0024:86`) hacen
+   `exists (select 1 from invitations …)`, y en PostgreSQL eso se evalúa con la
+   RLS del invocador. Retirarlas a secas apaga el **RSVP público** y vacía el
+   **muro de firmas**, las dos cosas en silencio. La `0053` mueve la
+   comprobación a funciones `security definer` y sólo después retira las que
+   filtran.
+
+2. **U-3 no era el umbral del observador anidado.** Se bajó a 0, se midió, y no
+   movió ni un item: con área de intersección cero no hay umbral que valga. La
+   causa es que el descendiente no puede ver nada mientras el ancestro recorta,
+   y cuando la cortina abre el scroll ya pasó de largo. Y **«no se recupera sin
+   recargar» es falso**: volver a poner el itinerario en pantalla lo revela.
+   Alcance real: `0 de 65` plantillas y `2 de 18` invitaciones.
+
+3. **U-2 no era un cliente roto.** Las dos invitaciones caídas tienen la demo
+   **Free** vencida el 2026-08-26 y sus dueños **no tienen ninguna orden**:
+   nunca pagaron. El muro de pago funcionaba; lo roto era que nadie se lo dijo a
+   nadie.
+
+### Y dos defectos que las correcciones destaparon, y no estaban aquí
+
+- **El origen de U-2**: el upsert del entitlement demo en `setPublished` no
+  miraba ni el error ni las filas, y la invitación se publicaba igual dos líneas
+  más abajo. Eso produce exactamente `is_published = true` + 404. Ya es
+  fail-closed.
+- **El duplicado de RSVP está EN PRODUCCIÓN**, no sólo en el E2E: dos respuestas
+  de la misma persona, 35 segundos aparte, con 13 y 1 pases, en la invitación de
+  un cliente con el evento a 16 días.
+
+---
+
 ## 7. Orden de corrección propuesto
 
 > **Reordenado el 2026-09-10 tras el E2E.** Lo que cambia: los dos defectos del
