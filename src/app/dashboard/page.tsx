@@ -35,6 +35,32 @@ export default async function DashboardPage() {
   const name = profile?.display_name || profile?.username || user!.email;
   const list = (invitations ?? []) as InvitationSummary[];
 
+  // VIGENCIA: la fuente de verdad es la RPC `is_entitlement_active` (0013), la
+  // MISMA que gatea `get_public_invitation`. No se relee
+  // `invitation_entitlements` a mano: ese duplicado ya se pagó una vez (ver el
+  // comentario de `isOwnerComped` en src/lib/billing/entitlements.ts) y además
+  // se equivocaría con las cuentas comped, cuyo entitlement puede no existir.
+  //
+  // Es N+1 y no hay forma de evitarlo sin SQL nuevo: la función recibe UN uuid
+  // y no existe variante por lote (ni vista) que se pueda invocar desde
+  // PostgREST. Se acota a las PUBLICADAS —un borrador es «Borrador» sin
+  // preguntar— y se disparan en paralelo, así que es 1 round-trip de latencia,
+  // no N. Medido en producción el 2026-09-09: 18 invitaciones, 7 publicadas
+  // repartidas entre 4 dueños, y el que más tiene son 4 → 4 llamadas en el
+  // peor panel de hoy.
+  const publicadas = list.filter((inv) => inv.is_published);
+  const vigencias = await Promise.all(
+    publicadas.map(async (inv) => {
+      const { data, error } = await supabase.rpc("is_entitlement_active", {
+        p_invitation_id: inv.id,
+      });
+      // `null` = no se pudo resolver. NO se degrada a «Caducada» por un error
+      // de red: ver `estadoDeInvitacion`.
+      return [inv.id, error ? null : (data as boolean | null)] as const;
+    }),
+  );
+  const vigenciaPorId = new Map(vigencias);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -74,7 +100,12 @@ export default async function DashboardPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((inv) => (
-            <InvitationCard key={inv.id} invitation={inv} username={username} />
+            <InvitationCard
+              key={inv.id}
+              invitation={inv}
+              username={username}
+              entitlementActive={vigenciaPorId.get(inv.id) ?? null}
+            />
           ))}
         </div>
       )}

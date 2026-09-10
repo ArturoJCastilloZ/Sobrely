@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { PublicInvitation } from "@/lib/invitations/public-types";
 import { PublicInvitationView } from "@/components/public/public-invitation";
+import { InvitacionCaducada } from "@/components/public/invitacion-caducada";
 import { brandingForPlanCode } from "@/lib/billing/branding";
 
 type Params = { username: string; invitationSlug: string };
@@ -21,6 +22,30 @@ const loadInvitation = cache(
   },
 );
 
+/**
+ * ¿Existe la invitación y sólo le caducó el acceso, o de verdad no existe?
+ *
+ * Hace falta porque `get_public_invitation` devuelve `null` en los DOS casos, y
+ * el invitado se merece mensajes distintos: uno le dice qué hacer y el otro le
+ * dice que se equivocó cuando no se equivocó.
+ *
+ * DEGRADA A LA CONDUCTA DE HOY a propósito: la función vive en la migración
+ * `0054`, que el dev aplica a mano. Mientras no esté aplicada la RPC no existe,
+ * la llamada da error y esto devuelve `"inexistente"` — o sea el 404 de
+ * siempre. Nada se rompe por desplegar el código antes que la migración.
+ */
+const loadEstado = cache(
+  async (username: string, slug: string): Promise<string> => {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc(
+      "estado_publico_de_invitacion",
+      { p_username: username, p_slug: slug },
+    );
+    if (error || typeof data !== "string") return "inexistente";
+    return data;
+  },
+);
+
 export async function generateMetadata({
   params,
 }: {
@@ -30,7 +55,16 @@ export async function generateMetadata({
   const invitation = await loadInvitation(username, invitationSlug);
 
   if (!invitation) {
-    return { title: "Invitación no encontrada" };
+    // El titulo de la pestaña también tiene que decir la verdad: el invitado
+    // que guarda el enlace no ve «no encontrada» sobre algo que sí existe.
+    const estado = await loadEstado(username, invitationSlug);
+    return {
+      title:
+        estado === "caducada"
+          ? "Invitación caducada"
+          : "Invitación no encontrada",
+      robots: { index: false, follow: false },
+    };
   }
 
   const title = invitation.title || "Invitación";
@@ -69,7 +103,13 @@ export default async function PublicInvitationPage({
   const { username, invitationSlug } = await params;
   const invitation = await loadInvitation(username, invitationSlug);
 
-  if (!invitation) notFound();
+  if (!invitation) {
+    // Sólo se pregunta por el estado cuando ya sabemos que no hay invitación
+    // que servir: en el camino feliz no se añade ni una consulta.
+    const estado = await loadEstado(username, invitationSlug);
+    if (estado === "caducada") return <InvitacionCaducada />;
+    notFound();
+  }
 
   return <PublicInvitationView invitation={invitation} />;
 }

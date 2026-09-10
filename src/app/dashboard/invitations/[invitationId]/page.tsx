@@ -7,6 +7,11 @@ import { rsvpConfigSchema } from "@/lib/modules/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RsvpTable, type RsvpRow } from "@/components/dashboard/rsvp-table";
+import {
+  AVISO_DE_CADUCADA,
+  ETIQUETA_DE_ESTADO,
+  estadoDeInvitacion,
+} from "@/components/dashboard/invitation-card";
 import { GuestManager } from "@/components/dashboard/guest-manager";
 import { FunnelKpis } from "@/components/dashboard/funnel-kpis";
 import { ResponseBreakdown } from "@/components/dashboard/response-breakdown";
@@ -76,8 +81,24 @@ export default async function InvitationDashboardPage({
   // Nombre con el que se firma la invitación de WhatsApp ("Ana te invita a…").
   const hostName = (profile?.display_name as string | null) ?? null;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+
+  // Vigencia por la MISMA RPC que gatea `get_public_invitation` (0013, comp de
+  // admin incluido). Aquí es UNA invitación: una sola llamada.
+  const { data: vigente, error: errorVigencia } = invitation.is_published
+    ? await supabase.rpc("is_entitlement_active", {
+        p_invitation_id: invitation.id,
+      })
+    : { data: null, error: null };
+  const estado = estadoDeInvitacion({
+    isPublished: invitation.is_published,
+    entitlementActive: errorVigencia ? null : (vigente as boolean | null),
+  });
+  const caducada = estado === "caducada";
+
+  // Caducada, el enlace publico sirve la pantalla «Esta invitacion ha
+  // caducado»: no se ofrece como si mostrara la invitacion.
   const publicUrl =
-    invitation.is_published && username
+    estado === "publicada" && username
       ? `/${username}/${invitation.slug}`
       : null;
 
@@ -198,17 +219,25 @@ export default async function InvitationDashboardPage({
               {ratePill}
             </Badge>
           ) : null}
-          {invitation.is_published ? (
-            <Badge variant="outline">Publicada</Badge>
-          ) : (
-            <Badge variant="outline">Borrador</Badge>
-          )}
+          <Badge variant={caducada ? "destructive" : "outline"}>
+            {ETIQUETA_DE_ESTADO[estado]}
+          </Badge>
           <LiveIndicator
             invitationId={invitation.id}
             mode={isGuestList ? "guest_list" : "open"}
           />
         </div>
       </div>
+
+      {caducada && (
+        <div
+          role="status"
+          className="rounded-lg border border-destructive/25 bg-destructive/10 p-4 text-sm text-destructive"
+        >
+          <p className="font-medium">Esta invitación caducó</p>
+          <p className="mt-1">{AVISO_DE_CADUCADA}</p>
+        </div>
+      )}
 
       <QuickActions
         funnel={funnel}
