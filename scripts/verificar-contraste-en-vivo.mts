@@ -124,6 +124,9 @@ async function plantillas(): Promise<Plantilla[]> {
   return await r.json();
 }
 
+/** El color con el que el producto vela un telón: `theme.colors.background`. */
+type Velo = [number, number, number];
+
 type Caja = {
   txt: string;
   color: [number, number, number];
@@ -139,6 +142,14 @@ type Caja = {
 type Peor = {
   txt: string;
   ratio: number;
+  /**
+   * El velo MÍNIMO que haría pasar a TODOS los glifos de este texto, o null si
+   * ni al 95 % alcanza. Es el mecanismo que el producto ya tiene
+   * (`backgroundImage.overlay`), pero medido sobre los píxeles de GLIFO en vez
+   * de sobre la envolvente de la caja — y eso es lo que lo vuelve accionable:
+   * la envolvente pedía 0.5 donde los glifos piden mucho menos.
+   */
+  veloMin: number | null;
   umbral: number;
   grande: boolean;
   glifos: number;
@@ -195,9 +206,10 @@ async function medirGlifos(
   sinTexto: string,
   lista: Caja[],
   escala: number,
+  velo: Velo,
 ): Promise<{ peores: Peor[]; glifosTotales: number }> {
   return await page.evaluate(
-    async ({ conTexto, sinTexto, lista, escala }) => {
+    async ({ conTexto, sinTexto, lista, escala, velo }) => {
       const carga = (uri: string) =>
         new Promise<HTMLImageElement>((res, rej) => {
           const im = new Image();
@@ -230,6 +242,9 @@ async function medirGlifos(
         return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
       };
 
+      const componer = (px: number[], v: number[], a: number) =>
+        [0, 1, 2].map((i) => a * v[i] + (1 - a) * px[i]);
+
       const peores: Peor[] = [];
       let glifosTotales = 0;
       for (const c of lista) {
@@ -254,10 +269,34 @@ async function medirGlifos(
           }
         }
         glifosTotales += glifos;
+        // El velo minimo, y solo si hace falta: se recorren los MISMOS pixeles
+        // de glifo componiendo el velo encima, con el paso de 0.05 que usa el
+        // resto del proyecto.
+        let veloMin: number | null = null;
+        if (glifos > 0 && bajo > 0) {
+          for (let al = 0.05; al <= 0.95; al += 0.05) {
+            let ok = true;
+            for (let y = Math.round(c.y0 * escala); y < Math.round(c.y1 * escala) && ok; y++) {
+              for (let x = Math.round(c.x0 * escala); x < Math.round(c.x1 * escala); x++) {
+                const i = (y * ca.width + x) * 4;
+                if (i + 2 >= da.length) continue;
+                const d =
+                  Math.abs(da[i] - db[i]) +
+                  Math.abs(da[i + 1] - db[i + 1]) +
+                  Math.abs(da[i + 2] - db[i + 2]);
+                if (d <= 30) continue;
+                const fondo = componer([db[i], db[i + 1], db[i + 2]], velo, al);
+                if (contra(c.color, fondo) < c.umbral) { ok = false; break; }
+              }
+            }
+            if (ok) { veloMin = Math.round(al * 100) / 100; break; }
+          }
+        }
         if (glifos > 0) {
           peores.push({
             txt: c.txt,
             ratio: Math.round(peor * 100) / 100,
+            veloMin,
             umbral: c.umbral,
             grande: c.grande,
             glifos,
@@ -268,7 +307,7 @@ async function medirGlifos(
       }
       return { peores, glifosTotales };
     },
-    { conTexto, sinTexto, lista, escala },
+    { conTexto, sinTexto, lista, escala, velo },
   );
 }
 
@@ -289,6 +328,7 @@ async function main() {
     superficie: string;
     txt: string;
     ratio: number;
+    veloMin: number | null;
     umbral: number;
     grande: boolean;
     fraccion: number;
@@ -325,6 +365,23 @@ async function main() {
           });
           await page.evaluate(() => document.fonts.ready);
 
+          // El velo que el producto aplica sobre un telón es
+          // `theme.colors.background`. Se lee del render para no reconstruirlo.
+          const velo = await page.evaluate(() => {
+            const el = Array.from(document.querySelectorAll<HTMLElement>("*")).find(
+              (e) => getComputedStyle(e).getPropertyValue("--inv-bg").trim() !== "",
+            );
+            const v = el ? getComputedStyle(el).getPropertyValue("--inv-bg").trim() : "";
+            const c = document.createElement("canvas").getContext("2d")!;
+            c.fillStyle = v || "#ffffff";
+            const m = c.fillStyle.match(/^#([0-9a-f]{6})$/i);
+            if (!m) return [255, 255, 255] as [number, number, number];
+            const h = m[1];
+            return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) as [
+              number, number, number,
+            ];
+          });
+
           const lista = await cajas(page, sup.alto);
           if (lista.length === 0) throw new Error("0 cajas de texto — sonda inválida");
 
@@ -344,6 +401,7 @@ async function main() {
             "data:image/png;base64," + sinTexto,
             lista,
             1,
+            velo,
           );
           if (glifosTotales === 0) {
             throw new Error("el diff no encontró NINGÚN glifo — sonda inválida");
@@ -357,6 +415,7 @@ async function main() {
                 superficie: sup.nombre,
                 txt: p.txt,
                 ratio: p.ratio,
+                veloMin: p.veloMin,
                 umbral: p.umbral,
                 grande: p.grande,
                 fraccion: p.fraccion,
@@ -396,10 +455,32 @@ async function main() {
           `${Math.round(m.fraccion * 100)} % del glifo · «${m.txt}»`,
       );
     }
+    // El velo MINIMO por plantilla: el mayor de los que piden sus textos, que
+    // es el unico que los hace pasar a todos. Es lo accionable del informe.
+    const porPlantilla = new Map<string, number | null>();
+    for (const m of malos) {
+      const y = porPlantilla.get(m.slug);
+      if (m.veloMin === null) porPlantilla.set(m.slug, null);
+      else if (y !== null) porPlantilla.set(m.slug, Math.max(y ?? 0, m.veloMin));
+    }
+    console.log(`\nVELO MÍNIMO por plantilla (medido sobre los GLIFOS):`);
+    const orden = [...porPlantilla.entries()].sort((a, b) => (b[1] ?? 9) - (a[1] ?? 9));
+    for (const [slug, v] of orden) {
+      console.log(`  ${slug.padEnd(30)} ${v === null ? "NI AL 95 % — el velo no lo arregla" : v}`);
+    }
+    const conNumero = orden.filter(([, v]) => v !== null).map(([, v]) => v as number);
+    if (conNumero.length) {
+      console.log(
+        `\n  ${conNumero.length} plantilla(s) se arreglan con velo · ` +
+          `mediana ${conNumero.slice().sort((a, b) => a - b)[Math.floor(conNumero.length / 2)]} · ` +
+          `máximo ${Math.max(...conNumero)}`,
+      );
+    }
+    const imposibles = orden.filter(([, v]) => v === null).length;
+    if (imposibles) console.log(`  ${imposibles} NO se arreglan con velo.`);
     console.log(
-      "\nAntes de tocar una paleta o subir un velo: MIRAR la plantilla a 3x en\n" +
-        "esa superficie. Un ratio bajo en pocos píxeles puede ser el borde de un\n" +
-        "glifo sobre un detalle del arte y leerse perfectamente.",
+      "\nAntes de subir un velo: MIRAR la plantilla a 3x. El velo OSCURECE el\n" +
+        "arte, así que un número pequeño es aceptable y uno grande borra la pieza.",
     );
   }
 

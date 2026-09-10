@@ -509,7 +509,33 @@ export function HeroPreview({
               className="h-px w-8 @2xl/inv:w-12 @4xl/inv:w-16"
               style={{ backgroundColor: "currentColor", opacity: 0.5 }}
             />
-            <span className="text-xs font-medium uppercase tracking-[0.3em] @2xl/inv:text-sm @4xl/inv:text-base">
+            <span
+              className="rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-[0.3em] @2xl/inv:px-3 @2xl/inv:text-sm @4xl/inv:text-base"
+              style={
+                // La PLACA del epigrafe, y se auto-oculta.
+                //
+                // El epigrafe es texto de 12px con `tracking-[0.3em]` y cae
+                // sobre el TELON, no sobre un color plano. Medido con
+                // `scripts/verificar-contraste-en-vivo.mts` sobre los pixeles
+                // de glifo: 128 casos bajo AA, TODOS este texto, y el peor en
+                // 1.26 (`boda-elegante`).
+                //
+                // El velo NO lo arregla, y esta medido antes de descartarlo:
+                // pedia una mediana de 0.85 —que borra el arte— y en 30
+                // plantillas no llegaba ni al 95 %. La razon es que el velo
+                // converge al color de fondo, que es justo contra el que ya se
+                // derivo el acento: pelea la misma batalla desde el lado malo.
+                //
+                // La placa hace la superficie DETERMINISTA. Y como su color es
+                // `--inv-bg`, sobre una seccion plana —que se pinta con ese
+                // mismo color— es INVISIBLE: sale unicamente donde hay telon
+                // detras, que es exactamente donde hacia falta.
+                //
+                // Sobre FOTO no se pone: ahi el texto es blanco sobre el
+                // degradado del hero, que es otro mecanismo.
+                sobreFoto ? undefined : { backgroundColor: "var(--inv-bg)" }
+              }
+            >
               {config.ctaLabel}
             </span>
             <span
