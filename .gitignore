@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Hojas de contacto para revision de arte (scripts/hojas-de-contacto.mts).
+# Son artefactos de revision, no assets del producto: 130 capturas de pliegue
+# que no tienen por que pesar en el repo.
+.hojas-de-contacto/
