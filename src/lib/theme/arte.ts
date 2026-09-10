@@ -57,7 +57,7 @@ export const ARTE: readonly DireccionArte[] = [
     nombre: "Botánica",
     eventos: ["Boda"],
     polaridad: "oscuro",
-    overlay: 0.05,
+    overlay: 0.2,
   },
   {
     clave: "xv-noche-oro",
@@ -65,7 +65,7 @@ export const ARTE: readonly DireccionArte[] = [
     nombre: "Noche y oro",
     eventos: ["XV años"],
     polaridad: "claro",
-    overlay: 0,
+    overlay: 0.55,
   },
   {
     clave: "revelacion-acuarela",
@@ -81,7 +81,7 @@ export const ARTE: readonly DireccionArte[] = [
     nombre: "Lino y sello",
     eventos: ["Boda"],
     polaridad: "oscuro",
-    overlay: 0.05,
+    overlay: 0.45,
   },
   {
     clave: "xv-rosa-polvo",
@@ -129,7 +129,7 @@ export const ARTE: readonly DireccionArte[] = [
     nombre: "Marino",
     eventos: ["Corporativo"],
     polaridad: "claro",
-    overlay: 0,
+    overlay: 0.05,
   },
   {
     clave: "cumple-guirnalda",
@@ -167,7 +167,7 @@ export const ARTE: readonly DireccionArte[] = [
     eventos: ["Boda"],
     polaridad: "oscuro",
     // 0.10 medido. Es la mejor de las tres: la foto sobrevive casi intacta.
-    overlay: 0.1,
+    overlay: 0.5,
   },
   {
     clave: "xv-seda-rosa",
@@ -228,7 +228,7 @@ export const ARTE: readonly DireccionArte[] = [
     nombre: "Punto y flor",
     eventos: ["Baby shower"],
     polaridad: "oscuro",
-    overlay: 0.5,
+    overlay: 0.55,
   },
   {
     clave: "revelacion-globos-coral",
@@ -289,7 +289,7 @@ export const ARTE: readonly DireccionArte[] = [
     nombre: "Tinta rosa y azul",
     eventos: ["Gender reveal"],
     polaridad: "oscuro",
-    overlay: 0.25,
+    overlay: 0.4,
   },
   {
     clave: "cumple-velas-espiral",
@@ -305,7 +305,7 @@ export const ARTE: readonly DireccionArte[] = [
     nombre: "Retícula de hormigón",
     eventos: ["Corporativo"],
     polaridad: "oscuro",
-    overlay: 0.55,
+    overlay: 0.6,
   },
   {
     clave: "xv-pastel-quince",
@@ -338,7 +338,7 @@ export const ARTE: readonly DireccionArte[] = [
     // Medido "oscuro 0.6 / claro 0.55": gana el velo MENOR, o sea `claro`.
     // Mismo perfil exacto que `baby-juguetes-madera`, que ya se declara claro.
     polaridad: "claro",
-    overlay: 0.55,
+    overlay: 0.6,
   },
   // ——— Piloto de arte del 2026-09-09 (roadmap §22, opción A) ———
   // Cinco plantillas, dos familias. Las tres FORMALES montan ornamento

@@ -19,9 +19,10 @@
  * promedio. El promedio es lo que hace que un fondo con una mancha clara
  * «pase» mientras el texto que cae sobre la mancha es ilegible.
  *
- * La banda que importa es la CENTRAL: el arte pone su interés en los bordes y
- * el texto va al medio, así que se mide donde el texto cae de verdad y no en
- * las esquinas decoradas.
+ * La ventana que se muestrea es la CAJA DEL TEXTO MEDIDA (ver `VENTANA`), no
+ * una "banda central" elegida a ojo. La diferencia no es cosmetica: la version
+ * anterior no muestreaba las franjas laterales, y de ahi salio la regla falsa
+ * de que poner arte en los laterales "no cuesta contraste".
  */
 import { chromium, type Browser } from "playwright-core";
 import { readdirSync, readFileSync, existsSync } from "node:fs";
@@ -59,6 +60,32 @@ function fuentes(): { nombre: string; dataUri: string }[] {
 
 /** Umbral WCAG AA para texto normal. El mismo que usa `contrast.ts`. */
 const AA_NORMAL = 4.5;
+
+/**
+ * La ventana que se muestrea, en coordenadas del lienzo de 420x900.
+ *
+ * MEDIDA, no supuesta (2026-09-09, 3.a sesion). Antes era
+ * `y 135..765, x 63..357` —la "banda central", elegida a ojo— y eso tuvo una
+ * consecuencia que no se vio en tres sesiones: la franja lateral quedaba FUERA
+ * del muestreo, asi que poner arte ahi "no costaba contraste". No era gratis:
+ * era INVISIBLE PARA EL INSTRUMENTO. Con esa licencia se compusieron 46 piezas
+ * con el mismo esquema de banda lateral espejada, y cuatro de ellas escondian
+ * un fallo real de contraste (la peor, 3.11 sobre un piso de 4.5).
+ *
+ * Estos numeros salen de `scripts/medir-cajas-de-texto.mts`, que proyecta las
+ * cajas de texto del render al lienzo deshaciendo el `background-size: cover`.
+ * Union sobre las 65 plantillas y las TRES superficies de la escala:
+ *
+ *   tarjeta 420x560   texto y 218..730  x 24..396
+ *   pagina  375x812   texto y  53..900  x 29..391
+ *   pagina 1200x900   texto y 321..608  x 17..403
+ *   UNION             texto y  53..900  x 17..403   <- esto es lo que se mide
+ *
+ * Es conservadora a proposito: la caja de un elemento de BLOQUE ocupa el ancho
+ * del contenedor aunque sus glifos no, asi que la ventana cubre zona sin tinta.
+ * Preferimos exigir de mas que volver a dejar un borde sin cobrar.
+ */
+const VENTANA = { y0: 53, y1: 900, x0: 17, x1: 403 } as const;
 
 /**
  * Los dos extremos de texto que un pack puede traer. Si un arte no aguanta
@@ -144,7 +171,7 @@ async function main() {
 
     for (const pieza of piezas) {
       const svg = pieza.nombre;
-      const muestras: number[][] = await page.evaluate(async (uri) => {
+      const muestras: number[][] = await page.evaluate(async ({ uri, v }) => {
         const img = new Image();
         // Data URI para no depender de un servidor: tiene que poder correr sin
         // `pnpm dev` levantado. Sirve igual para SVG y para JPEG.
@@ -155,17 +182,17 @@ async function main() {
         c.height = 900;
         const ctx = c.getContext("2d")!;
         ctx.drawImage(img, 0, 0, 420, 900);
-        // Banda central (70% x 70%): ahí cae el texto. Las esquinas llevan el
-        // ornamento a propósito y medirlas daría un falso negativo.
+        // La ventana MEDIDA de la caja del texto, ver `VENTANA`. Cubre las
+        // franjas laterales a proposito: es donde estaba el agujero.
         const out: number[][] = [];
-        for (let y = 135; y < 765; y += 12) {
-          for (let x = 63; x < 357; x += 12) {
+        for (let y = v.y0; y < v.y1; y += 12) {
+          for (let x = v.x0; x < v.x1; x += 12) {
             const d = ctx.getImageData(x, y, 1, 1).data;
             out.push([d[0], d[1], d[2]]);
           }
         }
         return out;
-      }, pieza.dataUri);
+      }, { uri: pieza.dataUri, v: VENTANA });
 
       if (muestras.length < 100) {
         throw new Error(`SONDA INVALIDA en ${svg}: ${muestras.length} muestras`);
@@ -205,11 +232,23 @@ async function main() {
             ? "claro"
             : // Con velo, la polaridad la decide cual de los dos velos es
               // viable y menor. Es como una FOTO llega a ser utilizable.
-              veloOscuro !== null && (veloClaro === null || veloOscuro <= veloClaro)
-              ? "oscuro"
-              : veloClaro !== null
-                ? "claro"
-                : "ninguno";
+              //
+              // EMPATE: si las dos polaridades son viables y sus velos estan a
+              // un paso de distancia (el paso del barrido es 0.05), la pieza
+              // admite las dos y elegir "la menor" es ruido de cuantizacion.
+              // En ese caso gana la DECLARADA. Salio al ensanchar la ventana:
+              // `xv-pastel-quince` medi­a 0.6 oscuro contra 0.55 claro y el
+              // gate acusaba de mentir a una tabla que no mentia.
+              veloOscuro !== null &&
+                veloClaro !== null &&
+                Math.abs(veloOscuro - veloClaro) <= 0.05 + 1e-9 &&
+                (declarado?.polaridad === "oscuro" || declarado?.polaridad === "claro")
+              ? declarado.polaridad
+              : veloOscuro !== null && (veloClaro === null || veloOscuro <= veloClaro)
+                ? "oscuro"
+                : veloClaro !== null
+                  ? "claro"
+                  : "ninguno";
 
       // El `overlay` declarado tiene que ALCANZAR el velo minimo medido. Si se
       // queda corto, el texto no llega a AA sobre esa foto y la asignacion

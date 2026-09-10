@@ -152,13 +152,33 @@ describe("el arte referenciado existe y su velo es el MEDIDO", () => {
       true,
     );
 
-    // El velo no se pone a ojo: sale de `verificar-contraste-arte.mts`.
+    // El velo no se pone a ojo: sale de `verificar-contraste-arte.mts`. Lo que
+    // se exige aquí es que el arte esté REGISTRADO, que es donde vive el velo
+    // medido y la procedencia.
     const clave = url
       .replace(/^\/arte\/(foto\/)?/, "")
       .replace(/\.(svg|jpg)$/, "");
     const arte = buscarArte(clave);
     expect(arte, `${clave} no está en arte.ts`).toBeTruthy();
-    expect(t.backgroundImage.overlay, `${f.slug} · velo`).toBe(arte!.overlay);
+    expect(typeof arte!.overlay, `${clave} sin velo declarado`).toBe("number");
+
+    // ⚠️ Aquí ANTES se exigía `overlay === arte.overlay`, y ese modelo estaba
+    // mal (2026-09-09, 3.ª sesión). Una migración de seed es HISTORIA
+    // CONGELADA: no se puede reescribir, ya está aplicada. `arte.ts` es un
+    // registro VIVO cuyo velo se re-mide cuando cambia el instrumento — y al
+    // ensanchar la ventana del gate a la caja de texto medida, nueve velos
+    // subieron. La igualdad se volvió imposible de satisfacer sin editar una
+    // migración aplicada, que es peor que el problema.
+    //
+    // Y sobre todo: la igualdad no protegía a nadie. Lo que un usuario ve es la
+    // FILA VIVA, no el `insert` original. `boda-papel-y-lino` es el caso: el
+    // seed le puso `boda-lino-sello.svg` con velo 0.05, la campaña de
+    // diferenciación le dio otro arte, y hoy su `backgroundImage` es NULL en la
+    // base — medido. La prueba se ponía roja por un telón que ya no existe.
+    //
+    // El velo de lo que se RENDERIZA se comprueba contra la base con
+    // `scripts/verificar-velos-en-vivo.mts`, que es donde ese invariante puede
+    // ser cierto.
   });
 
   it("toda imagen referenciada existe en disco y está registrada en arte.ts", () => {
