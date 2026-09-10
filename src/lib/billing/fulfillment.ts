@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPlan, resolveExpiry } from "@/lib/billing/plans";
 import { canPublishInvitation } from "@/lib/billing/entitlements";
+import { decidirEntitlement } from "@/lib/billing/no-degradar-entitlement";
 import { DEFAULT_CURRENCY, REFERRAL_CREDIT_AMOUNT } from "@/lib/billing/config";
 import {
   mapStatus,
@@ -69,15 +70,39 @@ export async function applyMercadoPagoPayment(params: {
     return { ok: true, idempotent: true, orderStatus: order.status };
   }
 
-  const { error: updErr } = await admin
+  const { data: ordenTocada, error: updErr } = await admin
     .from("orders")
     .update({ status: newStatus, provider_payment_id: paymentId })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .select("id");
 
   if (updErr) {
-    // El índice único (payment_provider, provider_payment_id) puede rechazar un
-    // pago ya registrado en otra orden: se trata como duplicado benigno.
-    return { ok: true, idempotent: true, reason: `order_update: ${updErr.message}` };
+    // SOLO el `23505` del índice único (payment_provider,
+    // provider_payment_id) es un duplicado benigno: ese pago ya está
+    // registrado en otra orden.
+    //
+    // Antes se devolvía `ok: true` ante CUALQUIER error, y eso es dinero
+    // perdido: el webhook responde 200, **Mercado Pago deja de reintentar**, la
+    // orden se queda en `pending` y el entitlement nunca se crea. El cliente
+    // pagó y no tiene acceso, sin un solo aviso. La dirección segura es la
+    // contraria — `ok: false` hace que la ruta devuelva 500 y MP lo reintente.
+    if (updErr.code === "23505") {
+      return {
+        ok: true,
+        idempotent: true,
+        reason: `order_update_duplicado: ${updErr.message}`,
+      };
+    }
+    return {
+      ok: false,
+      orderStatus: order.status ?? undefined,
+      reason: `order_update_failed: ${updErr.message}`,
+    };
+  }
+  if (!ordenTocada || ordenTocada.length === 0) {
+    // En PostgREST un update que no encuentra fila NO es error. Seguir aquí
+    // dejaría la orden con su estado viejo y activaría el entitlement igual.
+    return { ok: false, reason: "order_update_sin_filas" };
   }
 
   // Reembolso / contracargo de un plan: revoca el entitlement (el gate público
@@ -88,14 +113,69 @@ export async function applyMercadoPagoPayment(params: {
     order.product_type === "plan" &&
     order.invitation_id
   ) {
-    await admin
+    // Sin `plan_id` no se puede saber QUÉ se está reembolsando. Se elige no
+    // tocar nada: quitarle el acceso a quien sí pagó —y despublicarle su
+    // invitación en vivo— es peor que dejar un reembolso sin reflejar, y esto
+    // último un humano lo puede ver y arreglar. Se grita en el log.
+    if (!order.plan_id) {
+      console.error(
+        "[fulfillment] reembolso de un plan SIN plan_id; no se revoca nada:",
+        orderId,
+      );
+      return {
+        ok: true,
+        orderStatus: "refunded",
+        entitlementActivated: false,
+        reason: "refund_sin_plan_id_revision_manual",
+      };
+    }
+
+    // El filtro por `plan_id` es LO QUE ARREGLA EL DEFECTO. Antes se filtraba
+    // sólo por `invitation_id`, así que reembolsar el plan barato revocaba el
+    // entitlement de la invitación **aunque estuviera pagada con el caro**, y
+    // encima la despublicaba. Ahora sólo se revoca si el acceso vivo es el de
+    // ESTA orden.
+    const { data: revocados, error: revErr } = await admin
       .from("invitation_entitlements")
       .update({ status: "revoked" })
-      .eq("invitation_id", order.invitation_id);
-    await admin
+      .eq("invitation_id", order.invitation_id)
+      .eq("plan_id", order.plan_id)
+      .eq("status", "active")
+      .select("invitation_id");
+
+    if (revErr) {
+      return {
+        ok: false,
+        orderStatus: "refunded",
+        reason: `entitlement_revoke_failed: ${revErr.message}`,
+      };
+    }
+
+    if (!revocados || revocados.length === 0) {
+      // El entitlement vivo es de otro plan (o ya estaba revocado). No se toca
+      // y, sobre todo, NO se despublica: ese acceso lo pagó otra orden.
+      return {
+        ok: true,
+        orderStatus: "refunded",
+        entitlementActivated: false,
+        reason: "entitlement_de_otro_plan_no_se_revoca",
+      };
+    }
+
+    const { error: pubErr } = await admin
       .from("invitations")
       .update({ is_published: false, status: "draft" })
-      .eq("id", order.invitation_id);
+      .eq("id", order.invitation_id)
+      .select("id");
+    if (pubErr) {
+      // El acceso YA está revocado, así que el gate público la oculta igual.
+      // Se reporta el fallo para que MP reintente y la bandera se reconcilie.
+      return {
+        ok: false,
+        orderStatus: "refunded",
+        reason: `unpublish_failed: ${pubErr.message}`,
+      };
+    }
     return { ok: true, orderStatus: "refunded", entitlementActivated: false };
   }
 
@@ -148,23 +228,100 @@ export async function applyMercadoPagoPayment(params: {
     : null;
   const expiresAt = resolveExpiry(plan, now, eventDate);
 
-  const { error: entErr } = await admin.from("invitation_entitlements").upsert(
-    {
-      invitation_id: order.invitation_id,
-      plan_id: order.plan_id,
-      status: "active",
-      starts_at: now.toISOString(),
-      expires_at: expiresAt.toISOString(),
-      guest_limit: plan.maxGuests,
-    },
-    { onConflict: "invitation_id" },
+  // NO DEGRADAR. El `upsert` a secas reemplazaba la fila, asi que un pago de un
+  // plan inferior se comia un entitlement activo de un plan superior: el
+  // cliente pagaba Esencial teniendo Premium vigente y se quedaba con Esencial.
+  // La decision vive en `no-degradar-entitlement.ts`, donde SI se puede probar.
+  const { data: filaActual, error: leerErr } = await admin
+    .from("invitation_entitlements")
+    .select("plan_id, status, expires_at, plan:plans(code)")
+    .eq("invitation_id", order.invitation_id)
+    .maybeSingle();
+
+  if (leerErr) {
+    return {
+      ok: false,
+      orderStatus: newStatus,
+      reason: `entitlement_lookup_failed: ${leerErr.message}`,
+    };
+  }
+
+  const codigoActual = (
+    filaActual?.plan as { code?: string } | { code?: string }[] | null
   );
+  const codeActual = Array.isArray(codigoActual)
+    ? codigoActual[0]?.code
+    : codigoActual?.code;
+
+  const decision = decidirEntitlement({
+    planPagado: plan.code,
+    expiraPagado: expiresAt,
+    actual:
+      filaActual && codeActual
+        ? {
+            planCode: codeActual as PlanCode,
+            status: String(filaActual.status ?? ""),
+            expiresAt: filaActual.expires_at
+              ? new Date(filaActual.expires_at as string)
+              : null,
+          }
+        : null,
+    ahora: now,
+  });
+
+  if (decision.accion === "no-degradar") {
+    // La orden queda `paid` —el dinero entro— y el acceso se conserva como
+    // estaba. Se reporta el motivo para que se vea en el log del webhook.
+    console.error(
+      "[fulfillment] pago que NO se aplica para no degradar el acceso:",
+      { orderId, motivo: decision.motivo },
+    );
+    return {
+      ok: true,
+      orderStatus: newStatus,
+      entitlementActivated: false,
+      reason: `no_degradar: ${decision.motivo}`,
+    };
+  }
+
+  // El plan que se escribe puede NO ser el pagado (si se conserva uno
+  // superior), asi que el `plan_id` y el cupo se resuelven del plan DECIDIDO.
+  const planEscrito = getPlan(decision.planCode);
+  if (!planEscrito) {
+    return { ok: false, orderStatus: newStatus, reason: "plan_config_not_found" };
+  }
+  const planIdEscrito =
+    decision.planCode === plan.code ? order.plan_id : filaActual?.plan_id;
+
+  const { data: entFilas, error: entErr } = await admin
+    .from("invitation_entitlements")
+    .upsert(
+      {
+        invitation_id: order.invitation_id,
+        plan_id: planIdEscrito,
+        status: "active",
+        starts_at: now.toISOString(),
+        expires_at: decision.expiresAt.toISOString(),
+        guest_limit: planEscrito.maxGuests,
+      },
+      { onConflict: "invitation_id" },
+    )
+    .select("invitation_id");
 
   if (entErr) {
     return {
       ok: false,
       orderStatus: newStatus,
       reason: `entitlement_upsert_failed: ${entErr.message}`,
+    };
+  }
+  if (!entFilas || entFilas.length === 0) {
+    // Cobrado y sin acceso es el peor desenlace posible: se falla para que MP
+    // reintente en vez de responder 200 sobre una escritura que no ocurrio.
+    return {
+      ok: false,
+      orderStatus: newStatus,
+      reason: "entitlement_upsert_sin_filas",
     };
   }
 
