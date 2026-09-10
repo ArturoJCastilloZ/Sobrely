@@ -1427,3 +1427,77 @@ quedó corta en dos direcciones: **no miró 1200 px en tres de las cinco
 categorías** —y es la superficie donde el esquema de banda lateral se rompe
 solo— y **no hay ninguna medida de colisión**, que es de donde salen los dos
 defectos concretos de arriba.
+
+---
+
+## 19.11 Repuntuación tras romper la arquitectura y arreglar el acento (2026-09-09, 3.ª)
+
+⚠️ **Sigue siendo AUTOEVALUACIÓN**, con la misma advertencia de la §19.10: la
+hace quien dibujó el arte. El dev revisó las hojas y dictó que había vuelta;
+esto puntúa el resultado de esa vuelta.
+
+Base: las tres superficies otra vez, con las hojas regeneradas después de los
+cambios. Miradas por categoría a 1:1.
+
+### Qué cambió desde la §19.10
+
+1. **13 piezas con arquitectura nueva** (3 del piloto + 10 de la diagonal).
+   Medido: la tinta en el centro de la franja que 1200 px enseña pasó de
+   **0.00 %** a 15–38 % en esas 13.
+2. **3 piezas** con el contraste arreglado (`corporativo-lanzamiento`,
+   `cumpleanos-futbol`, `boda-botanica`). Sin ganancia estética.
+3. **El acento como TEXTO, derivado**: el epígrafe y los dígitos de la cuenta
+   atrás se leen en las 65. De 212 casos bajo AA a 128.
+
+Reparto de las 13 por categoría: Baby 4/12 · Boda 3/13 · XV 3/12 ·
+Cumpleaños 2/12 · Corporativo 2/11.
+
+### El número
+
+| categoría | VQ | U | ER | C | PF | MP | prom. | antes |
+|---|---|---|---|---|---|---|---|---|
+| Boda | 7 | 9 | 7 | 7 | 7 | 9 | **7.7** | 7.7 |
+| Cumpleaños | 7 | 9 | 8 | 6 | 6 | 9 | **7.5** | 7.5 |
+| XV años | 7 | 8 | 7 | **7** | 7 | 9 | **7.5** | 7.3 |
+| Baby shower | 7 | 9 | 8 | **7** | 7 | 9 | **7.8** | 7.7 |
+| Corporativo | 7 | 8 | 8 | 6 | 7 | 9 | **7.5** | 7.5 |
+
+**Promedio: 7.6** (antes 7.5). El umbral sigue siendo **8**.
+
+### Lo que se movió, y por qué sólo eso
+
+`Composition` sube a 7 en **XV** y **Baby shower**, que son donde la vuelta
+tocó un tercio de la categoría (3/12 y 4/12) y donde a 1200 px se nota que el
+centro dejó de estar vacío.
+
+### Lo que NO se movió, y hay que defenderlo igual
+
+- **`Composition` se queda en 6 en Cumpleaños y Corporativo.** 2 de 12 y 2 de
+  11 no cambian cómo se lee una categoría. Subirlas sería puntuar la intención.
+- **`Composition` se queda en 7 en Boda**, que ya lo tenía: para un 8 haría
+  falta que la mayoría de las 13 rompiera el esquema, y rompieron 3.
+- **`Visual Quality` y `Premium Feel` no se mueven.** La vuelta cambió la
+  COMPOSICIÓN, no el MEDIO: sigue siendo vectorial de línea fina, sin
+  materialidad. Al lado de las fotografías de la misma hoja —la tiara, el
+  raso, el pastel— la diferencia se ve sola.
+- **`Uniqueness` no sube, y hay un riesgo nuevo**: la diagonal aplicada a 13
+  piezas acerca dos pares que ya compartían paleta —`boda-destino` con
+  `boda-en-la-playa`, y `xv-manuscrita` con `xv-sencillos`—. Van en sentidos
+  opuestos a propósito, pero a tamaño de tarjeta se leen como familia. Si la
+  diagonal creciera mucho más, `Uniqueness` BAJARÍA.
+
+### El techo, calculado antes de prometer nada
+
+El 8 **no se alcanza con más de esto**, y sale de la aritmética de la propia
+rúbrica:
+
+- subir `Visual Quality` y `Premium Feel` de 7 a 8 en todas: **7.93**. No basta.
+- subir además `Composition` a 7 donde aún es 6: **8.0**, justo en el umbral.
+
+O sea que hacen falta **tres columnas a la vez**: fotografía o textura real
+(VQ y PF) **y** terminar la arquitectura en las 33 piezas que siguen con el
+esquema espejado. Ninguna de las dos por separado llega.
+
+Y está demostrado en este mismo documento con el mismo renderer: **las 15 con
+fotografía promedian 8.39** (§19.9). La palanca que cierra el hueco es el
+MEDIO, no más composición.
