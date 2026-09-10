@@ -10,6 +10,7 @@ import {
   CLIPPING_REVEAL_PRESETS,
 } from "@/lib/animation/registry";
 import { useReveal } from "@/hooks/use-reveal";
+import { RevealDelAncestro } from "@/components/animation/reveal-del-ancestro";
 
 /**
  * Runtime wrapper that applies a resolved animation to its children. Shared by
@@ -41,19 +42,24 @@ export function AnimatedModule({
   // El nodo observado es el MISMO que lleva el estado oculto. Para los presets
   // que ocultan recortando (`clip-path`), ese recorte deja la caja con area
   // cero y el observer no la ve nunca entrar: hay que mirarla con umbral 0.
+  const recorta = CLIPPING_REVEAL_PRESETS.has(animation.preset);
   const revealed = useReveal(ref, {
     trigger: animation.trigger,
     once: animation.once,
     enabled: active,
-    threshold: CLIPPING_REVEAL_PRESETS.has(animation.preset) ? 0 : 0.15,
+    threshold: recorta ? 0 : 0.15,
   });
 
-  // Not animating → plain, always-visible container.
+  // Not animating → plain, always-visible container. Se publica `true`: sin
+  // animacion el contenido esta visible desde el primer momento, y un grupo
+  // escalonado dentro no tiene nada que esperar.
   if (!active) {
     return (
-      <div ref={ref} className={className}>
-        {children}
-      </div>
+      <RevealDelAncestro.Provider value={true}>
+        <div ref={ref} className={className}>
+          {children}
+        </div>
+      </RevealDelAncestro.Provider>
     );
   }
 
@@ -78,7 +84,20 @@ export function AnimatedModule({
         className,
       )}
     >
-      {children}
+      {/* Lo que arregla U-3: los observadores ANIDADOS no pueden ver nada
+          mientras este modulo se oculta recortando su caja, asi que en vez de
+          mirar la pantalla heredan este dato. Ver `reveal-del-ancestro.tsx`.
+
+          Se publica SOLO si el preset recorta. Un preset que se oculta con
+          opacidad o desplazamiento no tiene el defecto —medido: 0 items
+          atascados— y su descendiente puede seguir esperando su propio turno,
+          que es lo que hace que la animacion se vea cuando el invitado la
+          esta mirando. Heredar SIEMPRE revelaria un grupo que aun esta por
+          debajo del pliegue en un modulo alto: cambiaria la conducta de los
+          otros diecisiete presets para arreglar dos. */}
+      <RevealDelAncestro.Provider value={revealed && recorta}>
+        {children}
+      </RevealDelAncestro.Provider>
     </div>
   );
 }

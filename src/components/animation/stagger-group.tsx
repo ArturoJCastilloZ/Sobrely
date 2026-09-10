@@ -5,6 +5,7 @@ import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { AnimationTrigger } from "@/lib/animation/types";
 import { useReveal } from "@/hooks/use-reveal";
+import { useRevealDelAncestro } from "@/components/animation/reveal-del-ancestro";
 
 /**
  * Reveals its direct children in sequence (CSS engine). Reusable for lists and
@@ -29,7 +30,13 @@ export function StaggerGroup({
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const active = enabled && !reduce;
-  const revealed = useReveal(ref, { trigger, once, enabled: active });
+  const propio = useReveal(ref, { trigger, once, enabled: active });
+  // O lo vi yo entrar en pantalla, O el modulo que me contiene ya abrio su
+  // cortina. Lo segundo es lo que cierra U-3: dentro de un modulo que se oculta
+  // recortando la caja, mi observador no ve NADA —a ningun umbral— y cuando la
+  // cortina abre el scroll ya me paso de largo. Ver `reveal-del-ancestro.tsx`.
+  const ancestro = useRevealDelAncestro();
+  const revealed = propio || ancestro;
 
   return (
     <div ref={ref} className={className}>
