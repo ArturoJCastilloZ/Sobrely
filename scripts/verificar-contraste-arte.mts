@@ -1,5 +1,10 @@
 /**
- * Verifica que el texto se pueda LEER sobre cada arte de fondo.
+ * PRE-VUELO: ¿este arte admite texto de alguna polaridad?
+ *
+ * Ojo con el alcance: mide contra dos colores de texto REPRESENTATIVOS, no
+ * contra el color real de cada plantilla. El veredicto sobre lo que el
+ * usuario ve lo da `verificar-contraste-en-vivo.mts` — ver la nota en
+ * `TEXTOS`.
  *
  * Uso:
  *   node scripts/verificar-contraste-arte.mts
@@ -88,8 +93,27 @@ const AA_NORMAL = 4.5;
 const VENTANA = { y0: 53, y1: 900, x0: 17, x1: 403 } as const;
 
 /**
- * Los dos extremos de texto que un pack puede traer. Si un arte no aguanta
- * NINGUNO de los dos, no es utilizable sin un velo detrás del texto.
+ * Dos colores de texto REPRESENTATIVOS. Si un arte no aguanta ninguno de los
+ * dos, no es utilizable sin un velo detrás del texto.
+ *
+ * ⚠️ NO son el peor caso, y esto es un PRE-VUELO, no el veredicto. Medido el
+ * 2026-09-09 (3.ª sesión) contra las 65 plantillas vivas: **27 tienen un
+ * texto peor que estos dos** — 25 de polaridad oscura con texto más claro
+ * que `#1f2937` (la peor, el pack `kawaii` con `#5a4a52`), y las 2 de
+ * polaridad clara con texto más oscuro que `#f8fafc`.
+ *
+ * Y NO se arregla poniendo aquí el peor caso real. Medido también: exigirle
+ * a las 76 piezas que aguanten `#5a4a52` tumbaría **29**, porque le pediría
+ * a `boda-cinematografica` sobrevivir la paleta de kawaii, con la que no se
+ * empareja nunca. Es el mismo error que medir la envolvente de una caja de
+ * texto como si fuera tinta: un peor caso GLOBAL sobre un problema que es de
+ * EMPAREJAMIENTO.
+ *
+ * El emparejamiento real vive en la base, así que el veredicto lo da
+ * `scripts/verificar-contraste-en-vivo.mts`, que mide el texto REAL de cada
+ * plantilla sobre su fondo REAL y sólo en los píxeles de GLIFO. Este script
+ * sigue valiendo para lo que sí puede contestar sin la base: si una pieza de
+ * arte NUEVA, todavía sin asignar, admite texto de alguna polaridad.
  */
 const TEXTOS = {
   oscuro: [31, 41, 55] as const,
