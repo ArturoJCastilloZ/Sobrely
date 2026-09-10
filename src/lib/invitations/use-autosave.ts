@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { esperaDelAutoguardado } from "./autosave-espera";
 
 /**
  * Autoguardado con espera, más guardia al cerrar la pestaña.
@@ -13,12 +15,27 @@ import { useCallback, useEffect, useRef } from "react";
  *
  * Detalles que no son obvios y que deciden si esto funciona o miente:
  *
+ * - **La espera se reinicia con `revision`, no con `hayCambios`.** Es la
+ *   diferencia entre guardar y no guardar, y costó una pérdida de datos
+ *   reproducida: `hayCambios` es un booleano, así que en cuanto se pone en
+ *   `true` deja de cambiar de identidad, el efecto no se vuelve a ejecutar y
+ *   NO se programa otro temporizador. Resultado medido: se guardaba lo que
+ *   hubiera a los 1.2 s y todo lo tecleado después se quedaba fuera **para
+ *   siempre**, porque la transición `false → true` que rearmaba el temporizador
+ *   ya no volvía a ocurrir mientras siguiera habiendo cambios. `revision`
+ *   cambia en CADA edición, así que ahora el efecto sí se re-ejecuta.
+ * - **`maxEsperaMs` es la red de seguridad.** Una espera que se reinicia con
+ *   cada tecla puede no dispararse nunca mientras alguien escribe sin pausas.
+ *   Pasado ese tope desde la primera edición pendiente, se guarda igual.
  * - El guardado en vuelo se serializa. Si se dispara uno mientras otro corre,
  *   el segundo espera; sin eso, dos respuestas pueden llegar desordenadas y la
- *   vieja pisa a la nueva.
+ *   vieja pisa a la nueva. El eslabón anterior se **neutraliza** con `catch`:
+ *   encadenar sobre una promesa rechazada dejaba el siguiente guardado sin
+ *   intentarse siquiera.
  * - `beforeunload` se registra solo cuando HAY cambios pendientes. Registrarlo
  *   siempre hace que el navegador pregunte al cerrar aunque no haya nada que
- *   perder, y la gente aprende a ignorar el aviso.
+ *   perder, y la gente aprende a ignorar el aviso. Ojo: `beforeunload` NO cubre
+ *   la navegación interna de Next — de eso se encarga quien use el hook.
  * - El temporizador se limpia al desmontar, pero un guardado ya disparado NO se
  *   cancela: cancelarlo sería exactamente perder el trabajo que esto protege.
  * - `pausado` apaga el TEMPORIZADOR y deja vivo el aviso al cerrar la pestaña.
@@ -30,14 +47,24 @@ import { useCallback, useEffect, useRef } from "react";
  */
 export function useAutosave({
   hayCambios,
+  revision,
   guardar,
   esperaMs = 1200,
+  maxEsperaMs = 10_000,
   pausado = false,
 }: {
   hayCambios: boolean;
+  /**
+   * Valor que cambia de IDENTIDAD con cada edición (el documento vivo sirve).
+   * Es la dependencia que reinicia la espera; sin ella el temporizador se arma
+   * una sola vez y el editor deja de guardar.
+   */
+  revision: unknown;
   /** Debe resolver cuando el guardado terminó. Los errores se manejan dentro. */
   guardar: () => Promise<void>;
   esperaMs?: number;
+  /** Tope desde la primera edición pendiente: pasado esto se guarda aunque se siga escribiendo. */
+  maxEsperaMs?: number;
   /** Detiene el autoguardado sin tocar el aviso al cerrar la pestaña. */
   pausado?: boolean;
 }) {
@@ -50,34 +77,63 @@ export function useAutosave({
     guardarRef.current = guardar;
   }, [guardar]);
 
+  const [guardando, setGuardando] = useState(false);
   const enVuelo = useRef<Promise<void> | null>(null);
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Cuándo empezó el tramo de cambios pendientes actual, para el tope. */
+  const pendienteDesde = useRef<number | null>(null);
 
   const guardarAhora = useCallback(async () => {
     if (temporizador.current) {
       clearTimeout(temporizador.current);
       temporizador.current = null;
     }
-    // Serializa: si hay uno corriendo, este espera su turno.
+    pendienteDesde.current = null;
+    // Serializa: si hay uno corriendo, este espera su turno. El `catch` del
+    // eslabón anterior es lo que impide que un fallo envenene la cadena y deje
+    // el editor sin volver a guardar.
     const anterior = enVuelo.current ?? Promise.resolve();
-    const propio = anterior.then(() => guardarRef.current());
-    enVuelo.current = propio.finally(() => {
-      if (enVuelo.current === propio) enVuelo.current = null;
+    const propio = anterior.catch(() => undefined).then(() => {
+      setGuardando(true);
+      return guardarRef.current();
     });
-    return enVuelo.current;
+    // La comparacion tiene que ser contra la promesa que SE GUARDA en la ref,
+    // no contra `propio`: `propio.finally(...)` devuelve otra promesa distinta,
+    // asi que `enVuelo.current === propio` era SIEMPRE falso y la ref no se
+    // limpiaba nunca. Con el indicador honesto eso se volvio visible —
+    // "Guardando…" fijo con la base ya escrita— pero el eslabon colgado ya
+    // estaba ahi antes: cada guardado alargaba la cadena para siempre.
+    const conLimpieza: Promise<void> = propio.finally(() => {
+      if (enVuelo.current === conLimpieza) {
+        enVuelo.current = null;
+        setGuardando(false);
+      }
+    });
+    enVuelo.current = conLimpieza;
+    return conLimpieza;
   }, []);
 
   useEffect(() => {
-    if (!hayCambios || pausado) return;
+    if (!hayCambios || pausado) {
+      pendienteDesde.current = null;
+      return;
+    }
+    if (pendienteDesde.current === null) pendienteDesde.current = Date.now();
+    // La espera normal, recortada por lo que quede del tope. Escribir sin
+    // pausas ya no aplaza el guardado indefinidamente.
+    const espera = esperaDelAutoguardado({
+      pendienteDesde: pendienteDesde.current,
+      ahora: Date.now(),
+      esperaMs,
+      maxEsperaMs,
+    });
     temporizador.current = setTimeout(() => {
       void guardarAhora();
-    }, esperaMs);
+    }, espera);
     return () => {
       if (temporizador.current) clearTimeout(temporizador.current);
     };
-    // `hayCambios` cambia en cada edición, así que el temporizador se reinicia
-    // mientras el usuario sigue escribiendo: guarda cuando hace una pausa.
-  }, [hayCambios, pausado, esperaMs, guardarAhora]);
+  }, [hayCambios, revision, pausado, esperaMs, maxEsperaMs, guardarAhora]);
 
   useEffect(() => {
     if (!hayCambios) return;
@@ -91,5 +147,5 @@ export function useAutosave({
     return () => window.removeEventListener("beforeunload", alSalir);
   }, [hayCambios]);
 
-  return { guardarAhora };
+  return { guardarAhora, guardando };
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -164,6 +165,12 @@ export function InvitationEditor({
   // un toast y seguir: reintentar un conflicto no lo resuelve, y cada reintento
   // repite el aviso mientras el trabajo del otro sigue en riesgo.
   const [conflicto, setConflicto] = useState(false);
+  /**
+   * El ULTIMO guardado fallo. Existe porque el indicador solo sabia decir
+   * "Guardando…" o "Guardado": con un fallo de red se quedaba en "Guardando…"
+   * para siempre, afirmando que estaba a salvo un trabajo que no lo estaba.
+   */
+  const [errorGuardado, setErrorGuardado] = useState<string | null>(null);
 
   const uploadCtx = { userId, invitationId: initialInvitation.id };
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
@@ -179,6 +186,44 @@ export function InvitationEditor({
   const [upgradePlan, setUpgradePlan] = useState<PlanCode | null>(null);
   /** Modulo pendiente de confirmar borrado. Antes se borraba a un clic. */
   const [porBorrar, setPorBorrar] = useState<EditorModule | null>(null);
+  const router = useRouter();
+  /** Salir con cambios sin guardar: se ofrece salir igualmente o quedarse. */
+  const [salidaEnRiesgo, setSalidaEnRiesgo] = useState(false);
+  const [saliendo, setSaliendo] = useState(false);
+
+  /**
+   * Salir del editor SIN perder el trabajo.
+   *
+   * `beforeunload` solo cubre cerrar/recargar la pestana: la navegacion interna
+   * de Next no lo dispara, asi que pulsar "Volver al panel" con cambios
+   * pendientes se los llevaba por delante sin un solo aviso. Medido en el E2E:
+   * dos ediciones destruidas, cero dialogos.
+   *
+   * Se GUARDA antes de salir en vez de solo preguntar: preguntar traslada al
+   * usuario un problema que la aplicacion puede resolver sola. Solo si el
+   * guardado falla se le pregunta, porque ahi si hay una decision que tomar.
+   */
+  async function salirAlPanel() {
+    if (!dirty) {
+      router.push("/dashboard");
+      return;
+    }
+    setSaliendo(true);
+    try {
+      await guardarAhora();
+    } catch {
+      // El propio guardado ya deja `errorGuardado` puesto.
+    } finally {
+      setSaliendo(false);
+    }
+    // `docRef` es la referencia viva: si sigue habiendo pendientes, el guardado
+    // no llego a puerto y salir ahora si perderia trabajo.
+    if (hayCambiosSinGuardar(historiaRef.current)) {
+      setSalidaEnRiesgo(true);
+      return;
+    }
+    router.push("/dashboard");
+  }
 
   function handlePublishToggle() {
     const next = !invitation.is_published;
@@ -262,6 +307,14 @@ export function InvitationEditor({
     docRef.current = historia.presente;
   }, [historia.presente]);
 
+  // Misma idea para la historia completa: `salirAlPanel` necesita saber si
+  // QUEDAN cambios DESPUES de esperar al guardado, y `dirty` en su clausura es
+  // el de antes de la peticion.
+  const historiaRef = useRef(historia);
+  useEffect(() => {
+    historiaRef.current = historia;
+  }, [historia]);
+
   const guardarDocumento = useCallback(async () => {
     const doc = docRef.current;
 
@@ -286,7 +339,12 @@ export function InvitationEditor({
       invitation: { ...doc.invitation, slug: cleanSlug, title: doc.invitation.title.trim() },
     };
 
-    const result = await saveEditor({
+    // `saveEditor` puede REVENTAR (red caida, servidor de pie). Sin este try
+    // la excepcion salia del callback, el hook no se enteraba y el indicador se
+    // quedaba en "Guardando…" indefinidamente.
+    let result: Awaited<ReturnType<typeof saveEditor>>;
+    try {
+      result = await saveEditor({
       invitationId: enviado.invitation.id,
       version: versionRef.current,
       settings: {
@@ -303,9 +361,15 @@ export function InvitationEditor({
         is_visible: m.is_visible,
         config: m.config,
       })),
-    });
+      });
+    } catch {
+      setErrorGuardado("No se pudo guardar. Revisa tu conexión.");
+      toast.error("No se pudo guardar. Revisa tu conexión.");
+      return;
+    }
 
     if (!result.ok) {
+      setErrorGuardado(result.error);
       if (result.conflict) {
         setConflicto(true);
         // Sin `duration: Infinity` el aviso se va solo y el usuario sigue
@@ -316,6 +380,8 @@ export function InvitationEditor({
       toast.error(result.error);
       return;
     }
+
+    setErrorGuardado(null);
 
     // Se adopta la version que dejo el servidor. Si se quedara con la vieja,
     // el guardado siguiente chocaria contra su propio guardado anterior.
@@ -342,8 +408,12 @@ export function InvitationEditor({
     setSelectedId((cur) => (cur && mapa[cur] ? mapa[cur] : cur));
   }, []);
 
-  const { guardarAhora } = useAutosave({
+  const { guardarAhora, guardando } = useAutosave({
     hayCambios: dirty,
+    // El documento vivo cambia de identidad con CADA edicion. Pasar `dirty` a
+    // secas —un booleano ya en `true`— hacia que la espera se armara una sola
+    // vez y el editor dejara de guardar para siempre.
+    revision: historia.presente,
     guardar: guardarDocumento,
     // `pausado` y no `hayCambios: dirty && !conflicto`: el usuario SIGUE
     // teniendo cambios sin guardar, asi que el aviso al cerrar la pestana debe
@@ -453,6 +523,36 @@ export function InvitationEditor({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/*
+        Solo aparece cuando el guardado de salida FALLO. Si el guardado va bien
+        el usuario no ve nada: se le resolvio el problema en vez de contarselo.
+      */}
+      <AlertDialog
+        open={salidaEnRiesgo}
+        onOpenChange={(abierto) => !abierto && setSalidaEnRiesgo(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>No se pudieron guardar tus cambios</AlertDialogTitle>
+            <AlertDialogDescription>
+              Si sales ahora perderás lo último que escribiste. Puedes quedarte e
+              intentarlo otra vez.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Quedarme</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setSalidaEnRiesgo(false);
+                router.push("/dashboard");
+              }}
+            >
+              Salir sin guardar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Top bar */}
       {/*
         Barra superior. Antes eran TRES bloques apilados —acciones, enlace
@@ -470,6 +570,11 @@ export function InvitationEditor({
           */}
           <div className="flex min-w-0 flex-1 items-center justify-between gap-2 sm:gap-3">
             <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
+              {/* Sigue siendo un enlace real (clic central, "abrir en pestana
+                  nueva", lectores de pantalla), pero con cambios pendientes se
+                  intercepta para GUARDAR antes de irse. Sin esto, la
+                  navegacion interna de Next se llevaba el trabajo por delante:
+                  `beforeunload` no la cubre. */}
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -477,6 +582,12 @@ export function InvitationEditor({
                 render={<Link href="/dashboard" />}
                 nativeButton={false}
                 className="shrink-0"
+                disabled={saliendo}
+                onClick={(e) => {
+                  if (!dirty) return;
+                  e.preventDefault();
+                  void salirAlPanel();
+                }}
               >
                 <ArrowLeftIcon />
               </Button>
@@ -487,12 +598,28 @@ export function InvitationEditor({
                   usuario no deberia tener que acordarse de guardar.
                   Se oculta en pantallas estrechas — el titulo importa mas, y
                   el estado se sigue anunciando por `aria-live`. */}
-              <span
-                className="hidden shrink-0 text-xs text-muted-foreground sm:inline"
-                aria-live="polite"
-              >
-                {dirty ? "Guardando…" : "Guardado"}
-              </span>
+              {/* Cuatro estados, no dos. Antes era `dirty ? "Guardando…" :
+                  "Guardado"`, asi que "Guardando…" solo significaba "hay
+                  cambios": con un guardado fallido se quedaba ahi para siempre
+                  y afirmaba que se estaba guardando algo que no estaba en
+                  vuelo. */}
+              {errorGuardado ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden h-7 shrink-0 px-2 text-xs text-destructive sm:inline-flex"
+                  onClick={() => void guardarAhora()}
+                >
+                  No se guardó · Reintentar
+                </Button>
+              ) : (
+                <span
+                  className="hidden shrink-0 text-xs text-muted-foreground sm:inline"
+                  aria-live="polite"
+                >
+                  {guardando ? "Guardando…" : dirty ? "Sin guardar" : "Guardado"}
+                </span>
+              )}
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               {/* Deshacer / rehacer. Los atajos funcionan igual; estos botones
