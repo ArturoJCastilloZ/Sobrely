@@ -1359,3 +1359,71 @@ No dice que el catálogo esté mal. Dice que pasó de **«42 se leen como panele
 color»** a **«65 son distinguibles y correctas, con acabado de 7.5»**. Es una
 mejora grande y medible, y a la vez está por debajo del listón que este
 documento se puso.
+
+---
+
+## 19.10-bis Lo que salió al ARMAR las hojas de contacto (2026-09-09, 3.ª sesión)
+
+⚠️ **Esto NO repuntúa nada.** La §19.10 sigue en **7.5** y sigue siendo
+autoevaluación: el veredicto es del dev. Aquí sólo se deja lo que se MIDIÓ al
+construir las tres superficies para que él las mire, más dos defectos que
+aparecieron al mirar y que la §19.10 no anota.
+
+Instrumento: `scripts/hojas-de-contacto.mts` (captura) y
+`scripts/armar-hojas.mts` (compone). Salida en `.hojas-de-contacto/`, ignorada
+por git. 130/130 capturas, 195/195 piezas en disco, 0 imágenes rotas.
+
+### 1. La franja del telón NO es una constante: cambia con la superficie
+
+La regla 1 del §25 del roadmap dice que el telón es `bg-cover` sobre `100svh` y
+que «sólo sobrevive la franja `y 170..730`» del lienzo de 900. La primera mitad
+es cierta; la segunda es la geometría de UNA superficie. Medido sobre el telón
+real, derivando de la caja y del tamaño natural del archivo:
+
+| superficie | franja del lienzo 420×900 que sobrevive | |
+|---|---|---|
+| tarjeta 420×560 | `y 170..730` · `x 0..420` | 62 % |
+| página 375×812 | `y 0..900` · `x 2..418` | **100 %** |
+| página 1200×900 | `y 293..608` · `x 0..420` | **35 %** |
+
+Consecuencias que cambian el trabajo, no sólo el dato:
+
+- **La superficie más apretada es ESCRITORIO, no la tarjeta.** A 1200 px el
+  lienzo se escala ×2.86, así que sólo se ve la rebanada central de las bandas
+  laterales, empujada a los bordes extremos, y **el remate de arriba y de abajo
+  no se ve nunca**. `cumpleanos-moderno` a 1200 px es un campo rosa vacío con
+  cuatro formas pegadas al borde; `xv-sencillos` a 1200 px son dos líneas
+  verticales con un punto, y nada más.
+- **Móvil es la superficie más generosa**, no sólo la de mejor proporción: se ve
+  el lienzo ENTERO. Es coherente con `Mobile Potential 9`.
+- `verificar-contraste-arte.mts` muestrea `y 135..765`, que es la banda de la
+  TARJETA ensanchada. Sobra para escritorio y **se queda corta para móvil**,
+  donde se ve `y 0..900`.
+
+### 2. El instrumento mide contraste, y los defectos que quedan son de COLISIÓN
+
+Ninguna de estas dos las ve `verificar-contraste-arte.mts`, porque mide el peor
+píxel de un rectángulo y no la relación entre el trazo del arte y la caja real
+del texto — que además se mueve con la superficie:
+
+- **`corporativo-taller`, tarjeta 420×560**: el título «Taller de capacitación»
+  **se monta sobre la retícula** de la banda derecha. El texto no está confinado
+  a `x 63..357`: un título largo invade la franja lateral que se dio por libre.
+- **`corporativo-taller`, página 375 px**: ahí el título sí libra, pero una línea
+  del arte **atraviesa el epígrafe «INSCRÍBETE»**. Es decir, la colisión no
+  desaparece entre superficies: se muda.
+
+### 3. Un defecto de lectura, no de medida
+
+- **`baby-shower-nubes` se lee como un ESQUELETO DE CARGA.** Las nubes son barras
+  redondeadas en gris azulado apiladas en dos columnas: es exactamente la forma
+  de un *skeleton screen*. Pasa el contraste, es única, y el usuario va a pensar
+  que la página no terminó de cargar.
+
+### Lo que esto le deja al dev para su veredicto
+
+La §19.10 puntuó `Composition 6` por la arquitectura repetida y acertó, pero se
+quedó corta en dos direcciones: **no miró 1200 px en tres de las cinco
+categorías** —y es la superficie donde el esquema de banda lateral se rompe
+solo— y **no hay ninguna medida de colisión**, que es de donde salen los dos
+defectos concretos de arriba.

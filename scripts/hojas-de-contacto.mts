@@ -303,9 +303,34 @@ async function main() {
     await browser?.close();
   }
 
+  // Una tanda PARCIAL se FUSIONA con lo que ya hay, no lo sobrescribe. Escribir
+  // `objetivo` a secas dejaba el archivo con una sola plantilla tras recapturar
+  // una, y `armar-hojas.mts` habria compuesto una hoja de UNA pieza con toda
+  // apariencia de estar completa. Es el mismo defecto que `capturar-miniaturas`
+  // tiene anotado con `REVISION_MINIATURAS`, y aqui se cierra en vez de
+  // repetirse.
+  const rutaMedidas = join(DESTINO, "medidas.json");
+  let acumulado: {
+    plantillas: Plantilla[];
+    medidas: Record<string, Record<string, Medida>>;
+  } = { plantillas: [], medidas: {} };
+  if (existsSync(rutaMedidas)) {
+    try {
+      acumulado = JSON.parse(readFileSync(rutaMedidas, "utf8"));
+    } catch {
+      // Un archivo corrupto no debe abortar la tanda: se reconstruye.
+      acumulado = { plantillas: [], medidas: {} };
+    }
+  }
+  // Las plantillas se toman SIEMPRE del universo recien leido de la BD, no de
+  // lo acumulado: si una se desactiva, no debe sobrevivir en el artefacto.
   writeFileSync(
-    join(DESTINO, "medidas.json"),
-    JSON.stringify({ plantillas: objetivo, medidas }, null, 2),
+    rutaMedidas,
+    JSON.stringify(
+      { plantillas: todas, medidas: { ...acumulado.medidas, ...medidas } },
+      null,
+      2,
+    ),
   );
 
   const hechas = objetivo.length * SUPERFICIES.length - fallos.length;
