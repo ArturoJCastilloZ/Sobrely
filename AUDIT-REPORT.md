@@ -9,8 +9,14 @@
 > el orquestador reprodujo por su cuenta los hallazgos más graves — marcados
 > abajo con **✓ verificado por el orquestador**.
 >
-> **Lo que NO se hizo:** ningún pago ni llamada a Mercado Pago, ninguna escritura
-> en la base de datos, ninguna cuenta creada, ningún archivo del repo modificado.
+> **Lo que NO se hizo en el diagnóstico estático:** ningún pago ni llamada a
+> Mercado Pago, ninguna escritura en la base de datos, ninguna cuenta creada,
+> ningún archivo del repo modificado.
+>
+> **Ampliación del 2026-09-10 — E2E ejecutado.** La §8 («no verificado») ya no
+> describe el estado: el flujo autenticado completo se ejecutó contra la BD de
+> producción con dos invitaciones de prueba creadas y borradas para ello, sin
+> ningún pago. Ver **E2E REAL EXECUTION** al final. Sigue sin corregirse nada.
 
 ---
 
@@ -142,7 +148,17 @@ sean inmunes.
 | Animaciones | UI | **FAIL** | ALTA | U-3, confirmado |
 | Invitación pública | Responsive | PASS | — | 21 mediciones, 0 desbordes |
 | Invitación pública | RSVP | **FAIL** | ALTA | `public-invitation.tsx:90-104` |
-| E2E | Flujo completo | **NO EJECUTADO** | — | requiere sesión y escrituras |
+| Editor | Textos · autoguardado | **FAIL** | CRÍTICA | E2E N-1, `use-autosave.ts:70-80` |
+| Editor | Salir con cambios | **FAIL** | CRÍTICA | E2E paso 10, `use-autosave.ts:82-92` |
+| Editor | Título por palabras | **FAIL** | ALTA | E2E N-2, `text-reveal.tsx:58,62` |
+| Invitación pública | RSVP idempotencia | **FAIL** | ALTA | E2E N-3, 2 filas idénticas |
+| Ciclo de vida | Borrado · Storage | **FAIL** | MEDIA | E2E N-4, `actions.ts:287-303` |
+| Invitación pública | Táctil en móvil | PARCIAL | BAJA | E2E N-5, 7/8 bajo 44 px |
+| Dashboard usuario | Títulos de página | PARCIAL | BAJA | E2E N-6, sin `metadata` |
+| E2E | Flujo completo | **EJECUTADO** | — | E2E REAL EXECUTION (22 pasos) |
+| E2E | Doble submit | PASS | — | 3/3: crear, publicar, RSVP |
+| E2E | Atrás / adelante | PASS | — | `?evento=Boda` restaura URL y estado |
+| E2E | Borrado verificado | PASS | — | universo 18→20→18, hijas en 0 |
 
 ---
 
@@ -372,24 +388,53 @@ referido.
 
 ## 7. Orden de corrección propuesto
 
-1. **Las dos policies de la `0001`** (`:244`, `:272`) — cierran U-1, los módulos
-   ocultos y el puenteo del muro de pago.
-2. **Reconciliar `is_published` con el entitlement** y avisar al anfitrión — U-2,
-   hay un cliente caído con su evento por delante.
-3. **El observer anidado** — U-3, invitados que nunca ven el itinerario.
-4. **Los dos del editor** (autoguardado y fallo silencioso) — pérdida de trabajo.
-5. **`ok:true` con 0 filas** — el mismo patrón en admin, dashboard, despublicar,
-   borrar y facturación. `saveEditor` ya lo resuelve bien: copiar de ahí.
-6. **`fulfillment.ts:80` y `:91`** — dominio dinero.
-7. **Copy de editor en la vista pública** (30 plantillas) y **username = correo**.
-8. El resto por severidad.
+> **Reordenado el 2026-09-10 tras el E2E.** Lo que cambia: los dos defectos del
+> editor suben al primer bloque porque ya no son hipótesis — están medidos, se
+> comen el trabajo del usuario en el camino más usado del producto, y no tienen
+> ninguna vía de rescate manual. La fuga de datos sigue primero porque es la
+> única con consecuencia irreversible hacia fuera.
 
----
+1. **Las dos policies de la `0001`** (`:244`, `:272`) — cierran U-1, los módulos
+   ocultos y el puenteo del muro de pago. Sigue siendo lo primero: es la única
+   con exposición de datos de terceros.
+2. 🔺 **El autoguardado del editor** (E2E N-1) — `use-autosave.ts:70-80`, más el
+   indicador que miente (`invitation-editor.tsx:494`), más el `beforeunload` que
+   no cubre la navegación interna (`:82-92`). **Sube del puesto 4 al 2**: está
+   reproducido, deja el editor atascado para siempre y destruye el trabajo sin
+   un solo aviso. Los tres se arreglan juntos o el arreglo miente igual.
+3. **Reconciliar `is_published` con el entitlement** y avisar al anfitrión — U-2,
+   hay un cliente caído con su evento por delante.
+4. 🔺 **La idempotencia del RSVP público** (E2E N-3) — **nueva**. Un invitado
+   confirma cuantas veces recargue y el conteo del anfitrión se infla; en planes
+   con tope, además consume cupo. Va aquí porque corrompe el dato que el
+   anfitrión usa para decidir gasto.
+5. **El observer anidado** — U-3, acotado por el E2E: **no** se reproduce en
+   `cumpleanos-galaxia`. Antes de arreglarlo conviene delimitar de qué preset
+   depende, o el arreglo será a ciegas.
+6. 🔺 **El título por palabras del editor** (E2E N-2) — **nuevo**.
+   `text-reveal.tsx:58,62`: el anfitrión escribe su título y se le borra todo
+   menos la primera palabra. Barato de arreglar, muy visible.
+7. **`ok:true` con 0 filas** — el mismo patrón en admin, dashboard, despublicar,
+   borrar y facturación. `saveEditor` ya lo resuelve bien: copiar de ahí.
+8. **`fulfillment.ts:80` y `:91`** — dominio dinero.
+9. **Copy de editor en la vista pública** (30 plantillas), **username = correo**
+   y **`meta robots`** — las tres confirmadas en vivo por el E2E, las tres son
+   fuga hacia fuera y las tres son de una línea.
+10. 🔺 **Las imágenes huérfanas al borrar** (E2E N-4) — contenido de clientes que
+    borraron su invitación sigue descargable.
+11. El resto por severidad (incluidos N-5 táctil en móvil y N-6 títulos de
+    página, los dos BAJA).
 
 ## 8. No verificado, y por qué
 
-- **Todo el E2E autenticado**: dashboard, editor, publicación, RSVP real, doble
-  submit, refresh, atrás/adelante, multipestaña. Exige sesión y escrituras.
+> ⚠️ **Esta sección quedó parcialmente superada el 2026-09-10.** El primer punto
+> ya se ejecutó; lo que sigue sin verificarse está actualizado abajo y, con más
+> detalle, al final de **E2E REAL EXECUTION**.
+
+- ~~**Todo el E2E autenticado**~~ → **EJECUTADO** el 2026-09-10: dashboard,
+  editor, publicación, RSVP real, doble submit, refresh y atrás/adelante. Lo que
+  sigue pendiente de ese bloque: **multipestaña** (conflicto de versión con dos
+  editores abiertos), el **modo lista de invitados**, y el **editor en móvil**.
 - **Admin en runtime**: exige sesión de admin.
 - **Pagos**: no se tocó Mercado Pago. Todo el análisis de facturación es estático.
 - **Peso real de página**: lo medido es `next dev`, no representa producción.
@@ -399,3 +444,402 @@ referido.
   estado activo/inactivo por RPC, pero `invitation_entitlements` está cerrada a
   `anon` (`*/0`), así que las fechas concretas vienen de una lectura con service
   key de un agente y **no están verificadas de forma independiente**.
+
+---
+
+## E2E REAL EXECUTION
+
+> **Ejecutado:** 2026-09-10, 03:33–04:05 UTC · **Rama:** `skarlette/rediseno` ·
+> **Superficie:** el `next-server` de desarrollo del dev en `localhost:3000`
+> (PID 78112, arriba desde el 2026-09-08 00:17; compila del fuente, así que
+> sirve el árbol de trabajo actual) contra la BD de **producción**.
+> **Navegador:** el Chrome del dev con su sesión abierta (`Arturo Castillo`,
+> cuenta **admin**).
+>
+> **Gate de medición aplicado en cada conclusión de UI:** `document.visibilityState`,
+> `document.hasFocus()` y la llegada de un `requestAnimationFrame`. Toda medida
+> tomada con la pestaña oculta se descartó y se repitió con la pestaña al frente.
+>
+> **Datos de la prueba, y su borrado.** Se crearon **dos** invitaciones de
+> prueba, ambas del propio dev, ambas borradas al terminar:
+> `invitacion-wta7oh` (en blanco) e `invitacion-l9rh0p` («ZZ PRUEBA E2E -
+> BORRAR», publicada, con 2 RSVP ficticios y 1 imagen subida). **Ninguna
+> invitación, usuario ni fila preexistente se modificó.**
+> **Cero pagos y cero llamadas a Mercado Pago**: la cuenta del dev es admin y
+> `invitation_owner_is_comped` devuelve `true`, así que el plan efectivo es
+> `premium` sin comprar nada — medido antes de publicar.
+> **`orders` quedó en 8 antes y después.**
+
+### Universo contado antes y después (no el filtro)
+
+| Tabla | Línea base 03:33 | Pico durante la prueba | Final 04:03 |
+|---|---|---|---|
+| `invitations` | 18 | 20 | **18** |
+| `invitation_modules` | 88 | 99 | **88** |
+| `rsvp_responses` | 11 | 13 | **11** |
+| `invitation_entitlements` | 3 | 3 | **3** |
+| `orders` | 8 | 8 | **8** |
+| `invitation_guests` | 8 | 8 | **8** |
+
+Además, tras el borrado: `invitations?title=ilike.*ZZ*` → `[]`,
+`rsvp_responses?guest_name=ilike.*Ficticio*` → `[]`, y las dos filas por id →
+`0 filas`. La sonda se validó con un **control negativo** (`select` de una
+columna inexistente → `HTTP 400` con el nombre de la columna), así que un `0`
+significa «no hay», no «no pregunté».
+
+---
+
+### Paso a paso
+
+#### 1. Login — **NOT TESTED**
+- **Acción:** no se ejecutó.
+- **Motivo:** introducir una contraseña para autenticarse está fuera de lo que
+  puedo hacer. Se trabajó sobre la sesión que el dev ya tenía abierta.
+- **Lo que sí se verificó por efecto**, sin sesión (cookies vacías, `curl`):
+  `/dashboard` → **307** → `/login?redirectTo=/dashboard`; `/admin` → **307** →
+  `/login?redirectTo=/admin`. La puerta cierra.
+- **Hallazgo de rebote (confirma §5.4):** `/dashboard/billing` sin sesión
+  redirige a `/login?redirectTo=**/dashboard**`, no a `/dashboard/billing`. El
+  destino se pierde: tras iniciar sesión el usuario no vuelve donde iba.
+- **Hallazgo de rebote (confirma §5.2):** `/editor/<uuid-inexistente>` sin
+  sesión responde **200**, no 307 ni 404.
+- **Severidad:** MEDIA (las dos, ya estaban en la matriz; ahora medidas en vivo).
+
+#### 2. Dashboard — **PASS**
+- **Acción:** abrir `/dashboard` con sesión.
+- **Resultado:** 8 tarjetas del usuario, estados `Publicada`/`Borrador`
+  correctos, todos los `href` resuelven.
+- **Consola:** 0 errores. **HTTP:** 113/113 en 200 sobre `localhost` (barrido
+  completo de `/dashboard`, `/dashboard/billing`, `/dashboard/referrals`).
+
+#### 3. Crear invitación — **PASS (con desvío de flujo)**
+- **Acción:** `+ Nueva invitación` → menú con dos opciones (`Confirmación
+  abierta` / `Lista de invitados`) → `Confirmación abierta`.
+- **Resultado:** va **directo al editor** con una invitación en blanco
+  (`invitacion-wta7oh`, `rsvp_mode=open`, `version=1`, 1 módulo `hero`).
+  `invitations` 18 → 19.
+- **Desvío:** este camino **no ofrece categoría ni plantilla**. Los pasos
+  «seleccionar categoría» y «seleccionar plantilla» sólo existen en el otro
+  camino, `Plantillas` (`/dashboard/templates`). No es un fallo, pero el flujo
+  pedido no es alcanzable desde el botón principal.
+- **Severidad:** — (dato de alcance).
+
+#### 4. Seleccionar categoría — **PASS**
+- **Acción:** `/dashboard/templates` → filtro `Cumpleaños`.
+- **Resultado:** `12 de 65 plantillas`, URL `?evento=Cumplea%C3%B1os`.
+  Las 9 categorías presentes (Boda 13 · Baby shower 12 · Cumpleaños 12 · XV 12 ·
+  Corporativo 11 · Gender reveal 2 · Bautizo 1 · Primera comunión 1 ·
+  Graduación 1).
+- **Confirma §5.3:** el catálogo **no indica el plan** de ninguna tarjeta.
+
+#### 5. Seleccionar plantilla — **PASS**, incluido **doble clic**
+- **Acción:** **doble clic** deliberado sobre `Usar esta plantilla` de
+  `Cumpleaños galaxia`, con hit-test previo (`elementFromPoint` = el botón).
+- **Resultado:** `invitations` 19 → **20**. **Una sola** invitación creada,
+  `invitacion-l9rh0p`, 10 módulos copiados. Sin duplicado.
+- **Severidad:** — (comportamiento correcto).
+
+#### 6. Editor · editar textos — **FAIL · CRÍTICA (pérdida de datos, reproducida)**
+- **Acción medida en tres tramos:**
+  1. Un cambio corto en `Título`, pausa → **guarda** (`version` 1→2, BD =
+     `ZZ PRUEBA E2E Despegue`).
+  2. Un segundo cambio, ya con el guardado anterior terminado → **guarda**
+     (`version` 3).
+  3. **El caso real:** escribir, dejar que el temporizador de 1.2 s dispare **a
+     mitad de la escritura**, y seguir escribiendo.
+- **Resultado del tramo 3, medido:**
+  - En pantalla: `ZZ CHUNK-A-CHUNK-B` · en la BD: **`ZZ CHUNK-A`**.
+    `updated_at` congelado en `03:39:02`.
+  - Se tecleó **un tercer cambio** en `Subtítulo` (`ZZ TERCER CAMBIO`): tampoco
+    se guardó. **100 segundos** después, `version` seguía en 4 y la BD seguía
+    con el texto viejo. **El editor queda atascado, no se recupera solo.**
+  - El indicador de la cabecera dijo **«Guardando…» de forma permanente**, con
+    la pestaña `visible`, `hasFocus:true` y `requestAnimationFrame` vivo — no es
+    estrangulamiento del navegador.
+- **Causa, anclada a la línea ejecutable:** `src/lib/invitations/use-autosave.ts:70-80`.
+  La dependencia del efecto es `hayCambios`, un **booleano**; una vez en `true`
+  no vuelve a cambiar de identidad, el efecto no se re-ejecuta y **no se
+  programa otro temporizador**. El comentario de `:78-79` («`hayCambios` cambia
+  en cada edición, así que el temporizador se reinicia») es **falso**. La
+  ventana mortal es lo tecleado entre que el temporizador dispara y que
+  `dirty` volvería a `false`: si sigue habiendo cambios nuevos, `dirty` nunca
+  baja, y la transición `false→true` que rearma el temporizador no ocurre nunca.
+- **Agravante medido:** `src/components/editor/invitation-editor.tsx:494` es
+  literalmente `dirty ? "Guardando…" : "Guardado"`. No existe estado de error
+  **ni botón de guardar manual**: el único rescate es `Publicar`
+  (`invitation-editor.tsx:189`, `if (dirty) await guardarAhora()`).
+- **Consola:** 0 errores. **HTTP:** 0 peticiones fallidas — el guardado **ni se
+  intenta**; no hay nada que falle.
+- **Impacto:** el anfitrión escribe su invitación, el indicador le dice
+  «Guardando…», y el trabajo no existe. Es pérdida silenciosa de datos en el
+  camino más usado del producto.
+- **Severidad: CRÍTICA.**
+
+#### 7. Editor · editar imágenes — **PASS**
+- **Acción:** subir un PNG de prueba (600×600, bandas magenta/cian) en
+  `Portada → Imagen de fondo`.
+- **Resultado:** subido a `invitation-images/<user_id>/<invitation_id>/…jpg`
+  (43 983 bytes, convertido a JPG), `hero.imageUrl` persistido, visible en la
+  vista previa. Al cambiar `Diseño de la portada` de `plain` a
+  `Texto centrado sobre la foto`, la imagen se pinta.
+- **Nota de UI correcta:** con `plain` el panel avisa «Esta composición es sólo
+  tipografía: ignora la imagen de fondo a propósito».
+- **Consola:** 0 errores. **HTTP:** sin fallos.
+
+#### 8. Editor · configurar módulos — **PASS**
+- **Acción:** apagar la visibilidad de `Música`.
+- **Resultado:** `invitation_modules` → `music.is_visible = false` en la BD, y
+  el módulo **ausente** de la invitación publicada. Los otros 9 intactos y en
+  orden.
+
+#### 9. Guardar — **FAIL · CRÍTICA** (mismo defecto del paso 6)
+- Los cambios «cortos con pausa» sí guardan (`version` llegó a 12). Los que caen
+  en la ventana descrita, no. No hay guardado manual con el que forzarlo.
+
+#### 10. Salir — **FAIL · CRÍTICA (sale sin avisar y pierde el trabajo)**
+- **Acción:** con dos ediciones sin guardar, pulsar `Volver al panel`.
+- **Resultado:** navega a `/dashboard` **sin ningún diálogo**
+  (`document.querySelector('[role=dialog],[role=alertdialog]')` → `null`).
+- **Causa:** la guarda es `beforeunload` (`use-autosave.ts:82-92`), que **no se
+  dispara en la navegación interna** de Next. El aviso existe sólo para cerrar
+  la pestaña.
+- **Severidad: CRÍTICA** (es la mitad que convierte el defecto anterior en
+  pérdida definitiva).
+
+#### 11. Volver a entrar / verificar persistencia — **FAIL · CRÍTICA**
+- **Acción:** reabrir `/editor/<id>`.
+- **Resultado medido:** `Título` = `ZZ CHUNK-A` (perdido `-CHUNK-B`),
+  `Subtítulo` = `Segundo cambio ZZ` (perdido `ZZ TERCER CAMBIO`). El indicador
+  pasa a «Guardado» — **afirmando que está a salvo lo que acaba de destruir.**
+- **Evidencia:** lectura del DOM del editor y de `invitation_modules.config`,
+  coincidentes.
+
+#### 12. Preview — **PASS**
+- **Acción:** alternar `Móvil` / `Escritorio` en el lienzo.
+- **Resultado:** el texto de la vista previa coincide **campo por campo** con lo
+  que sirve la BD. No existe ruta de preview aparte (`/editor/[invitationId]`
+  es la única); el lienzo es la vista previa.
+
+#### 13. Publicar — **PASS**, incluido **doble clic**
+- **Acción:** **doble clic** en `Publicar`.
+- **Resultado:** `is_published=true`, `status=published`. La cabecera cambia a
+  `Ver | Despublicar`. **`invitations` siguió en 20**, `orders` en 8,
+  `invitation_entitlements` en 3 — sin duplicados y **sin pago**.
+
+#### 14. Abrir URL pública — **PASS**
+- **URL:** `/arturodejesuscz-d0bd4f/invitacion-l9rh0p`, HTTP 200.
+- **Consola:** 0 errores. **HTTP:** sin fallos.
+
+#### 15. Verificar contenido público — **PASS con dos fugas confirmadas en vivo**
+- **Paridad:** título, subtítulo, cuenta regresiva, itinerario y código de
+  vestimenta idénticos a editor y BD. `Música` correctamente ausente.
+- **✓ Confirma §5.3 (copy de editor filtrado):** la página **publicada** sirve
+  literalmente **«Agrega fotos a tu galería.»**. En cambio el mapa **sí** está
+  protegido y su pista no aparece — o sea la omisión es por módulo, no general.
+  **Severidad: ALTA.**
+- **✓ Confirma §5.8 (indexable):** `document.querySelector('meta[name=robots]')`
+  → **null** en la invitación publicada. **Severidad: ALTA.**
+- **✓ Confirma §5.8 (username = correo):** la URL pública es
+  `/arturodejesuscz-d0bd4f/…` — la parte local del correo del anfitrión.
+  **Severidad: ALTA.**
+
+#### 16. Animaciones de la invitación publicada — **PASS (U-3 NO reproducido aquí)**
+- **Acción:** dos pasadas con el gate puesto (`visible`, `raf:true`): scroll de
+  lectura (600 px / 350 ms) y scroll rápido de móvil (1500 px / 80 ms).
+- **Resultado en las dos:** **0 nodos con texto sin pintar**, y las 5 filas del
+  itinerario con `opacity:1`, `transform:none`. Confirmado además por píxeles
+  (captura del bloque «Plan de vuelo» completo).
+- **Honestidad sobre el instrumento:** mi primera sonda reportó «6 recortados
+  sin revelar». Era **falso**: comparaba contra `inset(0px 0px 0px 0px)` y el
+  valor computado real es `inset(0px)`, así que contaba como rotos los que sí
+  estaban revelados. Corregida y re-medida.
+- **Conclusión:** **U-3 no se reproduce en esta plantilla**
+  (`cumpleanos-galaxia`, preset `anim--soft-scale`). Esto **no desmiente** la
+  §3 U-3, que se midió sobre otras dos invitaciones publicadas; sugiere que el
+  defecto **depende del preset** que recorta, y esa acotación no está en el
+  informe original. **Pendiente:** reproducirlo eligiendo explícitamente un
+  preset de la familia que recorta.
+
+#### 17. RSVP — **PASS**, incluido **doble submit**
+- **Acción:** formulario con datos ficticios (`Invitado Ficticio ZZ`,
+  `zz-prueba-e2e@example.invalid`, «Sí, asistiré», 1 invitado, mensaje de
+  prueba) y **doble clic** en `Confirmar`.
+- **Resultado:** `rsvp_responses` 11 → **12**. **Una sola fila**, con todos los
+  campos correctos. El doble submit está protegido.
+- **Consola:** 0 errores. **HTTP:** sin fallos.
+
+#### 18. Verificar RSVP en el dashboard — **PASS**
+- `/dashboard/invitations/<id>`: `RESPUESTAS RECIBIDAS 1`,
+  `CONFIRMACIONES 1 (100%)`, `ASISTENTES CONFIRMADOS 1`. Coherente con la BD.
+
+#### 19. Editar de nuevo y guardar — **PASS**
+- **Acción:** con la invitación ya publicada, cambiar `Subtítulo` a
+  `EDICION POSTERIOR ZZ`, pausa.
+- **Resultado:** BD actualizada a las `03:55:53`; la RPC pública
+  `get_public_invitation` ya servía el valor nuevo al consultarla.
+- **Nota de instrumento:** un intento anterior «no escribió nada». No era un
+  fallo del producto: **la pestaña del editor estaba en segundo plano** y el
+  clic no daba foco (`document.activeElement` = `BODY`, aunque
+  `elementFromPoint` devolvía el propio `input`). Con la pestaña al frente
+  funcionó a la primera. Se anota para que no se lea como defecto.
+
+#### 20. Verificar actualización en la URL pública — **PASS**
+- Recarga a las `03:56:25` (posterior al guardado): la página sirve
+  `EDICION POSTERIOR ZZ`. El cambio llega al invitado sin republicar.
+
+#### 21. Eliminar la invitación de prueba — **PASS**
+- **Acción:** `⋯ → Eliminar` en la tarjeta del dashboard. Antes de confirmar se
+  comprobó que los `href` de la tarjeta apuntaban **sólo** al id de prueba.
+- **Diálogo:** correcto y específico — «¿Eliminar «ZZ PRUEBA E2E - BORRAR»? Está
+  publicada: su enlace dejará de funcionar para quien ya lo tenga, y se borran
+  sus confirmaciones. No se puede deshacer.»
+
+#### 22. Confirmar eliminación — **PASS en BD, FAIL en Storage**
+- **Por efecto, contando el universo:** `invitations` 20→**19** (−1),
+  `invitation_modules` 99→**89** (−10), `rsvp_responses` 13→**11** (−2);
+  `invitation_guests`, `invitation_entitlements`, `orders` sin cambio. Por id,
+  **0 filas** en las 7 tablas hijas. La URL pública pasó a **HTTP 404**.
+- **FAIL:** la imagen subida **sobrevive al borrado** y siguió sirviéndose
+  públicamente: `HTTP 200`, 43 983 bytes, en un bucket público.
+  `deleteInvitation` (`src/lib/invitations/actions.ts:287-303`) sólo borra la
+  fila; no existe ninguna llamada `.remove()` contra Storage en todo `src/`.
+- **Limpieza:** el objeto huérfano se borró a mano por la API de Storage y se
+  verificó por efecto — con `cache-buster`, `HTTP 400`; la carpeta del usuario
+  volvió a sus 5 subcarpetas originales. (El primer `GET` devolvió 200 por caché
+  de borde; se distinguió caché de objeto vivo antes de concluir.)
+- **Severidad: MEDIA** (fuga de contenido de invitaciones borradas + consumo de
+  cuota que nadie libera).
+
+---
+
+### Comprobaciones transversales pedidas
+
+| # | Comprobación | Resultado |
+|---|---|---|
+| 1 | Flujo completo en escritorio | **PASS** (con los FAIL del editor) |
+| 2 | Partes críticas en móvil | **PARCIAL** — ver abajo |
+| 3 | Errores de consola relevantes | **PASS** — 0 errores en dashboard, editor, plantillas, billing, referidos e invitación pública. Único mensaje de error en toda la sesión: un aviso de React en desarrollo («Encountered a script tag while rendering React component»), sin efecto observable |
+| 4 | Peticiones HTTP fallidas | **PASS** — 113/113 en 200 sobre `localhost` en el barrido completo; 0 respuestas ≥400 salvo los 404 esperados de rutas inexistentes |
+| 5 | Errores de JavaScript | **PASS** — 0 excepciones |
+| 6 | Persistencia real en Supabase | **PASS parcial** — todo lo guardado se verificó contra la BD; y es justo así como se demostró la **pérdida** del paso 6 |
+| 7 | Paridad preview / editor / URL pública | **PASS** — coinciden campo por campo; la única diferencia es la pista de editor que **sí** se filtra al público (hallazgo, no desincronía) |
+| 8 | Comportamiento tras refresh | **PASS** — la invitación pública se rehidrata igual; el editor recarga exactamente lo que hay en BD |
+| 9 | Atrás / adelante | **PASS** — el filtro escribe `?evento=Boda`; `atrás` sale de la página y `adelante` restaura URL **y** estado (`Boda 13`, `13 de 65`). Nota: el filtro usa `replace`, así que `atrás` no deshace el filtro — decisión de diseño, no fallo |
+| 10 | Doble clic / doble submit en acciones críticas | **PASS 3/3** — crear desde plantilla (1 fila), publicar (sin duplicar), RSVP (1 fila) |
+
+**Sobre el punto 2 (móvil).** A **375×812 real** (viewport emulado) la invitación
+pública mide **0 desbordes horizontales**: `scrollWidth = 375`, 0 de 9 secciones
+y 0 de 8 controles fuera de la ventana. Eso confirma el PASS de responsive de la
+§5.8. Lo que **no** pude juzgar a 375 es el contenido animado: el panel del
+navegador embebido estaba **oculto** (`visibilityState:hidden`, `raf:false`), y
+con la pestaña oculta lo que se mide es el estrangulamiento de Chrome, no la
+aplicación — así que esa parte queda **NOT TESTED** en vez de reportada. El
+editor en móvil tampoco se probó: exige la sesión, que vive en la ventana del
+dev, y el ancho mínimo real de esa ventana fue 530 px.
+
+
+### Defectos NUEVOS encontrados por el E2E
+
+Los que no estaban en el diagnóstico estático, o que estaban pero **cambian de
+gravedad** al verlos ocurrir.
+
+#### N-1 · El autoguardado se atasca y el editor no vuelve a guardar nunca — **CRÍTICA**
+Ya estaba como hipótesis en §5.1 (`use-autosave.ts:71-80`). **Reproducido, y es
+peor que lo escrito:** no se pierde «lo tecleado después de 1.2 s», se pierde
+**todo lo que venga después**, porque el temporizador no se rearma jamás
+mientras siga habiendo cambios. Sumado a `invitation-editor.tsx:494`
+(«Guardando…» permanente), a que **no hay botón de guardar** y a que salir por
+la navegación interna no avisa, el resultado es pérdida de trabajo silenciosa y
+definitiva. Sube de «hipótesis de alta confianza» a **medida**.
+· Anclas: `use-autosave.ts:70-80` · `:82-92` · `invitation-editor.tsx:189`, `:494`.
+
+#### N-2 · Las palabras que se añaden a un título después del montaje no se pintan nunca — **ALTA**
+**Medido con evidencia de píxel.** Al escribir `Uno Dos Tres Cuatro` en el
+título, la vista previa pinta **sólo «Uno»**. Las demás palabras existen en el
+DOM, con caja y posición correctas, pero en `opacity: 0` y
+`transform: translateY(18px)` **para siempre** (pestaña visible, `raf` vivo, 6+
+segundos). Al recargar se ven las cuatro.
+· Causa anclada: `src/components/animation/text-reveal.tsx:47` parte por palabra;
+`:62` usa `key={i}`; `:56-58` monta con `initial="hidden"` y `whileInView` con
+`once: true` (`:33`); el estado oculto es `:15` (`y:"0.6em", opacity:0` — y
+`0.6em × 30px = 18px`, exactamente lo medido). El hero lo monta **sin `key`**
+(`src/components/modules/previews.tsx:484`), así que el contenedor no se remonta
+al editar y su observador ya no vuelve a disparar: las palabras nuevas se montan
+en `hidden` y nadie las promueve.
+· **Alcance:** el mismo componente vive en la página pública
+(`public-invitation.tsx:116`), pero allí el título **no cambia después del
+montaje**, así que el defecto no se manifiesta. Es, en la práctica, un defecto
+del **editor** — y el editor es justo donde el anfitrión escribe su título.
+· **Ninguna prueba lo cubre:** cero menciones a `TextReveal` / `whileInView` en
+la suite. `recorte-y-umbral.test.ts` suena cercana y no lo caza: sus cuatro
+aserciones (`:41`, `:47`, `:52-53`, `:58-59`) comparan la lista de presets
+contra el texto de `animations.css` — otro mecanismo, cero solapamiento.
+
+#### N-3 · El RSVP público no tiene idempotencia: el mismo invitado confirma cuantas veces quiera — **ALTA**
+**Medido.** Tras un refresh, el formulario se ofrece de nuevo sin memoria de la
+confirmación previa. Se envió **el mismo nombre y el mismo correo** una segunda
+vez y quedaron **dos filas idénticas** en `rsvp_responses`. El panel del evento
+pasó a decir **«RESPUESTAS RECIBIDAS 2 · ASISTENTES CONFIRMADOS 2 · 2 personas
+en total»** por **una sola persona**.
+· **Impacto:** el anfitrión planea comida y lugares para gente que no existe; y
+en los planes con tope de invitados, cada reenvío consume cupo. Cualquiera con
+el enlace puede inflar la lista, y no hay rate limit (§5.8 ya lo anotaba).
+· El doble clic **sí** está protegido; lo que no está protegido es el **reenvío**.
+
+#### N-4 · Borrar una invitación deja sus imágenes servidas al público — **MEDIA**
+**Verificado por efecto, no sólo por `grep`.** Tras borrar la invitación, su
+imagen seguía en `HTTP 200`, 43 983 bytes, en un bucket público. Las 10 filas de
+módulos y las 2 de RSVP sí cayeron por `CASCADE`. `deleteInvitation`
+(`actions.ts:287-303`) no toca Storage y **no existe ninguna llamada `.remove()`
+en todo `src/`**. La foto de la boda de un cliente que borró su invitación sigue
+descargable por quien tenga la URL.
+
+#### N-5 · Los controles del RSVP quedan por debajo del mínimo táctil en móvil — **BAJA**
+A 375 px, **7 de 8** controles miden menos de 44 px de alto: los campos de texto
+**30 px** y los botones **41 px** (mínimo recomendado 44 pt / 48 dp). No hay
+desbordes, pero el formulario que decide la conversión del producto es el más
+difícil de tocar.
+
+#### N-6 · Dos páginas del panel heredan el título de la portada — **BAJA**
+`/dashboard/billing` y `/dashboard/referrals` no declaran `export const
+metadata`, así que su `<title>` es **«Sobrely — Invitaciones digitales
+dinámicas»**. Medido en el HTML servido y en el fuente (`grep -c` = 0 en los dos
+archivos, = 1 en `dashboard`, `templates` y `animations`). Afecta a pestañas y
+marcadores.
+
+#### N-7 · El botón principal de crear no pasa por categoría ni plantilla — **dato de alcance**
+`+ Nueva invitación` crea una invitación **en blanco** y salta al editor. El
+flujo «categoría → plantilla» sólo existe entrando por `Plantillas`. No es un
+fallo, pero conviene saberlo antes de diseñar el onboarding.
+
+---
+
+### Lo que el E2E **confirmó en vivo** del diagnóstico estático
+
+| Hallazgo del informe | Cómo se confirmó |
+|---|---|
+| §5.3 copy de editor en la vista pública | «Agrega fotos a tu galería.» servido en la invitación **publicada** |
+| §5.8 invitaciones indexables | `meta[name=robots]` → `null` en la página publicada |
+| §5.8 username = parte local del correo | URL pública `/arturodejesuscz-d0bd4f/…` |
+| §5.4 `redirectTo` pierde el destino | `/dashboard/billing` sin sesión → `?redirectTo=/dashboard` |
+| §5.2 `/editor/*` responde 200 | `/editor/<uuid inexistente>` sin sesión → **200** |
+| §5.1 autoguardado y indicador que miente | N-1, reproducido y agravado |
+| §5.2 borrar no comprueba filas | El borrado funcionó; el defecto sigue latente (`actions.ts:301` no mira filas afectadas) |
+| §5.3 el catálogo no dice el plan | Ninguna de las 12 tarjetas de Cumpleaños indica plan |
+
+### Lo que el E2E **no** pudo confirmar
+
+- **U-3 (itinerario invisible).** No se reproduce en `cumpleanos-galaxia`, ni
+  con scroll lento ni rápido. La §3 sigue en pie —se midió sobre otras dos
+  publicadas— pero el defecto parece **depender del preset de animación**, y esa
+  acotación falta en el informe.
+- **Todo el muro de pago.** La cuenta del dev es admin y está *comped*
+  (`invitation_owner_is_comped` → `true`, plan efectivo `premium`), así que
+  `canPublishInvitation` nunca llegó a negar nada. **Los gates de plan siguen
+  sin ejercitarse en runtime**, y hacerlo exigiría una cuenta no admin.
+- **Modo «lista de invitados».** La invitación de prueba se creó en
+  `Confirmación abierta`. El puenteo descrito en §5.8 no se volvió a probar.
+- **Admin en runtime**, **Mercado Pago**, y el **build de producción**: igual que
+  antes, sin ejecutar.
+- **Móvil real a 375 px con animación**, y **el editor en móvil**: ver el punto 2
+  de la tabla transversal.
