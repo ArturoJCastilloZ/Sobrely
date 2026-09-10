@@ -190,6 +190,14 @@ export function InvitationEditor({
   /** Salir con cambios sin guardar: se ofrece salir igualmente o quedarse. */
   const [salidaEnRiesgo, setSalidaEnRiesgo] = useState(false);
   const [saliendo, setSaliendo] = useState(false);
+  /**
+   * Como fue el ULTIMO guardado. Es una ref y no estado a proposito: `salirAlPanel`
+   * lo consulta justo despues del `await`, y en ese punto React todavia no ha
+   * re-renderizado ni corrido los efectos, asi que cualquier estado —o una ref
+   * sincronizada en un efecto— seguiria valiendo lo de ANTES del guardado.
+   * Una ref escrita dentro del propio guardado si esta al dia.
+   */
+  const ultimoGuardado = useRef<"ok" | "error">("ok");
 
   /**
    * Salir del editor SIN perder el trabajo.
@@ -216,9 +224,8 @@ export function InvitationEditor({
     } finally {
       setSaliendo(false);
     }
-    // `docRef` es la referencia viva: si sigue habiendo pendientes, el guardado
-    // no llego a puerto y salir ahora si perderia trabajo.
-    if (hayCambiosSinGuardar(historiaRef.current)) {
+    // Se pregunta por el RESULTADO del guardado, no por el estado de React.
+    if (ultimoGuardado.current === "error") {
       setSalidaEnRiesgo(true);
       return;
     }
@@ -307,24 +314,24 @@ export function InvitationEditor({
     docRef.current = historia.presente;
   }, [historia.presente]);
 
-  // Misma idea para la historia completa: `salirAlPanel` necesita saber si
-  // QUEDAN cambios DESPUES de esperar al guardado, y `dirty` en su clausura es
-  // el de antes de la peticion.
-  const historiaRef = useRef(historia);
-  useEffect(() => {
-    historiaRef.current = historia;
-  }, [historia]);
-
   const guardarDocumento = useCallback(async () => {
     const doc = docRef.current;
 
     if (!doc.invitation.title.trim()) {
-      toast.error("El título es obligatorio.");
+      // `id` fijo: ahora que el autoguardado REINTENTA de verdad, sin esto el
+      // usuario recibiria un aviso nuevo cada vez que hace una pausa.
+      ultimoGuardado.current = "error";
+      setErrorGuardado("El título es obligatorio.");
+      toast.error("El título es obligatorio.", { id: "guardado-invalido" });
       return;
     }
     const cleanSlug = slugify(doc.invitation.slug);
     if (!cleanSlug) {
-      toast.error("El slug es obligatorio (usa letras o números).");
+      ultimoGuardado.current = "error";
+      setErrorGuardado("El slug es obligatorio (usa letras o números).");
+      toast.error("El slug es obligatorio (usa letras o números).", {
+        id: "guardado-invalido",
+      });
       return;
     }
     if (cleanSlug !== doc.invitation.slug) {
@@ -363,12 +370,16 @@ export function InvitationEditor({
       })),
       });
     } catch {
+      ultimoGuardado.current = "error";
       setErrorGuardado("No se pudo guardar. Revisa tu conexión.");
-      toast.error("No se pudo guardar. Revisa tu conexión.");
+      toast.error("No se pudo guardar. Revisa tu conexión.", {
+        id: "guardado-fallido",
+      });
       return;
     }
 
     if (!result.ok) {
+      ultimoGuardado.current = "error";
       setErrorGuardado(result.error);
       if (result.conflict) {
         setConflicto(true);
@@ -381,6 +392,7 @@ export function InvitationEditor({
       return;
     }
 
+    ultimoGuardado.current = "ok";
     setErrorGuardado(null);
 
     // Se adopta la version que dejo el servidor. Si se quedara con la vieja,
@@ -603,23 +615,30 @@ export function InvitationEditor({
                   cambios": con un guardado fallido se quedaba ahi para siempre
                   y afirmaba que se estaba guardando algo que no estaba en
                   vuelo. */}
-              {errorGuardado ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="hidden h-7 shrink-0 px-2 text-xs text-destructive sm:inline-flex"
-                  onClick={() => void guardarAhora()}
-                >
-                  No se guardó · Reintentar
-                </Button>
-              ) : (
-                <span
-                  className="hidden shrink-0 text-xs text-muted-foreground sm:inline"
-                  aria-live="polite"
-                >
-                  {guardando ? "Guardando…" : dirty ? "Sin guardar" : "Guardado"}
-                </span>
-              )}
+              {/* El `aria-live` envuelve a los DOS estados: si vive solo en la
+                  rama de exito, el lector de pantalla deja de anunciar
+                  justamente cuando hay algo que decir. */}
+              <span className="flex min-w-0 items-center" aria-live="polite">
+                {errorGuardado ? (
+                  // El fallo SI se ve en movil. El estado normal se sigue
+                  // ocultando en pantalla estrecha —el titulo importa mas— pero
+                  // esconder el error dejaria al usuario editando sobre trabajo
+                  // que no se esta guardando, que es el defecto que este cambio
+                  // viene a cerrar.
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 shrink-0 px-2 text-xs text-destructive"
+                    onClick={() => void guardarAhora()}
+                  >
+                    {errorGuardado} · Reintentar
+                  </Button>
+                ) : (
+                  <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
+                    {guardando ? "Guardando…" : dirty ? "Sin guardar" : "Guardado"}
+                  </span>
+                )}
+              </span>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               {/* Deshacer / rehacer. Los atajos funcionan igual; estos botones
