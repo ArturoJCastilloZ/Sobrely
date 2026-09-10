@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  contrastRatio, deriveCta, deriveStatus, hexToRgb, mix, rgbToHex,
+  contrastRatio, deriveCta, deriveStatus, deriveAccentText, cardSurface,
+  hexToRgb, mix, rgbToHex,
   AA_NORMAL, MAX_DARKEN, WHITE,
   STATUS_SUCCESS_BASE, STATUS_DANGER_BASE,
 } from "./contrast";
@@ -185,5 +186,86 @@ describe("deriveStatus", () => {
     // En un pack oscuro el verde sigue siendo verde, no gris del texto.
     const s = deriveStatus(STATUS_SUCCESS_BASE, "#f4efe6", "#161310");
     expect(s).not.toBe("#f4efe6");
+  });
+});
+
+describe("deriveAccentText", () => {
+  it("no toca un acento que YA se lee sobre su superficie", () => {
+    // La mayoria del catalogo no debe cambiar de aspecto: solo se mueven las
+    // que no se leian. Si esto se rompe, el arreglo repinta 65 plantillas.
+    //
+    // OJO con el acento y la tinta: la primera version de esta prueba los puso
+    // IGUALES (`#111111` y `#111111`), y entonces mezclar hacia la tinta no
+    // cambia nada — la prueba pasaba aunque se quitara el atajo. Sobrevivio al
+    // mutante. Tienen que ser DISTINTOS para que el atajo sea observable.
+    const azul = "#1d4ed8";
+    const tinta = "#0f172a";
+    expect(azul).not.toBe(tinta);
+    expect(contrastRatio(azul, WHITE)).toBeGreaterThanOrEqual(AA_NORMAL);
+    expect(deriveAccentText(azul, WHITE, tinta)).toBe(azul);
+  });
+
+  it("levanta el peor caso PUBLICADO hasta AA", () => {
+    // `invitacion-i7t0nb`, medida el 2026-09-09: azul palido sobre azul
+    // palido, 1.24 sobre un piso de 4.5.
+    const fondo = "#dde3ff";
+    expect(contrastRatio("#b3cfff", fondo)).toBeLessThan(2);
+    const out = deriveAccentText("#b3cfff", fondo, "#1f2937");
+    expect(contrastRatio(out, fondo)).toBeGreaterThanOrEqual(AA_NORMAL);
+  });
+
+  it("cambia lo MINIMO: un paso menos ya no cumpliria", () => {
+    const fondo = "#fffafc";
+    const tinta = "#4a3b41";
+    const out = deriveAccentText("#f7a8c4", fondo, tinta); // kawaii
+    expect(contrastRatio(out, fondo)).toBeGreaterThanOrEqual(AA_NORMAL);
+    // Con un 1 % menos de mezcla hacia la tinta, NO llega. Es lo que
+    // demuestra que busca el minimo y no se pasa de largo.
+    for (let t = 0.01; t <= 1; t += 0.01) {
+      if (mix("#f7a8c4", tinta, t) === out) {
+        const menos = mix("#f7a8c4", tinta, Math.max(0, t - 0.01));
+        expect(contrastRatio(menos, fondo)).toBeLessThan(AA_NORMAL);
+        return;
+      }
+    }
+    throw new Error("el resultado no esta en la rampa hacia la tinta");
+  });
+
+  it("mezcla hacia la TINTA, no hacia negro: el resultado no es gris", () => {
+    // Mezclar a negro apagaria el color y sacaria a la pieza de su paleta.
+    const out = deriveAccentText("#f7a8c4", "#fffafc", "#4a3b41");
+    const { r, g, b } = hexToRgb(out);
+    expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeGreaterThan(20);
+  });
+
+  it("devuelve la TINTA cuando ni ella alcanza el objetivo", () => {
+    // Caso degenerado: la superficie no admite texto legible de ningun color
+    // del tema. Ahi el acento no es el problema, y devolver la tinta es
+    // preferible a devolver un acento ilegible.
+    const tinta = "#808080";
+    expect(deriveAccentText("#7f7f7f", "#808080", tinta, 4.5)).toBe(tinta);
+  });
+
+  it("respeta un objetivo distinto de AA (texto grande pide 3.0)", () => {
+    const fondo = "#f0f9ff";
+    const flojo = deriveAccentText("#0ea5e9", fondo, "#1f2937", 3);
+    const duro = deriveAccentText("#0ea5e9", fondo, "#1f2937", 4.5);
+    expect(contrastRatio(flojo, fondo)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(duro, fondo)).toBeGreaterThanOrEqual(4.5);
+    // El objetivo mas duro obliga a mezclar mas, asi que NO pueden coincidir.
+    expect(flojo).not.toBe(duro);
+  });
+});
+
+describe("cardSurface", () => {
+  it("compone la tarjeta translucida sobre el fondo, en los dos modos", () => {
+    // `--inv-card` es `rgba(255,255,255,0.7)` en claro y `rgba(0,0,0,0.22)` en
+    // oscuro. Medir contra la CADENA en vez de contra el color compuesto seria
+    // medir contra algo que no se pinta en ninguna parte.
+    expect(cardSurface("#000000", "light")).toBe(mix("#000000", WHITE, 0.7));
+    expect(cardSurface("#ffffff", "dark")).toBe(mix("#ffffff", "#000000", 0.22));
+    // Una tarjeta clara sobre fondo oscuro es MAS clara que el fondo.
+    const claro = cardSurface("#101010", "light");
+    expect(contrastRatio(claro, WHITE)).toBeLessThan(contrastRatio("#101010", WHITE));
   });
 });

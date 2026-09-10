@@ -38,6 +38,17 @@ import {
 } from "@/lib/modules/types";
 
 const PRIMARY = "var(--inv-primary, var(--primary))";
+/**
+ * El acento cuando se usa como TEXTO. Derivado por superficie en
+ * `themeCssVars` para que alcance AA; `--inv-primary` queda para el color de
+ * MARCA (filetes, bordes, rellenos), donde no hay texto que leer.
+ *
+ * La reserva es `--inv-primary` a propósito: si la variable derivada faltara
+ * —una invitación renderizada por un camino que no pase por `themeCssVars`—
+ * el texto se pinta como antes en vez de desaparecer.
+ */
+const ACENTO_TEXTO = "var(--inv-accent-text, var(--inv-primary, var(--primary)))";
+const ACENTO_TARJETA = "var(--inv-accent-card, var(--inv-primary, var(--primary)))";
 const TINT = "color-mix(in srgb, var(--inv-primary, #888) 7%, transparent)";
 
 /**
@@ -489,7 +500,7 @@ export function HeroPreview({
             data-bloque="cta"
             className="mt-3 flex items-center gap-3 @2xl/inv:mt-5 @2xl/inv:gap-4"
             style={{
-              color: sobreFoto ? "rgba(255,255,255,.92)" : PRIMARY,
+              color: sobreFoto ? "rgba(255,255,255,.92)" : ACENTO_TEXTO,
               ...desplazamientoStyle(config, "cta"),
             }}
           >
@@ -580,7 +591,7 @@ export function CountdownPreview({
     <div className="flex min-w-[64px] flex-col items-center rounded-lg bg-[var(--inv-card)] px-3 py-2 shadow-sm @2xl/inv:min-w-[92px] @2xl/inv:px-5 @2xl/inv:py-3 @4xl/inv:min-w-[120px] @4xl/inv:px-7 @4xl/inv:py-4">
       <span
         className="text-2xl font-bold tabular-nums @2xl/inv:text-4xl @4xl/inv:text-5xl"
-        style={{ color: PRIMARY }}
+        style={{ color: ACENTO_TARJETA }}
       >
         {String(value).padStart(2, "0")}
       </span>
@@ -693,7 +704,7 @@ export function MapPreview({
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm underline underline-offset-4 @2xl/inv:text-base @4xl/inv:text-lg"
-            style={{ color: PRIMARY }}
+            style={{ color: ACENTO_TEXTO }}
           >
             Ver en Google Maps
           </a>
@@ -844,7 +855,7 @@ export function ItineraryPreview({
             >
               <span
                 className="min-w-[64px] font-semibold @2xl/inv:text-lg @4xl/inv:text-xl"
-                style={{ color: PRIMARY }}
+                style={{ color: ACENTO_TARJETA }}
               >
                 {it.time || "—"}
               </span>

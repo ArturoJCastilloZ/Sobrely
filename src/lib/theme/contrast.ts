@@ -161,6 +161,67 @@ export function deriveCta(
  * cumple. Conserva el matiz mientras se pueda; si ni mezclando del todo alcanza,
  * devuelve la tinta, que es legible por construcción.
  */
+/**
+ * El ACENTO usado como TEXTO sobre una superficie, ajustado lo mínimo para que
+ * se lea.
+ *
+ * Hermana de `deriveCta`, y existe por el mismo motivo un nivel más abajo.
+ * `deriveCta` arregla el acento cuando es el FONDO de un botón con texto
+ * blanco encima. Pero el acento también se pinta como TEXTO directamente sobre
+ * la invitación —el epígrafe («Acompáñanos»), el enlace del mapa, los dígitos
+ * de la cuenta atrás, la hora del itinerario— y ahí no pasaba por ninguna
+ * derivación.
+ *
+ * Medido el 2026-09-09 (3.ª sesión) con
+ * `scripts/verificar-contraste-en-vivo.mts`, que compara dos capturas y mide
+ * sólo los píxeles de GLIFO: **212 casos por debajo de AA en 45 de las 65
+ * plantillas**, y **3 de las 7 invitaciones PUBLICADAS**. La peor publicada
+ * daba **1.24** — `#b3cfff` sobre `#dde3ff`, azul pálido sobre azul pálido.
+ *
+ * Cómo ajusta, y por qué así:
+ *
+ * - **Si ya cumple, NO toca nada.** La mayoría del catálogo no cambia de
+ *   aspecto; sólo se mueven las que no se leían.
+ * - **Mezcla hacia la TINTA del tema, no hacia negro.** Mezclar a negro
+ *   apaga el color y saca a la pieza de su paleta; la tinta es el color de
+ *   texto que el propio tema ya eligió, así que el resultado sigue
+ *   perteneciendo a la invitación. Es el mismo criterio por el que el
+ *   contorno de `deriveCta` se mezcla hacia el FONDO y no hacia blanco.
+ * - **Paso de 1 %**, para no pasarse: se busca el mínimo que cumple.
+ * - **Reserva explícita**: si ni la tinta pura alcanza el objetivo sobre esa
+ *   superficie, se devuelve la tinta. Es el caso degenerado en el que la
+ *   superficie no admite texto legible de ningún color del tema, y ahí el
+ *   acento no es el problema.
+ */
+export function deriveAccentText(
+  primary: string,
+  surface: string,
+  ink: string,
+  objetivo: number = AA_NORMAL,
+): string {
+  if (contrastRatio(primary, surface) >= objetivo) return primary;
+  for (let t = 0.01; t <= 1; t += 0.01) {
+    const cand = mix(primary, ink, t);
+    if (contrastRatio(cand, surface) >= objetivo) return cand;
+  }
+  return ink;
+}
+
+/**
+ * El color EFECTIVO de las tarjetas de la invitación.
+ *
+ * `--inv-card` es translúcido (`rgba(255,255,255,0.7)` en claro,
+ * `rgba(0,0,0,0.22)` en oscuro), así que el color contra el que hay que medir
+ * el texto NO es esa cadena: es el resultado de componerla sobre el fondo del
+ * tema. Sin componerlo, la derivación mediría contra un color que no se pinta
+ * en ninguna parte.
+ */
+export function cardSurface(background: string, mode: "light" | "dark"): string {
+  return mode === "dark"
+    ? mix(background, "#000000", 0.22)
+    : mix(background, WHITE, 0.7);
+}
+
 export function deriveStatus(
   base: string,
   ink: string,

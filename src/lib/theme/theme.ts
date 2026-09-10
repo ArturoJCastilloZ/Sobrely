@@ -2,6 +2,8 @@ import { z } from "zod";
 import {
   deriveCta,
   deriveStatus,
+  deriveAccentText,
+  cardSurface,
   STATUS_SUCCESS_BASE,
   STATUS_DANGER_BASE,
 } from "./contrast";
@@ -264,6 +266,28 @@ export function themeCssVars(theme: ThemeConfig): React.CSSProperties {
     // dashboard is in dark mode.
     ["--inv-card" as string]:
       theme.mode === "dark" ? "rgba(0,0,0,0.22)" : "rgba(255,255,255,0.7)",
+    // El ACENTO usado como TEXTO, derivado por superficie.
+    //
+    // `--inv-primary` es el color que el anfitrión eligió y se sigue usando
+    // como color de MARCA (filetes, bordes, rellenos). Pero pintarlo como
+    // TEXTO sobre la invitación no pasaba por ninguna derivación, y medido con
+    // `scripts/verificar-contraste-en-vivo.mts`: 212 casos bajo AA en 45 de las
+    // 65 plantillas y en 3 de las 7 invitaciones PUBLICADAS, la peor en 1.24.
+    //
+    // Son DOS variables porque son dos superficies: el epígrafe y el enlace del
+    // mapa van sobre el fondo del tema, y los dígitos de la cuenta atrás y la
+    // hora del itinerario van sobre `--inv-card`, que es translúcido y hay que
+    // COMPONER antes de medir contra él.
+    ["--inv-accent-text" as string]: deriveAccentText(
+      theme.colors.primary,
+      theme.colors.background,
+      theme.colors.text,
+    ),
+    ["--inv-accent-card" as string]: deriveAccentText(
+      theme.colors.primary,
+      cardSurface(theme.colors.background, theme.mode === "dark" ? "dark" : "light"),
+      theme.colors.text,
+    ),
     ["--inv-space" as string]: SPACING_VALUES[theme.spacing],
     // CTA legible, derivado — no guardado.
     //
