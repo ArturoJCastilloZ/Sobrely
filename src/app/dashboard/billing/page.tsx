@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,8 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice, getActiveServices } from "@/lib/billing";
 import { ServiceRequestSection } from "@/components/billing/service-request-section";
+
+export const metadata: Metadata = { title: "Facturación" };
 
 /** Etiqueta y variante visual de un estado de orden. */
 const ORDER_STATUS: Record<

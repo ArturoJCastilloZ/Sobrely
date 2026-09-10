@@ -55,6 +55,9 @@ export async function generateMetadata({
       title,
       description,
     },
+    // Los datos del evento (anfitrion, fecha, direccion, confirmados) no tienen
+    // por que acabar en un buscador: mismo criterio que /g/[token] y /r/[token].
+    robots: { index: false, follow: false },
   };
 }
 

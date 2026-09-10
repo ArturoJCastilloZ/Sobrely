@@ -47,6 +47,8 @@ export async function generateMetadata({
     description,
     openGraph: { title, description, type: "website" },
     twitter: { card: "summary_large_image", title, description },
+    // Misma invitacion que /<usuario>/<slug>: tampoco se indexa.
+    robots: { index: false, follow: false },
   };
 }
 

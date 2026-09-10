@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getReferralSummary } from "@/lib/referrals/actions";
@@ -11,6 +13,8 @@ import { ReferralPanel } from "@/components/referrals/referral-panel";
  * aplicar un código recibido (una sola vez). El programa se puede apagar con
  * `NEXT_PUBLIC_REFERRAL_ENABLED`.
  */
+export const metadata: Metadata = { title: "Referidos" };
+
 export default async function ReferralsPage() {
   if (!REFERRAL_ENABLED) {
     return (
