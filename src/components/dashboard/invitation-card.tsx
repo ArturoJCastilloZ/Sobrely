@@ -8,7 +8,13 @@ import { ExternalLinkIcon, MoreHorizontalIcon, Trash2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -162,13 +168,32 @@ export function InvitationCard({
         usan a diario quedan en la fila, y las demás bajan a un menú: un
         destructivo no compite por atención con la acción principal.
       */}
+      {/*
+        MÓVIL: los tres controles suben a 44 px (`touch` / `icon-touch`) y en
+        escritorio vuelven a `sm` por breakpoint. Medido a 375x812: el dashboard
+        tenía 27 de 28 controles por debajo del mínimo táctil, y la causa es
+        ésta — `size="sm"` es `h-7`, o sea 28 px. El propio `button.tsx` declara
+        que `touch` es obligatorio en CTAs primarios, y esta tarjeta es el CTA
+        principal del producto.
+
+        NO se esconde «Respuestas» en el menú para ganar sitio: el comentario de
+        arriba dice que las dos acciones de diario se dejaron en la fila a
+        propósito, y a 375 las dos caben en táctil (medido: ~222 px de los ~327
+        disponibles).
+      */}
       <CardContent className="flex items-center gap-2">
-        <Button size="sm" render={<Link href={`/editor/${invitation.id}`} />} nativeButton={false}>
+        <Button
+          size="touch"
+          className="lg:h-7 lg:gap-1 lg:px-2.5 lg:text-[0.8rem]"
+          render={<Link href={`/editor/${invitation.id}`} />}
+          nativeButton={false}
+        >
           Editar
         </Button>
         <Button
-          size="sm"
+          size="touch"
           variant="outline"
+          className="lg:h-7 lg:gap-1 lg:px-2.5 lg:text-[0.8rem]"
           render={<Link href={`/dashboard/invitations/${invitation.id}`} />}
           nativeButton={false}
         >
@@ -180,9 +205,9 @@ export function InvitationCard({
             render={
               <Button
                 variant="ghost"
-                size="icon-sm"
+                size="icon-touch"
                 aria-label={`Más acciones para ${invitation.title}`}
-                className="ml-auto"
+                className="ml-auto lg:size-7"
               />
             }
           >
@@ -191,7 +216,9 @@ export function InvitationCard({
           <DropdownMenuContent align="end" className="w-52">
             {estado === "publicada" && username && (
               <DropdownMenuItem
-                render={<a href={verUrl} target="_blank" rel="noopener noreferrer" />}
+                render={
+                  <a href={verUrl} target="_blank" rel="noopener noreferrer" />
+                }
                 className="gap-2.5"
               >
                 <ExternalLinkIcon className="size-4" />

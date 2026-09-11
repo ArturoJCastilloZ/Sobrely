@@ -61,7 +61,8 @@ export function TemplateMarketplace({
 }) {
   const [evento, setEvento] = React.useState<string | null>(eventoInicial);
   const [consulta, setConsulta] = React.useState(consultaInicial);
-  const [soloFavoritos, setSoloFavoritos] = React.useState(soloFavoritosInicial);
+  const [soloFavoritos, setSoloFavoritos] =
+    React.useState(soloFavoritosInicial);
   /*
     Los favoritos viven en estado local para poder marcarlos de forma OPTIMISTA:
     la acción va al servidor y vuelve, y esperar el viaje para pintar el corazón
@@ -99,7 +100,13 @@ export function TemplateMarketplace({
   */
   const conteo = React.useMemo(() => contarPorEvento(plantillas), [plantillas]);
   const visibles = React.useMemo(
-    () => filtrarPlantillas(plantillas, { evento, q: consulta, soloFavoritos, favoritos }),
+    () =>
+      filtrarPlantillas(plantillas, {
+        evento,
+        q: consulta,
+        soloFavoritos,
+        favoritos,
+      }),
     [plantillas, evento, consulta, soloFavoritos, favoritos],
   );
 
@@ -134,7 +141,25 @@ export function TemplateMarketplace({
     setSoloFavoritos(false);
   };
 
-  const tipos = [...conteo.keys()].sort((a, b) => a.localeCompare(b, "es"));
+  /*
+    Orden por CONTEO descendente y no alfabético.
+
+    Medido a 375 px: las 12 pastillas en `flex-wrap` ocupaban 4 filas —168 px—
+    antes del primer resultado. Con una sola fila desplazable, el orden decide
+    qué se ve sin desplazar, y alfabéticamente lo primero era «Baby shower 12,
+    Bautizo 1, Boda 13…»: una categoría de UNA plantilla ocupaba el segundo
+    sitio. Por conteo, lo primero son las categorías con catálogo de verdad.
+
+    Las de 1 plantilla (Bautizo, Graduación, Primera comunión) NO se pliegan
+    bajo un «Más…»: con la fila desplazable ya no cuestan espacio vertical, y
+    esconder categorías enteras del catálogo es una decisión de producto, no
+    una de layout. Se quedan al final, que es donde su peso las pone.
+    Desempate alfabético para que el orden sea estable entre cargas.
+  */
+  const tipos = [...conteo.keys()].sort((a, b) => {
+    const porConteo = (conteo.get(b) ?? 0) - (conteo.get(a) ?? 0);
+    return porConteo !== 0 ? porConteo : a.localeCompare(b, "es");
+  });
 
   return (
     <div className="space-y-5">
@@ -186,7 +211,18 @@ export function TemplateMarketplace({
         anunciarlas como botones sueltos no diría que elegir una deselecciona
         la anterior.
       */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/*
+        MÓVIL: UNA fila desplazable en horizontal; a partir de `lg`, el
+        `flex-wrap` de siempre. Medido a 375x812: envueltas ocupaban 4 filas
+        —4×36 + 3×8 = 168 px— antes de que se viera la primera plantilla, sobre
+        un catálogo de 65. En una fila son 44.
+
+        El `-mx-4 px-4` sangra el carril hasta los bordes reales de la pantalla
+        (el shell mete `px-4`), que es lo que delata que la fila CONTINÚA: un
+        carril que termina justo en el margen se lee como una fila completa.
+        `pb-1` deja sitio al anillo de foco, que `overflow-x` recortaría.
+      */}
+      <div className="-mx-4 flex flex-nowrap items-center gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
         {/*
           El `radiogroup` envuelve SOLO las pastillas. «Quitar filtros» queda
           fuera a proposito: un grupo de radio que contiene un boton que no es
@@ -197,7 +233,10 @@ export function TemplateMarketplace({
         <div
           role="radiogroup"
           aria-label="Filtrar por tipo de evento"
-          className="flex flex-wrap gap-2"
+          // `flex-nowrap` + `shrink-0` en móvil: sin esto las pastillas se
+          // comprimirían dentro del carril en vez de desplazarse, y los
+          // nombres largos («Primera comunión») se partirían.
+          className="flex flex-nowrap gap-2 [&>*]:shrink-0 lg:flex-wrap"
         >
           <Pastilla activa={evento === null} onClick={() => setEvento(null)}>
             Todas <Cuenta n={plantillas.length} />
@@ -222,7 +261,7 @@ export function TemplateMarketplace({
           aria-pressed={soloFavoritos}
           onClick={() => setSoloFavoritos((v) => !v)}
           className={cn(
-            "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:h-9",
             soloFavoritos
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-background text-foreground hover:bg-muted",
@@ -245,7 +284,7 @@ export function TemplateMarketplace({
           <button
             type="button"
             onClick={limpiar}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:h-9"
           >
             <X aria-hidden="true" className="size-3.5" />
             Quitar filtros
@@ -273,9 +312,24 @@ export function TemplateMarketplace({
           }
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          {/*
+            DOS COLUMNAS ya desde 375 px, no desde `sm`.
+
+            Medido: la miniatura es 3/4 (`PROPORCION_MINIATURA`), así que a una
+            columna ocupa ~343 px de ancho → **457 px sólo de imagen**, y con la
+            cabecera y el CTA sale ~600 px por tarjeta. En 812 de alto eso es UNA
+            plantilla por pantalla para recorrer un catálogo de 65. A dos
+            columnas la imagen baja a ~215 y caben 4.
+
+            `gap-3` en móvil y `gap-4` desde `sm`: con dos columnas a 375 el hueco
+            de 16 px se come ancho que la miniatura necesita.
+          */}
           {visibles.map((tpl, i) => (
-            <Card key={tpl.id} className="relative flex flex-col overflow-clip pt-0">
+            <Card
+              key={tpl.id}
+              className="relative flex flex-col overflow-clip pt-0"
+            >
               {/*
                 Miniatura a sangre: `pt-0` en la tarjeta y `overflow-clip` para
                 que la imagen llegue al borde redondeado. `overflow-clip` y no
@@ -304,7 +358,10 @@ export function TemplateMarketplace({
                     // lea dos veces. El enlace es lo que necesita nombre.
                     alt=""
                     fill
-                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    // El tramo móvil pasa de `100vw` a `50vw`: con dos columnas, pedir
+                    // el ancho entero de la pantalla descarga una imagen del doble
+                    // de lo que se pinta.
+                    sizes="(min-width: 1024px) 33vw, 50vw"
                     /*
                       Las tres primeras candidatas a LCP. El indice es el de la
                       lista YA FILTRADA a proposito: tras filtrar, las tres de
@@ -350,13 +407,28 @@ export function TemplateMarketplace({
                 />
               </button>
               <CardHeader className="pt-4">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base">{tpl.name}</CardTitle>
+                {/*
+                  A dos columnas la tarjeta mide ~170 px de ancho: el título y
+                  la etiqueta en la MISMA línea se parten en dos o tres. En
+                  móvil se apilan y la etiqueta baja; desde `sm` vuelve la fila.
+                */}
+                <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+                  <CardTitle className="text-sm sm:text-base">
+                    {tpl.name}
+                  </CardTitle>
                   {tpl.event_type && (
                     <Badge variant="secondary">{tpl.event_type}</Badge>
                   )}
                 </div>
-                <CardDescription>{tpl.description}</CardDescription>
+                {/*
+                  La descripción se oculta en móvil: a ~170 px de ancho son 4-5
+                  renglones que empujan el CTA fuera de la tarjeta y anulan lo
+                  que las dos columnas acaban de ganar. Sigue en el DOM para
+                  lectores de pantalla y reaparece desde `sm`.
+                */}
+                <CardDescription className="sr-only sm:not-sr-only">
+                  {tpl.description}
+                </CardDescription>
               </CardHeader>
               <CardContent className="mt-auto">
                 <UseTemplateButton templateId={tpl.id} />
@@ -385,10 +457,14 @@ function Pastilla({
       aria-checked={activa}
       onClick={onClick}
       className={cn(
-        // Altura 36 y no menos: el canon de la Fase 0 fijo 44px de objetivo
-        // tactil para los controles primarios, y estas pastillas se pulsan en
-        // movil. El padding vertical del contenedor completa el area.
-        "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+        // 44 px en móvil (`h-11`) y 36 a partir de `lg`.
+        //
+        // El comentario anterior decía que «el padding vertical del contenedor
+        // completa el área» hasta los 44 del canon. Era FALSO: el contenedor es
+        // `flex flex-wrap items-center gap-2`, sin padding vertical, así que el
+        // área real siempre fueron 36. Un comentario que promete una garantía
+        // necesita evidencia igual que un veredicto.
+        "inline-flex h-11 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:h-9",
         activa
           ? "border-primary bg-primary text-primary-foreground"
           : "border-border bg-background text-foreground hover:bg-muted",

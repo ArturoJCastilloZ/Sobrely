@@ -30,7 +30,20 @@ export function NewInvitationButton() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button disabled={pending} />}>
+      {/*
+        `touch` (44 px) en móvil y `default` (32) a partir de `lg`: es el CTA
+        principal del dashboard y `button.tsx` declara ese piso como obligatorio
+        para los primarios. Sin `size`, caía en `default` = `h-8`.
+      */}
+      <DropdownMenuTrigger
+        render={
+          <Button
+            disabled={pending}
+            size="touch"
+            className="lg:h-8 lg:gap-1.5 lg:px-2.5"
+          />
+        }
+      >
         {pending ? "Creando…" : "+ Nueva invitación"}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
