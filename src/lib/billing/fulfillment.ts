@@ -4,6 +4,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPlan, resolveExpiry } from "@/lib/billing/plans";
 import { canPublishInvitation } from "@/lib/billing/entitlements";
 import { decidirEntitlement } from "@/lib/billing/no-degradar-entitlement";
+import {
+  puedeQuedarEntitlementPendiente,
+  hayEntitlementPendiente,
+} from "@/lib/billing/reentrada-fulfillment";
 import { DEFAULT_CURRENCY, REFERRAL_CREDIT_AMOUNT } from "@/lib/billing/config";
 import {
   mapStatus,
@@ -67,7 +71,51 @@ export async function applyMercadoPagoPayment(params: {
   // por notificaciones tardías — PERO deja pasar un `refunded` (reembolso o
   // contracargo) para revocar el acceso.
   if (isRedundantTransition(order.status ?? "", newStatus)) {
-    return { ok: true, idempotent: true, orderStatus: order.status };
+    // ...salvo que todavía quede TRABAJO por hacer. Este guard mira sólo el
+    // estado de la ORDEN, y lo que puede faltar es el ENTITLEMENT: si el
+    // `UPDATE` a `paid` commiteó y después falló la escritura del acceso,
+    // devolvimos `ok: false` para que MP reintentara — y el reintento entraba
+    // justo aquí y se cortaba con `ok: true`. El cliente pagaba y no tenía
+    // acceso, sin un solo aviso. Ver `reentrada-fulfillment.ts`.
+    const reentrada = { reentrar: false, motivo: "" };
+    if (
+      puedeQuedarEntitlementPendiente({
+        nuevoEstado: newStatus,
+        productType: order.product_type ?? null,
+        invitationId: order.invitation_id ?? null,
+        planId: order.plan_id ?? null,
+      })
+    ) {
+      const { data: entVivo, error: entVivoErr } = await admin
+        .from("invitation_entitlements")
+        .select("status")
+        .eq("invitation_id", order.invitation_id)
+        .maybeSingle();
+
+      if (entVivoErr) {
+        // Fail-closed: sin saber si hay acceso no se puede afirmar que no
+        // queda trabajo, y decir `ok: true` aquí es cerrar la puerta otra vez.
+        return {
+          ok: false,
+          orderStatus: order.status ?? undefined,
+          reason: `reentrada_lookup_failed: ${entVivoErr.message}`,
+        };
+      }
+      if (hayEntitlementPendiente(entVivo)) {
+        reentrada.reentrar = true;
+        reentrada.motivo = entVivo
+          ? `entitlement en '${entVivo.status}'`
+          : "sin entitlement";
+      }
+    }
+
+    if (!reentrada.reentrar) {
+      return { ok: true, idempotent: true, orderStatus: order.status };
+    }
+    console.error(
+      "[fulfillment] reentrando en una orden ya `paid` porque falta el acceso:",
+      { orderId, motivo: reentrada.motivo },
+    );
   }
 
   const { data: ordenTocada, error: updErr } = await admin
