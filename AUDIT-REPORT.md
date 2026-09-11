@@ -491,7 +491,7 @@ referido.
 > |---|---|
 > | **El punto 8 (dinero)** | Escrito en `388d2af` y **no probado por efecto**: no se tocó Mercado Pago ni se ejecutó ninguna operación financiera. La evidencia es de pruebas y mutación, no de un pago. Exige revisión humana. |
 > | ~~**El muro de pago entero**~~ | ✅ **EJERCITADO el 2026-09-11 con una cuenta NO admin** — y NIEGA. Ver el bloque «Muro de pago» abajo. |
-> | **Admin en runtime** | Exige sesión de admin en el navegador. |
+> | ~~**Admin en runtime**~~ | ✅ **VERIFICADO el 2026-09-11** con la sesión admin. Ver el bloque «Admin en runtime» abajo. |
 > | **Multipestaña** | El conflicto de versión con dos editores abiertos sobre la misma invitación. |
 > | **El modo «lista de invitados»** | ⚠️ **PARCIAL**: la invitación de esta prueba se creó en `guest_list` y el editor la sirve con su panel «Invitados», pero el **puenteo** de §5.8 sigue sin probarse. |
 > | **El editor en móvil** | Exige la sesión, que vive en la ventana del dev; su ancho mínimo real fue 530 px. |
@@ -917,6 +917,50 @@ Lo que SÍ sigue en pie del hallazgo: el flujo «categoría → plantilla» sól
 existe entrando por `Plantillas`. Pero la primera decisión que el producto pide
 al crear no es la plantilla, es el MODO — y eso cambia el onboarding que se
 diseñe encima.
+
+### Admin en runtime — verificado el 2026-09-11
+
+> Con la sesión admin (`arturodejesuscz@gmail.com`, `d1f1dc44`). El panel es de
+> **sólo lectura** salvo dos superficies de escritura —otorgar/revocar admin y
+> mover el estado de una solicitud—, y **ninguna de las dos se ejecutó**:
+> tocan `admin_users` y datos de clientes.
+
+**1. El gate.** `/admin` con sesión admin entra sin redirigir. Sin sesión da
+**307 → `/login?redirectTo=/admin`** (medido antes, en build de producción).
+⬜ **Lo único que falta**: con sesión NO admin debería redirigir a `/dashboard`
+(`src/lib/auth/admin.ts:46`). Eso es lectura de código, **no efecto observado** —
+exigiría volver a la cuenta no admin.
+
+**2. Las tres RPC niegan a `anon`**, y la denegación está ATRIBUIDA a su capa,
+que es lo que este repo ya pagó una vez: `get_admin_metrics`,
+`admin_list_admins` y `admin_recent_service_requests` devuelven **401 / `42501`
+`not authorized`**, y ese mensaje sale del **gate interno** de la función
+(`0009_admin.sql:61` — `if not public.is_admin(auth.uid()) then raise`), NO de un
+`permission denied for table`. O sea que la función se ejecutó con el rol
+anónimo y se negó a sí misma: es la cerradura correcta, no el `revoke` exterior.
+
+**3. Las métricas dicen la verdad.** Se calcularon desde la BD **antes** de
+abrir la página, y las siete cuadran:
+
+| métrica | calculado de la BD | pinta la UI |
+|---|---|---|
+| `users_total` | 13 | 13 |
+| `revenue_paid` | 699 | $699 |
+| `refunds_total` | 199 | $199 |
+| `orders_paid_count` | 1 | 1 |
+| `paying_users` | 1 | 1 |
+| `conversion_rate` | 1/13 = 7.69 % | 7.7 % |
+| `orders_by_status` | paid 1 · failed 3 · pending 3 · refunded 1 | idéntico |
+
+**4. La promesa del gestor de admins es REAL, no copy.** La UI dice «No puedes
+revocar tu propio acceso» y no pinta botón en la fila propia; la defensa vive
+server-side en `src/lib/admin/actions.ts:109` (`if (userId === currentId)`),
+detrás de `requireAdmin()`. Y su `delete` verifica filas afectadas
+(`.select("user_id")` + corte a 0), que es el patrón del punto 7 de la §7.
+
+**Defecto menor encontrado (BAJA):** el plural no concuerda con 1 — «**1
+órdenes pagadas**» y «**1 usuarios pagando**». Cosmético, en la primera pantalla
+que el dueño del producto ve.
 
 ### Muro de pago — ejercitado en runtime el 2026-09-11
 
