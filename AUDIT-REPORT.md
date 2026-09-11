@@ -490,10 +490,10 @@ referido.
 > | Sigue sin verificar | Por qué |
 > |---|---|
 > | **El punto 8 (dinero)** | Escrito en `388d2af` y **no probado por efecto**: no se tocó Mercado Pago ni se ejecutó ninguna operación financiera. La evidencia es de pruebas y mutación, no de un pago. Exige revisión humana. |
-> | **El muro de pago entero** | La cuenta del dev es admin y está *comped* (`invitation_owner_is_comped` → `true`, plan efectivo `premium`), así que `canPublishInvitation` nunca llegó a negar nada. Hace falta una cuenta NO admin. |
+> | ~~**El muro de pago entero**~~ | ✅ **EJERCITADO el 2026-09-11 con una cuenta NO admin** — y NIEGA. Ver el bloque «Muro de pago» abajo. |
 > | **Admin en runtime** | Exige sesión de admin en el navegador. |
 > | **Multipestaña** | El conflicto de versión con dos editores abiertos sobre la misma invitación. |
-> | **El modo «lista de invitados»** | Todo el E2E se hizo en `Confirmación abierta`. El puenteo descrito en §5.8 no se volvió a probar. |
+> | **El modo «lista de invitados»** | ⚠️ **PARCIAL**: la invitación de esta prueba se creó en `guest_list` y el editor la sirve con su panel «Invitados», pero el **puenteo** de §5.8 sigue sin probarse. |
 > | **El editor en móvil** | Exige la sesión, que vive en la ventana del dev; su ancho mínimo real fue 530 px. |
 > | ~~**El build de producción**~~ | ✅ **VERIFICADO el 2026-09-11** en un worktree aislado (para no tumbar el `next dev` del dev): `next build` **PASA sin un solo error ni warning**, y `next start` sirve. Ver el bloque de abajo. |
 > | ~~**La `0056`**~~ | ✅ **APLICADA el 2026-09-11**: duplicado reconciliado (universo 14 → 13, 0 pares duplicados) y el índice puesto con sus 2 comprobaciones en `ok = true`. |
@@ -905,9 +905,65 @@ archivos, = 1 en `dashboard`, `templates` y `animations`). Afecta a pestañas y
 marcadores.
 
 #### N-7 · El botón principal de crear no pasa por categoría ni plantilla — **dato de alcance**
-`+ Nueva invitación` crea una invitación **en blanco** y salta al editor. El
-flujo «categoría → plantilla» sólo existe entrando por `Plantillas`. No es un
-fallo, pero conviene saberlo antes de diseñar el onboarding.
+~~`+ Nueva invitación` crea una invitación **en blanco** y salta al editor.~~
+
+🚨 **CORREGIDO el 2026-09-11: esto era FALSO.** `+ Nueva invitación` no crea
+nada: es un `dropdown-menu-trigger` (`aria-haspopup="menu"`) que despliega el
+**modo de RSVP** — «Confirmación abierta» y «Lista de invitados»— y la
+invitación se crea al elegir uno. Medido en runtime: el `.click()` sobre el
+botón no movió el universo de `invitations` (18 → 18); sólo al pulsar la opción
+apareció la fila y el editor.
+Lo que SÍ sigue en pie del hallazgo: el flujo «categoría → plantilla» sólo
+existe entrando por `Plantillas`. Pero la primera decisión que el producto pide
+al crear no es la plantilla, es el MODO — y eso cambia el onboarding que se
+diseñe encima.
+
+### Muro de pago — ejercitado en runtime el 2026-09-11
+
+> Con la cuenta **`3712518b…`** (`castillo.arturo93@…`), que **no es admin**:
+> `admin_users` tiene **una sola fila en todo el universo** y es la otra cuenta
+> del dev (`d1f1dc44`). Invitación de prueba creada y **borrada** al terminar.
+
+**1. Las RPC del gate, en las dos direcciones** (con la llave publicable, la
+misma superficie que usa el producto):
+
+| invitación | `owner_is_comped` | `is_entitlement_active` | `effective_plan` |
+|---|---|---|---|
+| del dev **admin** | **true** | true | **premium** (comp, sin comprar) |
+| de un cliente **no admin** | **false** | true | **free** |
+| no admin, entitlement **vencido** | **false** | **false** | **null** |
+
+Es la primera vez que se observa un `false`: el comp **discrimina**, y el caso
+vencido cae fail-closed — que es el mecanismo detrás de U-2.
+
+**2. El muro, en la UI.** Con módulos que caben en Free (`hero`, `rsvp`)
+**publica** y crea el entitlement demo Free (14 días, cupo 25). Al añadir
+`gallery` —que exige Celebración— y volver a publicar, **NIEGA**:
+
+> «Mejora a Celebración para publicar — Tu invitación usa módulos premium.
+> Publícala con el plan Celebración por $399 (pago único por evento). Tus
+> módulos se conservan.»
+
+Y niega **de verdad**, no sólo en pantalla: `is_published` siguió en `false`,
+`status` en `draft`, y **cero órdenes nuevas** (`orders` = 8 antes y después).
+
+**3. De rebote:** el menú «Agregar sección» **sí etiqueta el plan** de cada
+módulo («Galería · Celebración», «Video · Premium»). El «no dice el plan» de la
+§5.3 es del catálogo de PLANTILLAS, no del editor.
+
+**Lo que NO se verificó, y por qué:** el CTA «Mejorar a Celebración» es un
+`<button>` con handler JS, sin `href`, así que conocer su destino exige
+pulsarlo — y eso abre un checkout de Mercado Pago. **No se pulsó.** El tramo
+CTA → checkout → pago sigue sin ejercitarse.
+
+**Limpieza, verificada contra el UNIVERSO y no contra el filtro:** las 6 tablas
+volvieron a su línea base (`invitations` 18, `invitation_modules` 88,
+`invitation_entitlements` 3, `orders` 8, `rsvp_responses` 14, `profiles` 13), y
+el `CASCADE` dejó **0** módulos y **0** entitlements de la invitación borrada.
+⚠️ La diferencia de `rsvp_responses` durante la sesión (13 → 14) está
+**atribuida**: `358e59f0`, 04:54 UTC, tráfico REAL de la invitación de un
+cliente — y entró **después** de aplicar la `0056`, lo que confirma de paso que
+el índice único no rompió el RSVP público.
 
 ---
 
