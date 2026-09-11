@@ -21,6 +21,33 @@
 -- no tienen por qué vivir en el historial de git. Con los ids basta, y el PASO
 -- 1 los muestra en pantalla cuando hace falta decidir.)
 --
+-- ── MEDIDO DE NUEVO el 2026-09-11 (04:41 UTC), y aparecio un dato que esta
+--    cabecera NO tenia y que INCLINA la decision:
+--
+--      · la fila de  1 pase (ec880b48) fue ACTUALIZADA el 2026-09-10 21:13 UTC
+--      · la fila de 13 pases (4d16d81b) NUNCA se ha tocado (created = updated)
+--
+--    El unico camino del producto que actualiza UNA fila por id es
+--    `updateRsvp` (`src/lib/rsvp/actions.ts:165`), que es «el ANFITRION edita
+--    una respuesta desde su panel». La RPC de la `0055` no pudo ser: su UPDATE
+--    filtra por (invitation_id, correo) SIN limite, asi que habria tocado las
+--    DOS filas, y la de 13 sigue intacta.
+--    O sea: el dueño del evento ya trato esa fila como la buena.
+--
+--    Universo recontado: `rsvp_responses` = 14 filas (no 13), 7 con correo y
+--    7 sin. La fila nueva es `4881fdc5`, del 2026-09-10 19:01 UTC, trafico
+--    REAL de esta misma invitacion — no es de prueba. Sigue habiendo
+--    EXACTAMENTE 1 par duplicado, este.
+--
+--    Contexto: invitacion de un CLIENTE (no del dev), publicada, `rsvp_mode`
+--    abierto, evento el 2026-09-26 — 15 dias — y sigue recibiendo respuestas.
+--
+-- ⚠️ ORDEN QUE IMPORTA: mientras el duplicado siga vivo, NO conviene desplegar
+--    el codigo que llama a la RPC de la `0055`. Su UPDATE sin limite tocaria
+--    las dos filas a la vez, asi que un reenvio de esa invitada MACHACARIA la
+--    fila de 13 pases con lo que escriba — destruyendo el dato sobre el que
+--    aun no se ha decidido. Primero el PASO 2, despues desplegar.
+--
 -- Son 35 segundos de diferencia y el mismo correo: casi con seguridad la misma
 -- persona corrigiéndose. Pero CUÁL de las dos es la buena —13 pases o 1— es un
 -- dato del cliente y la decisión es del dev, no mía. Trece pases o uno cambian
