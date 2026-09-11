@@ -44,3 +44,7 @@ next-env.d.ts
 # Son artefactos de revision, no assets del producto: 130 capturas de pliegue
 # que no tienen por que pesar en el repo.
 .hojas-de-contacto/
+# Capturas antes/despues de las publicadas: son renders pesados y
+# REGENERABLES con `scripts/capturas-antes-despues.mts`. El artefacto no entra
+# al repo; el script que lo produce, si.
+.capturas-antes-despues/
