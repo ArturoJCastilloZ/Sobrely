@@ -178,15 +178,41 @@ export async function createPlanCheckout(
       return { ok: false, error: "Mercado Pago no devolvió un enlace de pago." };
     }
 
-    await admin
+    // Se miran las filas pero NO se corta el flujo: `provider_order_id` es
+    // trazabilidad, y el webhook no depende de el —cruza por
+    // `external_reference`, que es el id de nuestra orden—. Romperle el pago a
+    // un cliente por un dato de seguimiento seria peor que el dato perdido;
+    // pero que se pierda EN SILENCIO tambien, asi que queda en el log.
+    const { data: vinculada } = await admin
       .from("orders")
       .update({ provider_order_id: pref.id })
-      .eq("id", order.id);
+      .eq("id", order.id)
+      .select("id");
+    if (!vinculada || vinculada.length === 0) {
+      console.error(
+        "[mercadopago] no se pudo vincular la preferencia con la orden:",
+        { orderId: order.id, preferenciaId: pref.id },
+      );
+    }
 
     return { ok: true, url: initPoint };
   } catch (err) {
     // Deja la orden como fallida para no dejar 'pending' colgado.
-    await admin.from("orders").update({ status: "failed" }).eq("id", order.id);
+    // Reversion: 0 filas aqui deja la orden en `pending` colgada, que es
+    // exactamente lo que esta linea existe para evitar. No se puede hacer nada
+    // mas desde aqui —ya estamos en el catch y se devuelve error igual— pero
+    // tiene que ser VISIBLE para quien mire los logs.
+    const { data: marcadas } = await admin
+      .from("orders")
+      .update({ status: "failed" })
+      .eq("id", order.id)
+      .select("id");
+    if (!marcadas || marcadas.length === 0) {
+      console.error(
+        "[mercadopago] la orden queda PENDING colgada: no se pudo marcar como fallida:",
+        order.id,
+      );
+    }
     const message = err instanceof Error ? err.message : "error desconocido";
     console.error("[mercadopago] create preference failed:", message);
     return { ok: false, error: "No se pudo iniciar el pago." };

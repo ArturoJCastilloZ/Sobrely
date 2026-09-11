@@ -176,13 +176,17 @@ export async function setSignatureHidden(
   const owner = await assertOwner(supabase, invitationId);
   if (!owner) return { ok: false, error: "No autorizado." };
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitation_signatures")
     .update({ is_hidden: hidden })
     .eq("id", signatureId)
-    .eq("invitation_id", invitationId);
+    .eq("invitation_id", invitationId)
+    .select("id");
 
   if (error) return { ok: false, error: "No se pudo actualizar la firma." };
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Esa firma ya no existe." };
+  }
   revalidatePath(`/dashboard/invitations/${invitationId}`);
   return { ok: true };
 }
@@ -196,13 +200,19 @@ export async function deleteSignature(
   const owner = await assertOwner(supabase, invitationId);
   if (!owner) return { ok: false, error: "No autorizado." };
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitation_signatures")
     .delete()
     .eq("id", signatureId)
-    .eq("invitation_id", invitationId);
+    .eq("invitation_id", invitationId)
+    .select("id");
 
   if (error) return { ok: false, error: "No se pudo borrar la firma." };
+  // La UI llama a esto «irreversible». Decir «borrada» sobre 0 filas deja al
+  // anfitrion creyendo que la firma salio del muro publico cuando sigue ahi.
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Esa firma ya no existe." };
+  }
   revalidatePath(`/dashboard/invitations/${invitationId}`);
   return { ok: true };
 }

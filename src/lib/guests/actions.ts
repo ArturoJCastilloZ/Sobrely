@@ -113,11 +113,15 @@ export async function setRsvpMode(
   const owner = await assertOwner(supabase, invitationId);
   if (!owner) return { ok: false, error: "No autorizado." };
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitations")
     .update({ rsvp_mode: mode })
-    .eq("id", invitationId);
+    .eq("id", invitationId)
+    .select("id");
   if (error) return { ok: false, error: "No se pudo cambiar el modo." };
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Esa invitación ya no existe." };
+  }
   return { ok: true };
 }
 
@@ -234,11 +238,15 @@ export async function editGuest(
     };
   }
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitation_guests")
     .update({ name: v.name, max_guests: v.maxGuests, phone: v.phone })
-    .eq("id", v.id);
+    .eq("id", v.id)
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Ese invitado ya no existe." };
+  }
   return { ok: true };
 }
 
@@ -273,11 +281,15 @@ export async function setGuestInvited(
   const yaMarcado = guest.invited_at !== null;
   if (yaMarcado === invited) return { ok: true };
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitation_guests")
     .update({ invited_at: invited ? new Date().toISOString() : null })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
   if (error) return { ok: false, error: "No se pudo actualizar el envío." };
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Ese invitado ya no existe." };
+  }
   return { ok: true };
 }
 
@@ -318,7 +330,7 @@ export async function markGuestReminded(
   const actual = (guest.reminder_count as number) ?? 0;
   const siguiente = deshacer ? Math.max(0, actual - 1) : actual + 1;
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitation_guests")
     .update({
       // Deshacer SIEMPRE limpia la fecha, aunque queden recordatorios en la
@@ -333,8 +345,12 @@ export async function markGuestReminded(
       reminded_at: deshacer ? null : new Date().toISOString(),
       reminder_count: siguiente,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
   if (error) return { ok: false, error: "No se pudo registrar el recordatorio." };
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Ese invitado ya no existe." };
+  }
   return { ok: true };
 }
 
@@ -346,11 +362,15 @@ export async function deleteGuest(id: string): Promise<GuestActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sesión expirada." };
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitation_guests")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Ese invitado ya no existe." };
+  }
   return { ok: true };
 }
 
@@ -387,11 +407,17 @@ export async function checkInByToken(token: string): Promise<CheckInResult> {
 
   const alreadyCheckedIn = Boolean(guest.checked_in_at);
   if (!alreadyCheckedIn) {
-    const { error } = await supabase
+    const { data: filas, error } = await supabase
       .from("invitation_guests")
       .update({ checked_in_at: new Date().toISOString() })
-      .eq("id", guest.id);
+      .eq("id", guest.id)
+      .select("id");
     if (error) return { ok: false, error: "No se pudo registrar el ingreso." };
+    // En la PUERTA del evento: decirle «ingresó» a quien no quedó registrado
+    // deja al anfitrión con un conteo falso y sin forma de notarlo.
+    if (!filas || filas.length === 0) {
+      return { ok: false, error: "No se pudo registrar el ingreso." };
+    }
   }
 
   return {
@@ -415,11 +441,15 @@ export async function setGuestCheckIn(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sesión expirada." };
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitation_guests")
     .update({ checked_in_at: checkedIn ? new Date().toISOString() : null })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "Ese invitado ya no existe." };
+  }
   return { ok: true };
 }
 

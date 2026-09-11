@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 
 /**
  * «`ok: true` con 0 filas» — el patrón de fallo silencioso que el informe
@@ -38,6 +38,18 @@ const ARCHIVOS = {
     dinero.
   */
   fulfillment: "../billing/fulfillment.ts",
+  /*
+    Los seis que el barrido de superficie destapó, auditados con el dev el
+    2026-09-11. Eran 16 escrituras sin verificar ni declarar; la mayoría usan el
+    cliente CON SESIÓN, o sea con RLS — y ahí un `update` sobre una fila que no
+    es tuya devuelve 0 filas sin error, que es el caso que este guard persigue.
+  */
+  billing: "../billing/actions.ts",
+  vanity: "../vanity/actions.ts",
+  guests: "../guests/actions.ts",
+  signatures: "../signatures/actions.ts",
+  reports: "../reports/actions.ts",
+  favoritos: "../templates/favorites-actions.ts",
 } as const;
 
 /** Fuente sin comentarios: una aserción no debe satisfacerse con la prosa. */
@@ -138,14 +150,11 @@ describe("el guard cubre TODOS los modulos que escriben", () => {
       Pendiente de auditar con el dev, por orden de riesgo: `billing/actions.ts`
       (dinero) y `vanity/actions.ts` (toca el slug publico) primero.
     */
-    const SIN_AUDITAR = new Set([
-      "billing/actions.ts",
-      "guests/actions.ts",
-      "reports/actions.ts",
-      "signatures/actions.ts",
-      "templates/favorites-actions.ts",
-      "vanity/actions.ts",
-    ]);
+    // La deuda quedó en CERO el 2026-09-11: los seis módulos que el barrido
+    // destapó están auditados y en `ARCHIVOS`. El conjunto se conserva vacío a
+    // propósito —y no se borra— porque es el sitio donde declarar el siguiente
+    // si aparece: sin él, la tentación es sacar el módulo de la lista.
+    const SIN_AUDITAR = new Set<string>([]);
     const fuera = escriben
       .filter((f) => !cubiertos.has(f))
       .filter((f) => !SIN_AUDITAR.has(f.slice(raiz.length)));
@@ -235,6 +244,19 @@ describe("y el resultado se COMPRUEBA, no solo se pide", () => {
     Ahora se lee el nombre que la propia sentencia asigna (`const { data: X }`)
     y se exige que ESE identificador se mire justo después.
   */
+  /*
+    La no-vacuidad es GLOBAL y no por módulo. Por módulo era incorrecta: uno
+    cuyas escrituras estén TODAS exentas por escrito —`favoritos` es
+    exactamente ese caso— no inspecciona ninguna, y eso es legítimo, no un
+    síntoma de sonda ciega. Lo que no puede pasar es que el recorte deje de
+    encontrar escrituras en TODO el conjunto.
+  */
+  let inspeccionadas = 0;
+  afterAll(() => {
+    expect(inspeccionadas, "ninguna escritura inspeccionada en ningún módulo")
+      .toBeGreaterThan(0);
+  });
+
   for (const [nombre, rel] of Object.entries(ARCHIVOS)) {
     it(`${nombre}: cada escritura con \`.select()\` mira sus filas`, () => {
       const src = crudo(rel);
@@ -271,9 +293,7 @@ describe("y el resultado se COMPRUEBA, no solo se pide", () => {
         expect(mira, `\`${variable}\` se pide y no se mira en ${nombre}`).toBe(true);
         miradas += 1;
       }
-      // No-vacuidad: si el recorte dejara de encontrar escrituras con select,
-      // este `it` pasaría sin comprobar nada.
-      expect(miradas, `${nombre}: ninguna escritura inspeccionada`).toBeGreaterThan(0);
+      inspeccionadas += miradas;
     });
   }
 });

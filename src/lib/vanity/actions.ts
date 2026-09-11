@@ -113,15 +113,23 @@ export async function claimVanitySlug(
   }
 
   // Upsert por invitation_id: una vanity por invitación (cambiarla la reemplaza).
-  const { error } = await admin
+  const { data: reclamadas, error } = await admin
     .from("vanity_slugs")
-    .upsert({ invitation_id: invitationId, slug: s }, { onConflict: "invitation_id" });
+    .upsert({ invitation_id: invitationId, slug: s }, { onConflict: "invitation_id" })
+    .select("invitation_id");
   if (error) {
     // 23505 → el slug ya lo tiene otra invitación (unique en slug).
     if (error.code === "23505") {
       return { ok: false, error: "Ese nombre ya está ocupado." };
     }
     console.error("[vanity] claim:", error.message);
+    return { ok: false, error: "No se pudo reclamar la URL." };
+  }
+  // Sin esto se devolvia «reclamada» sobre una escritura que pudo no ocurrir, y
+  // el usuario se iba creyendo que su URL personalizada existe. Es la unica
+  // senal que tiene: la pagina no le dice otra cosa.
+  if (!reclamadas || reclamadas.length === 0) {
+    console.error("[vanity] claim sin filas:", { invitationId, slug: s });
     return { ok: false, error: "No se pudo reclamar la URL." };
   }
   return { ok: true, slug: s };
@@ -146,6 +154,11 @@ export async function releaseVanitySlug(
   if (!inv) return { ok: false, error: "Invitación no encontrada." };
 
   const admin = createAdminClient();
+  // Liberar es idempotente: 0 filas significa que esa invitacion no tenia
+  // slug, y el estado final —ninguno— es el que se pedia. Y no hay RLS que lo
+  // enmascare: escribe el cliente service_role.
+  //
+  // filas-no-verificadas: el estado pedido ya se cumple con 0 filas.
   const { error } = await admin
     .from("vanity_slugs")
     .delete()

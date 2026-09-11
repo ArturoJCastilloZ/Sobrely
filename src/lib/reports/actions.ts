@@ -89,6 +89,10 @@ export async function createReportLink(
   // fallara, la vieja queda revocada y el anfitrión se queda sin liga. Se
   // prefiere ese fallo (visible, y se arregla generando otra) a la alternativa
   // de chocar contra el índice único parcial y dejar dos ligas en circulación.
+  // filas-no-verificadas: 0 filas aqui es el caso NORMAL —la primera vez no
+  // hay liga anterior que revocar— y exigir una convertiria el estreno en un
+  // error. Lo que de verdad importa de este bloque lo comprueba el `insert` de
+  // abajo, que si mira su resultado.
   const { error: revokeError } = await supabase
     .from("invitation_reports")
     .update({ revoked_at: new Date().toISOString() })
@@ -120,13 +124,21 @@ export async function revokeReportLink(
   const owner = await assertOwner(supabase, invitationId);
   if (!owner) return { ok: false, error: "No autorizado." };
 
-  const { error } = await supabase
+  const { data: filas, error } = await supabase
     .from("invitation_reports")
     .update({ revoked_at: new Date().toISOString() })
     .eq("invitation_id", invitationId)
-    .is("revoked_at", null);
+    .is("revoked_at", null)
+    .select("id");
 
   if (error) return { ok: false, error: "No se pudo revocar la liga." };
+  // Aqui SI se miran las filas, al reves que en `createReportLink`: esta liga
+  // abre el reporte con PIN. Si el anfitrion pulsa «revocar» y se le dice que
+  // si sobre 0 filas, se queda creyendo que apago un acceso que sigue vivo —y
+  // esa creencia es peor que el error, porque deja de vigilarlo.
+  if (!filas || filas.length === 0) {
+    return { ok: false, error: "No había ninguna liga activa que revocar." };
+  }
 
   revalidatePath(`/dashboard/invitations/${invitationId}`);
   return { ok: true };

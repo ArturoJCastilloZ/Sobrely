@@ -35,6 +35,11 @@ export async function toggleFavorite(
     .maybeSingle();
 
   if (existente) {
+    // El estado que el usuario pidio es «no favorito», y 0 filas ya lo cumple:
+    // la fila se acaba de leer dos sentencias arriba, asi que un cero solo
+    // puede venir de una carrera consigo mismo (dos toques al corazon).
+    //
+    // filas-no-verificadas: el estado pedido ya se cumple con 0 filas.
     const { error } = await supabase
       .from("template_favorites")
       .delete()
