@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editor móvil — prototipo</title>
+<!--
+  PROTOTIPO de diseño, no código de producción.
+
+  Qué resuelve, medido el 2026-09-11 sobre el editor REAL a 375x812:
+  la vista previa empieza en `top` 419 px con 2 secciones, 489 con 4, y
+  901 con 10 — contra un viewport de 812. Con la mediana del catálogo (4
+  módulos) el lienzo ya vive en la mitad inferior; con 10 nace FUERA de
+  pantalla, porque la lista de secciones es la vista de entrada y lo empuja.
+
+  La inversión que se propone: el LIENZO es la pantalla; las secciones y los
+  paneles son hojas inferiores invocadas desde una barra de pestañas — el
+  patrón de Canva y de Invitio en sus vistas móviles.
+
+  Sin dependencias externas a propósito (ni CDN ni fuentes remotas): se abre
+  con `open` y funciona sin red.
+-->
+<style>
+  :root{
+    --linea:#e5e5e5; --tinta:#111; --suave:#6b7280; --fondo:#fff; --hueso:#fafafa;
+    --alto-sup:52px; --alto-inf:64px; --radio:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#eceef1;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--tinta)}
+  .wrap{display:flex;flex-direction:column;align-items:center;padding:22px 16px 0}
+  h1.t{font-size:18px;margin:0 0 2px;text-align:center}
+  .sub{font-size:13px;color:#555;text-align:center;margin:0 0 16px;max-width:780px}
+  .barra{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 6px}
+  .barra button{height:36px;padding:0 14px;border-radius:9px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:13px}
+  .barra button[data-on="1"]{background:var(--tinta);color:#fff;border-color:var(--tinta)}
+  .pagina{display:flex;gap:28px;align-items:flex-start;justify-content:center;padding:20px 16px 60px;flex-wrap:wrap}
+  .col{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .rotulo{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#555;font-weight:600}
+  .nota{font-size:12px;color:#666;max-width:375px;text-align:center;line-height:1.5}
+  .nota b{color:#111}
+
+  /* el teléfono: 375x812 EXACTOS, que es lo que se juzga */
+  .tel{width:375px;height:812px;background:var(--fondo);border-radius:20px;overflow:hidden;
+       box-shadow:0 10px 40px rgba(0,0,0,.18);position:relative;display:flex;flex-direction:column}
+
+  /* franja 1 */
+  .sup{height:var(--alto-sup);flex:0 0 var(--alto-sup);display:flex;align-items:center;gap:6px;
+       padding:0 6px;border-bottom:1px solid var(--linea);background:var(--fondo);z-index:3;position:relative}
+  .tit{flex:1;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .icono{width:44px;height:44px;border:0;background:transparent;border-radius:10px;cursor:pointer;
+         display:grid;place-items:center;font-size:17px;color:var(--tinta)}
+  .icono:active{background:#f0f0f0}
+  .publicar{height:44px;padding:0 14px;border-radius:10px;border:0;background:var(--tinta);color:#fff;
+            font-weight:600;font-size:14px;cursor:pointer}
+
+  /* franja 2: el lienzo */
+  .lienzo{flex:1;min-height:0;overflow:auto;background:var(--hueso);position:relative}
+  .inv{background:#0e1430;color:#fff;min-height:100%}
+  .bloque{padding:26px 22px;border-bottom:1px solid rgba(255,255,255,.08);cursor:pointer;position:relative}
+  .bloque:active{background:rgba(255,255,255,.05)}
+  .bloque[data-sel="1"]{outline:2px solid #8ab4ff;outline-offset:-2px}
+  .bloque .eti{position:absolute;top:6px;right:8px;font-size:10px;letter-spacing:.06em;
+               text-transform:uppercase;color:rgba(255,255,255,.45)}
+  .portada{min-height:300px;display:grid;place-content:center;text-align:center;gap:10px;
+           background:radial-gradient(120% 90% at 50% 0%,#2b3a7a 0%,#0e1430 70%)}
+  .portada .epi{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:#cbb27a}
+  .portada h2{margin:0;font-size:34px;font-weight:400;font-family:Georgia,serif;line-height:1.15}
+  .portada .fecha{font-size:13px;color:rgba(255,255,255,.75)}
+  .h2{margin:0 0 8px;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#cbb27a}
+  .p{margin:0;color:rgba(255,255,255,.82);font-size:14px}
+  .cuenta{display:flex;gap:10px;justify-content:center;margin-top:6px}
+  .cuenta div{flex:1;background:rgba(255,255,255,.07);border-radius:10px;padding:10px 0;text-align:center}
+  .cuenta b{display:block;font-size:20px;font-weight:500}
+  .cuenta span{font-size:10px;color:rgba(255,255,255,.6);letter-spacing:.1em}
+
+  /* franja 3 */
+  .inf{height:var(--alto-inf);flex:0 0 var(--alto-inf);display:flex;border-top:1px solid var(--linea);
+       background:var(--fondo);z-index:3;position:relative}
+  .tab{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;
+       justify-content:center;gap:3px;cursor:pointer;font-size:10px;color:var(--suave);min-height:44px;padding:0}
+  .tab .g{font-size:19px;line-height:1}
+  .tab[aria-selected="true"]{color:var(--tinta);font-weight:600}
+
+  /* hoja inferior */
+  .velo{position:absolute;inset:0;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;
+        transition:opacity .22s ease;z-index:4}
+  .velo[data-on="1"]{opacity:1;pointer-events:auto}
+  .hoja{position:absolute;left:0;right:0;bottom:0;height:60%;background:var(--fondo);
+        border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.12);transform:translateY(101%);
+        transition:transform .26s cubic-bezier(.32,.72,0,1),height .2s ease;z-index:5;display:flex;flex-direction:column}
+  .hoja[data-on="1"]{transform:translateY(0)}
+  .hoja[data-alto="full"]{height:calc(100% - var(--alto-sup))}
+  .asa{padding:8px 0 4px;display:grid;place-items:center;cursor:grab;flex:0 0 auto;touch-action:none}
+  .asa i{display:block;width:38px;height:4px;border-radius:2px;background:#d4d4d4}
+  .hoja-cab{display:flex;align-items:center;gap:8px;padding:2px 6px 8px;border-bottom:1px solid var(--linea)}
+  .hoja-cab h3{margin:0;font-size:15px;flex:1;padding-left:6px}
+  .hoja-cuerpo{overflow:auto;padding:10px 12px 18px;flex:1}
+
+  .sec{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--linea);
+       border-radius:var(--radio);margin-bottom:8px;background:#fff;min-height:56px}
+  .sec .asa2{width:44px;height:44px;display:grid;place-items:center;color:#bbb;cursor:grab;flex:0 0 44px}
+  .sec .nom{flex:1;font-size:14px}
+  .sec .nom small{display:block;color:var(--suave);font-size:11px}
+  .sw{width:44px;height:26px;border-radius:14px;background:#d6d6d6;position:relative;border:0;cursor:pointer;flex:0 0 44px}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .18s ease}
+  .sw[aria-checked="true"]{background:var(--tinta)}
+  .sw[aria-checked="true"]::after{left:21px}
+  .bor{width:44px;height:44px;border:0;background:transparent;color:#9a9a9a;cursor:pointer;border-radius:10px;flex:0 0 44px}
+
+  .campo{margin-bottom:12px}
+  .campo label{display:block;font-size:12px;color:var(--suave);margin-bottom:5px}
+  .campo input{width:100%;height:44px;border:1px solid var(--linea);border-radius:10px;padding:0 12px;font-size:15px}
+
+  /* medidas superpuestas */
+  body[data-medidas="1"] .sup::after,
+  body[data-medidas="1"] .inf::after,
+  body[data-medidas="1"] .lienzo::after{
+    content:attr(data-m);position:absolute;right:6px;background:#ff2d55;color:#fff;font-size:10px;
+    padding:2px 6px;border-radius:4px;font-weight:700;z-index:9}
+  body[data-medidas="1"] .sup::after{top:4px}
+  body[data-medidas="1"] .inf::after{bottom:4px}
+  body[data-medidas="1"] .lienzo::after{top:6px}
+  body[data-medidas="1"] .sup,body[data-medidas="1"] .inf{outline:1px dashed #ff2d55;outline-offset:-1px}
+  body[data-medidas="1"] .lienzo{outline:1px dashed #34c759;outline-offset:-1px}
+
+  /* columna del ANTES */
+  .antes-wrap{width:375px;height:812px;overflow:hidden;border-radius:20px;
+              box-shadow:0 10px 40px rgba(0,0,0,.18);background:#fff;position:relative}
+  .antes-inner{position:absolute;inset:0;overflow:auto}
+  .antes .lista{padding:10px 12px}
+  .antes .cab2{padding:10px 12px 0;display:flex;align-items:center;justify-content:space-between}
+  .antes .cab2 span{font-size:11px;letter-spacing:.1em;color:var(--suave);text-transform:uppercase}
+  .marca{position:absolute;left:0;right:0;top:0;border-top:2px dashed #ff2d55;z-index:8;pointer-events:none}
+  .marca b{position:absolute;right:6px;top:4px;background:#ff2d55;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1 class="t">Editor móvil — prototipo (375 × 812)</h1>
+  <p class="sub">
+    Izquierda: el editor de hoy con las 10 secciones de «XV noche estelar».
+    Derecha: la propuesta. Los dos marcos miden <b>375 × 812 exactos</b>, así que
+    esto es el tamaño real. El lienzo de la derecha es <b>sólo previsualización</b>:
+    selecciona, no edita.
+  </p>
+  <div class="barra">
+    <button id="bmed">Mostrar medidas</button>
+    <button id="bsec">Abrir «Secciones»</button>
+    <button id="bres">Reiniciar</button>
+  </div>
+</div>
+
+<div class="pagina">
+
+  <div class="col">
+    <div class="rotulo">Hoy — medido</div>
+    <div class="antes-wrap antes">
+      <div class="antes-inner" id="antes">
+        <div class="sup">
+          <button class="icono">←</button>
+          <div class="tit">XV noche estelar</div>
+          <button class="icono">↶</button><button class="icono">↷</button>
+        </div>
+        <div class="cab2"><span>Secciones</span>
+          <button style="height:28px;padding:0 10px;border:1px solid #ccc;background:#fff;border-radius:8px;font-size:12px">Agregar sección</button></div>
+        <div class="lista" id="listaAntes"></div>
+        <div class="marca" id="marca"><b>pliegue 812 px</b></div>
+      </div>
+    </div>
+    <p class="nota">
+      La vista previa empieza en <b>901 px</b>: <b>89 px por debajo del pliegue</b>.
+      Con 4 secciones —la mediana del catálogo— empieza en 489 y ya ocupa sólo la
+      mitad inferior. Desplaza este marco para verlo.
+    </p>
+  </div>
+
+  <div class="col">
+    <div class="rotulo">Propuesta</div>
+    <div class="tel" id="tel">
+
+      <div class="sup" data-m="52 px">
+        <button class="icono" title="Volver">←</button>
+        <div class="tit">XV noche estelar</div>
+        <button class="icono" title="Deshacer">↶</button>
+        <button class="icono" title="Rehacer">↷</button>
+        <button class="publicar">Publicar</button>
+      </div>
+
+      <div class="lienzo" id="lienzo" data-m="696 px · 86%">
+        <div class="inv" id="inv"></div>
+      </div>
+
+      <div class="inf" data-m="64 px" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-hoja="secciones" aria-selected="false"><span class="g">▤</span>Secciones</button>
+        <button class="tab" role="tab" data-hoja="bloque"    aria-selected="false"><span class="g">✦</span>Bloque</button>
+        <button class="tab" role="tab" data-hoja="tema"      aria-selected="false"><span class="g">◐</span>Tema</button>
+        <button class="tab" role="tab" data-hoja="invitados" aria-selected="false"><span class="g">☺</span>Invitados</button>
+        <button class="tab" role="tab" data-hoja="ajustes"   aria-selected="false"><span class="g">⚙</span>Ajustes</button>
+      </div>
+
+      <div class="velo" id="velo"></div>
+      <div class="hoja" id="hoja" aria-hidden="true">
+        <div class="asa" id="asa"><i></i></div>
+        <div class="hoja-cab">
+          <h3 id="hojaTit">Secciones</h3>
+          <button class="icono" id="cerrar" title="Cerrar">✕</button>
+        </div>
+        <div class="hoja-cuerpo" id="hojaCuerpo"></div>
+      </div>
+
+    </div>
+    <p class="nota">
+      El lienzo ocupa <b>696 px, el 86 %</b> del alto y no se desplaza nunca. Las secciones
+      viven en una <b>hoja</b>: sube al 60 % y se arrastra por el asa a pantalla
+      completa. Toca un bloque del lienzo y se abre su hoja.
+    </p>
+  </div>
+</div>
+
+<script>
+const SECCIONES = [
+  ["Portada","✦",1],["Bienvenida","✉",1],["Cuenta regresiva","◷",1],
+  ["Ubicación","◉",0],["Galería","▣",0],["Itinerario","▤",1],
+  ["Código de vestimenta","♕",1],["Música","♪",0],["Mesa de regalos","▨",0],
+  ["Confirmación (RSVP)","✓",1],
+];
+const tarjeta = ([n,g,v]) => `
+  <div class="sec">
+    <div class="asa2">⠿</div>
+    <div class="nom">${g} ${n}${v?"":"<small>(oculto)</small>"}</div>
+    <button class="sw" aria-checked="${v?"true":"false"}"></button>
+    <button class="bor">🗑</button>
+  </div>`;
+
+/* ANTES: la lista empuja el lienzo fuera de pantalla */
+document.getElementById("listaAntes").innerHTML =
+  SECCIONES.map(tarjeta).join("") +
+  `<div style="padding:14px 4px 8px;font-size:11px;letter-spacing:.1em;color:#6b7280;text-transform:uppercase">Vista previa</div>
+   <div style="height:520px;border-radius:12px;background:#0e1430;color:#fff;display:grid;place-content:center;text-align:center">
+     <div style="font-size:11px;letter-spacing:.3em;color:#cbb27a">MIS XV AÑOS</div>
+     <div style="font-family:Georgia,serif;font-size:30px;margin-top:8px">Noche estelar</div>
+   </div>`;
+/* la marca del pliegue va al px 812 del CONTENIDO, no del marco */
+document.getElementById("marca").style.top = "812px";
+
+/* DESPUÉS: el lienzo */
+document.getElementById("inv").innerHTML = `
+  <div class="bloque portada" data-b="Portada">
+    <span class="eti">Portada</span>
+    <div class="epi">MIS XV AÑOS</div>
+    <h2>Noche estelar</h2>
+    <div class="fecha">Sábado 26 de septiembre · 8:00 p.m.</div>
+  </div>
+  <div class="bloque" data-b="Bienvenida"><span class="eti">Bienvenida</span>
+    <div class="h2">Bienvenida</div>
+    <p class="p">Hay noches que se recuerdan toda la vida. Quiero que ésta sea una de ellas, y que tú estés.</p>
+  </div>
+  <div class="bloque" data-b="Cuenta regresiva"><span class="eti">Cuenta regresiva</span>
+    <div class="h2">Faltan</div>
+    <div class="cuenta">
+      <div><b>15</b><span>DÍAS</span></div><div><b>06</b><span>HRS</span></div>
+      <div><b>42</b><span>MIN</span></div><div><b>11</b><span>SEG</span></div>
+    </div>
+  </div>
+  <div class="bloque" data-b="Itinerario"><span class="eti">Itinerario</span>
+    <div class="h2">Itinerario</div>
+    <p class="p">8:00 Recepción · 9:00 Vals · 10:00 Cena · 11:30 Baile</p>
+  </div>
+  <div class="bloque" data-b="Código de vestimenta"><span class="eti">Código de vestimenta</span>
+    <div class="h2">Código de vestimenta</div><p class="p">Formal. Evitar el color azul rey.</p>
+  </div>
+  <div class="bloque" data-b="Confirmación (RSVP)"><span class="eti">Confirmación (RSVP)</span>
+    <div class="h2">Confirmación</div><p class="p">Por favor confirma antes del 20 de septiembre.</p>
+  </div>`;
+
+const hoja=document.getElementById("hoja"), velo=document.getElementById("velo"),
+      cuerpo=document.getElementById("hojaCuerpo"), htit=document.getElementById("hojaTit"),
+      tabs=document.getElementById("tabs");
+
+const CUERPOS = {
+  secciones: () => `<p style="margin:0 0 10px;color:#6b7280;font-size:12px">
+      Arrastra el asa hacia arriba para verlas todas a pantalla completa.</p>` + SECCIONES.map(tarjeta).join(""),
+  bloque: () => `
+    <div class="campo"><label>Título</label><input value="Noche estelar"></div>
+    <div class="campo"><label>Subtítulo</label><input value="Mis XV años"></div>
+    <div class="campo"><label>Etiqueta</label><input value="Sábado 26 de septiembre"></div>
+    <p style="color:#6b7280;font-size:12px;margin:14px 0 0">
+      Los cambios se ven arriba, en el lienzo, sin cerrar la hoja.</p>`,
+  tema: () => `<div class="campo"><label>Paleta</label><input value="Noche estelar"></div>
+    <div class="campo"><label>Tipografía</label><input value="Serif / Sans"></div>`,
+  invitados: () => `<p style="color:#6b7280;font-size:12px;margin:0 0 10px">13 invitados · 8 confirmados</p>
+    <div class="sec"><div class="nom">Invitada de ejemplo<small>1 pase · confirmado</small></div></div>
+    <div class="sec"><div class="nom">Invitado de ejemplo<small>2 pases · pendiente</small></div></div>`,
+  ajustes: () => `<div class="campo"><label>Nombre del evento</label><input value="XV noche estelar"></div>
+    <div class="campo"><label>Fecha</label><input value="2026-09-26"></div>`,
+};
+const TITULOS={secciones:"Secciones",bloque:"Portada",tema:"Tema",invitados:"Invitados",ajustes:"Ajustes"};
+
+function abrir(clave, titulo){
+  htit.textContent = titulo || TITULOS[clave];
+  cuerpo.innerHTML = CUERPOS[clave]();
+  hoja.dataset.on="1"; velo.dataset.on="1"; hoja.setAttribute("aria-hidden","false");
+  [...tabs.children].forEach(b=>b.setAttribute("aria-selected", String(b.dataset.hoja===clave)));
+}
+function cerrar(){
+  hoja.dataset.on=""; velo.dataset.on=""; hoja.dataset.alto=""; hoja.setAttribute("aria-hidden","true");
+  [...tabs.children].forEach(b=>b.setAttribute("aria-selected","false"));
+  document.querySelectorAll('.bloque[data-sel="1"]').forEach(e=>e.dataset.sel="");
+}
+tabs.addEventListener("click", e=>{
+  const b=e.target.closest(".tab"); if(!b) return;
+  if(b.getAttribute("aria-selected")==="true") return cerrar();
+  abrir(b.dataset.hoja);
+});
+document.getElementById("cerrar").onclick=cerrar;
+velo.onclick=cerrar;
+
+/* tocar un bloque del lienzo abre SU hoja: selecciona, no edita */
+document.getElementById("inv").addEventListener("click", e=>{
+  const b=e.target.closest(".bloque"); if(!b) return;
+  document.querySelectorAll('.bloque[data-sel="1"]').forEach(x=>x.dataset.sel="");
+  b.dataset.sel="1";
+  abrir("bloque", b.dataset.b);
+});
+
+/* el asa: arriba -> pantalla completa; abajo -> baja un paso o cierra */
+let y0=null; const asa=document.getElementById("asa");
+asa.addEventListener("pointerdown", e=>{ y0=e.clientY; asa.setPointerCapture(e.pointerId); });
+asa.addEventListener("pointerup", e=>{
+  if(y0===null) return; const d=e.clientY-y0; y0=null;
+  if(d<-40) hoja.dataset.alto="full";
+  else if(d>40){ if(hoja.dataset.alto==="full") hoja.dataset.alto=""; else cerrar(); }
+});
+
+const bmed=document.getElementById("bmed");
+bmed.onclick=()=>{ const on=document.body.dataset.medidas==="1";
+  document.body.dataset.medidas=on?"":"1"; bmed.dataset.on=on?"":"1";
+  bmed.textContent=on?"Mostrar medidas":"Ocultar medidas"; };
+document.getElementById("bsec").onclick=()=>abrir("secciones");
+document.getElementById("bres").onclick=()=>{ cerrar();
+  document.getElementById("lienzo").scrollTop=0; document.getElementById("antes").scrollTop=0; };
+</script>
+</body>
+</html>
