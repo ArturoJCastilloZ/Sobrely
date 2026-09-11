@@ -210,11 +210,17 @@ export async function applyMercadoPagoPayment(params: {
       };
     }
 
+    // No se piden las filas y aqui va el motivo. Un 0 aqui significa que la
+    // invitacion ya no existe, y eso NO es un fallo que reportar: el acceso se
+    // revoco dos sentencias mas arriba, que es lo que de verdad cierra la
+    // puerta (el gate publico exige `is_entitlement_active`, 0054:47).
+    //
+    // filas-no-verificadas: el acceso ya esta revocado; 0 filas aqui no cambia
+    // el desenlace para el invitado.
     const { error: pubErr } = await admin
       .from("invitations")
       .update({ is_published: false, status: "draft" })
-      .eq("id", order.invitation_id)
-      .select("id");
+      .eq("id", order.invitation_id);
     if (pubErr) {
       // El acceso YA está revocado, así que el gate público la oculta igual.
       // Se reporta el fallo para que MP reintente y la bandera se reconcilie.
@@ -384,11 +390,25 @@ export async function applyMercadoPagoPayment(params: {
   if (publishOnPaid) {
     const check = await canPublishInvitation(admin, order.invitation_id);
     if (check.allowed) {
-      const { error: pubErr } = await admin
+      // `.select("id")` y comprobar filas: sin esto, `published = !pubErr`
+      // decia `true` aunque no se hubiera publicado NADA — en PostgREST un
+      // `update` que no encuentra fila devuelve `error: null`. Es el patron
+      // «ok:true con 0 filas» del punto 7, que se cerro en otros TRES archivos
+      // y se quedo vivo justo aqui: el camino donde el cliente PAGO desde el
+      // boton «Publicar». Un flag que miente impide enterarse de que alguien
+      // pago por publicar y su invitacion sigue en borrador.
+      const { data: publicadas, error: pubErr } = await admin
         .from("invitations")
         .update({ is_published: true, status: "published" })
-        .eq("id", order.invitation_id);
-      published = !pubErr;
+        .eq("id", order.invitation_id)
+        .select("id");
+      published = !pubErr && (publicadas?.length ?? 0) > 0;
+      if (!published) {
+        console.error(
+          "[fulfillment] pago con publish_on_paid que NO llego a publicar:",
+          { orderId, motivo: pubErr?.message ?? "0 filas afectadas" },
+        );
+      }
     }
   }
 

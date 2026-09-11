@@ -1,4 +1,6 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -20,6 +22,22 @@ const ARCHIVOS = {
   admin: "../admin/actions.ts",
   rsvp: "../rsvp/actions.ts",
   invitations: "./actions.ts",
+  /*
+    `fulfillment.ts` FALTABA, y es el archivo donde este defecto cuesta dinero.
+
+    El punto 7 arregló ocho escrituras en los tres módulos de arriba y dejó este
+    guard para que no volvieran; el punto 8 arregló el fulfillment aparte, con
+    pruebas propias. Entre las dos campañas nadie extendió la lista, así que la
+    auto-publicación se quedó con `published = !pubErr` —un `update` sin filas
+    no es error en PostgREST— y decía «publicada» sin haber publicado nada,
+    justo en el camino donde el cliente PAGÓ desde el botón «Publicar».
+    Encontrado al revisar el punto 8 con el dev el 2026-09-11.
+
+    La lección de este repo dice arreglar el MECANISMO y no el síntoma: el
+    síntoma era una línea, el mecanismo es que el guard no cubría el módulo del
+    dinero.
+  */
+  fulfillment: "../billing/fulfillment.ts",
 } as const;
 
 /** Fuente sin comentarios: una aserción no debe satisfacerse con la prosa. */
@@ -70,6 +88,74 @@ function sentenciasDeEscritura(src: string): string[] {
   return out;
 }
 
+describe("el guard cubre TODOS los modulos que escriben", () => {
+  /*
+    Una lista escrita a mano no puede defenderse a si misma: quitar un archivo
+    de `ARCHIVOS` dejaba la suite en verde, y asi es justo como
+    `fulfillment.ts` —el modulo del DINERO— estuvo fuera del guard desde que se
+    escribio. Lo destapo un mutante que sobrevivio.
+
+    Asi que la lista se comprueba contra la SUPERFICIE: se barre `src/lib` y
+    todo modulo que escriba en la base tiene que estar cubierto. Un archivo
+    nuevo con un `.update()` entra al guard sin tocar esta prueba.
+  */
+  it("ningun modulo de `src/lib` escribe en la BD sin estar en la lista", () => {
+    const raiz = fileURLToPath(new URL("../", import.meta.url));
+    const cubiertos = new Set(
+      Object.values(ARCHIVOS).map((rel) =>
+        fileURLToPath(new URL(rel, import.meta.url)),
+      ),
+    );
+    const escriben: string[] = [];
+    const recorrer = (dir: string) => {
+      for (const e of readdirSync(dir)) {
+        const ruta = join(dir, e);
+        if (statSync(ruta).isDirectory()) {
+          recorrer(ruta);
+        } else if (e.endsWith(".ts") && !e.includes(".test.")) {
+          const src = readFileSync(ruta, "utf8");
+          if (/\.from\("[^"]+"\)(?:\s|\/\/[^\n]*|\/\*[\s\S]*?\*\/)*\.(update|delete|upsert)\(/.test(src)) {
+            escriben.push(ruta);
+          }
+        }
+      }
+    };
+    recorrer(raiz);
+    // No-vacuidad: si el barrido dejara de encontrar modulos, esto pasaria solo.
+    expect(escriben.length, "el barrido no encontro ningun modulo").toBeGreaterThan(0);
+    /*
+      DEUDA DECLARADA, no resuelta.
+
+      El barrido destapo que el guard cubria 4 de 10 modulos que escriben en la
+      base. Los seis de abajo NO estan auditados: meterlos de golpe pondria la
+      suite roja sobre codigo que nadie ha revisado, y arreglarlos a ciegas en
+      un mismo commit es justo como se cuelan los defectos.
+
+      Lo que esta lista SI hace: que un modulo NUEVO que escriba en la base y no
+      este cubierto ponga la prueba en rojo. La deuda queda visible y acotada en
+      vez de invisible.
+
+      Pendiente de auditar con el dev, por orden de riesgo: `billing/actions.ts`
+      (dinero) y `vanity/actions.ts` (toca el slug publico) primero.
+    */
+    const SIN_AUDITAR = new Set([
+      "billing/actions.ts",
+      "guests/actions.ts",
+      "reports/actions.ts",
+      "signatures/actions.ts",
+      "templates/favorites-actions.ts",
+      "vanity/actions.ts",
+    ]);
+    const fuera = escriben
+      .filter((f) => !cubiertos.has(f))
+      .filter((f) => !SIN_AUDITAR.has(f.slice(raiz.length)));
+    expect(
+      fuera.map((f) => f.slice(raiz.length)),
+      "escriben en la BD y no estan en ARCHIVOS",
+    ).toEqual([]);
+  });
+});
+
 describe("toda escritura pide las filas afectadas", () => {
   // La guarda de no-vacuidad: si el recortador dejara de encontrar sentencias,
   // los `it.each` de abajo pasarían sin comprobar nada.
@@ -108,7 +194,20 @@ describe("toda escritura pide las filas afectadas", () => {
       // solución buena. Lo que se prohíbe es la tercera vía: no verificar y no
       // decirlo.
       for (const sentencia of sentenciasDeEscritura(crudo(rel))) {
-        const verifica = /\.select\(/.test(sentencia);
+        // `verifica` se evalúa sobre el CÓDIGO y `exenta` sobre la prosa.
+        //
+        // Antes las dos miraban el texto con comentarios, y eso era un FALSO
+        // VERDE: el comentario que declara una exención explica «se quita el
+        // .select()», así que la palabra aparecía en la prosa y la escritura
+        // pasaba como si pidiera filas. Lo destapó un mutante que sobrevivió
+        // —borrar la marca de exención no ponía nada en rojo— al extender el
+        // guard a `fulfillment.ts` el 2026-09-11. Es la trampa que este repo
+        // tiene anotada varias veces: una aserción no debe poder satisfacerse
+        // con el comentario que la explica.
+        const codigo = sentencia
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .replace(/\/\/[^\n]*/g, "");
+        const verifica = /\.select\(/.test(codigo);
         const exenta = /filas-no-verificadas:/.test(sentencia);
         expect(
           verifica || exenta,
@@ -120,31 +219,61 @@ describe("toda escritura pide las filas afectadas", () => {
 });
 
 describe("y el resultado se COMPRUEBA, no solo se pide", () => {
-  // Pedir `.select()` y no mirar la longitud seria cambiar un fallo silencioso
-  // por otro. Se cuenta que haya tantas comprobaciones como escrituras.
-  for (const [nombre, rel] of Object.entries(ARCHIVOS)) {
-    it(`${nombre}: hay una comprobación de longitud por escritura`, () => {
-      const src = fuente(rel);
-      const sentencias = sentenciasDeEscritura(crudo(rel));
-      const exentas = sentencias.filter((x) =>
-        /filas-no-verificadas:/.test(x),
-      ).length;
-      const conSelect = sentencias.filter((x) => /\.select\(/.test(x));
-      // `.maybeSingle()` devuelve un objeto o `null`, no un array, así que su
-      // comprobación correcta es un guard de falsedad y no una longitud. Es lo
-      // que hace `saveEditor` con `if (!bumped)`, que el informe señaló como el
-      // patrón BUENO a copiar. Contarlas juntas acusaría al único sitio que ya
-      // estaba bien.
-      const porLongitud = conSelect.filter((x) => !/maybeSingle\(\)/.test(x)).length;
-      const porGuard = conSelect.filter((x) => /maybeSingle\(\)/.test(x)).length;
-      const comprobaciones = (
-        src.match(/filas\.length === 0|entFilas\.length === 0/g) ?? []
-      ).length;
+  /*
+    Pedir `.select()` y no mirar la longitud sería cambiar un fallo silencioso
+    por otro.
 
-      expect(conSelect.length + exentas).toBe(sentencias.length);
-      expect(comprobaciones).toBe(porLongitud);
-      // Y que las de `maybeSingle` no queden sin mirar tampoco.
-      if (porGuard > 0) expect(src).toMatch(/if \(!bumped\)/);
+    Se comprueba POR SENTENCIA y no contando el archivo entero. La primera
+    versión contaba `filas.length === 0|entFilas.length === 0` en todo el
+    fuente y lo comparaba con el número de escrituras: funcionaba con los tres
+    módulos originales por casualidad de cómo se llamaban sus variables, y al
+    extender el guard a `fulfillment.ts` se rompió en las DOS direcciones —
+    acusaba a código correcto por usar otros nombres, y al generalizar el regex
+    empezó a contar `modules.length === 0`, que no comprueba ninguna escritura.
+    Un conteo global no sabe A QUÉ pertenece cada coincidencia.
+
+    Ahora se lee el nombre que la propia sentencia asigna (`const { data: X }`)
+    y se exige que ESE identificador se mire justo después.
+  */
+  for (const [nombre, rel] of Object.entries(ARCHIVOS)) {
+    it(`${nombre}: cada escritura con \`.select()\` mira sus filas`, () => {
+      const src = crudo(rel);
+      let miradas = 0;
+      for (const sentencia of sentenciasDeEscritura(src)) {
+        // La marca de exención se busca en la PROSA; `.select(` y
+        // `maybeSingle(` sólo en el CÓDIGO. Mezclarlo tiene consecuencias: el
+        // comentario que declara una exención explica «se quita el .select()»,
+        // y buscando sobre el texto entero esa escritura se colaba como si
+        // pidiera filas. Es la trampa que este repo ya tiene anotada — una
+        // aserción no debe poder satisfacerse con la explicación.
+        const codigo = sentencia
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .replace(/\/\/[^\n]*/g, "");
+        if (!/\.select\(/.test(codigo)) continue; // exenta declarada
+        // `.maybeSingle()` devuelve objeto o `null`: su comprobación correcta
+        // es un guard de falsedad, no una longitud.
+        if (/maybeSingle\(\)/.test(codigo)) continue;
+        const m = /const \{\s*data:\s*(\w+)/.exec(codigo);
+        expect(m, `sin variable de datos:\n${sentencia}`).not.toBeNull();
+        const variable = m![1];
+        // La comprobación vive DESPUÉS de la sentencia, y la ventana se mide
+        // sobre el código SIN COMENTARIOS: entre la escritura de la orden y su
+        // `if (!ordenTocada …)` hay un bloque de manejo de error con un párrafo
+        // de prosa, y midiendo sobre el crudo la comprobación caía fuera. La
+        // distancia que importa es la del código, no la de la explicación.
+        const limpio = fuente(rel);
+        const anclaVar = limpio.indexOf(`const { data: ${variable}`);
+        expect(anclaVar, `no se localizó \`${variable}\``).toBeGreaterThan(-1);
+        const ventana = limpio.slice(anclaVar, anclaVar + 700);
+        const mira = new RegExp(
+          `${variable}\\.length === 0|\\(${variable}\\?\\.length \\?\\? 0\\)|!${variable}\\b`,
+        ).test(ventana);
+        expect(mira, `\`${variable}\` se pide y no se mira en ${nombre}`).toBe(true);
+        miradas += 1;
+      }
+      // No-vacuidad: si el recorte dejara de encontrar escrituras con select,
+      // este `it` pasaría sin comprobar nada.
+      expect(miradas, `${nombre}: ninguna escritura inspeccionada`).toBeGreaterThan(0);
     });
   }
 });
