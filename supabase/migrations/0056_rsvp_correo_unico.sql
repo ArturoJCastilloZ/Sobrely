@@ -1,5 +1,5 @@
 -- ============================================================================
--- 0056 — Índice único que cierra la carrera del RSVP  ⚠️ NO APLICAR TODAVÍA
+-- 0056 — Índice único que cierra la carrera del RSVP  ✅ APLICADA 2026-09-11
 --
 -- La `0055` deja el RSVP público idempotente en la práctica, pero por
 -- UPDATE-y-si-no-INSERT, que tiene una ventana de carrera: dos envíos
@@ -7,7 +7,19 @@
 -- de verdad, y la `0055` ya trae el manejador de `unique_violation` que lo
 -- aprovecha.
 --
--- ⛔ NO SE PUEDE APLICAR HASTA RECONCILIAR UN DUPLICADO QUE YA EXISTE.
+-- ✅ APLICADA el 2026-09-11, tras reconciliar el duplicado. Las 2
+--    comprobaciones de abajo salieron en `ok = true`.
+--    Verificado por efecto contra el UNIVERSO, no el filtro:
+--      · `rsvp_responses` 14 -> 13 filas; la desaparecida es EXACTAMENTE la de
+--        13 pases (`4d16d81b`) y ninguna otra; 0 filas nuevas que atribuir.
+--      · la de 1 pase (`ec880b48`) sigue viva con `guest_count = 1`.
+--      · 0 pares duplicados por correo en toda la tabla.
+--      · el `create index` no movio ni una fila (13 -> 13).
+--
+-- Lo de abajo se conserva como historia de POR QUE estuvo bloqueada y como se
+-- decidio. El runbook ya no hay que ejecutarlo.
+--
+-- ⛔ (HISTORICO) NO SE PUDO APLICAR HASTA RECONCILIAR UN DUPLICADO QUE YA EXISTIA.
 --
 -- Medido el 2026-09-10: hay UN par duplicado en producción, y es de un cliente
 -- real, en una invitación con el evento a 16 días. Crear el índice con ese par
@@ -42,7 +54,8 @@
 --    Contexto: invitacion de un CLIENTE (no del dev), publicada, `rsvp_mode`
 --    abierto, evento el 2026-09-26 — 15 dias — y sigue recibiendo respuestas.
 --
--- ⚠️ ORDEN QUE IMPORTA: mientras el duplicado siga vivo, NO conviene desplegar
+-- ⚠️ (YA NO APLICA, el indice esta puesto) ORDEN QUE IMPORTABA: mientras el
+--    duplicado siguiera vivo, NO convenia desplegar
 --    el codigo que llama a la RPC de la `0055`. Su UPDATE sin limite tocaria
 --    las dos filas a la vez, asi que un reenvio de esa invitada MACHACARIA la
 --    fila de 13 pases con lo que escriba — destruyendo el dato sobre el que
