@@ -44,6 +44,13 @@ export interface OrdenParaReentrada {
  * Es la guarda que evita una consulta extra en el camino que no la necesita:
  * sólo una orden de plan, pagada y con invitación y plan resueltos puede tener
  * un entitlement pendiente.
+ *
+ * ⚠️ El `nuevoEstado === "paid"` NO es sólo una optimización, así que no se
+ * relaje: `isRedundantTransition` también corta el caso «orden ya `paid` y
+ * llega un `pending`/`failed` tardío». Reentrar ahí arrastraría el flujo hasta
+ * el `UPDATE` de la orden y la DEGRADARÍA de `paid` a ese estado tardío, que
+ * es justo lo que ese guard existe para impedir. Un acceso que falta se
+ * recupera en el siguiente `approved`; una orden pagada degradada, no.
  */
 export function puedeQuedarEntitlementPendiente(
   orden: OrdenParaReentrada,
