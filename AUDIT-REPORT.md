@@ -495,8 +495,8 @@ referido.
 > | **Multipestaña** | El conflicto de versión con dos editores abiertos sobre la misma invitación. |
 > | **El modo «lista de invitados»** | Todo el E2E se hizo en `Confirmación abierta`. El puenteo descrito en §5.8 no se volvió a probar. |
 > | **El editor en móvil** | Exige la sesión, que vive en la ventana del dev; su ancho mínimo real fue 530 px. |
-> | **El build de producción** | Todo se midió contra `next dev`. El 200 de `/editor/*` debe reconfirmarse con `next build && next start`. |
-> | **La `0056`** | Bloqueada por un duplicado real de cliente; decidir cuál de las dos filas se queda es del dev. |
+> | ~~**El build de producción**~~ | ✅ **VERIFICADO el 2026-09-11** en un worktree aislado (para no tumbar el `next dev` del dev): `next build` **PASA sin un solo error ni warning**, y `next start` sirve. Ver el bloque de abajo. |
+> | ~~**La `0056`**~~ | ✅ **APLICADA el 2026-09-11**: duplicado reconciliado (universo 14 → 13, 0 pares duplicados) y el índice puesto con sus 2 comprobaciones en `ok = true`. |
 
 - ~~**Todo el E2E autenticado**~~ → **EJECUTADO** el 2026-09-10: dashboard,
   editor, publicación, RSVP real, doble submit, refresh y atrás/adelante. Lo que
@@ -504,9 +504,39 @@ referido.
   editores abiertos), el **modo lista de invitados**, y el **editor en móvil**.
 - **Admin en runtime**: exige sesión de admin.
 - **Pagos**: no se tocó Mercado Pago. Todo el análisis de facturación es estático.
-- **Peso real de página**: lo medido es `next dev`, no representa producción.
-- **El 200 de `/editor/*` en build de producción**: medido contra `next dev`;
-  debe reconfirmarse con `next build && next start`.
+- ~~**Peso real de página**~~ → **MEDIDO en producción** el 2026-09-11:
+  `/` **50 358 B** de HTML · `/pricing` **96 633 B** · una landing de categoría
+  **44 864 B**.
+- ~~**El 200 de `/editor/*` en build de producción**~~ → **CONFIRMADO y
+  ACOTADO** el 2026-09-11. Sigue siendo **200** con `next start`, así que no era
+  un artefacto de `next dev`. Pero lo que sirve **no es una fuga**: son 21 603 B
+  de cascarón —`<title>Editor · Sobrely</title>` y el texto «Cargando editor…»—
+  sin ningún dato de invitación; el redirect a login lo hace el CLIENTE al
+  montar. O sea que el hallazgo es real como **200 a un recurso inexistente**
+  (indexable por bots, y el gate vive en el cliente), no como exposición de
+  datos. La auditoría no tenía esta distinción.
+
+### Build de producción — medido el 2026-09-11
+
+> Worktree aislado desde `origin/skarlette/rediseno` (`81edba7`) con
+> `pnpm install --frozen-lockfile` REAL, que es lo que hace un runner — no un
+> symlink de `node_modules`, que Turbopack rechaza. Se hizo así para **no tocar
+> el `next dev` del dev** (PID 35825), que comparte `.next/`. `next start` en el
+> puerto **3111**, y se confirmó que el PID que escuchaba era hijo del que yo
+> lancé antes de creerle a ningún 200. Al terminar: server bajado **por PID**
+> (nunca `pkill`), worktree retirado, `.env.local` copiado borrado, árbol del
+> dev en 0 cambios y el dev server del dev intacto.
+
+| Ruta | Código | Destino |
+|---|---|---|
+| `/editor/<uuid inexistente>` | **200** | — (cascarón, ver arriba) |
+| `/dashboard` | 307 | `/login?redirectTo=/dashboard` |
+| `/admin` | 307 | `/login?redirectTo=/admin` |
+| `/dashboard/billing` | 307 | `/login?redirectTo=`**`/dashboard`** ← el destino se sigue perdiendo |
+| `/`, `/pricing` | 200 | — |
+
+**Las dos variables públicas bastan para buildear** — quedó comprobado de paso,
+que es justo lo que hacía falta saber antes de configurar el CI.
 - **Las fechas de vencimiento de los entitlements**: el orquestador confirmó el
   estado activo/inactivo por RPC, pero `invitation_entitlements` está cerrada a
   `anon` (`*/0`), así que las fechas concretas vienen de una lectura con service
