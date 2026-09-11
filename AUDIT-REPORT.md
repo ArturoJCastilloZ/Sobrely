@@ -494,7 +494,7 @@ referido.
 > | ~~**Admin en runtime**~~ | ✅ **VERIFICADO el 2026-09-11** con la sesión admin. Ver el bloque «Admin en runtime» abajo. |
 > | ~~**Multipestaña**~~ | ✅ **VERIFICADO el 2026-09-11**: el bloqueo optimista detecta el conflicto, no escribe nada y se recupera. Ver abajo. |
 > | **El modo «lista de invitados»** | ⚠️ **PARCIAL**: la invitación de esta prueba se creó en `guest_list` y el editor la sirve con su panel «Invitados», pero el **puenteo** de §5.8 sigue sin probarse. |
-> | **El editor en móvil** | Exige la sesión, que vive en la ventana del dev; su ancho mínimo real fue 530 px. |
+> | ~~**El editor en móvil**~~ | ✅ **MEDIDO a 371 px el 2026-09-11** — y los «530 px» eran del INSTRUMENTO, no del producto. Ver abajo. |
 > | ~~**El build de producción**~~ | ✅ **VERIFICADO el 2026-09-11** en un worktree aislado (para no tumbar el `next dev` del dev): `next build` **PASA sin un solo error ni warning**, y `next start` sirve. Ver el bloque de abajo. |
 > | ~~**La `0056`**~~ | ✅ **APLICADA el 2026-09-11**: duplicado reconciliado (universo 14 → 13, 0 pares duplicados) y el índice puesto con sus 2 comprobaciones en `ok = true`. |
 
@@ -917,6 +917,45 @@ Lo que SÍ sigue en pie del hallazgo: el flujo «categoría → plantilla» sól
 existe entrando por `Plantillas`. Pero la primera decisión que el producto pide
 al crear no es la plantilla, es el MODO — y eso cambia el onboarding que se
 diseñe encima.
+
+### El editor en móvil — medido el 2026-09-11
+
+> 🚨 **Primero, una corrección al propio informe.** La §8 decía que «su ancho
+> mínimo real fue 530 px», y eso se leía como un límite del producto. **No lo
+> es: es un límite de Chrome.** Medido — al pedir una ventana de **430 px** el
+> navegador la dejó en **500**; macOS no permite ventanas más estrechas. El
+> informe atribuyó a la app una restricción de la herramienta con la que se
+> medía.
+>
+> La salida fue un **iframe del mismo origen** de 375 px dentro de la propia
+> página: hereda la sesión (mismo origen) y su viewport CSS sí es de 375, así
+> que las media queries responden de verdad. Viewport interior medido: **371 px**.
+> Invitación de prueba creada con la cuenta del dev y **borrada** al terminar.
+
+**1. El layout AGUANTA.** A 371 px: `scrollWidth` 371 = `clientWidth` 371,
+**desborde horizontal 0**, y **0 elementos** con el borde derecho fuera del
+viewport.
+
+**2. Se puede EDITAR y guarda.** Se escribió el título dentro del iframe y el
+efecto está en la base: `version` **1 → 2** y `title` = `EDITADO A 375`. O sea
+que el editor a 375 px no es decorativo: funciona.
+
+**3. El defecto real es táctil, y NO es del móvil.** A 371 px hay **37 de 39
+controles** por debajo del mínimo de 44 px — «Publicar», «Deshacer», «Rehacer»,
+«Agregar sección» miden **28 px** de alto, y «Reordenar» **16 px**.
+📐 **El control que impide atribuirlo mal:** a **1400 px** el conteo es
+**idéntico, 37 de 39**, y esos mismos controles siguen midiendo 28 px. El ancho
+no lo causa — **el editor está diseñado para puntero en todos los tamaños**.
+Reportarlo como «el editor en móvil tiene los controles pequeños» habría sido
+culpar a la variable equivocada.
+Es el mismo defecto que N-5 (RSVP, 7 de 8 bajo 44 px), pero en el editor y
+mucho más extendido.
+
+**Veredicto:** el editor en móvil **no está roto** —cabe y guarda—, pero es
+**incómodo por diseño**, no por el ancho. La decisión de hacerlo táctil es de
+producto, no un bug que arreglar.
+
+**Limpieza:** las 5 tablas volvieron a su línea base (18 / 88 / 3 / 8 / 14).
 
 ### Multipestaña — verificado el 2026-09-11
 
