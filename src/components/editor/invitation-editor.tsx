@@ -175,6 +175,29 @@ export function InvitationEditor({
   const uploadCtx = { userId, invitationId: initialInvitation.id };
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const [panel, setPanel] = useState<PanelId>("module");
+  /**
+   * MÓVIL (< 768 px): qué hoja inferior está abierta, o `null` si sólo se ve el
+   * lienzo. En escritorio este estado se ignora por completo — las columnas
+   * están siempre visibles y nada lo lee.
+   *
+   * Por qué hace falta: medido el 2026-09-11 a 375×812 sobre el editor real, la
+   * vista previa empieza en `top` 419 px con 2 secciones, 489 con 4 (la MEDIANA
+   * del catálogo) y **901 con 10**, contra un viewport de 812. El riel de
+   * secciones es el primer hijo de un `flex-col`, así que empuja al lienzo fuera
+   * de la pantalla en cuanto la invitación tiene contenido.
+   *
+   * La inversión: el lienzo ocupa la pantalla y el riel y el inspector pasan a
+   * ser hojas. **Se hace con CSS sobre los MISMOS nodos**, nunca con un segundo
+   * árbol: el comentario de abajo explica que el preview ya se montó dos veces
+   * una vez y duplicó las capas de stickers. Aquí `PreviewPane` sigue
+   * existiendo exactamente una vez.
+   */
+  const [hojaMovil, setHojaMovil] = useState<null | "secciones" | PanelId>(null);
+  /** Abre en móvil la hoja del panel que se acaba de elegir. */
+  const irAPanel = (p: PanelId) => {
+    setPanel(p);
+    setHojaMovil(p);
+  };
   const [selectedId, setSelectedId] = useState<string | null>(
     initialModules[0]?.id ?? null,
   );
@@ -769,7 +792,17 @@ export function InvitationEditor({
         {/* Riel: que hay en la invitacion */}
         <nav
           aria-label="Secciones de la invitación"
-          className="flex shrink-0 flex-col gap-3 border-b p-3 lg:w-(--ed-sidebar-w) lg:overflow-y-auto lg:border-r lg:border-b-0"
+          data-hoja={hojaMovil === "secciones" ? "abierta" : "cerrada"}
+          className={cn(
+            "flex shrink-0 flex-col gap-3 border-b p-3 lg:w-(--ed-sidebar-w) lg:overflow-y-auto lg:border-r lg:border-b-0",
+            // < 768: deja de ser el primer hijo del flujo —que es lo que
+            // empujaba el lienzo— y pasa a ser una hoja sobre la barra.
+            "max-md:fixed max-md:inset-x-0 max-md:bottom-(--ed-barra-movil) max-md:z-40",
+            "max-md:max-h-[60svh] max-md:overflow-y-auto max-md:rounded-t-2xl",
+            "max-md:border max-md:bg-background max-md:shadow-2xl",
+            "max-md:transition-transform max-md:duration-200 max-md:ease-out",
+            "max-md:data-[hoja=cerrada]:pointer-events-none max-md:data-[hoja=cerrada]:translate-y-[calc(100%+var(--ed-barra-movil))]",
+          )}
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-[length:var(--ed-text-micro)] font-(--ed-weight-medium) tracking-(--ed-tracking-micro) text-muted-foreground uppercase">
@@ -817,7 +850,10 @@ export function InvitationEditor({
                         selected={panel === "module" && m.id === selectedId}
                         onSelect={() => {
                           setSelectedId(m.id);
-                          setPanel("module");
+                          // En móvil, elegir una sección lleva DIRECTO a sus
+                          // propiedades: quedarse en la lista obligaría a un
+                          // segundo toque a ciegas.
+                          irAPanel("module");
                         }}
                         onToggleVisible={(v) => toggleVisible(m.id, v)}
                         onDelete={() => setPorBorrar(m)}
@@ -844,7 +880,7 @@ export function InvitationEditor({
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => setPanel(p.id)}
+                  onClick={() => irAPanel(p.id)}
                   aria-current={activo ? "true" : undefined}
                   className={cn(
                     "flex h-11 w-full items-center gap-2.5 rounded-[var(--ed-radius-sm)] px-2.5 text-left",
@@ -865,7 +901,7 @@ export function InvitationEditor({
 
         {/* Canvas: el protagonista. Antes vivia a la derecha, con un parrafo
             gris encima que decia "Vista previa en tiempo real". */}
-        <main className="flex min-h-[60svh] min-w-0 flex-1 flex-col overflow-y-auto bg-muted/40 p-4 lg:min-h-0">
+        <main className="flex min-h-[60svh] min-w-0 flex-1 flex-col overflow-y-auto bg-muted/40 p-4 max-md:pb-[calc(var(--ed-barra-movil)+1rem)] lg:min-h-0">
           <PreviewPane
             modules={modules}
             theme={theme}
@@ -895,7 +931,18 @@ export function InvitationEditor({
         {/* Inspector: contextual a lo que hay seleccionado. */}
         <aside
           aria-label="Propiedades"
-          className="flex shrink-0 flex-col border-t lg:w-[380px] lg:overflow-y-auto lg:border-t-0 lg:border-l"
+          data-hoja={
+            hojaMovil && hojaMovil !== "secciones" ? "abierta" : "cerrada"
+          }
+          className={cn(
+            "flex shrink-0 flex-col border-t lg:w-[380px] lg:overflow-y-auto lg:border-t-0 lg:border-l",
+            // Mismo tratamiento que el riel: la MISMA caja, movida por CSS.
+            "max-md:fixed max-md:inset-x-0 max-md:bottom-(--ed-barra-movil) max-md:z-40",
+            "max-md:max-h-[60svh] max-md:overflow-y-auto max-md:rounded-t-2xl",
+            "max-md:border max-md:bg-background max-md:shadow-2xl",
+            "max-md:transition-transform max-md:duration-200 max-md:ease-out",
+            "max-md:data-[hoja=cerrada]:pointer-events-none max-md:data-[hoja=cerrada]:translate-y-[calc(100%+var(--ed-barra-movil))]",
+          )}
         >
           <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3.5">
             {panel === "module" && selected ? (
@@ -996,6 +1043,85 @@ export function InvitationEditor({
             )}
           </div>
         </aside>
+
+        {/*
+          Velo de la hoja. Sólo < 768 y sólo cuando hay una abierta: deja ver el
+          lienzo detrás —que es el punto de todo esto— y cierra al tocarlo.
+        */}
+        {hojaMovil && (
+          <button
+            type="button"
+            aria-label="Cerrar panel"
+            onClick={() => setHojaMovil(null)}
+            className="fixed inset-0 z-30 bg-black/25 md:hidden"
+          />
+        )}
+
+        {/*
+          BARRA MÓVIL (< 768). La que hubo antes se quitó porque mezclaba tres
+          niveles —documento, bloque y un MODO («Vista previa»)— y porque cinco
+          `flex-1` se truncaban a 420 px. Las dos cosas están atendidas:
+          · «Vista previa» ya no es una pestaña: el lienzo está SIEMPRE visible,
+            así que desaparece el nivel que sobraba.
+          · No se trunca porque cada entrada apila icono sobre etiqueta de 10 px
+            en vez de ponerlos en fila — verificado por medición, no a ojo.
+
+          Las entradas salen de las MISMAS fuentes que el escritorio
+          (`PANELES_DOC`, con su filtro de `guest_list`), así que no hay una
+          lista paralela que se quede vieja cuando se añada un panel.
+        */}
+        <nav
+          aria-label="Secciones y paneles"
+          className="fixed inset-x-0 bottom-0 z-50 flex h-(--ed-barra-movil) border-t bg-background md:hidden"
+        >
+          {[
+            { id: "secciones" as const, label: "Secciones", icon: LayersIcon },
+            {
+              id: "module" as const,
+              label: selected
+                ? MODULE_META[selected.module_type].label
+                : "Bloque",
+              icon: selected
+                ? MODULE_REGISTRY[selected.module_type].Icon
+                : LayersIcon,
+            },
+            ...PANELES_DOC.filter(
+              (p) => p.id !== "guests" || invitation.rsvp_mode === "guest_list",
+            ),
+          ].map((p) => {
+            const Icon = p.icon;
+            const activo = hojaMovil === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                aria-current={activo ? "true" : undefined}
+                // Toca la activa y se cierra: así se vuelve al lienzo entero
+                // sin buscar una «X».
+                onClick={() =>
+                  setHojaMovil((actual) => {
+                    if (actual === p.id) return null;
+                    if (p.id !== "secciones") setPanel(p.id as PanelId);
+                    return p.id;
+                  })
+                }
+                className={cn(
+                  // `min-h-11` = 44 px: el mínimo táctil. Hoy 37 de 39
+                  // controles del editor están por debajo, y está medido que
+                  // NO es cosa del ancho (a 1400 px son los mismos 37).
+                  "flex min-h-11 flex-1 flex-col items-center justify-center gap-1 px-1",
+                  "text-[length:var(--ed-text-micro)] transition-colors",
+                  activo
+                    ? "font-(--ed-weight-semibold) text-foreground"
+                    : "text-muted-foreground",
+                )}
+              >
+                <Icon className="size-5 shrink-0" aria-hidden />
+                <span className="max-w-full truncate">{p.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );
