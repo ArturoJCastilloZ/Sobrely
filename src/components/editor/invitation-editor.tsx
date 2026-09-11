@@ -176,7 +176,7 @@ export function InvitationEditor({
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const [panel, setPanel] = useState<PanelId>("module");
   /**
-   * MÓVIL (< 768 px): qué hoja inferior está abierta, o `null` si sólo se ve el
+   * MÓVIL (< 1024 px): qué hoja inferior está abierta, o `null` si sólo se ve el
    * lienzo. En escritorio este estado se ignora por completo — las columnas
    * están siempre visibles y nada lo lee.
    *
@@ -795,13 +795,13 @@ export function InvitationEditor({
           data-hoja={hojaMovil === "secciones" ? "abierta" : "cerrada"}
           className={cn(
             "flex shrink-0 flex-col gap-3 border-b p-3 lg:w-(--ed-sidebar-w) lg:overflow-y-auto lg:border-r lg:border-b-0",
-            // < 768: deja de ser el primer hijo del flujo —que es lo que
+            // < 1024: deja de ser el primer hijo del flujo —que es lo que
             // empujaba el lienzo— y pasa a ser una hoja sobre la barra.
-            "max-md:fixed max-md:inset-x-0 max-md:bottom-(--ed-barra-movil) max-md:z-40",
-            "max-md:max-h-[60svh] max-md:overflow-y-auto max-md:rounded-t-2xl",
-            "max-md:border max-md:bg-background max-md:shadow-2xl",
-            "max-md:transition-transform max-md:duration-200 max-md:ease-out",
-            "max-md:data-[hoja=cerrada]:pointer-events-none max-md:data-[hoja=cerrada]:translate-y-[calc(100%+var(--ed-barra-movil))]",
+            "max-lg:fixed max-lg:inset-x-0 max-lg:bottom-(--ed-barra-movil) max-lg:z-40",
+            "max-lg:max-h-[60svh] max-lg:overflow-y-auto max-lg:rounded-t-2xl",
+            "max-lg:border max-lg:bg-background max-lg:shadow-2xl",
+            "max-lg:transition-transform max-lg:duration-200 max-lg:ease-out",
+            "max-lg:data-[hoja=cerrada]:pointer-events-none max-lg:data-[hoja=cerrada]:translate-y-[calc(100%+var(--ed-barra-movil))]",
           )}
         >
           <div className="flex items-center justify-between gap-2">
@@ -901,7 +901,7 @@ export function InvitationEditor({
 
         {/* Canvas: el protagonista. Antes vivia a la derecha, con un parrafo
             gris encima que decia "Vista previa en tiempo real". */}
-        <main className="flex min-h-[60svh] min-w-0 flex-1 flex-col overflow-y-auto bg-muted/40 p-4 max-md:pb-[calc(var(--ed-barra-movil)+1rem)] lg:min-h-0">
+        <main className="flex min-h-[60svh] min-w-0 flex-1 flex-col overflow-y-auto bg-muted/40 p-4 max-lg:pb-[calc(var(--ed-barra-movil)+1rem)] lg:min-h-0">
           <PreviewPane
             modules={modules}
             theme={theme}
@@ -937,11 +937,11 @@ export function InvitationEditor({
           className={cn(
             "flex shrink-0 flex-col border-t lg:w-[380px] lg:overflow-y-auto lg:border-t-0 lg:border-l",
             // Mismo tratamiento que el riel: la MISMA caja, movida por CSS.
-            "max-md:fixed max-md:inset-x-0 max-md:bottom-(--ed-barra-movil) max-md:z-40",
-            "max-md:max-h-[60svh] max-md:overflow-y-auto max-md:rounded-t-2xl",
-            "max-md:border max-md:bg-background max-md:shadow-2xl",
-            "max-md:transition-transform max-md:duration-200 max-md:ease-out",
-            "max-md:data-[hoja=cerrada]:pointer-events-none max-md:data-[hoja=cerrada]:translate-y-[calc(100%+var(--ed-barra-movil))]",
+            "max-lg:fixed max-lg:inset-x-0 max-lg:bottom-(--ed-barra-movil) max-lg:z-40",
+            "max-lg:max-h-[60svh] max-lg:overflow-y-auto max-lg:rounded-t-2xl",
+            "max-lg:border max-lg:bg-background max-lg:shadow-2xl",
+            "max-lg:transition-transform max-lg:duration-200 max-lg:ease-out",
+            "max-lg:data-[hoja=cerrada]:pointer-events-none max-lg:data-[hoja=cerrada]:translate-y-[calc(100%+var(--ed-barra-movil))]",
           )}
         >
           <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3.5">
@@ -1053,12 +1053,12 @@ export function InvitationEditor({
             type="button"
             aria-label="Cerrar panel"
             onClick={() => setHojaMovil(null)}
-            className="fixed inset-0 z-30 bg-black/25 md:hidden"
+            className="fixed inset-0 z-30 bg-black/25 lg:hidden"
           />
         )}
 
         {/*
-          BARRA MÓVIL (< 768). La que hubo antes se quitó porque mezclaba tres
+          BARRA MÓVIL (< 1024). La que hubo antes se quitó porque mezclaba tres
           niveles —documento, bloque y un MODO («Vista previa»)— y porque cinco
           `flex-1` se truncaban a 420 px. Las dos cosas están atendidas:
           · «Vista previa» ya no es una pestaña: el lienzo está SIEMPRE visible,
@@ -1072,7 +1072,7 @@ export function InvitationEditor({
         */}
         <nav
           aria-label="Secciones y paneles"
-          className="fixed inset-x-0 bottom-0 z-50 flex h-(--ed-barra-movil) border-t bg-background md:hidden"
+          className="fixed inset-x-0 bottom-0 z-50 flex h-(--ed-barra-movil) border-t bg-background lg:hidden"
         >
           {[
             { id: "secciones" as const, label: "Secciones", icon: LayersIcon },

@@ -3,7 +3,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
- * La barra de pestañas del editor en móvil (< 768 px).
+ * La barra de pestañas del editor en móvil (< 1024 px).
+ *
+ * El umbral es 1024 y no 768 A PROPOSITO: es exactamente donde el layout deja
+ * de apilarse (`lg:flex-row`). Con 768 quedaba una franja de 768–1023 con el
+ * defecto intacto.
  *
  * Lo que defiende, y por qué importa más que de costumbre: el encargo era
  * llevar el editor a móvil **sin perder ninguna opción**. La forma de
@@ -32,10 +36,10 @@ describe("un solo árbol: el preview no se duplica", () => {
   });
 
   it("y no hay un segundo bloque de layout escondido por breakpoint", () => {
-    // `lg:hidden` / `md:hidden` sobre un contenedor de layout sería la firma de
-    // la copia móvil que ya costó un bug de punteros. La barra SÍ usa
-    // `md:hidden`, y es el único sitio donde se admite.
-    const ocultos = CODIGO.match(/\bmd:hidden\b/g) ?? [];
+    // `lg:hidden` sobre un contenedor de layout sería la firma de la copia
+    // móvil que ya costó un bug de punteros. La barra SÍ lo usa, y es el
+    // único sitio donde se admite.
+    const ocultos = CODIGO.match(/(?<!max-)\blg:hidden\b/g) ?? [];
     expect(ocultos.length).toBeLessThanOrEqual(2);
   });
 });
@@ -67,11 +71,11 @@ describe("la barra móvil se construye desde las fuentes del escritorio", () => 
 
 describe("el riel y el inspector se mueven, no se duplican", () => {
   it("los dos se convierten en hoja con el MISMO mecanismo", () => {
-    // `data-hoja` + `max-md:fixed`: la misma caja del escritorio, reposicionada.
+    // `data-hoja` + `max-lg:fixed`: la misma caja del escritorio, reposicionada.
     // Si alguien montara una copia, estas dos marcas dejarían de ir en pareja.
     const hojas = CODIGO.match(/data-hoja=\{/g) ?? [];
     expect(hojas).toHaveLength(2);
-    const fijos = CODIGO.match(/max-md:fixed/g) ?? [];
+    const fijos = CODIGO.match(/max-lg:fixed/g) ?? [];
     expect(fijos).toHaveLength(2);
   });
 

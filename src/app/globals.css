@@ -148,7 +148,7 @@
   --ed-topbar-h: 52px;
   --ed-sidebar-w: 300px;
   --ed-inspector-w: 320px;
-  /* Barra de pestañas del editor en móvil (< 768). 64px para que cada entrada
+  /* Barra de pestañas del editor en móvil (< 1024). 64px para que cada entrada
      tenga el mínimo táctil de 44 con su etiqueta debajo. La usan la propia
      barra, el hueco inferior del lienzo y el desplazamiento con el que las
      hojas se esconden, así que vive en un token y no en tres literales. */
