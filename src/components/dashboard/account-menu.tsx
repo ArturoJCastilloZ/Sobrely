@@ -83,8 +83,20 @@ export function AccountMenu({
         <DropdownMenuSeparator />
 
         <form action={signOut}>
+          {/*
+            `nativeButton`: el `render` de este item SÍ es un <button> nativo, y
+            `Menu.Item` asume que NO lo es (`nativeButton` por defecto `false`,
+            ver `NonNativeButtonProps` en @base-ui/react). Sin declararlo, Base
+            UI aplica atributos y manejadores no nativos encima de un <button>
+            de verdad —`role`, el `disabled` no nativo— y avisa por consola.
+            Los items de arriba NO lo llevan y es correcto: su `render` es un
+            <Link>, o sea un <a>, que no es un botón nativo.
+            El <button> aquí no es opcional: va dentro de un <form action>, y
+            sólo un botón nativo envía el formulario.
+          */}
           <DropdownMenuItem
             render={<button type="submit" className="w-full" />}
+            nativeButton
             variant="destructive"
             className="gap-2.5 px-2.5 py-2"
           >

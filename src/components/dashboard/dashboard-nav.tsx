@@ -70,8 +70,16 @@ export function DashboardNav({
             ) : null}
             <DropdownMenuSeparator />
             <form action={signOut}>
+              {/*
+                `nativeButton`: ver la nota en `account-menu.tsx`. El `render`
+                es un <button> nativo y `Menu.Item` asume que no lo es, así que
+                sin esto Base UI le encaja atributos no nativos y avisa por
+                consola. Este sitio es la SEGUNDA instancia del mismo patrón:
+                la traza del error sólo señalaba `AccountMenu`.
+              */}
               <DropdownMenuItem
                 render={<button type="submit" className="w-full" />}
+                nativeButton
                 variant="destructive"
                 className="px-3 py-2.5"
               >
