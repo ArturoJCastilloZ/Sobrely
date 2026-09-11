@@ -93,11 +93,27 @@ export default async function Home() {
             </Button>
           ) : (
             <>
+              {/*
+                «Iniciar sesión» se esconde por debajo de `sm`, y no es una
+                decision estetica: MEDIDO a 375x812 en produccion, el `nav` del
+                header mide 340 px y la pagina desbordaba 88 px en horizontal
+                (scrollWidth 463 contra clientWidth 375). Esta es la unica de
+                las cuatro paginas con este header que lleva CUATRO botones
+                —`/pricing` 208 px, `/blog` 231, la landing de evento 174, las
+                tres sin desborde—, asi que el defecto es del acumulado, no del
+                componente.
+
+                Se elige ESTE y no otro porque es el unico REDUNDANTE en movil:
+                el hero ofrece «Ya tengo cuenta» dos dedos mas abajo. Quitar
+                «Precios» o «Blog» habria costado navegacion que no esta
+                duplicada en ningun sitio.
+              */}
               <Button
                 render={<Link href="/login" />}
                 nativeButton={false}
                 variant="ghost"
                 size="sm"
+                className="hidden sm:inline-flex"
               >
                 Iniciar sesión
               </Button>
