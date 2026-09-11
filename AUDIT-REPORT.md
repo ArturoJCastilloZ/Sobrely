@@ -492,7 +492,7 @@ referido.
 > | **El punto 8 (dinero)** | Escrito en `388d2af` y **no probado por efecto**: no se tocó Mercado Pago ni se ejecutó ninguna operación financiera. La evidencia es de pruebas y mutación, no de un pago. Exige revisión humana. |
 > | ~~**El muro de pago entero**~~ | ✅ **EJERCITADO el 2026-09-11 con una cuenta NO admin** — y NIEGA. Ver el bloque «Muro de pago» abajo. |
 > | ~~**Admin en runtime**~~ | ✅ **VERIFICADO el 2026-09-11** con la sesión admin. Ver el bloque «Admin en runtime» abajo. |
-> | **Multipestaña** | El conflicto de versión con dos editores abiertos sobre la misma invitación. |
+> | ~~**Multipestaña**~~ | ✅ **VERIFICADO el 2026-09-11**: el bloqueo optimista detecta el conflicto, no escribe nada y se recupera. Ver abajo. |
 > | **El modo «lista de invitados»** | ⚠️ **PARCIAL**: la invitación de esta prueba se creó en `guest_list` y el editor la sirve con su panel «Invitados», pero el **puenteo** de §5.8 sigue sin probarse. |
 > | **El editor en móvil** | Exige la sesión, que vive en la ventana del dev; su ancho mínimo real fue 530 px. |
 > | ~~**El build de producción**~~ | ✅ **VERIFICADO el 2026-09-11** en un worktree aislado (para no tumbar el `next dev` del dev): `next build` **PASA sin un solo error ni warning**, y `next start` sirve. Ver el bloque de abajo. |
@@ -917,6 +917,44 @@ Lo que SÍ sigue en pie del hallazgo: el flujo «categoría → plantilla» sól
 existe entrando por `Plantillas`. Pero la primera decisión que el producto pide
 al crear no es la plantilla, es el MODO — y eso cambia el onboarding que se
 diseñe encima.
+
+### Multipestaña — verificado el 2026-09-11
+
+> Dos pestañas (A y B) sobre la MISMA invitación de prueba, creada con la
+> cuenta del dev (`d1f1dc44`, la autorizada en el brief) y **borrada** al
+> terminar. Cada gesto con la pestaña al frente y el gate
+> `visibilityState`/`hasFocus` comprobado antes.
+
+**El ciclo completo, por `version` en la base:**
+
+| paso | qué pasó | `version` | título en la BD |
+|---|---|---|---|
+| crear | invitación nueva | **1** | — |
+| A escribe y autoguarda | `Guardado` | **2** | `TITULO DESDE A` |
+| B escribe (su `version` en memoria sigue en **1**) | **CONFLICTO** | **2** (no se mueve) | `TITULO DESDE A` (intacto) |
+| B pulsa «Recargar» | adopta el trabajo de A | 2 | `TITULO DESDE A` |
+| B escribe otra vez | `Guardado` | **3** | `TITULO DESDE B TRAS RECARGAR` |
+
+**Lo que B enseña al usuario** (banner FIJO, no sólo un toast):
+«Otra pestaña guardó cambios más nuevos.» + botón **Recargar**; y el toast
+«Otra pestaña o dispositivo guardó cambios más nuevos. Recarga para no borrar
+ese trabajo. · Reintentar».
+
+**Lo importante está medido, no supuesto:** el conflicto **no escribe nada**.
+`version` se quedó en 2 y el `title` del hero siguió siendo el de A — coherente
+con que el servidor responde `conflict` ANTES de tocar los módulos
+(`invitations/actions.ts:502`), así que no deja ajustes a medias ni borra
+secciones. Y **es recuperable**: tras «Recargar», B vuelve a guardar y la
+versión avanza a 3.
+
+**Un falso defecto que descarté:** la invitación quedó con **1 módulo** y sospeché
+que guardar hubiera borrado el `rsvp`. No: `actions.ts:75` siembra el módulo
+`rsvp` **sólo** en modo `guest_list`, y ésta se creó en «Confirmación abierta».
+Es exactamente lo que el propio menú promete.
+
+**Limpieza:** borrada al terminar; las 5 tablas volvieron a su línea base
+(`invitations` 18, `invitation_modules` 88, `invitation_entitlements` 3,
+`orders` 8, `rsvp_responses` 14) y el `CASCADE` dejó 0 módulos.
 
 ### Admin en runtime — verificado el 2026-09-11
 
