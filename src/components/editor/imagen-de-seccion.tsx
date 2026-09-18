@@ -99,6 +99,14 @@ function leer(config: Record<string, unknown>): Media {
  * - El velo sólo aparece con la imagen DE FONDO. En las demás posiciones la
  *   foto no lleva texto encima, y atenuarla sólo la ensucia.
  *
+ * ── Por que `SelectValue` lleva funcion ──────────────────────────────
+ *
+ * `<SelectValue />` a secas pinta el valor CRUDO del enum: el disparador decia
+ * «top», «rect», «4/3», «center» mientras el desplegable si mostraba los
+ * rotulos. Medido en Chrome — las tablas de rotulos eran, en la practica,
+ * codigo muerto en el sitio que el usuario mira primero. La API de Base UI
+ * acepta una funcion para formatearlo.
+ *
  * ── El gate ───────────────────────────────────────────────────────────
  *
  * Lleva `FeatureBadge` de `custom_art` porque esto SÍ añade una superficie
@@ -171,7 +179,11 @@ export function ImagenDeSeccion({
               onValueChange={elegido("position")}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>
+                  {(v: string | null) =>
+                    v ? MEDIA_POSITION_LABELS[v as keyof typeof MEDIA_POSITION_LABELS] : null
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {MEDIA_POSITIONS.map((p) => (
@@ -187,7 +199,11 @@ export function ImagenDeSeccion({
             <Label>Forma</Label>
             <Select value={media.shape} onValueChange={elegido("shape")}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>
+                  {(v: string | null) =>
+                    v ? MEDIA_SHAPE_LABELS[v as keyof typeof MEDIA_SHAPE_LABELS] : null
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {MEDIA_SHAPES.map((f) => (
@@ -207,7 +223,11 @@ export function ImagenDeSeccion({
               <Label>Proporción</Label>
               <Select value={media.ratio} onValueChange={elegido("ratio")}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                  {(v: string | null) =>
+                    v ? MEDIA_RATIO_LABELS[v as keyof typeof MEDIA_RATIO_LABELS] : null
+                  }
+                </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {MEDIA_RATIOS.map((r) => (
@@ -224,7 +244,11 @@ export function ImagenDeSeccion({
             <Label>Al recortar, conservar</Label>
             <Select value={media.focal} onValueChange={elegido("focal")}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>
+                  {(v: string | null) =>
+                    v ? MEDIA_FOCAL_LABELS[v as keyof typeof MEDIA_FOCAL_LABELS] : null
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {MEDIA_FOCALS.map((f) => (

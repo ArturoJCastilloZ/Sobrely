@@ -33,6 +33,11 @@ import {
  * lienzo libre daría infinitas, la mayoría feas, y las feas acabarían en
  * soporte y en las capturas del catálogo. Ver `sobrely-canvas-poc.md` §4-bis.
  *
+ * ⚠️ `<SelectValue />` a secas pinta el valor CRUDO del enum: el disparador
+ * decia «center», «double», «contained» mientras el desplegable si mostraba
+ * los rotulos en castellano. Se vio al exponer el slot de imagen justo debajo,
+ * en el MISMO panel. Por eso lleva funcion de formato.
+ *
  * No lleva gate de plan: cambia la DISPOSICIÓN de contenido que el usuario ya
  * tiene, no añade una superficie nueva donde meter arte propio — que es lo que
  * `custom_art` cobra.
@@ -79,7 +84,9 @@ export function ComposicionDeSeccion({
           onValueChange={(v) => onChange({ align: v })}
         >
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue>
+              {(v: string | null) => (v ? SECTION_ALIGN_LABELS[v as keyof typeof SECTION_ALIGN_LABELS] : null)}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {SECTION_ALIGNS.map((a) => (
@@ -98,7 +105,9 @@ export function ComposicionDeSeccion({
           onValueChange={(v) => onChange({ frame: v })}
         >
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue>
+              {(v: string | null) => (v ? SECTION_FRAME_LABELS[v as keyof typeof SECTION_FRAME_LABELS] : null)}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {SECTION_FRAMES.map((f) => (
@@ -117,7 +126,9 @@ export function ComposicionDeSeccion({
           onValueChange={(v) => onChange({ bleed: v })}
         >
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue>
+              {(v: string | null) => (v ? SECTION_BLEED_LABELS[v as keyof typeof SECTION_BLEED_LABELS] : null)}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {SECTION_BLEEDS.map((b) => (
