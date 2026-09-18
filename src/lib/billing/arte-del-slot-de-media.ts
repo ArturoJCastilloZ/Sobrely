@@ -1,4 +1,8 @@
-import { parseConfig, type ModuleType } from "@/lib/modules/types";
+import {
+  MODULE_TYPES,
+  parseConfig,
+  type ModuleType,
+} from "@/lib/modules/types";
 
 /**
  * El arte que el SLOT DE MEDIA de un modulo pone en la pagina.
@@ -39,6 +43,18 @@ export function urlDelSlotDeMedia(
   tipo: ModuleType,
   rawConfig: unknown,
 ): string | null {
+  // `module_type` es `text` sin CHECK en la base, y la policy `modules_owner_all`
+  // deja al dueno insertar por PostgREST sin pasar por `editorModuleSchema`. Con
+  // un tipo que el esquema no conoce, `moduleConfigSchemas[tipo]` es `undefined`
+  // y `parseConfig` revienta con «Cannot read properties of undefined (reading
+  // 'safeParse')» — reproducido, no supuesto.
+  //
+  // Antes de este gate esa fila daba una NEGATIVA limpia por `planAllowsModule`;
+  // sin esta guarda daria un 500 desde la accion de publicar. Se devuelve `null`
+  // y el modulo desconocido lo sigue rechazando el gate de modulos, que es a
+  // quien le toca.
+  if (!(MODULE_TYPES as readonly string[]).includes(tipo)) return null;
+
   const config = parseConfig(tipo, rawConfig);
   // `!media` es el caso de `hero`, que no lleva `mediaShape` en su esquema.
   //

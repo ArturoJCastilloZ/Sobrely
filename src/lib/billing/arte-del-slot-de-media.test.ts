@@ -50,6 +50,16 @@ describe("urlDelSlotDeMedia", () => {
     expect(urlDelSlotDeMedia("welcome", { media: "tampoco" })).toBeNull();
   });
 
+  it("un `module_type` que el esquema no conoce devuelve null, no revienta", () => {
+    // La base no tiene CHECK en `module_type` y la policy deja al dueno
+    // insertar por PostgREST. Sin la guarda, `parseConfig` tiraba un TypeError
+    // y el 500 salia por la accion de PUBLICAR.
+    expect(() =>
+      urlDelSlotDeMedia("inventado" as never, CON_FOTO),
+    ).not.toThrow();
+    expect(urlDelSlotDeMedia("inventado" as never, CON_FOTO)).toBeNull();
+  });
+
   it("`hero` NO tiene slot de media, asi que nunca devuelve nada", () => {
     // Su «Imagen de fondo» es `imageUrl` y vive fuera de este gate a
     // proposito: es la fuga preexistente, y cerrarla es decision de precio.
