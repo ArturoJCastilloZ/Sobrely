@@ -1,6 +1,7 @@
 # Sobrely — Rediseño y evolución del EDITOR
 
-> **Estado:** PROPUESTA. Nada implementado. Esperando «APROBADO FASE N».
+> **Estado:** FASE 1 ✅ COMPLETADA (2026-09-17, rama `skarlette/refactor-editor-fase1`).
+> Fases 2–10 esperando «APROBADO FASE N».
 > **Fecha del análisis:** 2026-09-17 · **Base medida:** `main @ b7f431b` (producción)
 > **Fuente canónica del encargo:** `~/.claude/plans/sobrely-editor-rediseno.md`
 >
@@ -690,6 +691,75 @@ el nombre (8), y la búsqueda del selector de composición (7).
 - **Riesgos:** romper el historial al mover el reducer (**mitigación:** `editor-history.ts` no se toca); perder el zoom al subir el estado.
 - **Aceptación:** el editor se ve y funciona **idéntico**. Prueba de conteo de renders: cambiar la selección re-renderiza 0 módulos.
 - **Pruebas:** contador de renders; las 20 de historial y las de autosave siguen verdes.
+
+#### ✅ FASE 1 — CERRADA, con lo MEDIDO
+
+Tres commits en `skarlette/refactor-editor-fase1`.
+
+**Lo que se encontró al empezar, y no estaba en el plan:** `ModulePreview`
+llamaba `parseConfig()` suelto en el render. Devuelve `safeParse(...).data`, o
+sea un objeto **nuevo cada vez**, así que la prop `config` de los doce Preview
+cambiaba de identidad en cada render y un `React.memo` habría fallado el 100 %
+de las veces. Sin arreglar eso primero, el resto del trabajo de rendimiento
+habría sido teatro. Es el commit 1.
+
+**Efecto medido en Chrome** (invitación real de 10 secciones, `localhost:3000`,
+pestaña `visible`, esperas por `requestAnimationFrame` continuo). Cinco cambios
+de selección alternando entre dos secciones:
+
+| Componente | Acoplado (mutante) | Fase 1 |
+|---|---|---|
+| `CanvasArea` | **10** renders | **0** |
+| `PreviewPane` | **10** renders | **0** |
+| Los 12 previews | 0 (ya los cortaba `memo`) | **0** |
+| `Countdown` | 2 | 2 — su propio `setInterval`, no la selección |
+
+Y editar el título de una sección repinta **solo su módulo** (`Map` +2), no los
+otros nueve. Esa es la memoización cobrándose.
+
+⚠️ **Cómo se llegó a ese número importa.** La primera sonda midió renders de los
+*previews* y dio 0 **también con el mutante aplicado** — o sea que el mutante
+sobrevivió. No era un pase: era la sonda mirando el sitio equivocado. Los
+previews los protege `memo` con acoplamiento o sin él; lo que el desacople evita
+es el repintado de `PreviewPane` mismo, que sí hace trabajo real (filtrar
+visibles, `resolveAnimation` ×10, construir la `replayKey`, leer el
+`ResizeObserver`). Con la sonda movida a ese nivel, el mutante murió y el número
+apareció. **Un 0 no vale hasta demostrar que el instrumento sabe ver un 10.**
+
+**Decisiones tomadas durante la fase:**
+
+- *Prueba de conteo de renders en CI:* **no se hizo así.** El repo corre vitest
+  con `environment: "node"` e `include: ["**/*.test.ts"]`, sin testing-library ni
+  DOM. En su lugar: `desacople-canvas.test.ts` recorre el **cierre transitivo de
+  imports** del lienzo y falla si algo, a cualquier profundidad, llama a
+  `useSeleccion()`. Es un PROXY de la estructura, y el archivo lo dice; el efecto
+  se midió en el navegador. Decisión del dev: guard estructural + medición, sin
+  añadir dependencias al repo de producción.
+- *Estabilizar el objeto `animation` de `preview-pane`:* **fuera de la Fase 1.**
+  Medido el camino, `ModulePreview` repinta pero su `Preview` memoizado corta, así
+  que el trabajo caro ya está protegido y lo que queda son envoltorios finos.
+  Entra en la Fase 2, donde la capa de selección sí lo hará pesar.
+
+**Daños colaterales, y cómo quedaron:**
+
+- `barra-movil.test.ts` leía el texto fuente de `invitation-editor.tsx`. Se
+  **reapuntó** a la superficie completa del editor (lee el directorio `shell/`,
+  no una lista a mano). Ninguna aserción relajada.
+- `slot-de-media.test.ts` y `portada-marco-stickers.test.ts` anclaban en
+  `indexOf("export function HeroPreview")`. Reapuntadas — y de paso se les cerró
+  un **verde falso**: con el ancla rota el recorte quedaba vacío y su
+  `not.toContain` pasaba igual. Ahora se afirma que el ancla existe.
+
+**Verificación:** `tsc` ✅ · `eslint` ✅ · **995 pruebas en 66 archivos** ✅ (7
+nuevas). Ocho mutantes aplicados, los ocho mueren. El editor se ve y se comporta
+igual: 10 secciones, selección, zoom, paginador, Móvil/Escritorio, un solo
+`PreviewPane`, cero errores de consola.
+
+**Deuda que la Fase 1 NO saldó** (sigue viva, y está arriba en §1.5):
+`config-editors.tsx` con 1 067 líneas, los 37 controles bajo 44 px, y
+`hayCambiosSinGuardar` comparando por `JSON.stringify` completo.
+
+---
 
 ### FASE 2 · Selección en el lienzo  ← la fase bisagra
 - **Objetivo:** hacer el lienzo interactivo.
