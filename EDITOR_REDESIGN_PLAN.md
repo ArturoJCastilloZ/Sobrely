@@ -1,7 +1,7 @@
 # Sobrely — Rediseño y evolución del EDITOR
 
-> **Estado:** FASE 1 ✅ COMPLETADA (2026-09-17, rama `skarlette/refactor-editor-fase1`).
-> Fases 2–10 esperando «APROBADO FASE N».
+> **Estado:** FASES 1 ✅ y 2 ✅ COMPLETADAS (2026-09-17, rama `skarlette/refactor-editor-fase1`).
+> Fases 3–10 esperando «APROBADO FASE N».
 > **Fecha del análisis:** 2026-09-17 · **Base medida:** `main @ b7f431b` (producción)
 > **Fuente canónica del encargo:** `~/.claude/plans/sobrely-editor-rediseno.md`
 >
@@ -769,6 +769,86 @@ igual: 10 secciones, selección, zoom, paginador, Móvil/Escritorio, un solo
 - **Riesgos:** **el más alto del plan** — conflicto de hit-testing con `StickerEditorLayer` (z-30) y `useMovimientoLibre`. Ya hay precedente medido: el paginador necesitó `z-40` porque `elementFromPoint` devolvía la capa de stickers. **Mitigación:** escalera de z documentada y una prueba de `elementFromPoint` por capa.
 - **Aceptación:** clic en cualquier texto de las 12 secciones lo selecciona; `Esc` sube; el riel y el lienzo siempre coinciden; `elementFromPoint` sobre cada capa devuelve lo esperado.
 - **Pruebas:** contrato `bloquesDe()` × HTML renderizado de los 12 módulos (**fija la SECUENCIA de `data-bloque`**, no solo el conteo); hit-testing por capa; recorrido de teclado.
+
+#### ✅ FASE 2 — CERRADA, con lo MEDIDO
+
+Dos commits. El lienzo deja de ser un espejo y pasa a responder.
+
+**Un agujero del PLAN, no del código.** El §4.A afirma «el DOM ya está anotado».
+Medido: **eso es cierto solo para la portada**. El hero emite
+`data-bloque="title|subtitle|cta"` siempre; las otras **once** secciones solo lo
+emiten con `freeMove` encendido, y el defecto es `false`. Las 18 invitaciones
+vivas no tenían **ni un ancla** en esos once módulos.
+
+La salida: `Section` marca sus hijos también con `freeMove` apagado, pero **solo
+dentro del editor** (`ModoEditorProvider`), y **clonando** el hijo en vez de
+envolverlo — `cloneElement` añade un *atributo*, no un *nodo*, así que no se
+mueve un píxel. La página pública no provee el contexto y su HTML sigue igual.
+Y no se afirma de palabra: la prueba le quita los `data-bloque` al HTML del
+editor y exige que quede **byte a byte** el HTML público, en los doce módulos.
+
+**El contrato de bloques, medido y no supuesto:**
+
+- Los huecos de CONTENIDO conservan su slot (`welcome` sin mensaje sigue dando
+  su segundo bloque, vacío). El índice no se corre porque el usuario borre texto.
+- Los hijos CONDICIONALES DE COLA sí desaparecen (`gifts` da 3 bloques con
+  enlaces y 2 sin ellos).
+- De ahí: lo renderizado es siempre un **prefijo** de la tabla. La prueba afirma
+  «prefijo», no «longitud exacta» — afirmar la longitud se pondría roja sola con
+  el primer cambio de copy.
+
+Un bloque **no es «un texto»**: el primero de `rsvp` es compuesto (título y
+descripción juntos) y uno de `dresscode` son dos figuras SVG. Su `campo` queda
+en `null` antes que adivinar — la Fase 3 escribe en esos campos.
+
+**El riesgo nº1 del plan, cerrado por medición.** La capa es
+`pointer-events-none` y solo dibuja; la selección se detecta por **burbujeo**,
+que es el patrón que ya usan las dos capas que funcionan. Medido en Chrome:
+`elementFromPoint` sobre un texto devuelve el `SPAN`, no la capa; el paginador
+sigue recibiendo el clic; los stickers siguen en `pointer-events: none`. La
+escalera de z no se tocó (contenido 10 < **selección 20** < stickers 30 <
+paginador 40 < modal 50).
+
+**Efecto medido en Chrome** (invitación real de 10 secciones, 20 anclas):
+
+| Comprobación | Resultado |
+|---|---|
+| Desalineación del recuadro al 100 % / 150 % / 50 % | **0, 0, 0 px** |
+| Renders al hacer clic en el lienzo | `CapaDeSeleccion` 4 · **`PreviewPane` 0 · `CanvasArea` 0** |
+| `Esc` | bloque → módulo → nada |
+| Riel → lienzo | «Itinerario» → recuadro «Itinerario» |
+| Lienzo → inspector | «Cuenta regresiva · Título» → inspector «Cuenta regresiva» |
+
+El desacople de la Fase 1 **sobrevivió**: la capa es un componente hermano que se
+suscribe ella sola y no monta ni un módulo.
+
+**El guard de la Fase 1 cazó este cambio, y se AFINÓ, no se relajó.** Su método
+era el cierre de imports, e importar se parece a acoplar sin serlo. El
+invariante bueno no es «nadie se suscribe» sino **«quien RENDERIZA módulos no se
+suscribe»**. Ahora hay lista explícita de suscriptores permitidos más dos
+pruebas que impiden que sea una puerta trasera.
+
+**Auditoría de seguridad del rango: sin hallazgos.** Se verificó inyección de
+selector (`CSS.escape` + entradas de baja capacidad), sobrescritura de props vía
+`cloneElement`, XSS en la etiqueta (cadenas estáticas), y que el modo editor no
+puede filtrarse a la página pública. Se corrigió un listener de `mouseleave` que
+no se retiraba en el cleanup.
+
+**⚠️ LO QUE NO SE HIZO, y estaba en el alcance:** el recorrido por **`Tab`** y
+`Enter` sobre los bloques del lienzo. `Esc` sí está. Hacer los 20 bloques
+focusables exige un *roving tabindex* bien hecho —si no, se mete un laberinto de
+tabulación peor que no tenerlo— y `Enter` solo tiene sentido cuando exista la
+edición directa. **Recomendación: entra en la Fase 3, emparejado con `Enter` →
+editar.** Hasta entonces el lienzo es navegable con ratón y el riel sigue siendo
+el camino accesible por teclado, como antes.
+
+Verificado por mutación, los cuatro mueren: `preview-pane` suscrito ·
+un permitido renderizando módulos · `Section` envolviendo en vez de clonar
+(11 de 12 módulos rojos) · la tabla de bloques desordenada.
+
+`tsc` ✅ · `eslint` ✅ · **1 049 pruebas en 67 archivos** ✅ (54 nuevas).
+
+---
 
 ### FASE 3 · Edición directa de texto + toolbar contextual
 - **Objetivo:** «clic sobre el texto → escribir».

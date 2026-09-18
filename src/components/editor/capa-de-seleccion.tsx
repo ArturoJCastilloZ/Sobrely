@@ -126,12 +126,22 @@ export function CapaDeSeleccion({
       setCajaHover(medir(cont, bloque && modulo.contains(bloque) ? bloque : modulo, zoom));
     }
 
+    // Con NOMBRE y no una flecha anónima: un manejador anónimo no se puede
+    // retirar, así que el `removeEventListener` de abajo no lo alcanzaría y
+    // quedaría colgado. Aquí el nodo muere con el componente y el único efecto
+    // sería `setCajaHover(null)`, o sea inofensivo — pero un listener que no se
+    // limpia es justo el patrón que luego se copia a un sitio donde sí importa.
+    function alSalir() {
+      setCajaHover(null);
+    }
+
     cont.addEventListener("click", alPulsar);
     cont.addEventListener("mousemove", alPasar);
-    cont.addEventListener("mouseleave", () => setCajaHover(null));
+    cont.addEventListener("mouseleave", alSalir);
     return () => {
       cont.removeEventListener("click", alPulsar);
       cont.removeEventListener("mousemove", alPasar);
+      cont.removeEventListener("mouseleave", alSalir);
     };
   }, [contenedor, seleccionar, zoom]);
 
