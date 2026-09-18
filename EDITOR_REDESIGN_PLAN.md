@@ -1,7 +1,8 @@
 # Sobrely — Rediseño y evolución del EDITOR
 
-> **Estado:** FASES 1 ✅ y 2 ✅ COMPLETADAS (2026-09-17, rama `skarlette/refactor-editor-fase1`).
-> Fases 3–10 esperando «APROBADO FASE N».
+> **Estado:** FASES 1 ✅, 2 ✅ y 3a ✅ COMPLETADAS (2026-09-17, rama `skarlette/refactor-editor-fase1`).
+> **Siguiente: FASE 3b** (tipografía por bloque) — necesita tu decisión, ver abajo.
+> Fases 4–10 esperando «APROBADO FASE N».
 > **Fecha del análisis:** 2026-09-17 · **Base medida:** `main @ b7f431b` (producción)
 > **Fuente canónica del encargo:** `~/.claude/plans/sobrely-editor-rediseno.md`
 >
@@ -953,6 +954,93 @@ un permitido renderizando módulos · `Section` envolviendo en vez de clonar
 - **Riesgos:** **seguridad** — pegar HTML en `config` jsonb que luego renderiza la página pública. **Mitigación:** `plaintext-only` + saneado + tope de longitud del esquema + prueba de inyección. Segundo riesgo: la fusión del historial por tecla (ya resuelta por `claveDeFusion`, hay que verificar que aplique).
 - **Aceptación:** editar «Mis XV años» en el lienzo cambia el documento, lo guarda, y ⌘Z lo deshace **como palabra, no como letra**. Pegar `<script>` guarda texto plano.
 - **Pruebas:** inyección por pegado; fusión de historial al teclear; reposicionamiento de la toolbar en los 4 bordes.
+
+#### ✅ FASE 3a — CERRADA · ⬜ FASE 3b — PENDIENTE DE APROBACIÓN
+
+**Lo hecho (3a):** edición directa de texto. Doble clic en un texto del lienzo y
+se escribe ahí. `Esc` cancela, `Enter` confirma. Escribe por la misma vía que los
+paneles (`updateConfig`), así que hereda autoguardado, bloqueo optimista y ⌘Z.
+Un paso de deshacer por edición — no por letra.
+
+**Seguridad:** el pegado se intercepta y se inserta texto plano a mano; no se
+confía en `contenteditable="plaintext-only"`. Los topes de longitud se **leen del
+esquema** desenvolviendo el `ZodDefault`, no de una tabla copiada. Auditoría del
+rango: sin hallazgos, y confirmó que la validación server-side existe
+(`saveEditorSchema` + `moduleConfigWriteSchemas` por módulo en `actions.ts`).
+
+**Tres defectos encontrados, y dos eran de la Fase 2:**
+
+1. `bloques.ts` mapeaba `dresscode[3]` al campo `notes`, **que no existe** en el
+   esquema — es `description`. Editar ahí habría hecho desaparecer el texto del
+   usuario en silencio. Lo cazó la prueba que cruza cada `campo` con su tope.
+2. La prueba de secuencia afirmaba «PREFIJO» y eso **enmascaraba un hueco en
+   medio**: `[0,1]` es prefijo de `[0,1,2]`. Medido, `dresscode` da `[0,1,3]` sin
+   `freeMove`, porque `cloneElement` sobre un COMPONENTE añade la prop pero el
+   componente no la reenvía a su raíz. Ahora el conjunto está **pinchado**: se
+   probó con un mutante que quitaba el bloque 1 y **sobrevivía** al subconjunto.
+3. **Deshacer no repintaba el lienzo.** Aplanar el bloque con `textContent = ...`
+   destruye nodos que React posee; sus fibras apuntan a nodos desprendidos y
+   React actualiza lo que ya no está en la página. El documento revertía bien y
+   **la pantalla mentía**. La suite estaba verde: sólo se vio midiendo. Arreglado
+   con una generación por módulo en la `key`.
+
+**Medido en Chrome:** editar → deshacer → rehacer → deshacer; lienzo y panel
+coinciden en los cuatro pasos. El `U+00A0` que aparecía en el lienzo se persiguió
+hasta el dato: **lo guardado lleva espacios normales (32)**; el 160 lo mete
+`TextReveal` al pintar. No hay corrupción.
+
+**Limitación documentada:** `map.address` no es editable en el lienzo — su bloque
+no queda marcado sin `freeMove`, por el problema del `cloneElement`.
+
+---
+
+### ⬜ FASE 3b — lo que falta, y la decisión que necesita
+
+**Por qué se paró.** El plan puso «escalones tipográficos, peso, alineación,
+color» en la Fase 3 dando por hecho que era *exponer* algo existente. Medido:
+**no existe ni un campo** de tamaño, peso o color por bloque ni por módulo, y los
+tamaños están **100 % hardcodeados** — los once `<h3>` de sección repiten
+literalmente la misma cadena Tailwind.
+
+O sea que una toolbar tipográfica exige **campo nuevo + des-hardcodear el render
+de 18 invitaciones vivas**. Eso es una decisión del dev, no del agente.
+
+**Lo que SÍ existe hoy** (inventariado, no supuesto):
+
+| Control | Campo | Alcance |
+|---|---|---|
+| Familia tipográfica | `theme.font` | invitación |
+| Titulares ≠ cuerpo | `theme.typography{heading,body}` + `parcheDeParTipografico` + aviso `cuerpoIlegible` | invitación |
+| Colores | `theme.colors.*` | invitación |
+| Espaciado | `theme.spacing` | invitación |
+| Alineación | `config.align` | **sección** (hero no lo hereda) |
+| Marco / sangrado | `config.frame`, `config.bleed` | sección |
+| Mover el bloque | `config.freeMove` + `textOffsets[i]` | **bloque**, por índice |
+| Variante de portada | `hero.variant`, `hero.imageRatio` | hero |
+
+Para contraste: **`deriveAccentText(color, superficie, tinta, 4.5)`** en
+`lib/theme/contrast.ts` — obligatorio si la toolbar deja elegir color, o se rompe
+el trabajo de contraste ya hecho (212 casos bajo AA documentados).
+
+**Propuesta para 3b, con el patrón que este repo ya probó dos veces:**
+
+Un campo por bloque cuyo **default no emite nada** — igual que `align: center` y
+`imageRatio: "auto"`, que son la cadena vacía a propósito. Cero píxeles de cambio
+en lo guardado, y la prueba de identidad byte a byte de la Fase 2 lo demostraría.
+
+- Sitio: `layoutShape` en `types.ts` (lo heredan los 11 de golpe). **Hero va
+  aparte** — no hereda `layoutShape`, y meterle esos campos sería config muerta.
+- Forma: paralelo a `textOffsets` (array por índice), con `.catch()` y recorte en
+  vez de `min/max` — porque `parseConfig` **descarta la config entera** del módulo
+  si algo no valida.
+- Render: `previews.tsx` tiene que dejar de hardcodear y pasar por un mapa de
+  escala. Es el cambio con más riesgo de regresión visual de todo el rediseño.
+
+**Y queda pendiente de la Fase 2:** el recorrido por **`Tab`/`Enter`** sobre los
+bloques del lienzo, que necesita un *roving tabindex* bien hecho. Emparejarlo con
+`Enter` → editar, que ya existe.
+
+---
 
 ### FASE 4 · Imágenes y elementos — exponer lo que ya existe
 - **Objetivo:** el mayor retorno por unidad de riesgo del plan.
