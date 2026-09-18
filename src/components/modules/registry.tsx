@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { useMemo, type ComponentType } from "react";
 import {
   SparklesIcon, MailOpenIcon, TimerIcon, MapPinIcon, ImagesIcon, FilmIcon,
   CalendarClockIcon, ShirtIcon, GiftIcon, MusicIcon, CheckCircle2Icon,
@@ -175,7 +175,27 @@ export function ModulePreview({
   ...rest
 }: ModulePreviewProps & { moduleType: ModuleType; config: Record<string, unknown> }) {
   const { Preview } = MODULE_REGISTRY[moduleType];
-  return <Preview config={parseConfig(moduleType, config)} {...rest} />;
+  /*
+   * `parseConfig` NO puede llamarse suelto en el render, y es la precondición
+   * de que `memo` sirva de algo aguas abajo.
+   *
+   * Devuelve `safeParse(...).data`, o sea un objeto NUEVO en cada llamada —
+   * zod construye uno fresco siempre, y el camino lento hace `{...base}`
+   * explícito. Sin memoizar, la prop `config` de cada Preview cambia de
+   * IDENTIDAD en cada render del lienzo, así que un `React.memo` superficial
+   * falla el 100% de las veces: se paga el coste de la comparación y nunca se
+   * cobra el ahorro.
+   *
+   * La dependencia es `config` CRUDO, que sí es estable: el reducer del
+   * documento sólo reconstruye el `config` del módulo que se editó
+   * (`{...m.config, ...patch}`) y devuelve los demás por referencia. Así que
+   * editar la portada no invalida el parseo de las otras once secciones.
+   */
+  const parsed = useMemo(
+    () => parseConfig(moduleType, config),
+    [moduleType, config],
+  );
+  return <Preview config={parsed} {...rest} />;
 }
 
 /** Panel de propiedades de un módulo. Sustituye al `switch` de `config-editors`. */
