@@ -104,12 +104,29 @@ destruir datos de un cliente) → 10 (QA y migración).
 8. **`container-type: inline-size` hace que `cqw` mida la caja de CONTENIDO**, y
    el límite del arrastre es el CENTRO del bloque, no el bloque entero.
 
-9. **Medir el DOM del editor ANTES de que React hidrate da un falso negativo.**
-   Al cerrar la 3b-A, tres sondas seguidas dijeron «0 bloques con `tabindex`» —
-   incluso tras recargar— y el código SÍ estaba en el bundle servido. Bastó UNA
-   interacción real (un `hover`) para que aparecieran los 20. La sonda no medía
-   el efecto: medía una página sin hidratar. Antes de concluir «no funciona»,
-   interactuar primero, o comprobar que el componente ya está vivo.
+9. **En este lienzo, una sonda ciega da un resultado FALSO y CREÍBLE.** Pasó
+   tres veces al cerrar la 3b-A, con tres mecanismos distintos, y las tres veces
+   el resultado falso parecía un hallazgo legítimo:
+
+   - **Sin hidratar.** Tres lecturas seguidas dijeron «0 bloques con
+     `tabindex`» —incluso tras recargar— con el código SÍ presente en el bundle
+     servido. Bastó UNA interacción real (un `hover`) para que aparecieran los
+     20: se estaba midiendo el DOM del SSR, no el de React vivo.
+   - **Demasiado tarde.** Comprobar el resultado de una edición 900 ms después
+     de confirmarla no distingue «se guardó» de «se perdió y el módulo se
+     remontó»: el arreglo del deshacer de la 3a remonta por generación en la
+     `key`, así que en ambos casos se lee un nodo NUEVO con el valor de
+     `config`. Para juzgar el instante hay que sondear **sin esperar**.
+   - **Rect colapsado por la animación.** El mismo bloque de la portada medía
+     `257x36` en una lectura y `0x0` en la siguiente, porque `TextReveal` lo
+     estaba animando. Dos clics fueron al vacío y se leyeron como «la edición se
+     pierde» — un defecto inventado que llegó a tener un arreglo escrito.
+
+   **Protocolo:** leer el rect del elemento **inmediatamente antes** de actuar
+   sobre él, nunca de una medición anterior; sondear en cada paso y no sólo al
+   final; y ante un «no funciona», exigir un control que demuestre que la sonda
+   ve algo —si el clic no seleccionó nada, no se ha probado nada—. Para editar,
+   preferir un bloque de sección estable antes que uno de la portada animada.
 
 ---
 
@@ -1111,6 +1128,22 @@ en Chrome). **Seis mutantes, seis muertos:** envolver en vez de topar (2 rojas),
 caer al principio en vez de al módulo (2), entrar siempre por la primera (1),
 devolver `null` con la lista vacía (1), ignorar el módulo al buscar el índice (2),
 y `paradaExtrema` siempre al final (1).
+
+**Auditoría del rango (`a63bec1..048bb66`), antes del push:** sin hallazgos de
+seguridad. Los únicos `setAttribute` nuevos son `tabindex` y `aria-label`, con
+valores de tablas de literales y no del `config` del usuario; el saneado del
+pegado, los topes leídos del esquema y la guarda de bloque compuesto quedan
+intactos.
+
+La auditoría sí levantó un defecto de corrección **plausible y falso**: que el
+`Enter` del contenedor volviera a entrar en edición tras el `confirmar()` de la
+3a y perdiera lo tecleado. Dos mediciones parecieron confirmarlo — y las dos
+eran clics sobre un bloque que la animación tenía a `0x0`. Medido sobre un
+bloque estable y con el arreglo puesto y quitado, el texto se guarda **igual en
+los dos casos**: el defecto no existe. Se revirtió el «arreglo», porque llevaba
+en un comentario un defecto «medido» que no se reproduce, y una justificación
+falsa en el código es peor que no tener la guarda. Es el tercer caso de la
+trampa nº 9.
 
 **Suite: 1 098 en 69 archivos · `tsc` ✅ · `eslint` ✅ · cero migraciones.**
 El cambio vive entero en un `useEffect` bajo `ModoEditorProvider`: no toca el
