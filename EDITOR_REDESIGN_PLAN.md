@@ -1,7 +1,7 @@
 # Sobrely — Rediseño y evolución del EDITOR
 
 > **Estado:** FASES 1 ✅, 2 ✅ y 3a ✅ COMPLETADAS (2026-09-17, rama `skarlette/refactor-editor-fase1`).
-> **FASE 3b — opción A (roving tabindex) CERRADA.** La tipografía por bloque
+> **FASE 4 en curso** (imágenes). **FASE 3b — opción A (roving tabindex) CERRADA.** La tipografía por bloque
 > (opciones B/C) sigue sin aprobar: ver «FASE 3b» abajo.
 > Fases 4–10 esperando «APROBADO FASE N».
 > **Fecha del análisis:** 2026-09-17 · **Base medida:** `main @ b7f431b` (producción)
@@ -84,6 +84,13 @@ destruir datos de un cliente) → 10 (QA y migración).
 1. **`parseConfig` devuelve un objeto NUEVO cada llamada** (zod). Llamarlo suelto
    en un render hace que `memo` falle el 100 % de las veces. Ya está memoizado en
    `ModulePreview`; no lo deshagas.
+
+   ⚠️ **Corregido el 2026-09-17:** este bloque decía además que `parseConfig`
+   «descarta la config ENTERA del módulo si algo no valida». Medido en
+   `types.ts:999`: **no lo hace.** Cuando el parse directo falla entra un camino
+   lento que prueba campo a campo sobre los defaults y conserva todo lo válido.
+   La recomendación práctica —`.default(...)` siempre, y `.catch()` + recorte en
+   vez de `min/max`— sigue en pie; la razón que se daba, no.
 2. **Los bytes del transcript NO estiman el contexto.** Una sesión de 5,28 MB
    tenía 505.944 tokens; otras de 28 MB no pueden tener 2,7M. Esas ya se
    compactaron. Para el porcentaje real: `get_usage`.
@@ -1161,6 +1168,41 @@ obliga a pasar por `deriveAccentText(...)` o se rompen los 212 casos bajo AA.
 ---
 
 ### FASE 4 · Imágenes y elementos — exponer lo que ya existe
+
+> **🟡 EN CURSO (2026-09-17).** Hecho: el gate de `custom_art`, el slot de
+> imagen en las 11 secciones y las miniaturas de portada. Falta: el panel
+> «Elementos» y la toolbar de imagen en el lienzo.
+>
+> **Dos archivos que este plan nombra MAL.** `composicion-de-seccion.tsx` vive
+> en `components/editor/`, no en `components/modules/`; y `config-editors.tsx`
+> al revés. Medido al abrirlos, no supuesto.
+>
+> **Lo que el plan NO vio, y bloqueaba la fase:** `custom_art` —«Arte propio
+> (fondo e **imágenes**)»— se comprobaba mirando **tres campos del `theme`** y
+> ninguno de la `config` de un módulo. Las otras dos superficies de subida
+> (`gallery`, `dresscode`) quedaban cubiertas de rebote porque sus módulos son
+> de Celebración, que ya trae la capacidad. El slot de media rompe esa
+> coincidencia: lo heredan los once, y `welcome`, `countdown` y `rsvp` son
+> **Free**. Se cerró la fuga ANTES de abrir la superficie, en su propio commit.
+>
+> **Deuda abierta, y es del dev:** `hero.imageUrl` («Imagen de fondo») sigue
+> dejando publicar arte propio en plan Free. Es una fuga que YA existía.
+> Cerrarla puede empezar a exigir Celebración a invitaciones vivas que hoy
+> publican gratis, así que pide censar las 18 antes de tocar nada. Decisión de
+> precio, no efecto colateral.
+>
+> **El md5 de las 18 que pedía este plan no hizo falta para el slot:** no se
+> tocó el render. Ni una línea de `previews.tsx`, ni un defecto del esquema. No
+> hay diff que medir porque no hay cambio que medir. Sigue haciendo falta para
+> lo que quede de la fase si toca el renderer.
+>
+> **Un defecto de UI que sólo salió midiendo:** `<SelectValue />` a secas pinta
+> el valor CRUDO del enum. El panel decía «top», «rect», «4/3», «center» y
+> —desde antes— «center», «double», «contained», mientras los desplegables sí
+> mostraban los rótulos. Las tablas de rótulos eran código muerto justo en lo
+> que el usuario ve primero. Arreglado con la función de formato que documenta
+> `SelectValue.d.ts`.
+
 - **Objetivo:** el mayor retorno por unidad de riesgo del plan.
 - **Alcance:** exponer `media{position,ratio,focal,overlay,shape}` en los 11 módulos; `imageRatio` y `variant` de portada con **miniaturas visuales** en vez de un `<Select>` en inglés; panel «Elementos» con stickers, separador y marco. Selección y toolbar de imagen.
 - **Archivos:** `composicion-de-seccion.tsx`, `config-editors.tsx` (se parte), `sticker-editor-layer.tsx`, nuevo `panel-elementos.tsx`.
