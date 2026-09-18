@@ -32,6 +32,7 @@ export function PreviewPane({
   eventDate = "",
   onStickersChange,
   onOffset,
+  onTexto,
 }: {
   modules: EditorModule[];
   theme: ThemeConfig;
@@ -40,6 +41,8 @@ export function PreviewPane({
   onStickersChange?: (stickers: ThemeConfig["stickers"]) => void;
   /** Arrastre del texto: `(moduloId, bloque, desplazamiento)`. */
   onOffset?: (moduloId: string, bloque: string, d: Desplazamiento) => void;
+  /** Edicion directa de texto: `(moduloId, campo, valor)`. */
+  onTexto?: (moduloId: string, campo: string, valor: string) => void;
 }) {
   const visible = modules.filter((m) => m.is_visible);
 
@@ -399,7 +402,7 @@ export function PreviewPane({
               );
             })}
           </div>
-          <CapaDeSeleccion contenedor={lienzo} modules={visible} />
+          <CapaDeSeleccion contenedor={lienzo} modules={visible} onTexto={onTexto} />
           </div>
         )}
         {onStickersChange && (

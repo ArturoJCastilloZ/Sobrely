@@ -68,7 +68,10 @@ const POR_INDICE: Record<Exclude<ModuleType, "hero">, Bloque[]> = {
     b("0", "Título", "title"),
     b("1", "Nivel"),
     b("2", "Figuras"),
-    b("3", "Notas", "notes"),
+    // `description`, NO `notes`: el esquema de `dresscode` no tiene `notes`.
+    // Escribir ahi habria hecho desaparecer el texto en silencio. Lo cazo la
+    // prueba que cruza cada `campo` con el tope declarado en el esquema.
+    b("3", "Descripción", "description"),
   ],
   gifts: [
     b("0", "Título", "title"),

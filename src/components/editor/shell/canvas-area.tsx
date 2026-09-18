@@ -38,6 +38,14 @@ export function CanvasArea() {
         modules={modules}
         theme={theme}
         eventDate={invitation.event_date}
+        // La edicion directa escribe por la MISMA via que los paneles
+        // (`updateConfig`), asi que hereda el autoguardado, el bloqueo optimista
+        // y el deshacer. `claveDeFusion` funde por `config:<id>:<campo>`, pero
+        // aqui llega UN solo despacho por edicion —al confirmar, no por tecla—
+        // asi que cada edicion es un paso de ⌘Z, no una letra.
+        onTexto={(moduloId, campo, valor) =>
+          aplicar({ type: "updateConfig", id: moduloId, patch: { [campo]: valor } })
+        }
         onStickersChange={(stickers) =>
           aplicar({ type: "updateTheme", patch: { stickers } })
         }

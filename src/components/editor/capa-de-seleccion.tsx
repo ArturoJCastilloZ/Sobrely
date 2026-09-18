@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 
 import { bloquePorId } from "@/lib/editor/bloques";
+import {
+  sanearTexto,
+  topeDeCampo,
+  valorDeCampo,
+} from "@/lib/editor/texto-directo";
 import { useLienzo } from "@/lib/editor/contexto-lienzo";
 import { useSeleccion } from "@/lib/editor/contexto-seleccion";
 import { subirUnNivel, type Seleccion } from "@/lib/editor/seleccion";
@@ -81,12 +86,38 @@ function nodoDe(cont: HTMLElement | null, sel: Seleccion): Element | null {
 export function CapaDeSeleccion({
   contenedor,
   modules,
+  onTexto,
 }: {
   /** El contenedor de los módulos. Es donde se escucha, y el origen de coordenadas. */
   contenedor: React.RefObject<HTMLDivElement | null>;
   modules: EditorModule[];
+  /**
+   * Commit de una edición de texto: `(moduloId, campo, valor)`.
+   *
+   * Viaja como prop y no se toma de `useDocumento()` a propósito: es el MISMO
+   * patrón que `onOffset`, y mantiene esta capa sin suscribirse al documento.
+   * Escribe por la vía de siempre (`updateConfig`), así que hereda el
+   * autoguardado, el bloqueo optimista y el deshacer sin nada nuevo.
+   */
+  onTexto?: (moduloId: string, campo: string, valor: string) => void;
 }) {
   const { seleccion, seleccionar } = useSeleccion();
+  /**
+   * Bloque en EDICIÓN, o `null`. Es distinto de «seleccionado»: seleccionar
+   * dibuja un recuadro, editar pone el cursor dentro del texto.
+   */
+  const [editando, setEditando] = useState<{
+    moduloId: string;
+    bloque: string;
+    campo: string;
+    tope: number | null;
+  } | null>(null);
+  /** El valor con el que se entró, para poder cancelar con `Esc`. */
+  const valorOriginal = useRef("");
+  const onTextoRef = useRef(onTexto);
+  useEffect(() => {
+    onTextoRef.current = onTexto;
+  }, [onTexto]);
   const { zoom } = useLienzo();
   const [cajaSel, setCajaSel] = useState<Caja | null>(null);
   const [cajaHover, setCajaHover] = useState<Caja | null>(null);
@@ -144,6 +175,161 @@ export function CapaDeSeleccion({
       cont.removeEventListener("mouseleave", alSalir);
     };
   }, [contenedor, seleccionar, zoom]);
+
+  // ---- Edición directa de texto -----------------------------------------
+  //
+  // El ciclo completo, y por qué cada paso es como es:
+  //
+  //  1. ENTRAR — se lee el valor de `config`, NO del DOM, y se planta como
+  //     texto plano dentro del bloque. Hace falta porque el DOM puede no ser
+  //     el texto: la portada anima su título con `TextReveal`, que lo parte en
+  //     un `<span>` por letra. Editar ESA estructura la destrozaría.
+  //  2. TECLEAR — no se despacha nada. El módulo no repinta (su `config` no ha
+  //     cambiado y el `memo` corta), así que el DOM se queda quieto bajo el
+  //     cursor. Despachar por tecla haría que React reemplazara el nodo en
+  //     mitad de la escritura y el cursor saltaría al principio.
+  //  3. SALIR — se sanea y se despacha UNA vez. React vuelve a montar la
+  //     estructura buena desde `config`. Un paso de ⌘Z por edición, que es lo
+  //     que el usuario reconoce como «un cambio» — no una letra.
+  //
+  // `Esc` cancela y restaura; `Enter` confirma. `Enter` no inserta salto porque
+  // ninguno de estos campos es multilínea en el render.
+  useEffect(() => {
+    const cont = contenedor.current;
+    if (!cont) return;
+
+    function entrar(sel: Seleccion) {
+      if (sel === null || sel.tipo !== "bloque") return;
+      const m = modules.find((x) => x.id === sel.moduloId);
+      if (!m) return;
+      const b = bloquePorId(m.module_type, sel.bloque);
+      // Sin `campo` no se edita. Es el caso del encabezado de `rsvp` —que es
+      // título Y descripción juntos— y de las figuras de vestimenta. Adivinar
+      // el campo escribiría en el sitio equivocado.
+      if (!b?.campo) return;
+
+      const nodo = nodoDe(cont, sel);
+      if (!(nodo instanceof HTMLElement)) return;
+
+      const valor = valorDeCampo(m.config, b.campo);
+      valorOriginal.current = valor;
+      nodo.textContent = valor;
+      nodo.setAttribute("contenteditable", "plaintext-only");
+      nodo.setAttribute("spellcheck", "true");
+      nodo.focus();
+
+      // Cursor al final, no al principio: se entra a seguir escribiendo.
+      const r = document.createRange();
+      r.selectNodeContents(nodo);
+      r.collapse(false);
+      const s = window.getSelection();
+      s?.removeAllRanges();
+      s?.addRange(r);
+
+      setEditando({
+        moduloId: sel.moduloId,
+        bloque: sel.bloque,
+        campo: b.campo,
+        tope: topeDeCampo(m.module_type, b.campo),
+      });
+    }
+
+    function alDobleClic(e: MouseEvent) {
+      const t = e.target as Element | null;
+      const modulo = t?.closest?.("[data-modulo]");
+      const bloque = t?.closest?.("[data-bloque]");
+      if (!modulo || !bloque || !modulo.contains(bloque)) return;
+      const moduloId = modulo.getAttribute("data-modulo");
+      const id = bloque.getAttribute("data-bloque");
+      if (!moduloId || !id) return;
+      // El doble clic del navegador selecciona la palabra; se limpia para que
+      // el cursor quede donde lo pone `entrar`.
+      e.preventDefault();
+      entrar({ tipo: "bloque", moduloId, bloque: id });
+    }
+
+    cont.addEventListener("dblclick", alDobleClic);
+    return () => cont.removeEventListener("dblclick", alDobleClic);
+  }, [contenedor, modules]);
+
+  // ---- Salir de la edición: confirmar o cancelar -------------------------
+  useEffect(() => {
+    const cont = contenedor.current;
+    if (!cont || !editando) return;
+    const nodo = nodoDe(cont, {
+      tipo: "bloque",
+      moduloId: editando.moduloId,
+      bloque: editando.bloque,
+    });
+    if (!(nodo instanceof HTMLElement)) return;
+
+    function limpiar(el: HTMLElement) {
+      el.removeAttribute("contenteditable");
+      el.removeAttribute("spellcheck");
+    }
+
+    function confirmar() {
+      if (!(nodo instanceof HTMLElement) || !editando) return;
+      // El saneado corre sobre lo que se va a GUARDAR, no sobre lo que se
+      // teclea: `contenteditable="plaintext-only"` tiene soporte desigual y el
+      // atributo se puede quitar desde la consola. La barrera de verdad es esta.
+      const valor = sanearTexto(nodo.textContent ?? "", editando.tope);
+      limpiar(nodo);
+      setEditando(null);
+      // Sólo se despacha si CAMBIÓ. Entrar y salir sin tocar nada no debe
+      // ensuciar el documento ni apilar un paso de deshacer vacío.
+      if (valor !== valorOriginal.current) {
+        onTextoRef.current?.(editando.moduloId, editando.campo, valor);
+      } else {
+        // React no va a repintar (nada cambió), así que el texto plano que se
+        // plantó al entrar se quedaría. Se restaura a mano.
+        nodo.textContent = valorOriginal.current;
+      }
+    }
+
+    function cancelar() {
+      if (!(nodo instanceof HTMLElement)) return;
+      nodo.textContent = valorOriginal.current;
+      limpiar(nodo);
+      setEditando(null);
+    }
+
+    function alTeclado(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        // Se detiene aquí: sin esto el manejador de ventana también lo vería y
+        // subiría un nivel de selección además de cancelar.
+        e.stopPropagation();
+        cancelar();
+        return;
+      }
+      if (e.key === "Enter") {
+        // Ninguno de estos campos es multilínea en el render, así que un salto
+        // sólo produciría un texto guardado que no se parece a lo que se ve.
+        e.preventDefault();
+        confirmar();
+      }
+    }
+
+    function alPegar(e: ClipboardEvent) {
+      // Se intercepta el pegado y se inserta TEXTO PLANO a mano. No se confía
+      // en `plaintext-only`: su soporte varía entre navegadores, y un pegado de
+      // Word metería cientos de kB de estilos en el `config` jsonb.
+      e.preventDefault();
+      const bruto = e.clipboardData?.getData("text/plain") ?? "";
+      const limpio = sanearTexto(bruto, null);
+      if (limpio) document.execCommand("insertText", false, limpio);
+    }
+
+    nodo.addEventListener("keydown", alTeclado);
+    nodo.addEventListener("blur", confirmar);
+    nodo.addEventListener("paste", alPegar);
+    return () => {
+      nodo.removeEventListener("keydown", alTeclado);
+      nodo.removeEventListener("blur", confirmar);
+      nodo.removeEventListener("paste", alPegar);
+    };
+  }, [contenedor, editando]);
 
   // ---- `Esc` sube un nivel ----------------------------------------------
   useEffect(() => {
