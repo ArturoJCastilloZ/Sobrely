@@ -9,6 +9,101 @@
 
 ---
 
+## RETOMAR — lee esto primero si abres una sesión nueva
+
+> Escrito el 2026-09-17. **El «estado medido» lleva fecha y hay que REMEDIRLO
+> antes de darlo por bueno**: `main` es producción, recibe tráfico real, y el
+> repo se mueve. Si al medir no cuadra, gana lo medido y se corrige este bloque.
+
+### Estado medido al 2026-09-17
+
+```
+rama de trabajo   skarlette/refactor-editor-fase1   (TODAS las fases van aquí)
+remoto            84d5901  == local, verificado con `git ls-remote`
+main (origin)     b7f431b  INTACTO — no se ha tocado, y no se toca sin pedirlo
+suite             1 049 pruebas en 67 archivos ✅ · tsc ✅ · eslint ✅
+migraciones       NINGUNA. Todo cabe en el `config` jsonb con `.default(...)`
+```
+
+Commits de la rama, del más viejo al más nuevo:
+
+| Commit | Qué entró |
+|---|---|
+| `e8b170d` | `parseConfig` deja de crear un objeto por render (precondición de todo) |
+| `39e0142` | `memo` en los 12 previews + `DresscodeFigures` |
+| `54ae5f6` | Tres contextos + monolito de 1 128 líneas partido en `shell/` |
+| `622de6f` | docs: Fase 1 cerrada |
+| ⚠️ `e7b88b5` | **«change contact email» — el mensaje MIENTE.** Su contenido es `src/lib/editor/seleccion.ts`. No lo hice yo; ya estaba en el remoto. Rewordearlo exige force-push |
+| `1b631c3` | Anclas de bloque en los 12 módulos, sin tocar la página pública |
+| `cec1976` | Selección en el lienzo: clic, recuadro, `Esc`, sincronía con el riel |
+| `84d5901` | docs: Fase 2 cerrada |
+
+### Orden de lectura
+
+1. **Este archivo entero.** Es la fuente de verdad del rediseño.
+2. `~/.claude/plans/sobrely-editor-rediseno.md` — el brief original del dev, tal cual.
+3. `~/.claude/plans/sobrely-retomar.md` §«Reglas duras» y `sobrely-roadmap.md` §7
+   (lecciones) y §26 (estado de producción).
+4. Los mensajes de commit de la rama: **340 líneas** que explican el *porqué* de
+   cada decisión. Están escritos para esto, no por ceremonia.
+
+### Reglas duras de este trabajo
+
+- **`main` es producción.** Vercel despliega de ahí y hay clientes reales. Todo
+  va en la rama; a `main` solo cuando el dev lo pida.
+- **NO usar el brain.** Nada de Sobrely vive ahí. Es regla del dev.
+- **Verificar por EFECTO OBSERVADO**, no porque compile ni porque la suite esté
+  verde. Las fases 1 y 2 se cerraron midiendo en el Chrome del dev.
+- **Una prueba no vale hasta verla MORIR.** Mutar cada aserción por separado.
+- **Supabase es SOLO PRODUCCIÓN.** Las migraciones las corre el dev a mano.
+
+### Lo que está HECHO
+
+- **Fase 1** — Tres contextos (`DocumentoContext`, `SeleccionContext`,
+  `LienzoContext`), monolito partido en `components/editor/shell/`, `memo` en los
+  12 previews. Medido: cambiar la selección repinta **0 módulos**.
+- **Fase 2** — `data-bloque` en los 12 módulos (solo en el editor, por
+  `ModoEditorProvider`, clonando el hijo y sin añadir nodos). Contrato
+  `bloquesDe()` en `lib/editor/bloques.ts`. Capa de selección con recuadro,
+  etiqueta, hover y `Esc`. Medido: desalineación **0 px** al 100/150/50 %.
+
+### Lo que FALTA, y en qué orden
+
+**Fase 3 (en curso):** edición directa de texto + toolbar contextual.
+Y la deuda que la Fase 2 dejó explícita: **el recorrido por `Tab`/`Enter`** sobre
+los bloques del lienzo, que necesita un *roving tabindex* bien hecho.
+
+Después: 4 (imágenes y elementos) → 7 (panel contextual) → 5 (capas) →
+6 (drag & drop) → 8 (chrome y móvil) → 9 (plantillas, la única que puede
+destruir datos de un cliente) → 10 (QA y migración).
+
+### Trampas conocidas — descubiertas midiendo, no suponiendo
+
+1. **`parseConfig` devuelve un objeto NUEVO cada llamada** (zod). Llamarlo suelto
+   en un render hace que `memo` falle el 100 % de las veces. Ya está memoizado en
+   `ModulePreview`; no lo deshagas.
+2. **Los bytes del transcript NO estiman el contexto.** Una sesión de 5,28 MB
+   tenía 505.944 tokens; otras de 28 MB no pueden tener 2,7M. Esas ya se
+   compactaron. Para el porcentaje real: `get_usage`.
+3. **El `data-bloque` de las 11 secciones solo existía con `freeMove` ON.** Por
+   eso la Fase 2 lo emite también apagado, pero SOLO en el editor. La página
+   pública tiene que renderizar byte a byte lo mismo — hay prueba que lo fija.
+4. **La secuencia de bloques es un PREFIJO de la tabla, no una longitud fija.**
+   Los huecos de contenido conservan su slot; los hijos condicionales de COLA
+   desaparecen (`gifts` da 3 bloques con enlaces y 2 sin ellos).
+5. **Un bloque NO es «un texto».** El `[0]` de `rsvp` es compuesto (título +
+   descripción) y uno de `dresscode` son dos figuras SVG. Su `campo` es `null` a
+   propósito: escribir en el campo equivocado corrompe la invitación de un cliente.
+6. **`git checkout <archivo>` falla ENTERO si le pasas un archivo sin rastrear**,
+   y no revierte nada. Una vez salvó el trabajo por accidente; no cuentes con ello.
+7. **Tres pruebas anclan por texto del código fuente** (`barra-movil`,
+   `slot-de-media`, `portada-marco-stickers`). Si renombras algo, reapúntalas —
+   no las relajes. Y ojo: con el ancla rota, un `not.toContain` da **verde falso**.
+8. **`container-type: inline-size` hace que `cqw` mida la caja de CONTENIDO**, y
+   el límite del arrastre es el CENTRO del bloque, no el bloque entero.
+
+---
+
 ## 0. Tesis del rediseño (léela primero)
 
 El brief asume que Sobrely es «un editor de formularios que hay que convertir en
