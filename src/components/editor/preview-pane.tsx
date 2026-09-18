@@ -11,6 +11,8 @@ import type { EditorModule } from "@/lib/invitations/editor-types";
 import type { ThemeConfig } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
 import { useLienzo, ZOOM_MAX, ZOOM_MIN } from "@/lib/editor/contexto-lienzo";
+import { ModoEditorProvider } from "@/lib/editor/contexto-modo";
+import { CapaDeSeleccion } from "@/components/editor/capa-de-seleccion";
 import { ModulePreview } from "@/components/modules/registry";
 import { ThemeScope } from "@/components/theme/theme-scope";
 import { StickerEditorLayer } from "@/components/editor/sticker-editor-layer";
@@ -159,6 +161,8 @@ export function PreviewPane({
   // se llamaba sobre nada — la etiqueta avanzaba y la pantalla no se movia. El
   // DOM ya tiene la verdad; preguntarle no puede quedar obsoleto.
   const canvas = useRef<HTMLDivElement | null>(null);
+  /** Envoltura estable del lienzo: no se remonta con `replayKey`. */
+  const lienzo = useRef<HTMLDivElement | null>(null);
 
   const leerAnclas = useCallback(
     () =>
@@ -237,6 +241,7 @@ export function PreviewPane({
     // envoltura es el ancho ya ESCALADO, asi que "ajustar al ancho" se
     // calcularia contra su propio resultado. Esta raiz mide el espacio
     // DISPONIBLE, que es el dato que hace falta.
+    <ModoEditorProvider>
     <div data-columna-canvas>
       {solapados.size > 0 && (
         <p
@@ -348,10 +353,20 @@ export function PreviewPane({
             Agrega módulos para ver la vista previa.
           </div>
         ) : (
+          // Envoltura ESTABLE del lienzo (Fase 2).
+          //
+          // El div de dentro lleva `key={replayKey}`, así que se DESMONTA cada
+          // vez que cambia una animación. Un `addEventListener` colgado de él
+          // se quedaría apuntando a un nodo muerto y la selección dejaría de
+          // responder justo después de tocar una animación — un fallo
+          // intermitente y muy difícil de atribuir.
+          //
+          // Esta envoltura no se remonta nunca, así que es el sitio donde la
+          // capa de selección escucha, y el origen de coordenadas del recuadro.
+          <div ref={lienzo} className="relative z-10">
           <div
             key={replayKey}
             ref={canvas}
-            className="relative z-10"
             // Los manejadores del arrastre van AQUÍ, en el contenedor de los
             // módulos, no en un overlay. Un overlay recibía el puntero él mismo
             // y `closest("[data-bloque]")` daba null — el arrastre no empezaba
@@ -383,6 +398,8 @@ export function PreviewPane({
                 </div>
               );
             })}
+          </div>
+          <CapaDeSeleccion contenedor={lienzo} modules={visible} />
           </div>
         )}
         {onStickersChange && (
@@ -511,5 +528,6 @@ export function PreviewPane({
         </div>
       )}
     </div>
+    </ModoEditorProvider>
   );
 }

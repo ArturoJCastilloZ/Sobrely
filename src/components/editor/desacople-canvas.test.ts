@@ -92,14 +92,61 @@ describe("el lienzo NO está acoplado a la selección", () => {
     expect(nombres).toContain("components/modules/previews.tsx");
   });
 
+  /**
+   * Quien se suscribe a la selección DENTRO del árbol del lienzo, a propósito.
+   *
+   * En la Fase 1 esta lista estaba vacía y la regla era «nadie». La Fase 2 trae
+   * la capa de selección, que por definición tiene que suscribirse — y el guard
+   * la cazó, con razón: importar y acoplar se parecen, pero no son lo mismo.
+   *
+   * El invariante bueno no es «nadie se suscribe» sino **«quien RENDERIZA
+   * módulos no se suscribe»**. `CapaDeSeleccion` es un componente HERMANO: se
+   * suscribe ella, repinta ella sola, y no monta ni un módulo. Por eso un clic
+   * en el riel sigue sin tocar el lienzo.
+   *
+   * Cada entrada paga su sitio en la prueba de abajo: tiene que demostrar que
+   * no renderiza módulos. Añadir aquí un archivo que sí los renderice deja el
+   * guard en verde mintiendo, así que la segunda prueba existe para impedirlo.
+   */
+  const SUSCRIPTORES_PERMITIDOS = [
+    "components/editor/capa-de-seleccion.tsx",
+    // El propio contexto: define el hook, no lo consume para pintar nada.
+    "lib/editor/contexto-seleccion.tsx",
+  ];
+
   it("ni el lienzo ni NADA que importe llama a `useSeleccion()`", () => {
     const culpables = [...cierre.entries()]
       .filter(([, src]) => /\buseSeleccion\s*\(/.test(limpiar(src)))
-      .map(([f]) => rel(f));
+      .map(([f]) => rel(f))
+      .filter((f) => !SUSCRIPTORES_PERMITIDOS.includes(f));
     expect(
       culpables,
       "estos archivos acoplan el lienzo a la selección y hacen que un clic en el riel repinte la invitación entera",
     ).toEqual([]);
+  });
+
+  it("y ningún suscriptor permitido renderiza módulos", () => {
+    // Lo que impide que la lista de arriba se convierta en una puerta trasera.
+    // Si un archivo se suscribe A LA VEZ que monta módulos, entonces sí repinta
+    // la invitación al cambiar la selección, esté en la lista o no.
+    for (const f of SUSCRIPTORES_PERMITIDOS) {
+      const src = limpiar(readFileSync(resolve(SRC, f), "utf8"));
+      expect(src, `${f} está en la lista pero renderiza módulos`).not.toMatch(
+        /\b(ModulePreview|MODULE_REGISTRY)\b/,
+      );
+    }
+  });
+
+  it("los dos componentes que SÍ montan el lienzo no se suscriben", () => {
+    // La comprobación directa, sin recorrer nada: son los que renderizan los
+    // módulos, así que su repintado es el caro.
+    for (const f of [
+      "components/editor/shell/canvas-area.tsx",
+      "components/editor/preview-pane.tsx",
+    ]) {
+      const src = limpiar(readFileSync(resolve(SRC, f), "utf8"));
+      expect(src, f).not.toMatch(/\buseSeleccion\s*\(/);
+    }
   });
 
   it("el dueño del documento tampoco se suscribe a la selección", () => {

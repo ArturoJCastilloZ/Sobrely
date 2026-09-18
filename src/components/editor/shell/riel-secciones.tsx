@@ -82,7 +82,7 @@ function Gutter({
  */
 export function RielSecciones() {
   const { modules, invitation, aplicar } = useDocumento();
-  const { moduloId, seleccionar, panel, irAPanel, hojaMovil } = useSeleccion();
+  const { moduloId, seleccionarModulo, panel, irAPanel, hojaMovil } = useSeleccion();
 
   /** Modulo pendiente de confirmar borrado. Antes se borraba a un clic. */
   const [porBorrar, setPorBorrar] = useState<EditorModule | null>(null);
@@ -105,13 +105,13 @@ export function RielSecciones() {
     // dentro no es una funcion pura y deja de ser reproducible en pruebas.
     const id = `tmp-${crypto.randomUUID()}`;
     aplicar({ type: "addModule", moduleType: type, id, index });
-    seleccionar(id);
+    seleccionarModulo(id);
     irAPanel("module");
   }
 
   function deleteModule(id: string) {
     aplicar({ type: "deleteModule", id });
-    if (moduloId === id) seleccionar(null);
+    if (moduloId === id) seleccionarModulo(null);
   }
 
   return (
@@ -207,7 +207,7 @@ export function RielSecciones() {
                     module={m}
                     selected={panel === "module" && m.id === moduloId}
                     onSelect={() => {
-                      seleccionar(m.id);
+                      seleccionarModulo(m.id);
                       // En móvil, elegir una sección lleva DIRECTO a sus
                       // propiedades: quedarse en la lista obligaría a un
                       // segundo toque a ciegas.

@@ -10,6 +10,12 @@ import {
   type ReactNode,
 } from "react";
 
+import {
+  mismaSeleccion,
+  moduloDe,
+  type Seleccion,
+} from "./seleccion";
+
 /**
  * Paneles de nivel DOCUMENTO. Viven aqui y no en el editor porque los leen
  * TRES sitios —el riel de escritorio, la barra movil y la cabecera del
@@ -39,10 +45,16 @@ export type HojaMovil = null | "secciones" | PanelId;
  * Esto importa porque el valor del contexto es lo que decide quien repinta.
  */
 export type SeleccionApi = {
-  /** Id del modulo seleccionado, o `null`. En la Fase 2 esto se ensancha a una
-   *  direccion de bloque; hoy no hace falta y meterlo seria config muerta. */
+  /** La direccion completa: nada, un modulo, o un bloque dentro de un modulo. */
+  seleccion: Seleccion;
+  /**
+   * El modulo al que apunta la seleccion, sea del nivel que sea. Derivado, no
+   * un segundo estado: tenerlo aparte permitiria que los dos se contradijeran.
+   */
   moduloId: string | null;
-  seleccionar: (id: string | null) => void;
+  seleccionar: (sel: Seleccion) => void;
+  /** Atajo para el riel, que siempre selecciona al nivel de modulo. */
+  seleccionarModulo: (id: string | null) => void;
   /** Reapunta la seleccion tras un guardado, cuando un `tmp-*` recibe su uuid. */
   remapear: (mapa: Record<string, string>) => void;
   panel: PanelId;
@@ -82,14 +94,40 @@ export function SeleccionProvider({
   apiRef?: SeleccionRef;
   children: ReactNode;
 }) {
-  const [moduloId, setModuloId] = useState<string | null>(idInicial);
+  const [seleccion, setSeleccion] = useState<Seleccion>(
+    idInicial ? { tipo: "modulo", moduloId: idInicial } : null,
+  );
   const [panel, setPanelEstado] = useState<PanelId>("module");
   const [hojaMovil, setHojaMovilEstado] = useState<HojaMovil>(null);
 
-  const seleccionar = useCallback((id: string | null) => setModuloId(id), []);
+  // Se compara por VALOR antes de fijar. La seleccion se reconstruye en cada
+  // clic del lienzo, asi que sin esto volver a pulsar el MISMO bloque crearia
+  // un objeto nuevo, cambiaria el contexto y repintaria el riel y el inspector
+  // para no cambiar nada.
+  const seleccionar = useCallback((sel: Seleccion) => {
+    setSeleccion((cur) => (mismaSeleccion(cur, sel) ? cur : sel));
+  }, []);
+
+  const seleccionarModulo = useCallback(
+    (id: string | null) =>
+      setSeleccion((cur) => {
+        const sig: Seleccion = id ? { tipo: "modulo", moduloId: id } : null;
+        return mismaSeleccion(cur, sig) ? cur : sig;
+      }),
+    [],
+  );
 
   const remapear = useCallback((mapa: Record<string, string>) => {
-    setModuloId((cur) => (cur && mapa[cur] ? mapa[cur] : cur));
+    setSeleccion((cur) => {
+      if (cur === null) return cur;
+      const nuevo = mapa[cur.moduloId];
+      if (!nuevo) return cur;
+      // Se conserva el NIVEL: si habia un bloque elegido, sigue elegido tras el
+      // guardado. Volver al modulo entero perderia el sitio del usuario.
+      return cur.tipo === "bloque"
+        ? { ...cur, moduloId: nuevo }
+        : { tipo: "modulo", moduloId: nuevo };
+    });
   }, []);
 
   const setPanel = useCallback((p: PanelId) => setPanelEstado(p), []);
@@ -108,8 +146,10 @@ export function SeleccionProvider({
 
   const api = useMemo<SeleccionApi>(
     () => ({
-      moduloId,
+      seleccion,
+      moduloId: moduloDe(seleccion),
       seleccionar,
+      seleccionarModulo,
       remapear,
       panel,
       setPanel,
@@ -117,7 +157,7 @@ export function SeleccionProvider({
       hojaMovil,
       setHojaMovil,
     }),
-    [moduloId, panel, hojaMovil, seleccionar, remapear, setPanel, irAPanel, setHojaMovil],
+    [seleccion, panel, hojaMovil, seleccionar, seleccionarModulo, remapear, setPanel, irAPanel, setHojaMovil],
   );
 
   // Se publica en un EFECTO, no durante el render: escribir una ref mientras se
