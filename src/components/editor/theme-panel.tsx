@@ -23,8 +23,6 @@ import {
   type StylePresetKey,
 } from "@/lib/animation/style-presets";
 import { applyThemePack } from "@/lib/theme/theme-packs";
-import { minimalPlanForFeature } from "@/lib/billing/plans";
-import type { PlanFeature } from "@/lib/billing/types";
 import { ThemePackPicker } from "./theme-pack-picker";
 import { SYSTEM_DEFAULT_ANIMATION } from "@/lib/animation/schema";
 import { AnimationFields } from "@/components/editor/animation-fields";
@@ -33,6 +31,7 @@ import {
   ImageUploader,
   type UploadContext,
 } from "@/components/editor/image-uploader";
+import { FeatureBadge } from "@/components/billing/feature-badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -53,24 +52,6 @@ const COLOR_FIELDS: { key: ColorKey; label: string }[] = [
   { key: "background", label: "Fondo" },
   { key: "text", label: "Texto" },
 ];
-
-/**
- * Insignia del plan que desbloquea una capacidad.
- *
- * Se deriva de `plans.ts` — la MISMA fuente que gatea al publicar — a
- * propósito: el nombre del plan venía escrito a mano en tres lugares, y cuando
- * `custom_art` bajó a Celebración el editor habría seguido pidiendo el plan de
- * arriba. Ahora un cambio de plan se refleja solo.
- */
-function FeatureBadge({ feature }: { feature: PlanFeature }) {
-  const plan = minimalPlanForFeature(feature);
-  if (!plan) return null;
-  return (
-    <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning">
-      {plan.name} ⭐
-    </span>
-  );
-}
 
 /** Common decoration symbols offered in the picker. */
 const SYMBOL_OPTIONS = [

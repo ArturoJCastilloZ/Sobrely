@@ -11,6 +11,7 @@ import {
   MODULE_TYPES,
   parseConfig,
   tieneComposicionDeSeccion,
+  tieneSlotDeMedia,
   type ModuleType,
 } from "@/lib/modules/types";
 import type { AnimationConfig } from "@/lib/animation/types";
@@ -28,6 +29,7 @@ import {
 } from "./config-editors";
 import { defaultAnimation } from "@/lib/animation/schema";
 import { ComposicionDeSeccion } from "@/components/editor/composicion-de-seccion";
+import { ImagenDeSeccion } from "@/components/editor/imagen-de-seccion";
 
 /**
  * Registro de tipos de módulo: un solo lugar por tipo.
@@ -220,6 +222,15 @@ export function ModuleConfigEditor({
       */}
       {tieneComposicionDeSeccion(moduleType) ? (
         <ComposicionDeSeccion config={rest.config} onChange={rest.onChange} />
+      ) : null}
+      {/* Misma regla y mismo sitio: lo decide el ESQUEMA
+          (`tieneSlotDeMedia`), no una lista. */}
+      {tieneSlotDeMedia(moduleType) ? (
+        <ImagenDeSeccion
+          config={rest.config}
+          onChange={rest.onChange}
+          ctx={rest.ctx}
+        />
       ) : null}
       <AnimationControl
         config={rest.config}

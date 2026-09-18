@@ -370,6 +370,31 @@ export const MEDIA_POSITION_LABELS: Record<MediaPosition, string> = {
   background: "De fondo",
 };
 
+/**
+ * Rotulos de cara al usuario, no la fraccion cruda.
+ *
+ * Mismo criterio que `HERO_VARIANT_LABELS`: «3/4» describe la caja, no lo que
+ * el usuario obtiene. Se conserva la fraccion entre parentesis porque quien ya
+ * sabe lo que busca la reconoce de un vistazo.
+ */
+export const MEDIA_RATIO_LABELS: Record<MediaRatio, string> = {
+  "1/1": "Cuadrada (1/1)",
+  "4/3": "Horizontal (4/3)",
+  "3/4": "Vertical (3/4)",
+  "3/2": "Horizontal amplia (3/2)",
+  "2/3": "Vertical amplia (2/3)",
+  "16/9": "Panoramica (16/9)",
+  "9/16": "Vertical de movil (9/16)",
+  "1/2": "Vertical estrecha (1/2)",
+};
+
+/** Que parte de la foto se conserva cuando la caja recorta. */
+export const MEDIA_FOCAL_LABELS: Record<MediaFocal, string> = {
+  top: "La parte de arriba",
+  center: "El centro",
+  bottom: "La parte de abajo",
+};
+
 export const MEDIA_SHAPE_LABELS: Record<MediaShape, string> = {
   rect: "Rectángulo",
   circle: "Círculo",
@@ -849,6 +874,20 @@ export const moduleConfigSchemas = {
  * Es el patrón que ya salvó un cambio transversal en esta base: emitir DESPUÉS
  * y que el defecto sea vacío, en vez de tocar N sitios.
  */
+/**
+ * Quien hereda el SLOT DE MEDIA, preguntado al esquema.
+ *
+ * Mismo criterio que `tieneComposicionDeSeccion` y por el mismo motivo: lo
+ * decide `objetoConLayout`, no una lista escrita a mano que se quedaria vieja
+ * al primer modulo nuevo. `hero` da false — compone su imagen con `variant` e
+ * `imageUrl`, no con `mediaShape`.
+ */
+export function tieneSlotDeMedia(tipo: ModuleType): boolean {
+  const esquema = moduleConfigSchemas[tipo];
+  const shape = (esquema as unknown as { shape?: Record<string, unknown> }).shape;
+  return Boolean(shape && "media" in shape);
+}
+
 export function tieneComposicionDeSeccion(tipo: ModuleType): boolean {
   const esquema = moduleConfigSchemas[tipo];
   const shape = (esquema as unknown as { shape?: Record<string, unknown> }).shape;
