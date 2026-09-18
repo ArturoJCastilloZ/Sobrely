@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -20,14 +20,44 @@ import { describe, expect, it } from "vitest";
  * montó dos veces una vez —una copia móvil y otra de escritorio— y duplicó las
  * capas de stickers escuchando punteros. Por eso aquí se comprueba que
  * `PreviewPane` aparece UNA sola vez.
+ *
+ * ---
+ *
+ * REAPUNTADO en la Fase 1 del rediseño. Antes leía un único archivo
+ * (`invitation-editor.tsx`, 1 128 líneas) porque el editor entero vivía ahí.
+ * Al partirlo, las mismas marcas quedaron repartidas entre `shell/`, así que
+ * ahora se lee la SUPERFICIE COMPLETA del editor y no un archivo.
+ *
+ * Ninguna aserción se ha relajado: siguen siendo los mismos conteos exactos.
+ * Y se lee el DIRECTORIO, no una lista a mano — así una pieza nueva del chrome
+ * entra sola en el ámbito de la guarda en vez de quedarse fuera en silencio,
+ * que es justo el modo en que una prueba deja de defender sin ponerse roja.
  */
 
-const SRC = readFileSync(
-  fileURLToPath(new URL("./invitation-editor.tsx", import.meta.url)),
-  "utf8",
-);
+const dir = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
+
+const ARCHIVOS = [
+  dir("./invitation-editor.tsx"),
+  dir("./preview-pane.tsx"),
+  ...readdirSync(dir("./shell"))
+    .filter((f) => f.endsWith(".tsx"))
+    .map((f) => dir(`./shell/${f}`)),
+];
+
 /** Sin comentarios: una aserción no debe poder anclar en la prosa que explica. */
-const CODIGO = SRC.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+const limpiar = (s: string) =>
+  s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+
+const CODIGO = ARCHIVOS.map((f) => limpiar(readFileSync(f, "utf8"))).join("\n");
+
+describe("la superficie del editor es la que se cree", () => {
+  it("hay al menos las piezas del chrome partido", () => {
+    // Si alguien renombra la carpeta o mueve las piezas, el resto de esta suite
+    // pasaría por vacío en vez de fallar. Esto lo caza.
+    expect(ARCHIVOS.length).toBeGreaterThanOrEqual(7);
+    expect(CODIGO.length).toBeGreaterThan(5000);
+  });
+});
 
 describe("un solo árbol: el preview no se duplica", () => {
   it("`PreviewPane` se monta exactamente una vez", () => {

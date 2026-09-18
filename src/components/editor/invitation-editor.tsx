@@ -1,37 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 
-import {
-  MODULE_META,
-  type ModuleType,
-} from "@/lib/modules/types";
-import type {
-  EditorInvitation,
-  EditorModule,
-} from "@/lib/invitations/editor-types";
+import type { EditorInvitation, EditorModule } from "@/lib/invitations/editor-types";
 import { saveEditor, setPublished } from "@/lib/invitations/actions";
 import { slugify } from "@/lib/invitations/schemas";
-import { PublishControls } from "./publish-controls";
-import { VanitySlugCard } from "./vanity-slug-card";
 import { CheckoutButton } from "@/components/billing/checkout-button";
 import {
   formatPrice,
@@ -40,31 +15,8 @@ import {
   type PlanCode,
 } from "@/lib/billing";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { SortableModuleItem } from "./sortable-module-item";
-import { ModulePalette } from "./module-palette";
-import { SettingsPanel } from "./settings-panel";
-import { PreviewPane } from "./preview-pane";
-import { ThemePanel } from "./theme-panel";
-import { ModuleConfigEditor, MODULE_REGISTRY } from "@/components/modules/registry";
-import { parcheDeDesplazamiento } from "@/lib/modules/types";
-import { RsvpModeToggle } from "@/components/dashboard/rsvp-mode-toggle";
-import { GuestManager } from "@/components/dashboard/guest-manager";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ThemeConfig } from "@/lib/theme/theme";
-import {
-  Undo2Icon, Redo2Icon, LayersIcon, MousePointerClickIcon, ArrowLeftIcon, PlusIcon,
-  ExternalLinkIcon,
-  PaletteIcon, UsersIcon, SettingsIcon,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { EmptyState } from "@/components/ui/empty-state";
-import { detectAnimationConflicts } from "@/lib/animation/conflicts";
 import type { EditorAction } from "@/lib/invitations/editor-document";
 import {
   editorHistoryReducer,
@@ -84,49 +36,42 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DocumentoProvider,
+  type DocumentoApi,
+} from "@/lib/editor/contexto-documento";
+import {
+  SeleccionProvider,
+  type SeleccionApi,
+} from "@/lib/editor/contexto-seleccion";
+import { LienzoProvider } from "@/lib/editor/contexto-lienzo";
+import { EditorLayout } from "./shell/editor-layout";
 
 /**
- * Paneles de nivel DOCUMENTO. Van separados de la lista de secciones porque no
- * son hermanos suyos: cambian la invitacion entera, no un bloque. Mezclarlos en
- * un mismo control de pestanas era el defecto estructural del editor viejo.
+ * Dueno del DOCUMENTO: el historial, el autoguardado y la publicacion.
+ *
+ * Antes este archivo tenia 1 128 lineas y era ademas el chrome entero —barra
+ * superior, riel, lienzo, inspector, barra movil y tres dialogos—, asi que
+ * cualquier estado de interfaz vivia junto al documento. Consecuencia medida:
+ * un clic en otra seccion del riel repintaba la invitacion COMPLETA.
+ *
+ * Ahora el reparto es:
+ *
+ *   InvitationEditor   documento + persistencia   (este archivo)
+ *   SeleccionProvider  que hay elegido            (`lib/editor/contexto-seleccion`)
+ *   LienzoProvider     zoom / vista / seccion     (`lib/editor/contexto-lienzo`)
+ *   EditorLayout       la composicion, sin hooks  (`shell/editor-layout`)
+ *
+ * La clave del desacople es que `EditorLayout` se crea UNA vez por render de
+ * este componente. Cuando cambia la seleccion, solo repinta `SeleccionProvider`
+ * — y su prop `children` sigue siendo el MISMO objeto de elemento, asi que
+ * React se salta el arbol entero. Solo repintan los que llaman `useSeleccion()`,
+ * por suscripcion al contexto y no por su padre.
+ *
+ * El reducer del historial y `useAutosave` NO se han tocado: son el codigo mas
+ * delicado del editor y cada linea de sus comentarios esta pagada con una
+ * perdida de datos reproducida.
  */
-const PANELES_DOC = [
-  { id: "theme", label: "Tema", icon: PaletteIcon },
-  { id: "guests", label: "Invitados", icon: UsersIcon },
-  { id: "settings", label: "Ajustes", icon: SettingsIcon },
-] as const;
-
-type PanelId = "module" | (typeof PANELES_DOC)[number]["id"];
-
-/** Franja entre dos secciones con el `+` que inserta ahi. */
-function Gutter({
-  indice,
-  onAdd,
-}: {
-  indice: number;
-  onAdd: (type: ModuleType, index: number) => void;
-}) {
-  return (
-    <div className="group/gutter relative flex h-3 items-center focus-within:h-7 hover:h-7">
-      <div className="h-px flex-1 bg-primary/40 opacity-0 transition-opacity duration-(--ed-fast) group-focus-within/gutter:opacity-100 group-hover/gutter:opacity-100" />
-      <ModulePalette
-        align="start"
-        onAdd={(type) => onAdd(type, indice)}
-        trigger={
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            aria-label={`Insertar sección en la posición ${indice + 1}`}
-            className="ml-1 rounded-full bg-primary text-primary-foreground opacity-0 transition-opacity duration-(--ed-fast) group-focus-within/gutter:opacity-100 group-hover/gutter:opacity-100 hover:bg-primary focus-visible:opacity-100"
-          />
-        }
-      >
-        <PlusIcon />
-      </ModulePalette>
-    </div>
-  );
-}
-
 export function InvitationEditor({
   initialInvitation,
   initialVersion,
@@ -172,43 +117,35 @@ export function InvitationEditor({
    */
   const [errorGuardado, setErrorGuardado] = useState<string | null>(null);
 
-  const uploadCtx = { userId, invitationId: initialInvitation.id };
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-  const [panel, setPanel] = useState<PanelId>("module");
-  /**
-   * MÓVIL (< 1024 px): qué hoja inferior está abierta, o `null` si sólo se ve el
-   * lienzo. En escritorio este estado se ignora por completo — las columnas
-   * están siempre visibles y nada lo lee.
-   *
-   * Por qué hace falta: medido el 2026-09-11 a 375×812 sobre el editor real, la
-   * vista previa empieza en `top` 419 px con 2 secciones, 489 con 4 (la MEDIANA
-   * del catálogo) y **901 con 10**, contra un viewport de 812. El riel de
-   * secciones es el primer hijo de un `flex-col`, así que empuja al lienzo fuera
-   * de la pantalla en cuanto la invitación tiene contenido.
-   *
-   * La inversión: el lienzo ocupa la pantalla y el riel y el inspector pasan a
-   * ser hojas. **Se hace con CSS sobre los MISMOS nodos**, nunca con un segundo
-   * árbol: el comentario de abajo explica que el preview ya se montó dos veces
-   * una vez y duplicó las capas de stickers. Aquí `PreviewPane` sigue
-   * existiendo exactamente una vez.
-   */
-  const [hojaMovil, setHojaMovil] = useState<null | "secciones" | PanelId>(null);
-  /** Abre en móvil la hoja del panel que se acaba de elegir. */
-  const irAPanel = (p: PanelId) => {
-    setPanel(p);
-    setHojaMovil(p);
-  };
-  const [selectedId, setSelectedId] = useState<string | null>(
-    initialModules[0]?.id ?? null,
+  // Memoizado: si fuera un objeto nuevo por render, cada `ImageUploader` de los
+  // paneles veria una prop distinta en cada tecla que se pulse en cualquier sitio.
+  const uploadCtx = useMemo(
+    () => ({ userId, invitationId: initialInvitation.id }),
+    [userId, initialInvitation.id],
   );
+
+  /**
+   * Puente imperativo a la seleccion, que vive POR DEBAJO de este componente.
+   *
+   * Se usa en un solo sitio: tras guardar, los modulos nuevos dejan de ser
+   * `tmp-*` y reciben su uuid real; sin reapuntar la seleccion, el panel de
+   * propiedades se vacia justo despues del primer autoguardado de una seccion
+   * recien creada.
+   *
+   * Es una ref y no una suscripcion PORQUE suscribir este componente a la
+   * seleccion es exactamente lo que el refactor viene a evitar: repintaria el
+   * lienzo en cada clic. Es el mismo motivo por el que `versionRef`, `docRef` y
+   * `ultimoGuardado` ya eran refs.
+   */
+  const seleccionRef = useRef<SeleccionApi | null>(null);
+
   // Derivado del documento, no una bandera: deshacer hasta el punto guardado
   // deja de marcar pendientes, que es lo que el usuario espera.
   const dirty = useMemo(() => hayCambiosSinGuardar(historia), [historia]);
   const [isPublishing, startPublishing] = useTransition();
   // Plan requerido cuando la publicación se bloquea por usar módulos ⭐ premium.
   const [upgradePlan, setUpgradePlan] = useState<PlanCode | null>(null);
-  /** Modulo pendiente de confirmar borrado. Antes se borraba a un clic. */
-  const [porBorrar, setPorBorrar] = useState<EditorModule | null>(null);
   const router = useRouter();
   /** Salir con cambios sin guardar: se ofrece salir igualmente o quedarse. */
   const [salidaEnRiesgo, setSalidaEnRiesgo] = useState(false);
@@ -221,114 +158,6 @@ export function InvitationEditor({
    * Una ref escrita dentro del propio guardado si esta al dia.
    */
   const ultimoGuardado = useRef<"ok" | "error">("ok");
-
-  /**
-   * Salir del editor SIN perder el trabajo.
-   *
-   * `beforeunload` solo cubre cerrar/recargar la pestana: la navegacion interna
-   * de Next no lo dispara, asi que pulsar "Volver al panel" con cambios
-   * pendientes se los llevaba por delante sin un solo aviso. Medido en el E2E:
-   * dos ediciones destruidas, cero dialogos.
-   *
-   * Se GUARDA antes de salir en vez de solo preguntar: preguntar traslada al
-   * usuario un problema que la aplicacion puede resolver sola. Solo si el
-   * guardado falla se le pregunta, porque ahi si hay una decision que tomar.
-   */
-  async function salirAlPanel() {
-    if (!dirty) {
-      router.push("/dashboard");
-      return;
-    }
-    setSaliendo(true);
-    try {
-      await guardarAhora();
-    } catch {
-      // El propio guardado ya deja `errorGuardado` puesto.
-    } finally {
-      setSaliendo(false);
-    }
-    // Se pregunta por el RESULTADO del guardado, no por el estado de React.
-    if (ultimoGuardado.current === "error") {
-      setSalidaEnRiesgo(true);
-      return;
-    }
-    router.push("/dashboard");
-  }
-
-  function handlePublishToggle() {
-    const next = !invitation.is_published;
-    startPublishing(async () => {
-      // Antes "Publicar" estaba deshabilitado mientras hubiera cambios sin
-      // guardar, y el usuario tenia que deducir ese modelo de dos pasos. Ahora
-      // se guarda primero: publicar una version vieja seria peor.
-      if (dirty) await guardarAhora();
-      const res = await setPublished(invitation.id, next);
-      if (!res.ok) {
-        // Bloqueo por plan → abre el CTA de mejora en vez de solo un toast.
-        if (res.needsUpgrade && res.requiredPlan) {
-          setUpgradePlan(res.requiredPlan);
-          return;
-        }
-        toast.error(res.error);
-        return;
-      }
-      aplicar({ type: "setPublished", published: res.is_published });
-      toast.success(
-        res.is_published ? "Invitación publicada." : "Invitación despublicada.",
-      );
-    });
-  }
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
-  const selected = modules.find((m) => m.id === selectedId) ?? null;
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    aplicar({ type: "reorder", activeId: String(active.id), overId: String(over.id) });
-  }
-
-  function addModule(type: ModuleType, index?: number) {
-    // El id se genera AQUI y no en el reducer: un reducer con `crypto.randomUUID()`
-    // dentro no es una funcion pura y deja de ser reproducible en pruebas.
-    const id = `tmp-${crypto.randomUUID()}`;
-    aplicar({ type: "addModule", moduleType: type, id, index });
-    setSelectedId(id);
-    setPanel("module");
-  }
-
-  function deleteModule(id: string) {
-    aplicar({ type: "deleteModule", id });
-    setSelectedId((cur) => (cur === id ? null : cur));
-  }
-
-  function toggleVisible(id: string, visible: boolean) {
-    aplicar({ type: "toggleVisible", id, visible });
-  }
-
-  function updateConfig(id: string, patch: Record<string, unknown>) {
-    aplicar({ type: "updateConfig", id, patch });
-  }
-
-  function updateSettings(patch: Partial<EditorInvitation>) {
-    aplicar({ type: "updateSettings", patch });
-  }
-
-  function updateTheme(patch: Partial<ThemeConfig>) {
-    aplicar({ type: "updateTheme", patch });
-  }
-
-  /** Clears every per-module animation override so all inherit the theme. */
-  function applyAnimationToAll() {
-    aplicar({ type: "clearAnimationOverrides" });
-    toast.success("Animación del tema aplicada a todos los módulos.");
-  }
 
   // Referencia viva al documento, para que el autoguardado no dependa de una
   // clausura vieja: sin esto guardaria lo que habia cuando se armo el callback.
@@ -440,7 +269,7 @@ export function InvitationEditor({
     };
     despachar({ type: "marcarGuardado", documento: guardado });
 
-    setSelectedId((cur) => (cur && mapa[cur] ? mapa[cur] : cur));
+    seleccionRef.current?.remapear(mapa);
   }, []);
 
   const { guardarAhora, guardando } = useAutosave({
@@ -455,6 +284,63 @@ export function InvitationEditor({
     // seguir vivo. Lo que se apaga es el reintento.
     pausado: conflicto,
   });
+
+  /**
+   * Salir del editor SIN perder el trabajo.
+   *
+   * `beforeunload` solo cubre cerrar/recargar la pestana: la navegacion interna
+   * de Next no lo dispara, asi que pulsar "Volver al panel" con cambios
+   * pendientes se los llevaba por delante sin un solo aviso. Medido en el E2E:
+   * dos ediciones destruidas, cero dialogos.
+   *
+   * Se GUARDA antes de salir en vez de solo preguntar: preguntar traslada al
+   * usuario un problema que la aplicacion puede resolver sola. Solo si el
+   * guardado falla se le pregunta, porque ahi si hay una decision que tomar.
+   */
+  const salirAlPanel = useCallback(async () => {
+    if (!dirty) {
+      router.push("/dashboard");
+      return;
+    }
+    setSaliendo(true);
+    try {
+      await guardarAhora();
+    } catch {
+      // El propio guardado ya deja `errorGuardado` puesto.
+    } finally {
+      setSaliendo(false);
+    }
+    // Se pregunta por el RESULTADO del guardado, no por el estado de React.
+    if (ultimoGuardado.current === "error") {
+      setSalidaEnRiesgo(true);
+      return;
+    }
+    router.push("/dashboard");
+  }, [dirty, guardarAhora, router]);
+
+  const alternarPublicado = useCallback(() => {
+    const next = !invitation.is_published;
+    startPublishing(async () => {
+      // Antes "Publicar" estaba deshabilitado mientras hubiera cambios sin
+      // guardar, y el usuario tenia que deducir ese modelo de dos pasos. Ahora
+      // se guarda primero: publicar una version vieja seria peor.
+      if (dirty) await guardarAhora();
+      const res = await setPublished(invitation.id, next);
+      if (!res.ok) {
+        // Bloqueo por plan → abre el CTA de mejora en vez de solo un toast.
+        if (res.needsUpgrade && res.requiredPlan) {
+          setUpgradePlan(res.requiredPlan);
+          return;
+        }
+        toast.error(res.error);
+        return;
+      }
+      aplicar({ type: "setPublished", published: res.is_published });
+      toast.success(
+        res.is_published ? "Invitación publicada." : "Invitación despublicada.",
+      );
+    });
+  }, [invitation.is_published, invitation.id, dirty, guardarAhora, aplicar]);
 
   // Deshacer / rehacer. `metaKey` para macOS, `ctrlKey` para el resto.
   useEffect(() => {
@@ -477,10 +363,43 @@ export function InvitationEditor({
     return () => window.removeEventListener("keydown", alTeclado);
   }, []);
 
+  const deshacer = useCallback(() => despachar({ type: "deshacer" }), []);
+  const rehacer = useCallback(() => despachar({ type: "rehacer" }), []);
+
+  const documento = useMemo<DocumentoApi>(
+    () => ({
+      invitation,
+      modules,
+      theme,
+      aplicar,
+      deshacer,
+      rehacer,
+      puedeDeshacer: puedeDeshacer(historia),
+      puedeRehacer: puedeRehacer(historia),
+      dirty,
+      guardando,
+      errorGuardado,
+      conflicto,
+      guardarAhora,
+      publicando: isPublishing,
+      alternarPublicado,
+      salirAlPanel,
+      saliendo,
+      username,
+      siteUrl,
+      uploadCtx,
+    }),
+    [
+      invitation, modules, theme, aplicar, deshacer, rehacer, historia, dirty,
+      guardando, errorGuardado, conflicto, guardarAhora, isPublishing,
+      alternarPublicado, salirAlPanel, saliendo, username, siteUrl, uploadCtx,
+    ],
+  );
+
   const upgradePlanObj = upgradePlan ? getPlan(upgradePlan) : undefined;
 
   return (
-    <div className="flex h-svh flex-col overflow-hidden">
+    <DocumentoProvider value={documento}>
       {/* Modal de mejora de plan (bloqueo de publicación por módulos premium) */}
       {upgradePlanObj && (
         <div
@@ -489,10 +408,7 @@ export function InvitationEditor({
           aria-modal="true"
           onClick={() => setUpgradePlan(null)}
         >
-          <Card
-            className="w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <Card className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <CardHeader>
               <CardTitle>Mejora a {upgradePlanObj.name} para publicar</CardTitle>
             </CardHeader>
@@ -526,39 +442,6 @@ export function InvitationEditor({
       )}
 
       {/*
-        Confirmacion de borrado. Antes un clic en un boton de 28px destruia el
-        modulo y su config sin preguntar y sin retorno — no habia undo en todo
-        el producto. Ahora hay las dos cosas, y el dialogo lo dice.
-      */}
-      <AlertDialog
-        open={porBorrar !== null}
-        onOpenChange={(abierto) => !abierto && setPorBorrar(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              ¿Eliminar «{porBorrar ? MODULE_META[porBorrar.module_type].label : ""}»?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Se quita la sección y todo lo que escribiste en ella. Puedes
-              recuperarla con Deshacer mientras no cierres el editor.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel />
-            <AlertDialogAction
-              onClick={() => {
-                if (porBorrar) deleteModule(porBorrar.id);
-                setPorBorrar(null);
-              }}
-            >
-              Eliminar sección
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/*
         Solo aparece cuando el guardado de salida FALLO. Si el guardado va bien
         el usuario no ve nada: se le resolvio el problema en vez de contarselo.
       */}
@@ -588,541 +471,14 @@ export function InvitationEditor({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Top bar */}
-      {/*
-        Barra superior. Antes eran TRES bloques apilados —acciones, enlace
-        publico y URL personalizada— que en un telefono se comian una fraccion
-        grande del viewport antes de mostrar nada editable. El enlace y la URL
-        bajan al panel de Ajustes, que es donde se consultan, no donde estorban.
-      */}
-      <header className="shrink-0 border-b">
-        <div className="flex w-full items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4">
-          {/*
-            `min-w-0` en los dos flex es lo que permite que el titulo se recorte
-            en vez de empujar. Sin el, un hijo flex se niega a encogerse por
-            debajo de su contenido y la barra desborda: medido a 375px, el
-            contenido ocupaba 424px y "Publicar" quedaba fuera de pantalla.
-          */}
-          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 sm:gap-3">
-            <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
-              {/* Sigue siendo un enlace real (clic central, "abrir en pestana
-                  nueva", lectores de pantalla), pero con cambios pendientes se
-                  intercepta para GUARDAR antes de irse. Sin esto, la
-                  navegacion interna de Next se llevaba el trabajo por delante:
-                  `beforeunload` no la cubre. */}
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Volver al panel"
-                render={<Link href="/dashboard" />}
-                nativeButton={false}
-                className="shrink-0"
-                disabled={saliendo}
-                onClick={(e) => {
-                  if (!dirty) return;
-                  e.preventDefault();
-                  void salirAlPanel();
-                }}
-              >
-                <ArrowLeftIcon />
-              </Button>
-              <span className="truncate text-sm font-medium">
-                {invitation.title || "Sin título"}
-              </span>
-              {/* Estado del autoguardado. Sustituye al boton Guardar: el
-                  usuario no deberia tener que acordarse de guardar.
-                  Se oculta en pantallas estrechas — el titulo importa mas, y
-                  el estado se sigue anunciando por `aria-live`. */}
-              {/* Cuatro estados, no dos. Antes era `dirty ? "Guardando…" :
-                  "Guardado"`, asi que "Guardando…" solo significaba "hay
-                  cambios": con un guardado fallido se quedaba ahi para siempre
-                  y afirmaba que se estaba guardando algo que no estaba en
-                  vuelo. */}
-              {/* El `aria-live` envuelve a los DOS estados: si vive solo en la
-                  rama de exito, el lector de pantalla deja de anunciar
-                  justamente cuando hay algo que decir. */}
-              <span className="flex min-w-0 items-center" aria-live="polite">
-                {errorGuardado ? (
-                  // El fallo SI se ve en movil. El estado normal se sigue
-                  // ocultando en pantalla estrecha —el titulo importa mas— pero
-                  // esconder el error dejaria al usuario editando sobre trabajo
-                  // que no se esta guardando, que es el defecto que este cambio
-                  // viene a cerrar.
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 shrink-0 px-2 text-xs text-destructive"
-                    onClick={() => void guardarAhora()}
-                  >
-                    {errorGuardado} · Reintentar
-                  </Button>
-                ) : (
-                  <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
-                    {guardando ? "Guardando…" : dirty ? "Sin guardar" : "Guardado"}
-                  </span>
-                )}
-              </span>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
-              {/* Deshacer / rehacer. Los atajos funcionan igual; estos botones
-                  existen porque un atajo que nadie ve no existe. */}
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Deshacer"
-                title="Deshacer (⌘Z)"
-                disabled={!puedeDeshacer(historia)}
-                onClick={() => despachar({ type: "deshacer" })}
-              >
-                <Undo2Icon />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Rehacer"
-                title="Rehacer (⌘⇧Z)"
-                disabled={!puedeRehacer(historia)}
-                onClick={() => despachar({ type: "rehacer" })}
-              >
-                <Redo2Icon />
-              </Button>
-              {/*
-                "Ver" vive aqui y no dentro de Ajustes. Es la accion que mas se
-                repite mientras editas —mirar como va quedando de verdad— y
-                enterrarla dos clics adentro la volvia invisible. Solo aparece
-                publicada, porque antes de eso el enlace no lleva a ningun lado.
-              */}
-              {invitation.is_published && username && invitation.slug && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  nativeButton={false}
-                  render={
-                    <a
-                      href={`/${username}/${invitation.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    />
-                  }
-                >
-                  <ExternalLinkIcon />
-                  Ver
-                </Button>
-              )}
-              <Button
-                onClick={handlePublishToggle}
-                disabled={isPublishing}
-                variant={invitation.is_published ? "outline" : "default"}
-                size="sm"
-              >
-                {isPublishing
-                  ? "…"
-                  : invitation.is_published
-                    ? "Despublicar"
-                    : "Publicar"}
-              </Button>
-            </div>
-          </div>
-
-        </div>
-      </header>
-
-      {/*
-        Conflicto de version. Es un banner FIJO y no solo un toast: el toast se
-        va (o el usuario lo cierra) y entonces sigue editando creyendo que se
-        guarda, que es el fallo silencioso que este bloqueo viene a cerrar.
-        Se le dice lo que pasa, lo que se hizo por el y la unica salida segura.
-      */}
-      {conflicto && (
-        <div
-          role="alert"
-          // `warning` y no `destructive`: esto no es una operacion que fallo,
-          // es un "detente". Y es el token que SI tiene el par superficie +
-          // primer plano con contraste AA verificado por prueba
-          // (`semantic-colors.test.ts`); `destructive` no tiene `-surface`,
-          // asi que `bg-destructive-surface` no existiria y el banner saldria
-          // transparente.
-          className="shrink-0 border-b border-warning/40 bg-warning-surface px-4 py-3 text-sm"
-        >
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            {/*
-              `text-warning` y NO `text-warning-fg`: `-fg` es la mitad que va
-              sobre el color SOLIDO, no sobre el `-surface`. Medido en el
-              navegador con el tema oscuro, `warning-fg` daba
-              `rgb(42, 26, 0)` sobre un fondo `rgb(42, 32, 8)` — el mismo
-              color, texto INVISIBLE. El emparejamiento bueno ya lo afirma
-              `semantic-colors.test.ts`: "el color solido es legible como
-              TEXTO sobre su propia superficie", en claro y en oscuro.
-            */}
-            <span className="font-medium text-warning">
-              Otra pestaña guardó cambios más nuevos.
-            </span>
-            <span className="text-muted-foreground">
-              Dejamos de guardar para no borrar ese trabajo. Tus cambios siguen
-              en pantalla; recarga para ver la versión más nueva.
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              className="ml-auto"
-              onClick={() => window.location.reload()}
-            >
-              Recargar
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/*
-        Tres columnas: riel de secciones, canvas y panel de propiedades.
-
-        UN SOLO ARBOL, no dos. Antes el preview se montaba DOS VECES en
-        escritorio —uno en la pestana movil oculta por CSS y otro en la columna
-        derecha—, con sus dos capas de stickers escuchando punteros. Si aqui se
-        hiciera "tres columnas en desktop, pestanas en movil" con clases, el
-        doble montaje seguiria. Este arbol pasa de fila a columna y el preview
-        existe una vez.
-
-        Y desaparecen las pestanas, que mezclaban tres cosas distintas en un
-        mismo control —nivel de documento (Tema, Ajustes), nivel de bloque
-        (Modulos) y un modo (Vista previa)— y llegaban a cinco `flex-1` en
-        420px, truncandose.
-      */}
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        {/* Riel: que hay en la invitacion */}
-        <nav
-          aria-label="Secciones de la invitación"
-          data-hoja={hojaMovil === "secciones" ? "abierta" : "cerrada"}
-          className={cn(
-            "flex shrink-0 flex-col gap-3 border-b p-3 lg:w-(--ed-sidebar-w) lg:overflow-y-auto lg:border-r lg:border-b-0",
-            // < 1024: deja de ser el primer hijo del flujo —que es lo que
-            // empujaba el lienzo— y pasa a ser una hoja sobre la barra.
-            "max-lg:fixed max-lg:inset-x-0 max-lg:bottom-(--ed-barra-movil) max-lg:z-40",
-            "max-lg:max-h-[60svh] max-lg:overflow-y-auto max-lg:rounded-t-2xl",
-            "max-lg:border max-lg:bg-background max-lg:shadow-2xl",
-            "max-lg:transition-transform max-lg:duration-200 max-lg:ease-out",
-            "max-lg:data-[hoja=cerrada]:pointer-events-none max-lg:data-[hoja=cerrada]:translate-y-[calc(100%+var(--ed-barra-movil))]",
-          )}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[length:var(--ed-text-micro)] font-(--ed-weight-medium) tracking-(--ed-tracking-micro) text-muted-foreground uppercase">
-              Secciones
-            </span>
-            <ModulePalette onAdd={addModule} />
-          </div>
-
-          {modules.length === 0 ? (
-            <EmptyState
-              icon={<LayersIcon />}
-              title="Tu invitación está vacía"
-              description="Agrega la primera sección para empezar."
-              className="py-8"
-            />
-          ) : (
-            <DndContext
-              id="modules-dnd"
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              modifiers={[restrictToVerticalAxis]}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={modules.map((m) => m.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {/*
-                  Gutter con `+` ENTRE secciones, patron de Notion. Antes solo
-                  existia un "Agregar modulo" global que siempre empujaba al
-                  final: si querias una seccion en medio, la agregabas abajo y
-                  la arrastrabas. El `+` inserta donde apuntas.
-
-                  Aparece al pasar el cursor sobre su franja, no siempre: cinco
-                  botones permanentes entre cuatro secciones convierten una
-                  lista en ruido. `focus-within` lo mantiene visible cuando se
-                  llega por teclado, que si no seria inalcanzable.
-                */}
-                <div>
-                  {modules.map((m, i) => (
-                    <div key={m.id}>
-                      <Gutter indice={i} onAdd={addModule} />
-                      <SortableModuleItem
-                        module={m}
-                        selected={panel === "module" && m.id === selectedId}
-                        onSelect={() => {
-                          setSelectedId(m.id);
-                          // En móvil, elegir una sección lleva DIRECTO a sus
-                          // propiedades: quedarse en la lista obligaría a un
-                          // segundo toque a ciegas.
-                          irAPanel("module");
-                        }}
-                        onToggleVisible={(v) => toggleVisible(m.id, v)}
-                        onDelete={() => setPorBorrar(m)}
-                      />
-                    </div>
-                  ))}
-                  <Gutter indice={modules.length} onAdd={addModule} />
-                </div>
-              </SortableContext>
-            </DndContext>
-          )}
-
-          {/*
-            Nivel de DOCUMENTO, separado del nivel de bloque por un filete. No
-            son hermanos de "Secciones": cambian la invitacion entera.
-          */}
-          <div className="mt-auto space-y-0.5 border-t pt-3">
-            {PANELES_DOC.filter(
-              (p) => p.id !== "guests" || invitation.rsvp_mode === "guest_list",
-            ).map((p) => {
-              const Icon = p.icon;
-              const activo = panel === p.id;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => irAPanel(p.id)}
-                  aria-current={activo ? "true" : undefined}
-                  className={cn(
-                    "flex h-11 w-full items-center gap-2.5 rounded-[var(--ed-radius-sm)] px-2.5 text-left",
-                    "text-[length:var(--ed-text-sm)] tracking-(--ed-tracking-sm)",
-                    "transition-colors duration-(--ed-fast) focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                    activo
-                      ? "bg-muted font-(--ed-weight-medium) text-foreground"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" aria-hidden />
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-
-        {/* Canvas: el protagonista. Antes vivia a la derecha, con un parrafo
-            gris encima que decia "Vista previa en tiempo real". */}
-        <main className="flex min-h-[60svh] min-w-0 flex-1 flex-col overflow-y-auto bg-muted/40 p-4 max-lg:pb-[calc(var(--ed-barra-movil)+1rem)] lg:min-h-0">
-          <PreviewPane
-            modules={modules}
-            theme={theme}
-            eventDate={invitation.event_date}
-            onStickersChange={(stickers) => updateTheme({ stickers })}
-            // El arrastre escribe por la MISMA vía que los paneles
-            // (`updateConfig`), así que hereda el autoguardado, el bloqueo
-            // optimista y el deshacer sin nada nuevo. `claveDeFusion` funde por
-            // `config:<id>:textOffsets`, así que un arrastre entero es UN paso
-            // de ⌘Z y no uno por píxel.
-            onOffset={(moduloId, bloque, d) => {
-              const m = modules.find((x) => x.id === moduloId);
-              if (!m) return;
-              const patch = parcheDeDesplazamiento(
-                m.module_type === "hero",
-                (m.config as Record<string, unknown>)?.textOffsets,
-                bloque,
-                d,
-              );
-              // `null` = bloque que no encaja con la forma del módulo. Se
-              // ignora en vez de escribir en un sitio inventado.
-              if (patch) updateConfig(moduloId, patch);
-            }}
-          />
-        </main>
-
-        {/* Inspector: contextual a lo que hay seleccionado. */}
-        <aside
-          aria-label="Propiedades"
-          data-hoja={
-            hojaMovil && hojaMovil !== "secciones" ? "abierta" : "cerrada"
-          }
-          className={cn(
-            "flex shrink-0 flex-col border-t lg:w-[380px] lg:overflow-y-auto lg:border-t-0 lg:border-l",
-            // Mismo tratamiento que el riel: la MISMA caja, movida por CSS.
-            "max-lg:fixed max-lg:inset-x-0 max-lg:bottom-(--ed-barra-movil) max-lg:z-40",
-            "max-lg:max-h-[60svh] max-lg:overflow-y-auto max-lg:rounded-t-2xl",
-            "max-lg:border max-lg:bg-background max-lg:shadow-2xl",
-            "max-lg:transition-transform max-lg:duration-200 max-lg:ease-out",
-            "max-lg:data-[hoja=cerrada]:pointer-events-none max-lg:data-[hoja=cerrada]:translate-y-[calc(100%+var(--ed-barra-movil))]",
-          )}
-        >
-          <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3.5">
-            {panel === "module" && selected ? (
-              <>
-                {(() => {
-                  const Icon = MODULE_REGISTRY[selected.module_type].Icon;
-                  return <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />;
-                })()}
-                <span className="text-[length:var(--ed-text-sm)] font-(--ed-weight-semibold) tracking-(--ed-tracking-sm)">
-                  {MODULE_META[selected.module_type].label}
-                </span>
-              </>
-            ) : (
-              <span className="text-[length:var(--ed-text-sm)] font-(--ed-weight-semibold) tracking-(--ed-tracking-sm)">
-                {PANELES_DOC.find((p) => p.id === panel)?.label ?? "Propiedades"}
-              </span>
-            )}
-          </div>
-
-          <div className="space-y-4 p-3.5">
-            {panel === "module" &&
-              (selected ? (
-                <>
-                  {selected.module_type === "rsvp" &&
-                    invitation.rsvp_mode === "guest_list" && (
-                      <Button
-                        variant="outline"
-                        size="touch"
-                        className="w-full"
-                        onClick={() => setPanel("guests")}
-                      >
-                        Gestionar invitados
-                      </Button>
-                    )}
-                  <ModuleConfigEditor
-                    moduleType={selected.module_type}
-                    config={selected.config}
-                    onChange={(patch) => updateConfig(selected.id, patch)}
-                    ctx={uploadCtx}
-                    animationDefaults={theme.animation}
-                    eventDate={invitation.event_date}
-                    onSetEventDate={(iso) => updateSettings({ event_date: iso })}
-                    rsvpMode={invitation.rsvp_mode}
-                  />
-                </>
-              ) : (
-                <EmptyState
-                  icon={<MousePointerClickIcon />}
-                  title="Nada seleccionado"
-                  description="Elige una sección de la izquierda para editarla."
-                  className="py-8"
-                />
-              ))}
-
-            {panel === "theme" && (
-              <ThemePanel
-                theme={theme}
-                onChange={updateTheme}
-                warnings={detectAnimationConflicts(theme, modules)}
-                onApplyAnimationToAll={applyAnimationToAll}
-                ctx={uploadCtx}
-              />
-            )}
-
-            {panel === "guests" && invitation.rsvp_mode === "guest_list" && (
-              <GuestManager
-                invitationId={invitation.id}
-                siteUrl={siteUrl}
-                eventTitle={invitation.title}
-              />
-            )}
-
-            {panel === "settings" && (
-              <>
-                <SettingsPanel invitation={invitation} onChange={updateSettings} />
-                <RsvpModeToggle
-                  invitationId={invitation.id}
-                  mode={invitation.rsvp_mode}
-                  refresh={false}
-                  onChange={(m) => {
-                    aplicar({ type: "updateSettings", patch: { rsvp_mode: m } });
-                    if (m === "guest_list") setPanel("guests");
-                  }}
-                />
-                {/* Bajan aqui desde la barra superior: se consultan al
-                    compartir, no en cada tecla. */}
-                <Separator />
-                <PublishControls
-                  username={username}
-                  slug={invitation.slug}
-                  isPublished={invitation.is_published}
-                  dirty={dirty}
-                />
-                {invitation.is_published && (
-                  <VanitySlugCard invitationId={invitation.id} />
-                )}
-              </>
-            )}
-          </div>
-        </aside>
-
-        {/*
-          Velo de la hoja. Sólo < 768 y sólo cuando hay una abierta: deja ver el
-          lienzo detrás —que es el punto de todo esto— y cierra al tocarlo.
-        */}
-        {hojaMovil && (
-          <button
-            type="button"
-            aria-label="Cerrar panel"
-            onClick={() => setHojaMovil(null)}
-            className="fixed inset-0 z-30 bg-black/25 lg:hidden"
-          />
-        )}
-
-        {/*
-          BARRA MÓVIL (< 1024). La que hubo antes se quitó porque mezclaba tres
-          niveles —documento, bloque y un MODO («Vista previa»)— y porque cinco
-          `flex-1` se truncaban a 420 px. Las dos cosas están atendidas:
-          · «Vista previa» ya no es una pestaña: el lienzo está SIEMPRE visible,
-            así que desaparece el nivel que sobraba.
-          · No se trunca porque cada entrada apila icono sobre etiqueta de 10 px
-            en vez de ponerlos en fila — verificado por medición, no a ojo.
-
-          Las entradas salen de las MISMAS fuentes que el escritorio
-          (`PANELES_DOC`, con su filtro de `guest_list`), así que no hay una
-          lista paralela que se quede vieja cuando se añada un panel.
-        */}
-        <nav
-          aria-label="Secciones y paneles"
-          className="fixed inset-x-0 bottom-0 z-50 flex h-(--ed-barra-movil) border-t bg-background lg:hidden"
-        >
-          {[
-            { id: "secciones" as const, label: "Secciones", icon: LayersIcon },
-            {
-              id: "module" as const,
-              label: selected
-                ? MODULE_META[selected.module_type].label
-                : "Bloque",
-              icon: selected
-                ? MODULE_REGISTRY[selected.module_type].Icon
-                : LayersIcon,
-            },
-            ...PANELES_DOC.filter(
-              (p) => p.id !== "guests" || invitation.rsvp_mode === "guest_list",
-            ),
-          ].map((p) => {
-            const Icon = p.icon;
-            const activo = hojaMovil === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                aria-current={activo ? "true" : undefined}
-                // Toca la activa y se cierra: así se vuelve al lienzo entero
-                // sin buscar una «X».
-                onClick={() =>
-                  setHojaMovil((actual) => {
-                    if (actual === p.id) return null;
-                    if (p.id !== "secciones") setPanel(p.id as PanelId);
-                    return p.id;
-                  })
-                }
-                className={cn(
-                  // `min-h-11` = 44 px: el mínimo táctil. Hoy 37 de 39
-                  // controles del editor están por debajo, y está medido que
-                  // NO es cosa del ancho (a 1400 px son los mismos 37).
-                  "flex min-h-11 flex-1 flex-col items-center justify-center gap-1 px-1",
-                  "text-[length:var(--ed-text-micro)] transition-colors",
-                  activo
-                    ? "font-(--ed-weight-semibold) text-foreground"
-                    : "text-muted-foreground",
-                )}
-              >
-                <Icon className="size-5 shrink-0" aria-hidden />
-                <span className="max-w-full truncate">{p.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-    </div>
+      <SeleccionProvider
+        idInicial={initialModules[0]?.id ?? null}
+        apiRef={seleccionRef}
+      >
+        <LienzoProvider>
+          <EditorLayout />
+        </LienzoProvider>
+      </SeleccionProvider>
+    </DocumentoProvider>
   );
 }

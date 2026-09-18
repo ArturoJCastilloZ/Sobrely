@@ -10,6 +10,7 @@ import { MODULE_META } from "@/lib/modules/types";
 import type { EditorModule } from "@/lib/invitations/editor-types";
 import type { ThemeConfig } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
+import { useLienzo, ZOOM_MAX, ZOOM_MIN } from "@/lib/editor/contexto-lienzo";
 import { ModulePreview } from "@/components/modules/registry";
 import { ThemeScope } from "@/components/theme/theme-scope";
 import { StickerEditorLayer } from "@/components/editor/sticker-editor-layer";
@@ -59,8 +60,22 @@ export function PreviewPane({
         return next;
       }),
   });
-  const [view, setView] = useState<"mobile" | "desktop">("mobile");
-  const desktop = view === "desktop";
+  /*
+   * `vista`, `zoom` y `seccionActual` SUBEN al contexto del lienzo (Fase 1).
+   *
+   * Vivian aqui como `useState` locales, y eso los dejaba fuera del alcance de
+   * cualquier otro control: la barra de estado inferior de la Fase 8 y los
+   * atajos ⌘+/⌘− los necesitan, y sobre todo los necesita la capa de seleccion
+   * de la Fase 2 — un recuadro dibujado sobre un lienzo escalado por
+   * `transform` tiene que saber por cuanto esta escalado, o queda desplazado.
+   *
+   * Lo que NO sube es la MEDICION (`marco`, `natural`, `ajustarAlAncho`): eso
+   * depende del DOM de este componente y sacarlo seria acoplar el contexto a un
+   * arbol concreto.
+   */
+  const { vista, setVista, zoom, ajustaZoom, seccionActual, setSeccionActual } =
+    useLienzo();
+  const desktop = vista === "desktop";
 
   /*
    * Zoom del lienzo.
@@ -87,9 +102,6 @@ export function PreviewPane({
    * a mano; si no, al alejar quedaría un hueco muerto debajo y al acercar el
    * contenido se montaría sobre el paginador.
    */
-  const ZOOM_MIN = 0.5;
-  const ZOOM_MAX = 1.5;
-  const [zoom, setZoom] = useState(1);
   const marco = useRef<HTMLDivElement | null>(null);
   const [natural, setNatural] = useState({ ancho: 0, alto: 0 });
 
@@ -110,8 +122,6 @@ export function PreviewPane({
   }, []);
 
   const pctZoom = Math.round(zoom * 100);
-  const ajustaZoom = (z: number) =>
-    setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 100) / 100)));
 
   /**
    * "Ajustar al ancho": el zoom que hace que el marco quepe justo en su
@@ -149,7 +159,6 @@ export function PreviewPane({
   // se llamaba sobre nada — la etiqueta avanzaba y la pantalla no se movia. El
   // DOM ya tiene la verdad; preguntarle no puede quedar obsoleto.
   const canvas = useRef<HTMLDivElement | null>(null);
-  const [actual, setActual] = useState(0);
 
   const leerAnclas = useCallback(
     () =>
@@ -179,14 +188,14 @@ export function PreviewPane({
             mejor = nodos.indexOf(e.target as HTMLElement);
           }
         }
-        if (mejor >= 0) setActual(mejor);
+        if (mejor >= 0) setSeccionActual(mejor);
       },
       { threshold: [0.1, 0.25, 0.5, 0.75, 1] },
     );
     nodos.forEach((n) => obs.observe(n));
     return () => obs.disconnect();
     // Se rearma cuando cambia la lista visible: si no, observaría nodos muertos.
-  }, [clavesVisibles, leerAnclas]);
+  }, [clavesVisibles, leerAnclas, setSeccionActual]);
 
   function irA(i: number) {
     const nodos = leerAnclas();
@@ -201,7 +210,7 @@ export function PreviewPane({
     // (el `smooth` nativo y mi animacion por igual) y funcionaba todo lo
     // sincrono. Era el entorno de medicion, no el codigo.
     destino.scrollIntoView({ behavior: "smooth", block: "start" });
-    setActual(n);
+    setSeccionActual(n);
   }
 
   // Re-play the entrance animation in the preview when any animation setting
@@ -251,12 +260,12 @@ export function PreviewPane({
           <button
             key={v}
             type="button"
-            onClick={() => setView(v)}
-            aria-pressed={view === v}
+            onClick={() => setVista(v)}
+            aria-pressed={vista === v}
             className={cn(
               "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors duration-(--ed-fast)",
               "focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-              view === v
+              vista === v
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:bg-muted/70",
             )}
@@ -453,7 +462,7 @@ export function PreviewPane({
             */}
             <button
               type="button"
-              onClick={() => setZoom(1)}
+              onClick={() => ajustaZoom(1)}
               aria-label={`Zoom al ${pctZoom} por ciento. Restablecer al 100 por ciento`}
               className="w-11 shrink-0 rounded px-1 text-center text-[length:var(--ed-text-mini)] text-muted-foreground tabular-nums hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
@@ -474,8 +483,8 @@ export function PreviewPane({
               variant="ghost"
               size="icon-sm"
               aria-label="Sección anterior"
-              disabled={actual === 0}
-              onClick={() => irA(actual - 1)}
+              disabled={seccionActual === 0}
+              onClick={() => irA(seccionActual - 1)}
             >
               <ChevronLeftIcon />
             </Button>
@@ -483,16 +492,16 @@ export function PreviewPane({
               className="min-w-36 px-1 text-center text-[length:var(--ed-text-mini)] text-muted-foreground"
               aria-live="polite"
             >
-              {MODULE_META[visible[actual]?.module_type ?? visible[0].module_type].label}
+              {MODULE_META[visible[seccionActual]?.module_type ?? visible[0].module_type].label}
               {" · "}
-              {actual + 1} de {visible.length}
+              {seccionActual + 1} de {visible.length}
             </span>
             <Button
               variant="ghost"
               size="icon-sm"
               aria-label="Sección siguiente"
-              disabled={actual >= visible.length - 1}
-              onClick={() => irA(actual + 1)}
+              disabled={seccionActual >= visible.length - 1}
+              onClick={() => irA(seccionActual + 1)}
             >
               <ChevronRightIcon />
             </Button>
