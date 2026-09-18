@@ -6,6 +6,8 @@ import {
   SECTION_ALIGN_LABELS,
   SECTION_BLEEDS,
   SECTION_BLEED_LABELS,
+  SECTION_DIVIDERS,
+  SECTION_DIVIDER_LABELS,
   SECTION_FRAMES,
   SECTION_FRAME_LABELS,
 } from "@/lib/modules/types";
@@ -113,6 +115,34 @@ export function ComposicionDeSeccion({
             {SECTION_FRAMES.map((f) => (
               <SelectItem key={f} value={f}>
                 {SECTION_FRAME_LABELS[f]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* El unico ELEMENTO nuevo del rediseno (Grupo B del §6). Va aqui y no
+          en un panel «Elementos» propio: la Fase 7 rehace este panel entero
+          por tipo de seleccion, asi que inventar ahora un panel que esa fase
+          va a mover seria trabajo tirado — lo dice el propio plan al adelantar
+          la 7 justo despues de la 4. */}
+      <div className="space-y-1.5">
+        <Label>Separador al pie</Label>
+        <Select
+          value={val("divider", "none")}
+          onValueChange={(v) => (v === null ? undefined : onChange({ divider: v }))}
+        >
+          <SelectTrigger>
+            <SelectValue>
+              {(v: string | null) =>
+                v ? SECTION_DIVIDER_LABELS[v as keyof typeof SECTION_DIVIDER_LABELS] : null
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {SECTION_DIVIDERS.map((d) => (
+              <SelectItem key={d} value={d}>
+                {SECTION_DIVIDER_LABELS[d]}
               </SelectItem>
             ))}
           </SelectContent>

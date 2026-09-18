@@ -73,6 +73,28 @@ export const SECTION_FRAME_LABELS: Record<SectionFrame, string> = {
   inset: "Marco interior",
 };
 
+/**
+ * Separador al PIE de la seccion (Grupo B del §6: «elementos baratos y de valor
+ * real»).
+ *
+ * Es el unico elemento del brief que no existia ya en el motor. El resto del
+ * Grupo A —imagen, marco, composicion de portada, stickers, fondo— solo habia
+ * que exponerlo.
+ *
+ * `none` por defecto y NO emite nodo: es el mismo patron que `align: center` y
+ * `imageRatio: "auto"`, probado tres veces en esta base. Lo defiende la prueba
+ * de identidad, que compara el md5 del render contra la captura tomada ANTES
+ * de anadir el campo.
+ */
+export const SECTION_DIVIDERS = ["none", "line", "ornament"] as const;
+export type SectionDivider = (typeof SECTION_DIVIDERS)[number];
+
+export const SECTION_DIVIDER_LABELS: Record<SectionDivider, string> = {
+  none: "Sin separador",
+  line: "Una linea",
+  ornament: "Linea con adorno",
+};
+
 export const SECTION_BLEEDS = ["contained", "full"] as const;
 export type SectionBleed = (typeof SECTION_BLEEDS)[number];
 
@@ -261,6 +283,13 @@ const layoutShape = {
    */
   freeMove: z.boolean().default(false),
   textOffsets: z.array(desplazamientoSchema).max(6).default([]),
+  /**
+   * Separador al pie. `.catch()` y no solo `.default()`: si llegara un valor
+   * que el enum no conoce, `.default()` no lo rescata —solo cubre el campo
+   * AUSENTE— y la config del modulo tendria que pasar por el camino lento.
+   * Con `.catch()` cae al defecto sin ruido, que para un adorno es lo correcto.
+   */
+  divider: z.enum(SECTION_DIVIDERS).default("none").catch("none"),
 };
 
 // ---- Slot de media (Fase 11 · P2) ----------------------------------------

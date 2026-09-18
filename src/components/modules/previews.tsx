@@ -7,6 +7,7 @@ import type {
   HeroVariant,
   SectionAlign,
   SectionBleed,
+  SectionDivider,
   SectionFrame,
   MediaConfig,
   MediaShape,
@@ -228,6 +229,7 @@ function Section({
   align = "center",
   bleed = "contained",
   frame = "none",
+  divider = "none",
   media,
   className,
   freeMove = false,
@@ -240,6 +242,8 @@ function Section({
   align?: SectionAlign;
   bleed?: SectionBleed;
   frame?: SectionFrame;
+  /** Separador al pie. `none` no emite NADA (ni un nodo). */
+  divider?: SectionDivider;
   media?: MediaConfig;
   className?: string;
   /** Movimiento libre del texto (el mismo interruptor que la portada). */
@@ -365,9 +369,59 @@ function Section({
           conMedia && media!.position === "background" && "relative",
         )}
       >
-        {contenido}
+        {/* Con `none` el hijo es EXACTAMENTE `contenido`, una sola posicion,
+            igual que antes de existir este campo.
+            
+            No vale `{contenido}{cond ? <Separador/> : null}`: aunque el `null`
+            no pinte nada, anade una POSICION al arbol de React y eso corre los
+            `useId` de los `<Label>`/`<Input>`. `rsvp` es el unico modulo con
+            formulario y su md5 se movia — medido, no supuesto: sin el cambio
+            42dc3c75…, con el 'ef85e574…', y el HTML no traia separador alguno.
+            Lo cazo la prueba de identidad. */}
+        {divider === "none" ? (
+          contenido
+        ) : (
+          <>
+            {contenido}
+            <Separador variante={divider} />
+          </>
+        )}
       </div>
     </section>
+  );
+}
+
+/**
+ * El separador al pie de una seccion.
+ *
+ * Hereda el color por `--inv-primary` con el MISMO `color-mix` al 35 % que el
+ * marco. Un valor propio habria hecho que dos adornos de la misma seccion no
+ * combinaran, y el color del marco ya esta afinado contra los 20 packs.
+ *
+ * `aria-hidden` porque no aporta contenido: quien navega con lector de pantalla
+ * no gana nada oyendo «imagen» entre dos secciones.
+ */
+function Separador({ variante }: { variante: Exclude<SectionDivider, "none"> }) {
+  const tinta = "color-mix(in srgb, var(--inv-primary, #888) 35%, transparent)";
+  if (variante === "line") {
+    return (
+      <hr
+        aria-hidden
+        className="mx-auto mt-8 w-16 border-0 border-t @2xl/inv:mt-10"
+        style={{ borderColor: tinta }}
+      />
+    );
+  }
+  return (
+    <div
+      aria-hidden
+      className="mt-8 flex items-center justify-center gap-3 @2xl/inv:mt-10"
+      style={{ color: tinta }}
+    >
+      <span className="h-px w-10 bg-current" />
+      <span className="h-1.5 w-1.5 rotate-45 bg-current" />
+      <span className="h-px w-10 bg-current" />
+    </div>
   );
 }
 
@@ -589,6 +643,7 @@ function WelcomePreviewBase({ config }: { config: WelcomeConfig }) {
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       className="text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -677,6 +732,7 @@ function CountdownPreviewBase({
         bleed={config.bleed}
         media={config.media}
         frame={config.frame}
+      divider={config.divider}
         tint
         className="flex flex-col items-center gap-4 text-center"
       >
@@ -698,6 +754,7 @@ function CountdownPreviewBase({
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       tint
       className="flex flex-col items-center gap-4 text-center"
     >
@@ -738,6 +795,7 @@ function MapPreviewBase({
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       className="flex flex-col items-center gap-2 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -794,6 +852,7 @@ function GalleryPreviewBase({
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       wide
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -860,6 +919,7 @@ function VideoPreviewBase({
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       wide
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -904,6 +964,7 @@ function ItineraryPreviewBase({
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       tint
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -958,6 +1019,7 @@ function SignaturesPreviewBase({ config }: { config: SignaturesConfig }) {
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       className="flex flex-col items-center gap-3 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -1010,6 +1072,7 @@ function DresscodePreviewBase({
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       className="flex flex-col items-center gap-3 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -1063,6 +1126,7 @@ function GiftsPreviewBase({
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       tint
       className="flex flex-col items-center gap-3 text-center"
     >
@@ -1116,6 +1180,7 @@ function MusicPreviewBase({
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       className="flex flex-col items-center gap-2 text-center"
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
@@ -1160,6 +1225,7 @@ function RsvpPreviewBase({
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
+      divider={config.divider}
       tint
       className="flex flex-col items-center gap-4"
     >
