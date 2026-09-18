@@ -1185,6 +1185,34 @@ obliga a pasar por `deriveAccentText(...)` o se rompen los 212 casos bajo AA.
 > coincidencia: lo heredan los once, y `welcome`, `countdown` y `rsvp` son
 > **Free**. Se cerró la fuga ANTES de abrir la superficie, en su propio commit.
 >
+> **⚠️ CORRECCIÓN al commit `2ccbd25`, que dice «cierra la fuga».** Cierra la
+> fuga **al publicar**, que es donde el producto pone su gate. No cierra otra
+> anterior y más amplia: **`canPublishInvitation` sólo corre al publicar**
+> (`actions.ts:242`) y en el fulfillment. `saveEditor` comprueba sesión y
+> propiedad y nada más — ni `is_published` ni plan. Medido leyendo la función.
+>
+> O sea que un usuario Free puede publicar limpio y DESPUÉS añadir arte propio,
+> que queda servido indefinidamente. **No lo introduce este trabajo:** el
+> agujero es idéntico para `theme.backgroundImage`, los stickers y la
+> decoración, las tres superficies que el gate ya miraba, y `saveEditor` escribe
+> `theme_config` por la misma vía. El slot de media es una cuarta puerta al
+> mismo hueco, no un hueco nuevo.
+>
+> Cerrarlo es **decisión del dev**: exigiría rechazar el guardado o despublicar
+> sobre invitaciones de clientes reales. Queda anotado, no tocado.
+>
+> **CENSO contra producción (2026-09-17, sólo lectura), que descartó dos sustos:**
+>
+> | | Medido |
+> |---|---|
+> | Plantillas | 65; **2** con media renderizable, **las dos con ruta relativa** → `esArteDeLaApp` las exonera, no cobran |
+> | Módulos en invitaciones vivas | 47; **0** con media renderizable |
+>
+> Conclusión: el gate nuevo **no cambia el veredicto de ninguna invitación ni
+> plantilla actual**. Era la regresión de la `0030` la que había que descartar
+> —cuando el arte del catálogo mandó las 50 detrás de Celebración— y no se
+> repite.
+>
 > **Deuda abierta, y es del dev:** `hero.imageUrl` («Imagen de fondo») sigue
 > dejando publicar arte propio en plan Free. Es una fuga que YA existía.
 > Cerrarla puede empezar a exigir Celebración a invitaciones vivas que hoy
