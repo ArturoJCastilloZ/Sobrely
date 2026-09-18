@@ -167,6 +167,26 @@ export function PreviewPane({
   /** Envoltura estable del lienzo: no se remonta con `replayKey`. */
   const lienzo = useRef<HTMLDivElement | null>(null);
 
+  /*
+   * Generacion por modulo, para forzar un remonte tras editar su texto.
+   *
+   * Hace falta por un conflicto REAL entre React y `contentEditable`, y costo
+   * encontrarlo porque la suite estaba verde: al entrar en edicion, la capa
+   * aplana el bloque con `textContent = ...`, y eso DESTRUYE nodos del DOM que
+   * React posee. Sus fibras siguen apuntando a nodos ya desprendidos, asi que
+   * en el siguiente render React actualiza nodos que ya no estan en la pagina.
+   *
+   * Sintoma medido: escribir funcionaba —el documento cambiaba y el panel lo
+   * reflejaba— pero DESHACER no repintaba el lienzo. El caso mas claro es la
+   * portada animada, cuyo titulo es un `<TextReveal>` partido en un `<span>`
+   * por letra: al aplanarlo desaparecen todos.
+   *
+   * Cambiar la `key` del modulo editado obliga a React a tirar el arbol viejo y
+   * construirlo de cero desde `config`, que es la verdad. Se remonta UN modulo
+   * y solo al confirmar una edicion, no en cada tecla.
+   */
+  const [generacion, setGeneracion] = useState<Record<string, number>>({});
+
   const leerAnclas = useCallback(
     () =>
       Array.from(
@@ -388,7 +408,10 @@ export function PreviewPane({
               // hidden). Reveal on mount instead so content is always visible.
               const animation = { ...resolved, trigger: "load" as const };
               return (
-                <div key={m.id} data-modulo={m.id}>
+                <div
+                  key={`${m.id}:${generacion[m.id] ?? 0}`}
+                  data-modulo={m.id}
+                >
                   <AnimatedModule animation={animation} index={i}>
                     <ModulePreview
                       moduleType={m.module_type}
@@ -402,7 +425,14 @@ export function PreviewPane({
               );
             })}
           </div>
-          <CapaDeSeleccion contenedor={lienzo} modules={visible} onTexto={onTexto} />
+          <CapaDeSeleccion
+            contenedor={lienzo}
+            modules={visible}
+            onTexto={(moduloId, campo, valor) => {
+              onTexto?.(moduloId, campo, valor);
+              setGeneracion((g) => ({ ...g, [moduloId]: (g[moduloId] ?? 0) + 1 }));
+            }}
+          />
           </div>
         )}
         {onStickersChange && (
