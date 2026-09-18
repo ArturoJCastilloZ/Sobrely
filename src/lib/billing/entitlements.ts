@@ -10,6 +10,7 @@ import {
   planHasFeature,
 } from "@/lib/billing/plans";
 import { parseTheme } from "@/lib/theme/theme";
+import { urlDelSlotDeMedia } from "@/lib/billing/arte-del-slot-de-media";
 import { esArteDeLaApp } from "@/lib/theme/arte";
 import { isThemePackPremium } from "@/lib/theme/theme-packs";
 
@@ -211,12 +212,11 @@ export async function canPublishInvitation(
 
   const { data: mods } = await supabase
     .from("invitation_modules")
-    .select("module_type, is_visible")
+    .select("module_type, is_visible, config")
     .eq("invitation_id", invitationId);
 
-  const visible = (mods ?? [])
-    .filter((m) => m.is_visible !== false)
-    .map((m) => m.module_type as ModuleType);
+  const visibles = (mods ?? []).filter((m) => m.is_visible !== false);
+  const visible = visibles.map((m) => m.module_type as ModuleType);
 
   const premiumModulesUsed = visible.filter((m) => !planAllowsModule(plan, m));
 
@@ -244,7 +244,21 @@ export async function canPublishInvitation(
   const usesCustomArt =
     usaArtePropio(parsedTheme.backgroundImage?.url) ||
     (parsedTheme.stickers ?? []).some((s) => usaArtePropio(s.url)) ||
-    usaArtePropio(parsedTheme.decoration?.imageUrl);
+    usaArtePropio(parsedTheme.decoration?.imageUrl) ||
+    // El slot de imagen de las secciones. Se suma AQUI y no en otro gate
+    // porque es la misma capacidad que se vende: subir arte propio. Sin esto,
+    // exponer el slot en el editor regalaria `custom_art` a los tres modulos
+    // del plan Free que lo heredan (`welcome`, `countdown`, `rsvp`).
+    //
+    // Solo cuenta lo que el modulo RENDERIZA: `urlDelSlotDeMedia` lee por el
+    // esquema y exige que la posicion no sea `none`, igual que el renderer.
+    // Y sigue pasando por `usaArtePropio`, asi que el arte que sirve la app
+    // —las rutas relativas de las 50 plantillas— no cobra nada.
+    visibles.some((m) =>
+      usaArtePropio(
+        urlDelSlotDeMedia(m.module_type as ModuleType, m.config),
+      ),
+    );
   const customArtGated = usesCustomArt && !planHasFeature(plan, "custom_art");
 
   // El modo lista de invitados NO gatea la publicación: está disponible en
