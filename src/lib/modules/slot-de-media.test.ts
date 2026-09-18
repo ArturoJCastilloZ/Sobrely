@@ -109,11 +109,21 @@ describe("el velo del hero deja de estar hardcodeado", () => {
   });
 
   it("el gradiente usa el valor de config, no un número escrito a mano", () => {
-    // Hasta el SIGUIENTE `export function`, y no hasta el primer `\n}`: ese
-    // cierra el desestructurado de los props y dejaba el cuerpo fuera del
-    // recorte. Tercera vez esta sesión que un slice mal anclado miente.
-    const i = src.indexOf("export function HeroPreview");
-    const cuerpo = src.slice(i, src.indexOf("export function", i + 20));
+    // Hasta la SIGUIENTE declaración de nivel superior, y no hasta el primer
+    // `\n}`: ese cierra el desestructurado de los props y dejaba el cuerpo
+    // fuera del recorte. Tercera vez esta sesión que un slice mal anclado
+    // miente.
+    //
+    // El ancla dejó de ser `export function HeroPreview` cuando los previews
+    // pasaron a exportarse memoizados (`const HeroPreview = memo(Base)`). Y se
+    // AFIRMA que existe: con el ancla rota el recorte queda vacío, y sobre una
+    // cadena vacía el `not.toContain` de abajo pasa — o sea que media guarda
+    // daba un verde falso justo cuando había dejado de mirar nada.
+    const i = src.indexOf("function HeroPreviewBase(");
+    expect(i, "no se encontró el cuerpo de HeroPreview").toBeGreaterThan(-1);
+    const fin = src.indexOf("\nfunction ", i + 20);
+    expect(fin, "no se encontró el final del cuerpo").toBeGreaterThan(-1);
+    const cuerpo = src.slice(i, fin);
     expect(cuerpo).toContain("config.overlay");
     expect(cuerpo).not.toContain("rgba(0,0,0,.45)");
   });

@@ -392,7 +392,7 @@ const HERO_TEXTO_CLASSES: Record<HeroVariant, string> = {
 const desplazamientoStyle = (config: HeroConfig, bloque: HeroBloque) =>
   estiloDeDesplazamiento(config.freeMove, config.textOffsets[bloque]);
 
-export function HeroPreview({
+function HeroPreviewBase({
   config,
   animate = false,
 }: {
@@ -552,7 +552,7 @@ export function HeroPreview({
 
 // ---- Welcome --------------------------------------------------------------
 
-export function WelcomePreview({ config }: { config: WelcomeConfig }) {
+function WelcomePreviewBase({ config }: { config: WelcomeConfig }) {
   return (
     <Section
       align={config.align}
@@ -577,7 +577,7 @@ export function WelcomePreview({ config }: { config: WelcomeConfig }) {
 
 // ---- Countdown ------------------------------------------------------------
 
-export function CountdownPreview({
+function CountdownPreviewBase({
   config,
   eventDate = "",
   editorHint = false,
@@ -688,7 +688,7 @@ export function CountdownPreview({
 
 // ---- Map ------------------------------------------------------------------
 
-export function MapPreview({
+function MapPreviewBase({
   config,
   editorHint = false,
 }: {
@@ -748,7 +748,7 @@ export function MapPreview({
 
 // ---- Gallery --------------------------------------------------------------
 
-export function GalleryPreview({
+function GalleryPreviewBase({
   config,
   animate = false,
   editorHint = false,
@@ -815,7 +815,7 @@ export function toEmbedUrl(url: string): string {
   return "";
 }
 
-export function VideoPreview({
+function VideoPreviewBase({
   config,
   editorHint = false,
 }: {
@@ -857,7 +857,7 @@ export function VideoPreview({
 
 // ---- Itinerary ------------------------------------------------------------
 
-export function ItineraryPreview({
+function ItineraryPreviewBase({
   config,
   animate = false,
   editorHint = false,
@@ -921,7 +921,7 @@ export function ItineraryPreview({
  * id de la invitación, así que la página pública lo despacha aparte — igual
  * que el RSVP.
  */
-export function SignaturesPreview({ config }: { config: SignaturesConfig }) {
+function SignaturesPreviewBase({ config }: { config: SignaturesConfig }) {
   return (
     <Section
       align={config.align}
@@ -965,7 +965,7 @@ export function SignaturesPreview({ config }: { config: SignaturesConfig }) {
 
 // ---- Dress code -----------------------------------------------------------
 
-export function DresscodePreview({
+function DresscodePreviewBase({
   config,
   editorHint = false,
 }: {
@@ -1019,7 +1019,7 @@ export function DresscodePreview({
 
 // ---- Gifts ----------------------------------------------------------------
 
-export function GiftsPreview({
+function GiftsPreviewBase({
   config,
   animate = false,
 }: {
@@ -1072,7 +1072,7 @@ export function GiftsPreview({
 
 // ---- Music ----------------------------------------------------------------
 
-export function MusicPreview({
+function MusicPreviewBase({
   config,
   editorHint = false,
 }: {
@@ -1114,7 +1114,7 @@ export function MusicPreview({
 
 // ---- RSVP (editor preview, non-interactive) -------------------------------
 
-export function RsvpPreview({
+function RsvpPreviewBase({
   config,
   interactive = false,
   editorHint = false,
@@ -1195,3 +1195,30 @@ export function RsvpPreview({
 
 // El despacho por tipo vive en `registry.tsx`: un solo lugar por modulo, y
 // olvidar una entrada es un error de TypeScript en vez de un modulo invisible.
+
+/*
+ * ---- Exportaciones memoizadas -------------------------------------------
+ *
+ * Los doce Preview son PUROS respecto de sus props: derivan todo de `config`
+ * mas un par de banderas. `CountdownPreview` tiene su propio `setInterval`,
+ * pero ese re-render es interno y `memo` no lo estorba.
+ *
+ * Esto SOLO sirve porque `ModulePreview` ya memoiza `parseConfig`: antes, la
+ * prop `config` cambiaba de identidad en cada render y la comparacion
+ * superficial fallaba siempre. El orden importa.
+ *
+ * Se exporta el envoltorio con el nombre de siempre, asi que ningun sitio de
+ * llamada cambia: `registry.tsx` sigue importando `HeroPreview`.
+ */
+export const HeroPreview = React.memo(HeroPreviewBase);
+export const WelcomePreview = React.memo(WelcomePreviewBase);
+export const CountdownPreview = React.memo(CountdownPreviewBase);
+export const MapPreview = React.memo(MapPreviewBase);
+export const GalleryPreview = React.memo(GalleryPreviewBase);
+export const VideoPreview = React.memo(VideoPreviewBase);
+export const ItineraryPreview = React.memo(ItineraryPreviewBase);
+export const SignaturesPreview = React.memo(SignaturesPreviewBase);
+export const DresscodePreview = React.memo(DresscodePreviewBase);
+export const GiftsPreview = React.memo(GiftsPreviewBase);
+export const MusicPreview = React.memo(MusicPreviewBase);
+export const RsvpPreview = React.memo(RsvpPreviewBase);

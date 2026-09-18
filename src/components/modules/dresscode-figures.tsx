@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import type { DresscodeLevel } from "@/lib/modules/types";
 
 type LevelInfo = {
@@ -216,7 +218,13 @@ function Figure({
   );
 }
 
-export function DresscodeFigures({ level }: { level: DresscodeLevel }) {
+/*
+ * Memoizado: es el auxiliar mas caro del modulo de vestimenta —pinta dos
+ * figuras de SVG a mano— y su unica prop es un string. O sea que la
+ * comparacion superficial acierta siempre que el nivel no cambie, que es
+ * casi siempre mientras se edita cualquier OTRA seccion.
+ */
+function DresscodeFigurasBase({ level }: { level: DresscodeLevel }) {
   if (level === "custom") return null;
   const info = DRESS_INFO[level];
   return (
@@ -230,3 +238,5 @@ export function DresscodeFigures({ level }: { level: DresscodeLevel }) {
     </div>
   );
 }
+
+export const DresscodeFigures = memo(DresscodeFigurasBase);

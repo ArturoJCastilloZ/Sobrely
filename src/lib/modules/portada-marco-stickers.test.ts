@@ -57,8 +57,14 @@ describe("P3 · variantes de portada", () => {
 
   it("el texto se pone blanco sólo cuando va SOBRE la foto", () => {
     const src = leer("../../components/modules/previews.tsx");
-    const i = src.indexOf("export function HeroPreview");
-    const cuerpo = src.slice(i, src.indexOf("export function", i + 20));
+    // Ancla afirmada, no supuesta: ver la nota larga en `slot-de-media.test.ts`.
+    // Con el ancla rota el recorte queda vacío y el `not.toContain` de abajo
+    // pasaría igual, dando un verde falso.
+    const i = src.indexOf("function HeroPreviewBase(");
+    expect(i, "no se encontró el cuerpo de HeroPreview").toBeGreaterThan(-1);
+    const fin = src.indexOf("\nfunction ", i + 20);
+    expect(fin, "no se encontró el final del cuerpo").toBeGreaterThan(-1);
+    const cuerpo = src.slice(i, fin);
     // Antes bastaba con que existiera `imageUrl`. En `split` y `editorial` la
     // foto NO está debajo del texto, así que blanco sobre la superficie clara
     // sería invisible — el bug de contraste que la Fase 0 vino a cerrar.
