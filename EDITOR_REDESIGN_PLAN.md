@@ -1170,8 +1170,31 @@ obliga a pasar por `deriveAccentText(...)` o se rompen los 212 casos bajo AA.
 ### FASE 4 · Imágenes y elementos — exponer lo que ya existe
 
 > **🟡 EN CURSO (2026-09-17).** Hecho: el gate de `custom_art`, el slot de
-> imagen en las 11 secciones y las miniaturas de portada. Falta: el panel
-> «Elementos» y la toolbar de imagen en el lienzo.
+> imagen en las 11 secciones, las miniaturas de portada y el **separador de
+> sección**. Falta sólo la **toolbar de imagen en el lienzo**, que depende de
+> una toolbar que aún no existe (la 3b-B/C sigue sin aprobar).
+>
+> **«Elementos» quedó en un solo elemento, y está medido.** El Grupo A del §6
+> —«ya existen, sólo hay que exponerlos»— está **entero**: imagen de sección y
+> composición de portada entraron en esta fase; marco, stickers y fondo ya
+> estaban expuestos desde antes. Del Grupo B quedaba el separador, y es el
+> **único elemento del brief que no existía en el motor**: cero coincidencias
+> de `divider`/`separador` en `src/lib` y `components/modules`.
+>
+> **No se creó `panel-elementos.tsx`.** La Fase 7 rehace este panel entero por
+> tipo de selección, y este plan adelanta la 7 justo después de la 4 «porque el
+> panel viejo se queda corto y sería trabajo tirado». Inventar ahora un panel
+> que la 7 va a mover es ese trabajo tirado. El control vive en el bloque de
+> sección que ya existe.
+>
+> **⚠️ Trampa nueva, y casi se cuela:** `{cond ? <X/> : null}` **no** es neutro
+> aunque no pinte nada — **añade una POSICIÓN al árbol de React**, y eso corre
+> los `useId` de los `<Label>`/`<Input>`. `rsvp` es el único módulo con
+> formulario y su render se movía: sin el cambio `42dc3c75…`, con él
+> `ef85e574…`, y el HTML **no traía separador alguno**. La forma correcta es
+> elegir entre `contenido` y un fragmento, para que el caso por defecto sea
+> literalmente el mismo hijo. Lo cazó la prueba de identidad; el razonamiento
+> «es sólo un `null`» no lo habría cazado nunca.
 >
 > **Dos archivos que este plan nombra MAL.** `composicion-de-seccion.tsx` vive
 > en `components/editor/`, no en `components/modules/`; y `config-editors.tsx`
