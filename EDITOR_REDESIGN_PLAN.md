@@ -1,7 +1,8 @@
 # Sobrely — Rediseño y evolución del EDITOR
 
 > **Estado:** FASES 1 ✅, 2 ✅ y 3a ✅ COMPLETADAS (2026-09-17, rama `skarlette/refactor-editor-fase1`).
-> **Siguiente: FASE 3b** (tipografía por bloque) — necesita tu decisión, ver abajo.
+> **FASE 3b — opción A (roving tabindex) CERRADA.** La tipografía por bloque
+> (opciones B/C) sigue sin aprobar: ver «FASE 3b» abajo.
 > Fases 4–10 esperando «APROBADO FASE N».
 > **Fecha del análisis:** 2026-09-17 · **Base medida:** `main @ b7f431b` (producción)
 > **Fuente canónica del encargo:** `~/.claude/plans/sobrely-editor-rediseno.md`
@@ -70,9 +71,9 @@ Commits de la rama, del más viejo al más nuevo:
 
 ### Lo que FALTA, y en qué orden
 
-**Fase 3 (en curso):** edición directa de texto + toolbar contextual.
-Y la deuda que la Fase 2 dejó explícita: **el recorrido por `Tab`/`Enter`** sobre
-los bloques del lienzo, que necesita un *roving tabindex* bien hecho.
+**Fase 3:** 3a (edición directa) y 3b-A (recorrido por teclado) CERRADAS. Queda
+la **toolbar tipográfica** —opciones B/C de la 3b—, que sigue sin aprobar porque
+exige campo nuevo y des-hardcodear el render de 18 invitaciones vivas.
 
 Después: 4 (imágenes y elementos) → 7 (panel contextual) → 5 (capas) →
 6 (drag & drop) → 8 (chrome y móvil) → 9 (plantillas, la única que puede
@@ -102,6 +103,13 @@ destruir datos de un cliente) → 10 (QA y migración).
    no las relajes. Y ojo: con el ancla rota, un `not.toContain` da **verde falso**.
 8. **`container-type: inline-size` hace que `cqw` mida la caja de CONTENIDO**, y
    el límite del arrastre es el CENTRO del bloque, no el bloque entero.
+
+9. **Medir el DOM del editor ANTES de que React hidrate da un falso negativo.**
+   Al cerrar la 3b-A, tres sondas seguidas dijeron «0 bloques con `tabindex`» —
+   incluso tras recargar— y el código SÍ estaba en el bundle servido. Bastó UNA
+   interacción real (un `hover`) para que aparecieran los 20. La sonda no medía
+   el efecto: medía una página sin hidratar. Antes de concluir «no funciona»,
+   interactuar primero, o comprobar que el componente ya está vivo.
 
 ---
 
@@ -1036,9 +1044,86 @@ en lo guardado, y la prueba de identidad byte a byte de la Fase 2 lo demostrarí
 - Render: `previews.tsx` tiene que dejar de hardcodear y pasar por un mapa de
   escala. Es el cambio con más riesgo de regresión visual de todo el rediseño.
 
-**Y queda pendiente de la Fase 2:** el recorrido por **`Tab`/`Enter`** sobre los
-bloques del lienzo, que necesita un *roving tabindex* bien hecho. Emparejarlo con
-`Enter` → editar, que ya existe.
+---
+
+#### ✅ FASE 3b · opción A — CERRADA (roving tabindex)
+
+**Lo aprobado:** sólo el recorrido por teclado. La tipografía por bloque (B/C)
+queda sin aprobar; nada de `types.ts` ni de `previews.tsx` se ha tocado.
+
+**Dos afirmaciones del traspaso que la medición corrigió antes de escribir nada:**
+
+1. «Emparejarlo con `Enter` → editar, **que ya existe**» — **no existía.** Se
+   entraba a editar SÓLO por `dblclick`; el único `Enter` del archivo confirmaba
+   una edición ya abierta. O sea que el alcance no era «añadir `Tab`», era `Tab`
+   **más** una puerta de entrada por teclado que no había.
+2. «Los once `<h3>` repiten literalmente la misma cadena» — son **once + un
+   huérfano**: el de `rsvp` (`previews.tsx:1167`) es `text-lg font-semibold` a
+   secas, sin los tres escalones de container query. Importa para la opción B:
+   escribir el mapa de escala mirando «la cadena que se repite» le REGALARÍA a
+   RSVP tres escalones que hoy no tiene — píxeles movidos en invitaciones vivas,
+   colados por una uniformización que parece limpieza.
+
+**Lo hecho.** `Tab` entra al lienzo y sale de él en **una** parada; las flechas
+recorren bloque a bloque cruzando el límite de módulo; `Inicio`/`Fin` van a los
+extremos; `Enter` edita; `Esc` sube un nivel (eso ya estaba). Los 20 bloques
+llevan `aria-label` derivado del MISMO contrato que pinta el rótulo del recuadro,
+así que lector de pantalla y pantalla no pueden discrepar.
+
+**Decisiones, y por qué:**
+
+- **Roving, no 36 paradas de `Tab`.** Doce módulos por ~3 bloques obligarían a
+  pulsar `Tab` 36 veces para cruzar el lienzo hasta el panel. Es justo lo que el
+  patrón existe para evitar. ⚠️ Se aparta de la letra del traspaso («recorrido
+  por `Tab`»): se apartó a propósito, y está dicho.
+- **Topa, no envuelve.** En un lienzo de varias pantallas, envolver teletransporta
+  el foco al otro extremo sin anunciarlo. Topar devuelve la MISMA selección y el
+  provider, que compara por valor, no repinta. Misma decisión que `subirUnNivel`.
+- **Las paradas se leen del DOM, no de la tabla de `bloques.ts`.** La secuencia
+  renderizada es un PREFIJO de la tabla; la tabla prometería paradas que no están
+  en la página.
+- **`preventDefault` también al topar**, o la flecha que no mueve nada desplaza
+  la página y parece que el foco se fue.
+
+**Un defecto encontrado midiendo, y era mío:** el clic seleccionaba pero **dejaba
+el foco en `<body>`**. Ratón y teclado se desincronizaban: pulsabas un bloque,
+veías el recuadro, y la flecha siguiente no hacía nada. Arreglado enfocando el
+bloque en el clic, con `preventScroll` porque ya está a la vista y el
+desplazamiento automático dentro de un lienzo escalado por `transform` salta.
+
+**Medido en el Chrome del dev**, no por verde de suite:
+
+| Comprobación | Resultado |
+|---|---|
+| Invariante del roving | 1 nodo con `tabindex="0"`, 19 con `-1`, 20 con `aria-label` |
+| Clic | foco, `tabindex="0"` y rótulo del recuadro coinciden los tres |
+| Flechas | cruzan de `Portada · Etiqueta` a `Bienvenida · Título` y vuelven |
+| `Inicio`/`Fin` | `Portada · Título` ↔ `Confirmación (RSVP) · Formulario` |
+| Topes | flecha de más en ambos extremos: la selección NO se mueve |
+| `Enter` → editar | abre `contentEditable` sobre el bloque enfocado |
+| `Esc` | cancela y restaura el texto original |
+| `Enter` → confirmar (de la 3a) | **no lo pisa mi manejador**: el texto tecleado se guarda entero, y ⌘Z lo revierte. Lienzo y panel coinciden después |
+| `Tab` / `Shift+Tab` | sale al control de zoom y vuelve por la misma puerta |
+
+**Pruebas:** `recorrido.test.ts`, 12 casos sobre lógica pura (el entorno de
+vitest es `node`: el foco y el layout no se pueden medir ahí, por eso se midieron
+en Chrome). **Seis mutantes, seis muertos:** envolver en vez de topar (2 rojas),
+caer al principio en vez de al módulo (2), entrar siempre por la primera (1),
+devolver `null` con la lista vacía (1), ignorar el módulo al buscar el índice (2),
+y `paradaExtrema` siempre al final (1).
+
+**Suite: 1 098 en 69 archivos · `tsc` ✅ · `eslint` ✅ · cero migraciones.**
+El cambio vive entero en un `useEffect` bajo `ModoEditorProvider`: no toca el
+render, no toca `types.ts`, y la página pública no lo ve.
+
+---
+
+#### ⬜ FASE 3b · opciones B y C — SIN APROBAR
+
+La toolbar tipográfica (tamaño, y en C peso y color). Siguen intactos su coste y
+su riesgo: campo nuevo en `layoutShape` con default que no emita nada, más
+des-hardcodear `previews.tsx` respetando el huérfano de RSVP. Y en C, el color
+obliga a pasar por `deriveAccentText(...)` o se rompen los 212 casos bajo AA.
 
 ---
 

@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 
 import { bloquePorId } from "@/lib/editor/bloques";
 import {
+  paradaExtrema,
+  siguienteParada,
+  type Parada,
+} from "@/lib/editor/recorrido";
+import {
   sanearTexto,
   topeDeCampo,
   valorDeCampo,
@@ -48,6 +53,32 @@ function nodoDe(cont: HTMLElement | null, sel: Seleccion): Element | null {
   if (!modulo) return null;
   if (sel.tipo === "modulo") return modulo;
   return modulo.querySelector(`[data-bloque="${CSS.escape(sel.bloque)}"]`);
+}
+
+/**
+ * Las paradas del recorrido, EN ORDEN DE DOCUMENTO y leidas del DOM.
+ *
+ * Del DOM y no de la tabla de `bloques.ts` a proposito: la secuencia
+ * renderizada es un PREFIJO de la tabla —los hijos condicionales de cola
+ * desaparecen— asi que la tabla prometeria paradas que no estan en la pagina y
+ * el foco se iria a un nodo inexistente.
+ */
+function paradasDe(cont: HTMLElement | null): Parada[] {
+  if (!cont) return [];
+  const paradas: Parada[] = [];
+  for (const modulo of cont.querySelectorAll("[data-modulo]")) {
+    const moduloId = modulo.getAttribute("data-modulo");
+    if (!moduloId) continue;
+    for (const nodo of modulo.querySelectorAll("[data-bloque]")) {
+      // El bloque tiene que ser de ESTE modulo: con modulos anidados, el
+      // `querySelectorAll` del de fuera tambien devuelve los de dentro y la
+      // parada quedaria duplicada y atribuida al modulo equivocado.
+      if (nodo.closest("[data-modulo]") !== modulo) continue;
+      const id = nodo.getAttribute("data-bloque");
+      if (id) paradas.push({ moduloId, bloque: id });
+    }
+  }
+  return paradas;
 }
 
 /**
@@ -147,6 +178,18 @@ export function CapaDeSeleccion({
       seleccionar(
         id ? { tipo: "bloque", moduloId, bloque: id } : { tipo: "modulo", moduloId },
       );
+
+      // El clic tambien mueve el FOCO al bloque. Sin esto, raton y teclado se
+      // desincronizan: medido en Chrome, pulsar un bloque dejaba el foco en
+      // `<body>` mientras el recuadro se pintaba encima del bloque, asi que la
+      // flecha siguiente no hacia nada y parecia que el recorrido estaba roto.
+      // Es tambien lo que mantiene la invariante del roving tabindex: el unico
+      // nodo con `tabindex="0"` es el que tiene el foco.
+      //
+      // `preventScroll` porque el bloque ya esta a la vista —se acaba de
+      // pulsar— y el desplazamiento automatico dentro de un lienzo escalado por
+      // `transform` salta de sitio.
+      if (suyo instanceof HTMLElement) suyo.focus({ preventScroll: true });
     }
 
     function alPasar(e: MouseEvent) {
@@ -248,9 +291,125 @@ export function CapaDeSeleccion({
       entrar({ tipo: "bloque", moduloId, bloque: id });
     }
 
+    /**
+     * `Enter` sobre un bloque enfocado entra a editar — el equivalente por
+     * teclado del doble clic.
+     *
+     * Medido antes de escribirlo: NO existia. El unico `Enter` de este archivo
+     * CONFIRMA una edicion ya abierta; abrirla era exclusivo del `dblclick`. O
+     * sea que hasta aqui un usuario de teclado podia recorrer y seleccionar,
+     * pero no escribir.
+     *
+     * El bloque se lee del FOCO y no de `seleccion` para no meter la seleccion
+     * en las dependencias de este efecto: volveria a montar los listeners en
+     * cada flecha.
+     */
+    function alTeclado(e: KeyboardEvent) {
+      if (e.key !== "Enter") return;
+      const el = document.activeElement;
+      if (!(el instanceof HTMLElement)) return;
+      // Ya dentro de la edicion, `Enter` es del editor: confirma. Si se
+      // entrara otra vez se replantaria el texto y se perderia lo tecleado.
+      if (el.isContentEditable) return;
+      const bloque = el.closest("[data-bloque]");
+      const modulo = bloque?.closest("[data-modulo]");
+      const moduloId = modulo?.getAttribute("data-modulo");
+      const id = bloque?.getAttribute("data-bloque");
+      if (!moduloId || !id) return;
+      e.preventDefault();
+      entrar({ tipo: "bloque", moduloId, bloque: id });
+    }
+
     cont.addEventListener("dblclick", alDobleClic);
-    return () => cont.removeEventListener("dblclick", alDobleClic);
+    cont.addEventListener("keydown", alTeclado);
+    return () => {
+      cont.removeEventListener("dblclick", alDobleClic);
+      cont.removeEventListener("keydown", alTeclado);
+    };
   }, [contenedor, modules]);
+
+  // ---- Recorrido por teclado: el roving tabindex -------------------------
+  //
+  // La deuda que la Fase 2 dejo escrita, y la unica via de entrada al lienzo
+  // sin puntero.
+  //
+  // Lo que hace cada tecla, y por que:
+  //
+  //   `Tab`        entra al lienzo y sale de el. UNA parada, no ~36: doce
+  //                modulos por ~3 bloques obligarian a pulsar `Tab` 36 veces
+  //                para cruzar hasta el panel de propiedades. Es exactamente
+  //                lo que el patron de roving tabindex existe para evitar.
+  //   flechas      recorren bloque a bloque, TOPANDO en los extremos.
+  //   Inicio/Fin   primer y ultimo bloque del lienzo.
+  //   `Enter`      edita (arriba).
+  //   `Esc`        sube un nivel — ya existia, no se toca.
+  //
+  // El `tabindex` se planta sobre nodos que REACT POSEE. Poner un atributo es
+  // seguro (React no reconcilia atributos que no paso por props), pero un
+  // remonte lo borra —y el arreglo del deshacer de la 3a remonta el modulo por
+  // generacion en la `key`—, asi que este efecto depende de `modules` y vuelve
+  // a sembrarlo en cada remonte.
+  useEffect(() => {
+    const cont = contenedor.current;
+    if (!cont) return;
+
+    const paradas = paradasDe(cont);
+    const nodos = [...cont.querySelectorAll("[data-bloque]")].filter(
+      (n): n is HTMLElement => n instanceof HTMLElement,
+    );
+
+    // El bloque que lleva el `0` es el seleccionado; si no hay seleccion, el
+    // primero. Asi `Tab` siempre encuentra una puerta de entrada, y al volver
+    // al lienzo se vuelve por donde se salio.
+    const activo = nodoDe(cont, seleccion);
+    const puerta = activo instanceof HTMLElement && activo.hasAttribute("data-bloque")
+      ? activo
+      : nodos[0];
+
+    for (const n of nodos) {
+      n.setAttribute("tabindex", n === puerta ? "0" : "-1");
+      // Un `div` enfocable no anuncia nada. La etiqueta sale del MISMO
+      // contrato que pinta el rotulo del recuadro, para que el lector de
+      // pantalla y la pantalla no puedan discrepar.
+      const modulo = n.closest("[data-modulo]");
+      const moduloId = modulo?.getAttribute("data-modulo");
+      const id = n.getAttribute("data-bloque");
+      const m = modules.find((x) => x.id === moduloId);
+      if (!m || !id) continue;
+      const b = bloquePorId(m.module_type, id);
+      if (b) n.setAttribute("aria-label", `${MODULE_META[m.module_type].label} · ${b.etiqueta}`);
+    }
+
+    function alTeclado(e: KeyboardEvent) {
+      const el = document.activeElement;
+      // Dentro de la edicion las flechas son del cursor, no del recorrido.
+      if (el instanceof HTMLElement && el.isContentEditable) return;
+      if (!(el instanceof HTMLElement) || !el.closest("[data-bloque]")) return;
+
+      let destino: Seleccion | undefined;
+      if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+        destino = siguienteParada(paradas, seleccion, 1);
+      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+        destino = siguienteParada(paradas, seleccion, -1);
+      } else if (e.key === "Home") {
+        destino = paradaExtrema(paradas, seleccion, "primera");
+      } else if (e.key === "End") {
+        destino = paradaExtrema(paradas, seleccion, "ultima");
+      }
+      if (destino === undefined) return;
+
+      // Se frena SIEMPRE que la tecla es del recorrido, incluso al topar: sin
+      // esto, la flecha que no mueve la seleccion desplaza la pagina y parece
+      // que el foco se fue.
+      e.preventDefault();
+      seleccionar(destino);
+      const nodo = nodoDe(cont!, destino);
+      if (nodo instanceof HTMLElement) nodo.focus();
+    }
+
+    cont.addEventListener("keydown", alTeclado);
+    return () => cont.removeEventListener("keydown", alTeclado);
+  }, [contenedor, seleccion, seleccionar, modules]);
 
   // ---- Salir de la edición: confirmar o cancelar -------------------------
   useEffect(() => {
