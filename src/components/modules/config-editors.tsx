@@ -11,8 +11,6 @@ import type {
 } from "@/lib/modules/types";
 import {
   MOSTRAR_MOVIMIENTO_LIBRE,
-  HERO_VARIANTS,
-  HERO_VARIANT_LABELS,
   parcheDeComposicionDePortada,
   proporcionMasCercana,
   MAX_RSVP_QUESTIONS,
@@ -40,6 +38,7 @@ import {
   type UploadContext,
 } from "@/components/editor/image-uploader";
 import { SortableImageGrid } from "@/components/editor/sortable-image-grid";
+import { ComposicionDePortadaMiniaturas } from "@/components/editor/composicion-de-portada-miniaturas";
 import {
   CSS_REVEAL_PRESETS,
   ANIMATION_REGISTRY,
@@ -163,28 +162,20 @@ function ComposicionDePortada({
   return (
     <>
       <Field label="Diseño de la portada">
-        <Select
-          value={variant}
-          // La decisión vive en `parcheDeComposicionDePortada`, que SÍ tiene
-          // pruebas: este proyecto no tiene entorno de DOM, así que dejar la
-          // lógica aquí sería dejarla sin comprobar.
-          onValueChange={(v) =>
-            onChange(
-              parcheDeComposicionDePortada(v as HeroVariant, medida),
-            )
-          }
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {HERO_VARIANTS.map((v) => (
-              <SelectItem key={v} value={v}>
-                {HERO_VARIANT_LABELS[v]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Miniaturas y no un `<Select>`: el disparador decía el valor CRUDO
+            del enum —«editorial»—, o sea que el control estaba en inglés, que
+            es la queja textual de la Fase 4 del plan. Y un layout se reconoce
+            antes viéndolo que leyéndolo.
+
+            La decisión sigue viviendo en `parcheDeComposicionDePortada`, que SÍ
+            tiene pruebas: este proyecto no tiene entorno de DOM, así que dejar
+            la lógica en el componente sería dejarla sin comprobar. Cambia el
+            control, no la regla. */}
+        <ComposicionDePortadaMiniaturas
+          value={variant as HeroVariant}
+          name="composicion-de-portada"
+          onChange={(v) => onChange(parcheDeComposicionDePortada(v, medida))}
+        />
       </Field>
 
       {/* Se DICE el encuadre en vez de dejarlo pasar en silencio. */}
