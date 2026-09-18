@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useEsEditor } from "@/lib/editor/contexto-modo";
 import type {
   HeroVariant,
   SectionAlign,
@@ -254,12 +255,27 @@ function Section({
   // Sin imagen, `contenido === children`: el árbol renderizado es LITERALMENTE
   // el de antes, sin una envoltura de más. Es lo que permite comprobar por md5
   // que las 50 no se mueven.
+  const esEditor = useEsEditor();
+
   const conMedia = Boolean(media && media.position !== "none" && media.url);
 
   // Con el interruptor APAGADO no se envuelve nada: el arbol renderizado sigue
   // siendo literalmente el de antes. Es la misma disciplina que el comentario
   // de arriba sobre `media`, y es lo que permite afirmar que una invitacion
   // que no usa esto no se mueve ni un pixel.
+  //
+  // Con el interruptor apagado PERO dentro del editor si se marca cada hijo,
+  // porque sin `data-bloque` no hay nada que seleccionar y las once secciones
+  // que no son la portada quedarian muertas al clic (Fase 2).
+  //
+  // Y se marca CLONANDO el hijo, no envolviendolo: `cloneElement` solo anade un
+  // ATRIBUTO, asi que no entra un nodo nuevo en el arbol y no se mueve ni un
+  // pixel. Envolver en un `div` —como hace la rama de `freeMove`— si cambiaria
+  // el layout de un contenedor `flex` o `space-y`.
+  //
+  // La pagina publica no provee `ModoEditorProvider`, asi que ahi `esEditor` es
+  // `false` y el arbol renderizado sigue siendo LITERALMENTE el de antes. Es lo
+  // que permite comprobar por md5 que las 18 no se mueven.
   const colocables = freeMove
     ? React.Children.toArray(children).map((hijo, i) => {
         const d = textOffsets?.[i];
@@ -273,7 +289,19 @@ function Section({
           </div>
         );
       })
-    : children;
+    : esEditor
+      ? React.Children.toArray(children).map((hijo, i) =>
+          // Un hijo que no sea elemento (una cadena suelta) no admite atributo.
+          // Se deja pasar SIN marcar en vez de envolverlo: envolverlo cambiaria
+          // el layout, y el indice se conserva igual porque `toArray` no mueve
+          // a los demas. Ese bloque simplemente no sera seleccionable.
+          React.isValidElement(hijo)
+            ? React.cloneElement(hijo as React.ReactElement<Record<string, unknown>>, {
+                "data-bloque": String(i),
+              })
+            : hijo,
+        )
+      : children;
 
   const cuerpo = conMedia ? (
     <ConMedia media={media!}>{colocables}</ConMedia>
