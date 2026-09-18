@@ -1187,6 +1187,26 @@ obliga a pasar por `deriveAccentText(...)` o se rompen los 212 casos bajo AA.
 > que la 7 va a mover es ese trabajo tirado. El control vive en el bloque de
 > sección que ya existe.
 >
+> **🔴 HALLAZGO ABIERTO, del dev: el editor miente para 2 de las 11 secciones.**
+> En la página **pública**, `rsvp` y `signatures` NO pasan por `Section` — se
+> despachan aparte en `public-invitation.tsx:90-110` porque son interactivos y
+> hablan con el servidor. Así que ignoran `align`, `bleed`, `frame` y ahora
+> `divider`. El editor los ofrece y el invitado no los ve.
+>
+> No lo introduce el separador: lleva vivo desde que se expusieron `align` y
+> `frame`. Censo contra producción (2026-09-17, sólo lectura):
+>
+> | | rsvp/signatures | con esas perillas fuera del defecto |
+> |---|---|---|
+> | Invitaciones vivas | 7 | **0** |
+> | Plantillas del catálogo | 65 | **27** |
+>
+> O sea que **27 plantillas llevan una intención de diseño que nadie ve**, y
+> arreglarlo HOY no movería ninguna invitación viva —las 7 están en el
+> defecto—. El arreglo es envolver esos dos componentes en `Section` en la
+> página pública. Cambia la página de clientes reales, así que es decisión del
+> dev, no efecto colateral de esta fase.
+>
 > **⚠️ Trampa nueva, y casi se cuela:** `{cond ? <X/> : null}` **no** es neutro
 > aunque no pinte nada — **añade una POSICIÓN al árbol de React**, y eso corre
 > los `useId` de los `<Label>`/`<Input>`. `rsvp` es el único módulo con
