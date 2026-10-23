@@ -117,6 +117,53 @@ emisor es un no-op. ¿Qué plan tiene el proyecto?
 - Aceptación: un visitante sin sesión llega a una plantilla y ve precio + CTA
   sin pasar por login (verificado en Chrome, sesión cerrada).
 
+#### Resultados de la Fase 1 (2026-10-22)
+
+**Qué se construyó, y dos desviaciones del plan escrito arriba (con su porqué):**
+
+| Plan | Lo que se hizo | Por qué |
+|---|---|---|
+| «desde $199» | **Precio real por tarjeta**, calculado con el mismo criterio que el gate de publicación | Medido contra la BD (65 plantillas): **35 cuestan $199, 20 cuestan $399 y 10 cuestan $699**. Un «desde $199» habría sido falso para 30 de 65 |
+| CTA dentro de `/plantilla/[slug]` | Ruta **nueva** `/plantillas/[slug]` que reutiliza la anterior por composición | `/plantilla/[slug]` la usan 5 scripts (capturas, hojas de contacto, medición de cajas de texto, contraste); un botón ahí se quemaría en las miniaturas |
+
+- `/plantillas`: **indexable**, canonical propio, en el sitemap. Sus vistas de
+  detalle `/plantillas/<slug>` van `noindex` y fuera del sitemap (contenido casi
+  idéntico entre sí). Esto resuelve la pregunta abierta §7.1 con la opción
+  conservadora: el índice posiciona, los detalles no diluyen.
+- Se reutilizó el marketplace del dashboard con `modo="publico"` (sin favoritas,
+  que exigen sesión). El modo por defecto no cambia.
+- `plantillas` reservada como vanity; la guarda existente que barre `src/app`
+  la habría hecho fallar de no estarlo (mutada: muere). 0 vanities y 0 usuarios
+  con ese nombre hoy.
+- Landing: el botón principal sin sesión pasa de «Empieza gratis → /register» a
+  «Ver plantillas → /plantillas».
+
+**Verificado por efecto, en navegador, sin sesión:** a 375 px ni la galería ni la
+landing desbordan (`scrollWidth` 375); 65 botones llevan a
+`/register?next=/plantillas/<slug>`; sin corazones ni «Favoritas»; sin errores de
+consola; `?evento=Boda` filtra (13 de 65); plantilla inexistente → 404;
+`/plantilla/<slug>` (captura) **sigue sin barra de compra**; el sitemap lista
+`/plantillas` y ningún detalle. Botones de 44 px en móvil.
+
+**Defecto encontrado y corregido durante la medición:** la barra de compra
+`fixed` era 13 px más alta que su espaciador y **tapaba el final de la
+invitación**. Pasó a `sticky bottom-0` al final del flujo (solape medido: 0).
+
+**Lo que NO está verificado ni hecho (dicho sin adornos):**
+- **Con sesión iniciada no lo vi en navegador** (no tengo una sesión de prueba).
+  Ese camino usa el `UseTemplateButton` que ya existía; está verificado solo por
+  lectura de código.
+- **El botón sin sesión pierde la plantilla hoy.** Lleva `?next=` pero el
+  registro lo ignora (el correo fuerza `/dashboard`, Google no recibe destino).
+  Cablearlo es la **Fase 2**. Hasta entonces, quien se registra aterriza en el
+  dashboard y tiene que volver a buscarla.
+- **El texto de la galería ya describe el modelo de la Fase 3** («pagas al
+  publicar») mientras la demo de 14 días sigue existiendo. No es falso, pero
+  **esta fase no debe llegar sola a producción**: se sube junto con la Fase 3.
+- La vista de venta hereda `animations: false` de la ruta de captura: la
+  invitación se ve estática, menos viva que la real.
+- No medí LCP ni Lighthouse de las páginas nuevas.
+
 ### Fase 2 — «Usar esta plantilla» conserva la intención
 - Sin sesión: `createFromTemplate` deja de mandar a `/login` pelado; manda a
   `/register?next=/plantilla/<slug>/usar` (o equivalente). Tras correo **o**
