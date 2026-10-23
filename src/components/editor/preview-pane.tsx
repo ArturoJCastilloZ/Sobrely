@@ -164,8 +164,12 @@ export function PreviewPane({
   // se llamaba sobre nada — la etiqueta avanzaba y la pantalla no se movia. El
   // DOM ya tiene la verdad; preguntarle no puede quedar obsoleto.
   const canvas = useRef<HTMLDivElement | null>(null);
-  /** Envoltura estable del lienzo: no se remonta con `replayKey`. */
-  const lienzo = useRef<HTMLDivElement | null>(null);
+  /**
+   * Nodo real del lienzo. Un ref mudo no notifica a CapaDeSeleccion si el
+   * preview se reconstruye; guardarlo como estado hace que sus listeners se
+   * conecten de nuevo al nodo vivo.
+   */
+  const [lienzo, setLienzo] = useState<HTMLDivElement | null>(null);
 
   /*
    * Generacion por modulo, para forzar un remonte tras editar su texto.
@@ -230,13 +234,25 @@ export function PreviewPane({
     const destino = nodos[n];
     if (!destino) return; // sin ancla no se finge que navego
 
-    // El desplazamiento suave lo hace la plataforma. Llegue a escribir una
-    // animacion propia creyendo que `smooth` estaba roto —lo medi y no movia
-    // nada— hasta darme cuenta de que el panel del navegador estaba OCULTO y
-    // ahi `requestAnimationFrame` se pausa: fallaba todo lo que pasa por rAF
-    // (el `smooth` nativo y mi animacion por igual) y funcionaba todo lo
-    // sincrono. Era el entorno de medicion, no el codigo.
-    destino.scrollIntoView({ behavior: "smooth", block: "start" });
+    const scroll = destino.closest<HTMLElement>("[data-editor-scroll]");
+    if (scroll) {
+      // `scrollIntoView` sube TODOS los ancestros desplazables, incluido el
+      // documento. Al navegar o al llegar al final, eso dejaba ver el vacío
+      // fuera del editor. Movemos exclusivamente la columna del lienzo.
+      // `getBoundingClientRect` ya refleja el zoom visual; `scrollTop` usa
+      // coordenadas sin escalar, por eso se deshace el factor de zoom.
+      const delta =
+        (destino.getBoundingClientRect().top - scroll.getBoundingClientRect().top) /
+        zoom;
+      scroll.scrollTo({
+        top: Math.max(0, scroll.scrollTop + delta),
+        behavior: "smooth",
+      });
+    } else {
+      // Reserva segura para renderizadores embebidos que no usan el shell del
+      // editor. En la aplicación normal siempre existe `data-editor-scroll`.
+      destino.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
     setSeccionActual(n);
   }
 
@@ -265,7 +281,7 @@ export function PreviewPane({
     // calcularia contra su propio resultado. Esta raiz mide el espacio
     // DISPONIBLE, que es el dato que hace falta.
     <ModoEditorProvider>
-    <div data-columna-canvas>
+    <div data-columna-canvas className="min-h-full">
       {solapados.size > 0 && (
         <p
           role="status"
@@ -386,7 +402,7 @@ export function PreviewPane({
           //
           // Esta envoltura no se remonta nunca, así que es el sitio donde la
           // capa de selección escucha, y el origen de coordenadas del recuadro.
-          <div ref={lienzo} className="relative z-10">
+          <div ref={setLienzo} data-editor-lienzo className="relative z-10">
           <div
             key={replayKey}
             ref={canvas}

@@ -6,6 +6,11 @@ import type {
   HeroVariant,
   GalleryLayout,
   DresscodeLevel,
+  CountdownVariant,
+  RsvpVariant,
+  MapVariant,
+  ItineraryVariant,
+  GiftsVariant,
   RsvpQuestion,
   RsvpQuestionType,
 } from "@/lib/modules/types";
@@ -20,7 +25,36 @@ import {
 } from "@/lib/modules/types";
 import { newQuestionId } from "@/lib/modules/rsvp-answers";
 import { GALLERY_LAYOUTS, GALLERY_LAYOUT_LABELS } from "@/lib/modules/types";
-import { DRESSCODE_LEVELS, DRESSCODE_LABELS } from "@/lib/modules/types";
+import {
+  COUNTDOWN_VARIANTS,
+  COUNTDOWN_VARIANT_LABELS,
+  COUNTDOWN_LABEL_STYLES,
+  COUNTDOWN_LABEL_STYLE_LABELS,
+  COUNTDOWN_NUMBER_WEIGHTS,
+  COUNTDOWN_NUMBER_WEIGHT_LABELS,
+  DRESSCODE_LEVELS,
+  DRESSCODE_LABELS,
+  RSVP_VARIANTS,
+  RSVP_VARIANT_LABELS,
+  RSVP_FIELD_STYLES,
+  RSVP_FIELD_STYLE_LABELS,
+  RSVP_BUTTON_STYLES,
+  RSVP_BUTTON_STYLE_LABELS,
+  RSVP_BUTTON_TONES,
+  RSVP_BUTTON_TONE_LABELS,
+  RSVP_DENSITIES,
+  RSVP_DENSITY_LABELS,
+  RSVP_ATTENDANCE_STYLES,
+  RSVP_ATTENDANCE_STYLE_LABELS,
+  MAP_VARIANTS,
+  MAP_VARIANT_LABELS,
+  ITINERARY_VARIANTS,
+  ITINERARY_VARIANT_LABELS,
+  DRESSCODE_BADGE_STYLES,
+  DRESSCODE_BADGE_STYLE_LABELS,
+  GIFTS_VARIANTS,
+  GIFTS_VARIANT_LABELS,
+} from "@/lib/modules/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,7 +65,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import {
   ImageUploader,
@@ -50,6 +83,12 @@ import type {
 } from "@/lib/animation/types";
 import { AnimationFields } from "@/components/editor/animation-fields";
 import { Badge } from "@/components/ui/badge";
+import { SelectLabelTrigger } from "@/components/ui/select-label-trigger";
+import {
+  FontPreviewOptions,
+  FontPreviewTrigger,
+} from "@/components/editor/font-select-options";
+import type { FontKey } from "@/lib/theme/theme";
 
 const REVEAL_OPTIONS = [...CSS_REVEAL_PRESETS] as AnimationPreset[];
 
@@ -278,6 +317,53 @@ export function WelcomeEditor({ config, onChange }: EditorProps) {
 
 // ---- Countdown ------------------------------------------------------------
 
+/** Miniatura fiel a la distribución, no un icono abstracto del diseño. */
+function CountdownDesignThumbnail({ variant }: { variant: CountdownVariant }) {
+  const cell = "flex items-center justify-center border border-current text-[7px] leading-none";
+  const value = "8";
+
+  if (variant === "poster") {
+    return (
+      <span aria-hidden className="grid h-10 grid-cols-[1.2fr_2fr] gap-1 text-primary">
+        <i className={`${cell} rounded-sm bg-current text-background`}>{value}</i>
+        <span className="grid grid-cols-3 gap-1">
+          <i className={`${cell} rounded-sm bg-current text-background`}>{value}</i>
+          <i className={`${cell} rounded-sm bg-current text-background`}>{value}</i>
+          <i className={`${cell} rounded-sm bg-current text-background`}>{value}</i>
+        </span>
+      </span>
+    );
+  }
+
+  if (variant === "split") {
+    return (
+      <span aria-hidden className="grid h-10 grid-cols-2 gap-1 text-primary">
+        {[0, 1, 2, 3].map((item) => <i key={item} className={`${cell} rounded-sm bg-current/10`}>{value}</i>)}
+      </span>
+    );
+  }
+
+  const shape = {
+    cards: "rounded-sm bg-current/15 shadow-sm",
+    outline: "rounded-sm bg-transparent border-2",
+    minimal: "border-x-0 border-t-0 rounded-none",
+    circles: "rounded-full bg-current/15",
+    timeline: "rounded-none border-y-0 border-r-0 first:border-l",
+    pill: "rounded-full bg-current/10 border-2",
+    ribbon: "rounded-none border-x-0 border-y-2 bg-current/15",
+    stamp: "rounded-full border-2 border-dashed bg-current/10",
+  }[variant];
+
+  return (
+    <span
+      aria-hidden
+      className={`grid h-10 grid-cols-4 gap-1 text-primary ${variant === "timeline" ? "gap-0" : ""}`}
+    >
+      {[0, 1, 2, 3].map((item) => <i key={item} className={`${cell} ${shape}`}>{value}</i>)}
+    </span>
+  );
+}
+
 export function CountdownEditor({
   config,
   onChange,
@@ -289,11 +375,73 @@ export function CountdownEditor({
 }) {
   const useEvent = Boolean(config.useEventDate);
   const targetDate = str(config.targetDate);
+  const variant = (str(config.variant) || "cards") as CountdownVariant;
+  const numberFont = str(config.numberFont) || undefined;
+  const labelStyle = str(config.labelStyle) || "short";
+  const numberWeight = str(config.numberWeight) || "bold";
 
   return (
     <div className="space-y-3">
       <Field label="Título">
         <Input value={str(config.title)} onChange={(e) => onChange({ title: e.target.value })} />
+      </Field>
+
+      <Field label="Diseño de la cuenta regresiva">
+        <div className="grid grid-cols-2 gap-2">
+          {COUNTDOWN_VARIANTS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onChange({ variant: option })}
+              className={`rounded-md border p-2 text-left text-sm transition-colors ${variant === option ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"}`}
+            >
+              <CountdownDesignThumbnail variant={option} />
+              <span className="mt-1.5 block">{COUNTDOWN_VARIANT_LABELS[option]}</span>
+            </button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Fuente de los números">
+        <Select
+          value={numberFont ?? "global"}
+          onValueChange={(value) => onChange({ numberFont: value === "global" ? undefined : value as FontKey })}
+        >
+          <SelectTrigger><FontPreviewTrigger font={numberFont as FontKey | undefined} /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="global">Diseño global</SelectItem>
+            <FontPreviewOptions />
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field label="Etiquetas de tiempo">
+        <div className="grid grid-cols-3 gap-1.5">
+          {COUNTDOWN_LABEL_STYLES.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={labelStyle === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ labelStyle: option })}
+            >
+              {COUNTDOWN_LABEL_STYLE_LABELS[option]}
+            </Button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Peso de los números">
+        <div className="grid grid-cols-3 gap-1.5">
+          {COUNTDOWN_NUMBER_WEIGHTS.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={numberWeight === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ numberWeight: option })}
+            >
+              {COUNTDOWN_NUMBER_WEIGHT_LABELS[option]}
+            </Button>
+          ))}
+        </div>
       </Field>
 
       <div className="flex items-center justify-between rounded-md border px-3 py-2">
@@ -338,6 +486,8 @@ export function CountdownEditor({
 // ---- Map ------------------------------------------------------------------
 
 export function MapEditor({ config, onChange }: EditorProps) {
+  const mapsActionStyle = str(config.mapsActionStyle) || "link";
+  const variant = (str(config.variant) || "classic") as MapVariant;
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -348,6 +498,40 @@ export function MapEditor({ config, onChange }: EditorProps) {
       </Field>
       <Field label="Dirección">
         <Textarea value={str(config.address)} onChange={(e) => onChange({ address: e.target.value })} />
+      </Field>
+      <Field label="Diseño de ubicación">
+        <div className="grid grid-cols-3 gap-1.5">
+          {MAP_VARIANTS.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={variant === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ variant: option })}
+            >
+              {MAP_VARIANT_LABELS[option]}
+            </Button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Acción de mapa">
+        <div className="grid grid-cols-3 gap-1.5">
+          {([
+            ["link", "Enlace"],
+            ["button", "Botón"],
+            ["pill", "Cápsula"],
+          ] as const).map(([option, label]) => (
+            <Button
+              key={option}
+              type="button"
+              variant={mapsActionStyle === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ mapsActionStyle: option })}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
       </Field>
     </div>
   );
@@ -373,11 +557,7 @@ export function GalleryEditor({ config, onChange, ctx }: EditorProps) {
           value={layout}
           onValueChange={(v) => onChange({ layout: v as GalleryLayout })}
         >
-          <SelectTrigger>
-            <SelectValue>
-              {(v: string) => GALLERY_LAYOUT_LABELS[v as GalleryLayout] ?? v}
-            </SelectValue>
-          </SelectTrigger>
+          <SelectTrigger><SelectLabelTrigger label={GALLERY_LAYOUT_LABELS[layout]} /></SelectTrigger>
           <SelectContent>
             {GALLERY_LAYOUTS.map((l) => (
               <SelectItem key={l} value={l}>
@@ -464,6 +644,7 @@ export function ItineraryEditor({ config, onChange }: EditorProps) {
   const items: ItineraryItem[] = Array.isArray(config.items)
     ? (config.items as ItineraryItem[])
     : [];
+  const variant = (str(config.variant) || "cards") as ItineraryVariant;
 
   function update(i: number, patch: Partial<ItineraryItem>) {
     onChange({
@@ -475,6 +656,21 @@ export function ItineraryEditor({ config, onChange }: EditorProps) {
     <div className="space-y-3">
       <Field label="Título">
         <Input value={str(config.title)} onChange={(e) => onChange({ title: e.target.value })} />
+      </Field>
+      <Field label="Diseño del programa">
+        <div className="grid grid-cols-3 gap-1.5">
+          {ITINERARY_VARIANTS.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={variant === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ variant: option })}
+            >
+              {ITINERARY_VARIANT_LABELS[option]}
+            </Button>
+          ))}
+        </div>
       </Field>
 
       <div className="space-y-2">
@@ -568,6 +764,7 @@ export function SignaturesEditor({ config, onChange }: EditorProps) {
 
 export function DresscodeEditor({ config, onChange, ctx }: EditorProps) {
   const level = (config.level as DresscodeLevel) ?? "formal";
+  const badgeStyle = str(config.badgeStyle) || "pill";
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -578,11 +775,7 @@ export function DresscodeEditor({ config, onChange, ctx }: EditorProps) {
           value={level}
           onValueChange={(v) => onChange({ level: v as DresscodeLevel })}
         >
-          <SelectTrigger>
-            <SelectValue>
-              {(v: string) => DRESSCODE_LABELS[v as DresscodeLevel] ?? v}
-            </SelectValue>
-          </SelectTrigger>
+          <SelectTrigger><SelectLabelTrigger label={DRESSCODE_LABELS[level]} /></SelectTrigger>
           <SelectContent>
             {DRESSCODE_LEVELS.map((l) => (
               <SelectItem key={l} value={l}>
@@ -592,6 +785,23 @@ export function DresscodeEditor({ config, onChange, ctx }: EditorProps) {
           </SelectContent>
         </Select>
       </Field>
+      {level !== "custom" && (
+        <Field label="Estilo de la etiqueta">
+          <div className="grid grid-cols-3 gap-1.5">
+            {DRESSCODE_BADGE_STYLES.map((option) => (
+              <Button
+                key={option}
+                type="button"
+                variant={badgeStyle === option ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => onChange({ badgeStyle: option })}
+              >
+                {DRESSCODE_BADGE_STYLE_LABELS[option]}
+              </Button>
+            ))}
+          </div>
+        </Field>
+      )}
       <Field
         label={level === "custom" ? "Descripción" : "Nota adicional (opcional)"}
       >
@@ -638,6 +848,7 @@ export function GiftsEditor({ config, onChange }: EditorProps) {
   const links: GiftLink[] = Array.isArray(config.links)
     ? (config.links as GiftLink[])
     : [];
+  const variant = (str(config.variant) || "pills") as GiftsVariant;
 
   function update(i: number, patch: Partial<GiftLink>) {
     onChange({ links: links.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
@@ -650,6 +861,21 @@ export function GiftsEditor({ config, onChange }: EditorProps) {
       </Field>
       <Field label="Descripción">
         <Textarea value={str(config.description)} onChange={(e) => onChange({ description: e.target.value })} />
+      </Field>
+      <Field label="Diseño de enlaces">
+        <div className="grid grid-cols-3 gap-1.5">
+          {GIFTS_VARIANTS.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={variant === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ variant: option })}
+            >
+              {GIFTS_VARIANT_LABELS[option]}
+            </Button>
+          ))}
+        </div>
       </Field>
 
       <div className="space-y-2">
@@ -716,12 +942,36 @@ export function MusicEditor({ config, onChange }: EditorProps) {
 
 // ---- RSVP -----------------------------------------------------------------
 
+function RsvpDesignThumbnail({ variant }: { variant: RsvpVariant }) {
+  const field = "h-1.5 rounded-sm border border-current/60";
+  const shell = {
+    classic: "",
+    card: "rounded-md border p-1.5 shadow-sm",
+    minimal: "border-x-0 border-t-0 rounded-none",
+    editorial: "rounded-none border-x-2 border-y-0 pl-1.5",
+  }[variant];
+  return (
+    <span aria-hidden className={`flex h-10 flex-col gap-1 text-primary ${shell}`}>
+      <i className="h-1.5 w-3/5 rounded-sm bg-current" />
+      <i className={field} />
+      <i className={field} />
+      <i className="mt-auto h-2 rounded-sm bg-current" />
+    </span>
+  );
+}
+
 export function RsvpEditor({
   config,
   onChange,
   rsvpMode,
 }: EditorProps & { rsvpMode?: "open" | "guest_list" }) {
   const isGuestList = rsvpMode === "guest_list";
+  const variant = (str(config.variant) || "classic") as RsvpVariant;
+  const fieldStyle = str(config.fieldStyle) || "soft";
+  const buttonStyle = str(config.buttonStyle) || "rounded";
+  const buttonTone = str(config.buttonTone) || "auto";
+  const density = str(config.density) || "comfortable";
+  const attendanceStyle = str(config.attendanceStyle) || "cards";
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -729,6 +979,103 @@ export function RsvpEditor({
       </Field>
       <Field label="Descripción">
         <Textarea value={str(config.description)} onChange={(e) => onChange({ description: e.target.value })} />
+      </Field>
+      <Field label="Texto del botón">
+        <Input
+          value={str(config.buttonLabel) || "Confirmar"}
+          maxLength={40}
+          onChange={(e) => onChange({ buttonLabel: e.target.value })}
+        />
+      </Field>
+      <Field label="Diseño del formulario">
+        <div className="grid grid-cols-2 gap-2">
+          {RSVP_VARIANTS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onChange({ variant: option })}
+              className={`rounded-md border p-2 text-left text-sm transition-colors ${variant === option ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"}`}
+            >
+              <RsvpDesignThumbnail variant={option} />
+              <span className="mt-1.5 block">{RSVP_VARIANT_LABELS[option]}</span>
+            </button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Estilo de los campos">
+        <div className="grid grid-cols-3 gap-1.5">
+          {RSVP_FIELD_STYLES.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={fieldStyle === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ fieldStyle: option })}
+            >
+              {RSVP_FIELD_STYLE_LABELS[option]}
+            </Button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Forma del botón">
+        <div className="grid grid-cols-3 gap-1.5">
+          {RSVP_BUTTON_STYLES.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={buttonStyle === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ buttonStyle: option })}
+            >
+              {RSVP_BUTTON_STYLE_LABELS[option]}
+            </Button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Estilo de la acción">
+        <div className="grid grid-cols-2 gap-1.5">
+          {RSVP_BUTTON_TONES.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={buttonTone === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ buttonTone: option })}
+            >
+              {RSVP_BUTTON_TONE_LABELS[option]}
+            </Button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Espaciado del formulario">
+        <div className="grid grid-cols-3 gap-1.5">
+          {RSVP_DENSITIES.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={density === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ density: option })}
+            >
+              {RSVP_DENSITY_LABELS[option]}
+            </Button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Opciones de asistencia">
+        <div className="grid grid-cols-3 gap-1.5">
+          {RSVP_ATTENDANCE_STYLES.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={attendanceStyle === option ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => onChange({ attendanceStyle: option })}
+            >
+              {RSVP_ATTENDANCE_STYLE_LABELS[option]}
+            </Button>
+          ))}
+        </div>
       </Field>
       <Field label="Fecha límite (opcional)">
         <Input
@@ -980,7 +1327,7 @@ export function AnimationControl({
   const hasOverride = Object.keys(override).length > 0;
 
   return (
-    <div className="mt-3 space-y-3 border-t pt-3">
+    <div className="space-y-3 pt-3">
       <div className="flex items-center justify-between">
         <Label className="cursor-pointer">Animar este módulo</Label>
         <Switch
@@ -998,15 +1345,7 @@ export function AnimationControl({
                 patch({ preset: v === INHERIT ? undefined : (v as AnimationPreset) })
               }
             >
-              <SelectTrigger>
-                <SelectValue>
-                  {(v: string) =>
-                    v === INHERIT
-                      ? "Heredar del tema"
-                      : (ANIMATION_REGISTRY[v as AnimationPreset]?.label ?? v)
-                  }
-                </SelectValue>
-              </SelectTrigger>
+              <SelectTrigger><SelectLabelTrigger label={preset === INHERIT ? "Heredar del tema" : (ANIMATION_REGISTRY[preset as AnimationPreset]?.label ?? preset)} /></SelectTrigger>
               <SelectContent>
                 <SelectItem value={INHERIT}>Heredar del tema</SelectItem>
                 {REVEAL_OPTIONS.map((p) => (

@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import {
-  FONT_KEYS,
-  FONT_LABELS,
   cuerpoIlegible,
   parcheDeParTipografico,
   SPACING_KEYS,
@@ -16,6 +14,10 @@ import {
   type SpacingKey,
   type ThemeConfig,
 } from "@/lib/theme/theme";
+import {
+  FontPreviewOptions,
+  FontPreviewTrigger,
+} from "@/components/editor/font-select-options";
 import {
   STYLE_PRESETS,
   STYLE_PRESET_LIST,
@@ -36,6 +38,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { SelectLabelTrigger } from "@/components/ui/select-label-trigger";
 import {
   Select,
   SelectContent,
@@ -182,6 +185,15 @@ export function ThemePanel({
 
   return (
     <div className="space-y-4">
+      <div className="rounded-[var(--ed-radius-sm)] border border-primary/25 bg-primary/5 p-3">
+        <p className="text-sm font-medium">Diseño de toda la invitación</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Lo que cambies aquí se refleja en todas las secciones: portada,
+          textos, cuenta regresiva, confirmación y las que agregues después.
+          Los ajustes de una sección siguen disponibles al seleccionarla.
+        </p>
+      </div>
+
       {/* Theme packs (temáticas de 1 clic) */}
       <ThemePackPicker value={theme.themePack} onSelect={applyPack} />
 
@@ -363,15 +375,9 @@ export function ThemePanel({
       <div className="space-y-1.5">
         <Label>Tipografía</Label>
         <Select value={theme.font} onValueChange={(v) => onChange({ font: v as FontKey })}>
-          <SelectTrigger>
-            <SelectValue>{(v: string) => FONT_LABELS[v as FontKey] ?? v}</SelectValue>
-          </SelectTrigger>
+          <SelectTrigger><FontPreviewTrigger font={theme.font} /></SelectTrigger>
           <SelectContent>
-            {FONT_KEYS.map((f) => (
-              <SelectItem key={f} value={f}>
-                {FONT_LABELS[f]}
-              </SelectItem>
-            ))}
+            <FontPreviewOptions />
           </SelectContent>
         </Select>
       </div>
@@ -405,17 +411,9 @@ export function ThemePanel({
                 })
               }
             >
-              <SelectTrigger>
-                <SelectValue>
-                  {(v: string) => FONT_LABELS[v as FontKey] ?? v}
-                </SelectValue>
-              </SelectTrigger>
+              <SelectTrigger><FontPreviewTrigger font={theme.typography.heading} /></SelectTrigger>
               <SelectContent>
-                {FONT_KEYS.map((f) => (
-                  <SelectItem key={f} value={f}>
-                    {FONT_LABELS[f]}
-                  </SelectItem>
-                ))}
+                <FontPreviewOptions />
               </SelectContent>
             </Select>
 
@@ -431,17 +429,9 @@ export function ThemePanel({
                 })
               }
             >
-              <SelectTrigger>
-                <SelectValue>
-                  {(v: string) => FONT_LABELS[v as FontKey] ?? v}
-                </SelectValue>
-              </SelectTrigger>
+              <SelectTrigger><FontPreviewTrigger font={theme.typography.body} /></SelectTrigger>
               <SelectContent>
-                {FONT_KEYS.map((f) => (
-                  <SelectItem key={f} value={f}>
-                    {FONT_LABELS[f]}
-                  </SelectItem>
-                ))}
+                <FontPreviewOptions />
               </SelectContent>
             </Select>
 
@@ -464,9 +454,7 @@ export function ThemePanel({
       <div className="space-y-1.5">
         <Label>Espaciado</Label>
         <Select value={theme.spacing} onValueChange={(v) => onChange({ spacing: v as SpacingKey })}>
-          <SelectTrigger>
-            <SelectValue>{(v: string) => SPACING_LABELS[v as SpacingKey] ?? v}</SelectValue>
-          </SelectTrigger>
+          <SelectTrigger><SelectLabelTrigger label={SPACING_LABELS[theme.spacing]} /></SelectTrigger>
           <SelectContent>
             {SPACING_KEYS.map((s) => (
               <SelectItem key={s} value={s}>
@@ -547,11 +535,7 @@ export function ThemePanel({
                 })
               }
             >
-              <SelectTrigger>
-                <SelectValue>
-                  {(v: string) => DECORATION_LABELS[v as DecorationVariantKey] ?? v}
-                </SelectValue>
-              </SelectTrigger>
+              <SelectTrigger><SelectLabelTrigger label={DECORATION_LABELS[theme.decoration.variant]} /></SelectTrigger>
               <SelectContent>
                 {DECORATION_VARIANTS.map((d) => (
                   <SelectItem key={d} value={d}>

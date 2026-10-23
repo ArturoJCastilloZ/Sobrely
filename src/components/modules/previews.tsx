@@ -18,6 +18,7 @@ import type {
   GiftsConfig,
   HeroConfig,
   HeroBloque,
+  TextStyle,
   Desplazamiento,
   ItineraryConfig,
   MapConfig,
@@ -27,6 +28,7 @@ import type {
   VideoConfig,
   WelcomeConfig,
 } from "@/lib/modules/types";
+import { FONT_STACKS } from "@/lib/theme/theme";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -234,6 +236,7 @@ function Section({
   className,
   freeMove = false,
   textOffsets,
+  textStyles = {},
 }: {
   children: React.ReactNode;
   tint?: boolean;
@@ -255,6 +258,8 @@ function Section({
    * es la prueba que fija el número de bloques de cada módulo.
    */
   textOffsets?: readonly Desplazamiento[];
+  /** Overrides de tipografía por índice, persistidos en la configuración. */
+  textStyles?: Record<string, TextStyle>;
 }) {
   // Sin imagen, `contenido === children`: el árbol renderizado es LITERALMENTE
   // el de antes, sin una envoltura de más. Es lo que permite comprobar por md5
@@ -280,6 +285,54 @@ function Section({
   // La pagina publica no provee `ModoEditorProvider`, asi que ahi `esEditor` es
   // `false` y el arbol renderizado sigue siendo LITERALMENTE el de antes. Es lo
   // que permite comprobar por md5 que las 18 no se mueven.
+  const hayEstilosDeTexto = Object.values(textStyles).some(
+    (style) => Object.keys(style).length > 0,
+  );
+  const estiloDelBloque = (indice: number): React.CSSProperties => {
+    const style = textStyles[String(indice)];
+    if (!style || Object.keys(style).length === 0) return {};
+    return {
+      ...(style.font ? { fontFamily: FONT_STACKS[style.font] } : {}),
+      ...(style.color ? { color: style.color } : {}),
+      ...(style.size ? { fontSize: `${style.size}rem` } : {}),
+      ...(style.weight ? { fontWeight: style.weight } : {}),
+      ...(style.letterSpacing !== undefined
+        ? { letterSpacing: `${style.letterSpacing}em` }
+        : {}),
+      ...(style.lineHeight ? { lineHeight: style.lineHeight } : {}),
+      ...(style.transform ? { textTransform: style.transform } : {}),
+      ...(style.align
+        ? {
+            // Los hijos de Section viven en un flex con `items-center`: sin
+            // estirar el bloque, un título mide solo su texto y alinear a la
+            // izquierda/derecha no tiene ningún espacio visible donde actuar.
+            alignSelf: "stretch",
+            width: "100%",
+            textAlign: style.align,
+            justifyContent:
+              style.align === "left"
+                ? "flex-start"
+                : style.align === "right"
+                  ? "flex-end"
+                  : "center",
+          }
+        : {}),
+    };
+  };
+
+  const hijoConEstilo = (hijo: React.ReactNode, indice: number) =>
+    React.isValidElement(hijo)
+      ? (() => {
+          const elemento = hijo as React.ReactElement<Record<string, unknown>>;
+          return React.cloneElement(elemento, {
+            style: {
+              ...(elemento.props.style as React.CSSProperties | undefined),
+              ...estiloDelBloque(indice),
+            },
+          });
+        })()
+      : hijo;
+
   const colocables = freeMove
     ? React.Children.toArray(children).map((hijo, i) => {
         const d = textOffsets?.[i];
@@ -289,20 +342,21 @@ function Section({
             data-bloque={String(i)}
             style={estiloDeDesplazamiento(true, d)}
           >
-            {hijo}
+            {hijoConEstilo(hijo, i)}
           </div>
         );
       })
-    : esEditor
+    : esEditor || hayEstilosDeTexto
       ? React.Children.toArray(children).map((hijo, i) =>
           // Un hijo que no sea elemento (una cadena suelta) no admite atributo.
           // Se deja pasar SIN marcar en vez de envolverlo: envolverlo cambiaria
           // el layout, y el indice se conserva igual porque `toArray` no mueve
           // a los demas. Ese bloque simplemente no sera seleccionable.
           React.isValidElement(hijo)
-            ? React.cloneElement(hijo as React.ReactElement<Record<string, unknown>>, {
-                "data-bloque": String(i),
-              })
+            ? React.cloneElement(
+                hijoConEstilo(hijo, i) as React.ReactElement<Record<string, unknown>>,
+                { "data-bloque": String(i) },
+              )
             : hijo,
         )
       : children;
@@ -348,7 +402,13 @@ function Section({
   return (
     <section
       className="w-full"
-      style={tint ? { backgroundColor: TINT } : undefined}
+      style={{
+        ...(tint ? { backgroundColor: TINT } : {}),
+        // `textOffsets` se expresa en cqw. Sin este contenedor, cqw busca un
+        // ancestro (a menudo el lienzo completo) y el bloque recorre más que
+        // el puntero. La portada ya lo declaraba; faltaba el camino modular.
+        ...(freeMove ? { containerType: "inline-size" } : {}),
+      }}
     >
       <div
         className={cn(
@@ -474,6 +534,34 @@ const HERO_TEXTO_CLASSES: Record<HeroVariant, string> = {
 const desplazamientoStyle = (config: HeroConfig, bloque: HeroBloque) =>
   estiloDeDesplazamiento(config.freeMove, config.textOffsets[bloque]);
 
+/** Convierte el override persistido en estilos del texto de portada. */
+function estiloDeTexto(style: TextStyle, colorBase: string): React.CSSProperties {
+  return {
+    color: style.color ?? colorBase,
+    ...(style.font ? { fontFamily: FONT_STACKS[style.font] } : {}),
+    ...(style.size ? { fontSize: `${style.size}rem` } : {}),
+    ...(style.weight ? { fontWeight: style.weight } : {}),
+    ...(style.letterSpacing !== undefined
+      ? { letterSpacing: `${style.letterSpacing}em` }
+      : {}),
+    ...(style.lineHeight ? { lineHeight: style.lineHeight } : {}),
+    ...(style.transform ? { textTransform: style.transform } : {}),
+    ...(style.align
+      ? {
+          alignSelf: "stretch",
+          width: "100%",
+          textAlign: style.align,
+          justifyContent:
+            style.align === "left"
+              ? "flex-start"
+              : style.align === "right"
+                ? "flex-end"
+                : "center",
+        }
+      : {}),
+  };
+}
+
 function HeroPreviewBase({
   config,
   animate = false,
@@ -559,7 +647,7 @@ function HeroPreviewBase({
           data-bloque="title"
           className="text-3xl font-bold tracking-tight @2xl/inv:text-5xl @4xl/inv:text-6xl @5xl/inv:text-7xl"
           style={{
-            color: sobreFoto ? "#fff" : "inherit",
+            ...estiloDeTexto(config.textStyles.title, sobreFoto ? "#fff" : "inherit"),
             ...desplazamientoStyle(config, "title"),
           }}
         >
@@ -570,7 +658,10 @@ function HeroPreviewBase({
             data-bloque="subtitle"
             className="text-base @2xl/inv:text-xl @4xl/inv:text-2xl @5xl/inv:text-3xl"
             style={{
-              color: sobreFoto ? "rgba(255,255,255,.9)" : "inherit",
+              ...estiloDeTexto(
+                config.textStyles.subtitle,
+                sobreFoto ? "rgba(255,255,255,.9)" : "inherit",
+              ),
               ...desplazamientoStyle(config, "subtitle"),
             }}
           >
@@ -582,7 +673,10 @@ function HeroPreviewBase({
             data-bloque="cta"
             className="mt-3 flex items-center gap-3 @2xl/inv:mt-5 @2xl/inv:gap-4"
             style={{
-              color: sobreFoto ? "rgba(255,255,255,.92)" : ACENTO_TEXTO,
+              ...estiloDeTexto(
+                config.textStyles.cta,
+                sobreFoto ? "rgba(255,255,255,.92)" : ACENTO_TEXTO,
+              ),
               ...desplazamientoStyle(config, "cta"),
             }}
           >
@@ -640,6 +734,7 @@ function WelcomePreviewBase({ config }: { config: WelcomeConfig }) {
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -696,11 +791,66 @@ function CountdownPreviewBase({
   const minutes = Math.floor((diff % 3_600_000) / 60_000);
   const seconds = Math.floor((diff % 60_000) / 1000);
 
+  const countdownVariant = config.variant;
+  const countdownLabels = {
+    short: ["días", "hrs", "min", "seg"],
+    full: ["días", "horas", "minutos", "segundos"],
+    initials: ["D", "H", "M", "S"],
+  }[config.labelStyle ?? "short"];
+  const countdownNumberWeight = {
+    medium: "font-medium",
+    bold: "font-bold",
+    black: "font-black",
+  }[config.numberWeight ?? "bold"];
+  // El bloque «Cuenta atrás» se puede estilizar desde el inspector. Las cifras
+  // tenían color/tamaño locales y lo ignoraban; se replica aquí el override
+  // para que el feedback en el lienzo sea fiel. `numberFont` gana a propósito:
+  // es el control específico de las cifras dentro de este mismo módulo.
+  const countdownTextStyle = config.textStyles["1"] ?? {};
+  const countdownLayout = {
+    cards: "gap-2 @2xl/inv:gap-4",
+    outline: "gap-2 @2xl/inv:gap-4",
+    minimal: "gap-4 @2xl/inv:gap-7",
+    circles: "gap-2 @2xl/inv:gap-4",
+    poster: "gap-2 @2xl/inv:gap-4",
+    timeline: "gap-0 divide-x divide-[color:var(--inv-primary)]",
+    split: "grid w-full max-w-sm grid-cols-2 gap-2 @2xl/inv:max-w-md @2xl/inv:gap-4",
+    pill: "gap-2 @2xl/inv:gap-4",
+    ribbon: "gap-1 @2xl/inv:gap-2",
+    stamp: "gap-2 @2xl/inv:gap-4",
+  }[countdownVariant];
+  const countdownCell = {
+    // Esta cadena conserva LITERALMENTE el render de las plantillas actuales.
+    cards: "flex min-w-[64px] flex-col items-center rounded-lg bg-[var(--inv-card)] px-3 py-2 shadow-sm @2xl/inv:min-w-[92px] @2xl/inv:px-5 @2xl/inv:py-3 @4xl/inv:min-w-[120px] @4xl/inv:px-7 @4xl/inv:py-4",
+    outline: "flex min-w-[64px] flex-col items-center justify-center rounded-lg border-2 bg-transparent px-3 py-2 @2xl/inv:min-w-[92px] @2xl/inv:px-5 @2xl/inv:py-3",
+    minimal: "flex min-w-12 flex-col items-center justify-center border-b-2 px-1 pb-1 @2xl/inv:min-w-20",
+    circles: "flex size-16 flex-col items-center justify-center rounded-full border-2 bg-[var(--inv-card)] @2xl/inv:size-24 @4xl/inv:size-30",
+    poster: "flex min-w-16 flex-col items-center justify-center rounded-md bg-[var(--inv-primary)] px-3 py-2 text-white shadow-md @2xl/inv:min-w-24 @2xl/inv:px-5 @2xl/inv:py-3",
+    timeline: "flex min-w-14 flex-col items-center justify-center px-2 py-1.5 @2xl/inv:min-w-20 @2xl/inv:px-4",
+    split: "flex min-w-0 flex-col items-center justify-center rounded-sm border bg-[var(--inv-card)] px-3 py-2 shadow-sm @2xl/inv:px-5 @2xl/inv:py-3",
+    pill: "flex min-w-16 flex-col items-center justify-center rounded-full border-2 bg-[var(--inv-card)] px-3 py-2 @2xl/inv:min-w-24 @2xl/inv:px-5 @2xl/inv:py-3",
+    ribbon: "flex min-w-14 flex-col items-center justify-center border-y-4 bg-[var(--inv-card)] px-2 py-2 @2xl/inv:min-w-20 @2xl/inv:px-4 @2xl/inv:py-3",
+    stamp: "flex size-16 flex-col items-center justify-center rounded-full border-2 border-dashed bg-[var(--inv-card)] @2xl/inv:size-24 @4xl/inv:size-30",
+  }[countdownVariant];
+
   const cell = (value: number, label: string) => (
-    <div className="flex min-w-[64px] flex-col items-center rounded-lg bg-[var(--inv-card)] px-3 py-2 shadow-sm @2xl/inv:min-w-[92px] @2xl/inv:px-5 @2xl/inv:py-3 @4xl/inv:min-w-[120px] @4xl/inv:px-7 @4xl/inv:py-4">
+    <div
+      className={countdownCell}
+      style={
+        countdownVariant === "outline" || countdownVariant === "minimal" || countdownVariant === "circles" || countdownVariant === "split" || countdownVariant === "pill" || countdownVariant === "ribbon" || countdownVariant === "stamp"
+          ? { borderColor: ACENTO_TARJETA }
+          : undefined
+      }
+    >
       <span
-        className="text-2xl font-bold tabular-nums @2xl/inv:text-4xl @4xl/inv:text-5xl"
-        style={{ color: ACENTO_TARJETA }}
+        className={`text-2xl ${countdownNumberWeight} tabular-nums @2xl/inv:text-4xl @4xl/inv:text-5xl`}
+        style={{
+          ...estiloDeTexto(
+            countdownTextStyle,
+            countdownVariant === "poster" ? "currentColor" : ACENTO_TARJETA,
+          ),
+          ...(config.numberFont ? { fontFamily: FONT_STACKS[config.numberFont] } : {}),
+        }}
       >
         {String(value).padStart(2, "0")}
       </span>
@@ -729,6 +879,7 @@ function CountdownPreviewBase({
         align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
         bleed={config.bleed}
         media={config.media}
         frame={config.frame}
@@ -751,6 +902,7 @@ function CountdownPreviewBase({
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -761,12 +913,23 @@ function CountdownPreviewBase({
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Faltan"}
       </h3>
-      <div className="flex flex-wrap justify-center gap-2 @2xl/inv:gap-4">
-        {cell(days, "días")}
-        {cell(hours, "hrs")}
-        {cell(minutes, "min")}
-        {cell(seconds, "seg")}
-      </div>
+      {countdownVariant === "poster" ? (
+        <div className="flex w-full max-w-md items-stretch justify-center gap-2 @2xl/inv:gap-4">
+          {cell(days, countdownLabels[0])}
+          <div className="grid flex-1 grid-cols-3 gap-2 @2xl/inv:gap-3">
+            {cell(hours, countdownLabels[1])}
+            {cell(minutes, countdownLabels[2])}
+            {cell(seconds, countdownLabels[3])}
+          </div>
+        </div>
+      ) : (
+        <div className={cn("flex flex-wrap justify-center", countdownLayout)}>
+          {cell(days, countdownLabels[0])}
+          {cell(hours, countdownLabels[1])}
+          {cell(minutes, countdownLabels[2])}
+          {cell(seconds, countdownLabels[3])}
+        </div>
+      )}
     </Section>
   );
 }
@@ -781,22 +944,42 @@ function MapPreviewBase({
   /** Ver `CountdownPreview`: los avisos al anfitrión son solo del editor. */
   editorHint?: boolean;
 }) {
+  const esEditor = useEsEditor();
   // Sin direccion NI nombre del lugar el modulo no tiene contenido: en publico
   // se omite, en el editor se explica.
   if (!config.address && !config.venueName && !editorHint) return null;
   const mapsUrl = config.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config.address)}`
     : "";
+  const mapsActionStyle = config.mapsActionStyle ?? "link";
+  const mapLayout = {
+    classic: "",
+    card: "rounded-2xl bg-[var(--inv-card)] p-6 shadow-sm",
+    editorial: "border-l-4 border-[color:var(--inv-primary)] bg-[color-mix(in_srgb,var(--inv-primary)_6%,transparent)] p-6",
+  }[config.variant ?? "classic"];
+  const mapsActionClass = {
+    link: "text-sm underline underline-offset-4 @2xl/inv:text-base @4xl/inv:text-lg",
+    button: "rounded-md px-4 py-2 text-sm font-medium text-white @2xl/inv:text-base",
+    pill: "rounded-full px-4 py-2 text-sm font-medium text-white @2xl/inv:text-base",
+  }[mapsActionStyle];
+  const mapsActionVisual = mapsActionStyle === "link"
+    ? { color: ACENTO_TEXTO }
+    : { backgroundColor: PRIMARY };
+  const addressTextStyle = config.textStyles["2"];
+  const addressStyle = addressTextStyle && Object.keys(addressTextStyle).length > 0
+    ? estiloDeTexto(addressTextStyle, "inherit")
+    : undefined;
   return (
     <Section
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
       divider={config.divider}
-      className="flex flex-col items-center gap-2 text-center"
+      className={cn("flex flex-col items-center gap-2 text-center", mapLayout)}
     >
       <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
         {config.title || "Ubicación"}
@@ -808,15 +991,22 @@ function MapPreviewBase({
       )}
       {config.address ? (
         <>
-          <p className="text-sm opacity-70 @2xl/inv:text-base @4xl/inv:text-lg">
+          <p
+            // El Fragmento que agrupa dirección + enlace no reenvía atributos
+            // de `cloneElement`. Marcamos el texto real sólo en editor (y no
+            // en freeMove, donde Section ya provee la ancla canónica).
+            data-bloque={esEditor && !config.freeMove ? "2" : undefined}
+            className="text-sm opacity-70 @2xl/inv:text-base @4xl/inv:text-lg"
+            style={addressStyle}
+          >
             {config.address}
           </p>
           <a
             href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm underline underline-offset-4 @2xl/inv:text-base @4xl/inv:text-lg"
-            style={{ color: ACENTO_TEXTO }}
+            className={mapsActionClass}
+            style={mapsActionVisual}
           >
             Ver en Google Maps
           </a>
@@ -849,6 +1039,7 @@ function GalleryPreviewBase({
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -916,6 +1107,7 @@ function VideoPreviewBase({
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -956,11 +1148,13 @@ function ItineraryPreviewBase({
   editorHint?: boolean;
 }) {
   const items = config.items.filter((i) => i.time || i.label);
+  const itineraryVariant = config.variant ?? "cards";
   return (
     <Section
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -975,7 +1169,7 @@ function ItineraryPreviewBase({
         editorHint ? (
           <p className="text-sm opacity-70">Agrega los horarios del evento.</p>
         ) : null
-      ) : (
+      ) : itineraryVariant === "cards" ? (
         <StaggerGroup
           enabled={animate}
           className="w-full max-w-sm space-y-2 text-left @2xl/inv:grid @2xl/inv:max-w-3xl @2xl/inv:grid-cols-2 @2xl/inv:gap-3 @2xl/inv:space-y-0"
@@ -992,6 +1186,45 @@ function ItineraryPreviewBase({
                 {it.time || "—"}
               </span>
               <span className="text-sm @2xl/inv:text-base @4xl/inv:text-lg">
+                {it.label}
+              </span>
+            </div>
+          ))}
+        </StaggerGroup>
+      ) : (
+        <StaggerGroup
+          enabled={animate}
+          className={cn(
+            "w-full max-w-sm text-left @2xl/inv:max-w-3xl",
+            itineraryVariant === "timeline"
+              ? "max-w-md space-y-3 border-l-2 border-[color:var(--inv-primary)] pl-6"
+              : "divide-y divide-[color:var(--inv-primary)]/25",
+          )}
+        >
+          {items.map((it, i) => (
+            <div
+              key={i}
+              className={cn(
+                "flex gap-3 py-3",
+                itineraryVariant === "timeline" && "relative grid grid-cols-[76px_1fr] items-center gap-3 py-0",
+              )}
+            >
+              {itineraryVariant === "timeline" && (
+                <span className="absolute -left-[1.875rem] top-1/2 size-3 -translate-y-1/2 rounded-full bg-[var(--inv-primary)] ring-4 ring-[var(--inv-bg)]" />
+              )}
+              <span
+                className={cn(
+                  "min-w-[64px] font-semibold @2xl/inv:text-lg @4xl/inv:text-xl",
+                  itineraryVariant === "timeline" && "rounded-full bg-[color-mix(in_srgb,var(--inv-primary)_12%,transparent)] px-2 py-1 text-center",
+                )}
+                style={{ color: ACENTO_TARJETA }}
+              >
+                {it.time || "—"}
+              </span>
+              <span className={cn(
+                "text-sm @2xl/inv:text-base @4xl/inv:text-lg",
+                itineraryVariant === "timeline" && "rounded-lg bg-[var(--inv-card)] px-3 py-2 shadow-sm",
+              )}>
                 {it.label}
               </span>
             </div>
@@ -1016,6 +1249,7 @@ function SignaturesPreviewBase({ config }: { config: SignaturesConfig }) {
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -1064,11 +1298,21 @@ function DresscodePreviewBase({
   editorHint?: boolean;
 }) {
   const level = config.level;
+  const badgeStyle = config.badgeStyle ?? "pill";
+  const badgeClass = {
+    pill: "rounded-full px-3 py-1 text-sm font-medium text-white @2xl/inv:px-4 @2xl/inv:py-1.5 @2xl/inv:text-base @4xl/inv:px-6 @4xl/inv:py-2 @4xl/inv:text-lg",
+    outline: "rounded-full border-2 px-3 py-1 text-sm font-medium @2xl/inv:px-4 @2xl/inv:py-1.5 @2xl/inv:text-base @4xl/inv:px-6 @4xl/inv:py-2 @4xl/inv:text-lg",
+    banner: "rounded-none px-5 py-1.5 text-sm font-medium text-white @2xl/inv:px-7 @2xl/inv:py-2 @2xl/inv:text-base @4xl/inv:px-9 @4xl/inv:py-2.5 @4xl/inv:text-lg",
+  }[badgeStyle];
+  const badgeVisual = badgeStyle === "outline"
+    ? { color: PRIMARY, borderColor: PRIMARY }
+    : { backgroundColor: PRIMARY };
   return (
     <Section
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -1080,8 +1324,8 @@ function DresscodePreviewBase({
       </h3>
       {level !== "custom" && (
         <span
-          className="rounded-full px-3 py-1 text-sm font-medium text-white @2xl/inv:px-4 @2xl/inv:py-1.5 @2xl/inv:text-base @4xl/inv:px-6 @4xl/inv:py-2 @4xl/inv:text-lg"
-          style={{ backgroundColor: PRIMARY }}
+          className={badgeClass}
+          style={badgeVisual}
         >
           {DRESSCODE_LABELS[level]}
         </span>
@@ -1118,11 +1362,26 @@ function GiftsPreviewBase({
   animate?: boolean;
 }) {
   const links = config.links.filter((l) => l.url);
+  const giftsVariant = config.variant ?? "pills";
+  const linksLayout = {
+    pills: "flex flex-wrap justify-center gap-2 @2xl/inv:gap-3",
+    cards: "grid w-full max-w-md grid-cols-2 gap-2 @2xl/inv:max-w-3xl @2xl/inv:gap-3",
+    list: "flex w-full max-w-md flex-col divide-y divide-[color:var(--inv-primary)]/25 @2xl/inv:max-w-xl",
+  }[giftsVariant];
+  const linkClass = {
+    pills: "rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2.5 @2xl/inv:text-base @4xl/inv:px-8 @4xl/inv:py-3 @4xl/inv:text-lg",
+    cards: "flex min-h-20 items-center justify-center rounded-xl border border-[color:var(--inv-primary)] bg-[var(--inv-card)] p-3 text-center text-sm font-medium @2xl/inv:min-h-28 @2xl/inv:text-base",
+    list: "flex items-center justify-between py-3 text-sm font-medium after:content-['↗'] @2xl/inv:text-base",
+  }[giftsVariant];
+  const linkVisual = giftsVariant === "pills"
+    ? { backgroundColor: PRIMARY }
+    : { color: ACENTO_TEXTO };
   return (
     <Section
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -1141,7 +1400,7 @@ function GiftsPreviewBase({
       {links.length > 0 && (
         <StaggerGroup
           enabled={animate}
-          className="flex flex-wrap justify-center gap-2 @2xl/inv:gap-3"
+          className={linksLayout}
           step={0.06}
         >
           {links.map((l, i) => (
@@ -1150,8 +1409,8 @@ function GiftsPreviewBase({
               href={l.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full px-4 py-1.5 text-sm font-medium text-white @2xl/inv:px-6 @2xl/inv:py-2.5 @2xl/inv:text-base @4xl/inv:px-8 @4xl/inv:py-3 @4xl/inv:text-lg"
-              style={{ backgroundColor: PRIMARY }}
+              className={linkClass}
+              style={linkVisual}
             >
               {l.label || "Ver mesa"}
             </a>
@@ -1177,6 +1436,7 @@ function MusicPreviewBase({
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -1217,11 +1477,59 @@ function RsvpPreviewBase({
   editorHint?: boolean;
 }) {
   const deadline = formatDate(config.deadline);
+  const formVariant = config.variant ?? "classic";
+  const formClass = {
+    classic: "",
+    card: "rounded-2xl bg-[var(--inv-card)] p-4 shadow-sm",
+    minimal: "border-y border-[color:var(--inv-primary)] py-4",
+    editorial: "border-l-4 border-[color:var(--inv-primary)] bg-[color-mix(in_srgb,var(--inv-primary)_6%,transparent)] p-4",
+  }[formVariant];
+  const fieldClass = formVariant === "minimal"
+    ? "rounded-none border-x-0 border-t-0 bg-transparent"
+    : undefined;
+  const configuredFieldClass = {
+    // El lienzo usa inputs deshabilitados: sin `disabled:opacity-100` el
+    // navegador suaviza tanto el borde que Contorno parece idéntico a Suave.
+    // Suave conserva la apariencia histórica de las invitaciones existentes.
+    soft: "",
+    outline: "border-2 border-[color:var(--inv-primary)] bg-transparent disabled:opacity-100",
+    underline: "rounded-none border-x-0 border-t-0 border-b-2 border-[color:var(--inv-primary)] bg-transparent px-0 disabled:opacity-100",
+  }[config.fieldStyle ?? "soft"];
+  const actionPresentation = config.buttonTone === "auto" || !config.buttonTone
+    ? formVariant === "minimal" ? "minimal" : "solid"
+    : config.buttonTone;
+  const actionTone = {
+    solid: "",
+    minimal: "border-b-2 bg-transparent text-[var(--inv-primary)]",
+    outline: "border-2 bg-transparent text-[var(--inv-primary)]",
+    soft: "bg-[color-mix(in_srgb,var(--inv-primary)_14%,white)] text-[var(--inv-primary)]",
+  }[actionPresentation];
+  const actionShape = {
+    rounded: "rounded-lg",
+    pill: "rounded-full",
+    square: "rounded-none",
+  }[config.buttonStyle ?? "rounded"];
+  const actionStyle = actionPresentation === "solid"
+    ? { backgroundColor: PRIMARY }
+    : actionPresentation === "soft"
+      ? { color: PRIMARY }
+      : { color: PRIMARY, borderColor: PRIMARY };
+  const formSpacing = {
+    compact: "space-y-2",
+    comfortable: "space-y-3",
+    airy: "space-y-5",
+  }[config.density ?? "comfortable"];
+  const attendanceClass = {
+    cards: "rounded-md border",
+    pills: "rounded-full border",
+    underline: "rounded-none border-x-0 border-t-0 border-b-2",
+  }[config.attendanceStyle ?? "cards"];
   return (
     <Section
       align={config.align}
       freeMove={config.freeMove}
       textOffsets={config.textOffsets}
+      textStyles={config.textStyles}
       bleed={config.bleed}
       media={config.media}
       frame={config.frame}
@@ -1229,35 +1537,54 @@ function RsvpPreviewBase({
       tint
       className="flex flex-col items-center gap-4"
     >
-      <div className="text-center">
-        <h3 className="text-lg font-semibold">
-          {config.title || "Confirma tu asistencia"}
-        </h3>
-        {config.description && (
-          <p className="mt-1 text-sm opacity-80">{config.description}</p>
-        )}
-        {deadline && (
-          <p className="mt-1 text-xs opacity-70">Fecha límite: {deadline}</p>
-        )}
-      </div>
+      {/* Título y descripción son hermanos directos de Section: cada uno
+          recibe su propio data-bloque y su propio override tipográfico. Los
+          nodos ocultos conservan la numeración estable aunque estén vacíos. */}
+      <h3 className="text-center text-lg font-semibold">
+        {config.title || "Confirma tu asistencia"}
+      </h3>
+      <p className={cn("-mt-3 text-center text-sm opacity-80", !config.description && "hidden")}>
+        {config.description}
+      </p>
+      <p className={cn("-mt-3 text-center text-xs opacity-70", !deadline && "hidden")}>
+        Fecha límite: {deadline}
+      </p>
 
-      <div className="w-full max-w-sm space-y-3">
+      <div className={cn("w-full max-w-sm", formSpacing, formClass)}>
         <div className="space-y-1.5">
           <Label>Nombre</Label>
-          <Input disabled={!interactive} placeholder="Tu nombre" />
+          <Input className={cn(fieldClass, configuredFieldClass)} disabled={!interactive} placeholder="Tu nombre" />
         </div>
         <div className="space-y-1.5">
           <Label>Correo (opcional)</Label>
-          <Input
+          <Input className={cn(fieldClass, configuredFieldClass)}
             disabled={!interactive}
             type="email"
             placeholder="tu@correo.com"
           />
         </div>
+        <div className="space-y-1.5">
+          <Label>¿Asistirás?</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {["Sí", "Tal vez", "No"].map((option) => (
+              <button
+                key={option}
+                type="button"
+                disabled
+                className={cn(
+                  "h-8 border-[color:var(--inv-primary)] px-1 text-xs font-medium text-[var(--inv-primary)] disabled:opacity-100",
+                  attendanceClass,
+                )}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
         {config.allowGuestCount && (
           <div className="space-y-1.5">
             <Label>Número de invitados</Label>
-            <Input
+            <Input className={cn(fieldClass, configuredFieldClass)}
               disabled={!interactive}
               type="number"
               min={1}
@@ -1267,15 +1594,15 @@ function RsvpPreviewBase({
         )}
         <div className="space-y-1.5">
           <Label>Mensaje (opcional)</Label>
-          <Textarea disabled={!interactive} placeholder="Déjanos un mensaje" />
+          <Textarea className={cn(fieldClass, configuredFieldClass)} disabled={!interactive} placeholder="Déjanos un mensaje" />
         </div>
         <button
           type="button"
           disabled
-          className="w-full rounded-lg py-2 text-sm font-medium text-white opacity-90"
-          style={{ backgroundColor: PRIMARY }}
+          className={cn("w-full py-2 text-sm font-medium text-white opacity-90", actionTone, actionShape)}
+          style={actionStyle}
         >
-          Confirmar
+          {config.buttonLabel || "Confirmar"}
         </button>
         {!interactive && editorHint && (
           <p className="text-center text-xs opacity-70">

@@ -10,7 +10,7 @@ import {
 
 describe("el interruptor del par tipográfico", () => {
   it("hay familias que comprobar", () => {
-    expect(FONT_KEYS.length).toBe(4);
+    expect(FONT_KEYS.length).toBeGreaterThanOrEqual(14);
   });
 
   it("al ACTIVARLO siembra el par desde `font`: el render NO se mueve", () => {

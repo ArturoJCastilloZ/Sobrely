@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -31,7 +31,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ModulePalette } from "@/components/editor/module-palette";
-import { SortableModuleItem } from "@/components/editor/sortable-module-item";
+import {
+  SortableModuleItem,
+  type CapaDeModulo,
+} from "@/components/editor/sortable-module-item";
+import { capasDeAnclas } from "@/lib/editor/capas";
 import { useDocumento } from "@/lib/editor/contexto-documento";
 import { PANELES_DOC, useSeleccion } from "@/lib/editor/contexto-seleccion";
 import type { EditorModule } from "@/lib/invitations/editor-types";
@@ -82,10 +86,48 @@ function Gutter({
  */
 export function RielSecciones() {
   const { modules, invitation, aplicar } = useDocumento();
-  const { moduloId, seleccionarModulo, panel, irAPanel, hojaMovil } = useSeleccion();
+  const { seleccion, moduloId, seleccionar, seleccionarModulo, panel, irAPanel, hojaMovil } = useSeleccion();
 
   /** Modulo pendiente de confirmar borrado. Antes se borraba a un clic. */
   const [porBorrar, setPorBorrar] = useState<EditorModule | null>(null);
+  /** Capas leídas del lienzo ya renderizado, por id de módulo. */
+  const [capas, setCapas] = useState<Record<string, CapaDeModulo[]>>({});
+
+  useEffect(() => {
+    const lienzo = document.querySelector<HTMLElement>("[data-editor-lienzo]");
+    if (!lienzo) return;
+    // `lienzo` puede estar desmontado cuando corra la limpieza; esta constante
+    // estrecha el tipo para los cierres de `leer` y del observer.
+    const raizLienzo = lienzo;
+
+    function leer() {
+      const siguiente: Record<string, CapaDeModulo[]> = {};
+      for (const nodoModulo of raizLienzo.querySelectorAll("[data-modulo]")) {
+        const moduloId = nodoModulo.getAttribute("data-modulo");
+        const modulo = modules.find((m) => m.id === moduloId);
+        if (!modulo || !moduloId) continue;
+        const anclas: string[] = [];
+        for (const nodoBloque of nodoModulo.querySelectorAll("[data-bloque]")) {
+          // Sólo hijos de ESTE módulo: un módulo anidado no puede contaminar
+          // su árbol padre.
+          if (nodoBloque.closest("[data-modulo]") !== nodoModulo) continue;
+          const id = nodoBloque.getAttribute("data-bloque");
+          if (id) anclas.push(id);
+        }
+        siguiente[moduloId] = capasDeAnclas(modulo.module_type, anclas);
+      }
+      setCapas((actual) =>
+        JSON.stringify(actual) === JSON.stringify(siguiente) ? actual : siguiente,
+      );
+    }
+
+    leer();
+    // El lienzo puede remontarse al cambiar una animación. Observamos sólo
+    // hijos: atributos de foco/selección no deben disparar lecturas.
+    const observer = new MutationObserver(leer);
+    observer.observe(raizLienzo, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [modules]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -206,11 +248,21 @@ export function RielSecciones() {
                   <SortableModuleItem
                     module={m}
                     selected={panel === "module" && m.id === moduloId}
+                    capas={capas[m.id] ?? []}
+                    bloqueSeleccionado={
+                      seleccion?.tipo === "bloque" && seleccion.moduloId === m.id
+                        ? seleccion.bloque
+                        : null
+                    }
                     onSelect={() => {
                       seleccionarModulo(m.id);
                       // En móvil, elegir una sección lleva DIRECTO a sus
                       // propiedades: quedarse en la lista obligaría a un
                       // segundo toque a ciegas.
+                      irAPanel("module");
+                    }}
+                    onSelectBloque={(bloque) => {
+                      seleccionar({ tipo: "bloque", moduloId: m.id, bloque });
                       irAPanel("module");
                     }}
                     onToggleVisible={(v) =>
@@ -231,6 +283,9 @@ export function RielSecciones() {
         son hermanos de "Secciones": cambian la invitacion entera.
       */}
       <div className="mt-auto space-y-0.5 border-t pt-3">
+        <p className="px-2.5 pb-1 text-[length:var(--ed-text-micro)] font-(--ed-weight-medium) tracking-(--ed-tracking-micro) text-muted-foreground uppercase">
+          Invitación completa
+        </p>
         {PANELES_DOC.filter(
           (p) => p.id !== "guests" || invitation.rsvp_mode === "guest_list",
         ).map((p) => {
@@ -243,7 +298,7 @@ export function RielSecciones() {
               onClick={() => irAPanel(p.id)}
               aria-current={activo ? "true" : undefined}
               className={cn(
-                "flex h-11 w-full items-center gap-2.5 rounded-[var(--ed-radius-sm)] px-2.5 text-left",
+                "flex min-h-11 w-full items-center gap-2.5 rounded-[var(--ed-radius-sm)] px-2.5 py-2 text-left",
                 "text-[length:var(--ed-text-sm)] tracking-(--ed-tracking-sm)",
                 "transition-colors duration-(--ed-fast) focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
                 activo
@@ -252,7 +307,14 @@ export function RielSecciones() {
               )}
             >
               <Icon className="size-4 shrink-0" aria-hidden />
-              {p.label}
+              <span className="min-w-0">
+                <span className="block">{p.label}</span>
+                {p.id === "theme" && (
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    Colores, fuentes y estilo de toda la plantilla
+                  </span>
+                )}
+              </span>
             </button>
           );
         })}

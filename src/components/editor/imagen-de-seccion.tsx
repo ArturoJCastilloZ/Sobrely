@@ -22,8 +22,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
+import { SelectLabelTrigger } from "@/components/ui/select-label-trigger";
 
 /** Lo que el esquema garantiza que hay en `config.media`. */
 type Media = {
@@ -137,7 +137,7 @@ export function ImagenDeSeccion({
     v === null ? undefined : set({ [clave]: v } as Partial<Media>);
 
   return (
-    <div className="mt-4 space-y-3 border-t pt-4">
+    <div className="space-y-3 pt-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-muted-foreground">
           Imagen de la sección
@@ -178,13 +178,7 @@ export function ImagenDeSeccion({
               value={media.position}
               onValueChange={elegido("position")}
             >
-              <SelectTrigger>
-                <SelectValue>
-                  {(v: string | null) =>
-                    v ? MEDIA_POSITION_LABELS[v as keyof typeof MEDIA_POSITION_LABELS] : null
-                  }
-                </SelectValue>
-              </SelectTrigger>
+              <SelectTrigger><SelectLabelTrigger label={MEDIA_POSITION_LABELS[media.position as keyof typeof MEDIA_POSITION_LABELS]} /></SelectTrigger>
               <SelectContent>
                 {MEDIA_POSITIONS.map((p) => (
                   <SelectItem key={p} value={p}>
@@ -198,13 +192,7 @@ export function ImagenDeSeccion({
           <div className="space-y-1.5">
             <Label>Forma</Label>
             <Select value={media.shape} onValueChange={elegido("shape")}>
-              <SelectTrigger>
-                <SelectValue>
-                  {(v: string | null) =>
-                    v ? MEDIA_SHAPE_LABELS[v as keyof typeof MEDIA_SHAPE_LABELS] : null
-                  }
-                </SelectValue>
-              </SelectTrigger>
+              <SelectTrigger><SelectLabelTrigger label={MEDIA_SHAPE_LABELS[media.shape as keyof typeof MEDIA_SHAPE_LABELS]} /></SelectTrigger>
               <SelectContent>
                 {MEDIA_SHAPES.map((f) => (
                   <SelectItem key={f} value={f}>
@@ -222,13 +210,7 @@ export function ImagenDeSeccion({
             <div className="space-y-1.5">
               <Label>Proporción</Label>
               <Select value={media.ratio} onValueChange={elegido("ratio")}>
-                <SelectTrigger>
-                  <SelectValue>
-                  {(v: string | null) =>
-                    v ? MEDIA_RATIO_LABELS[v as keyof typeof MEDIA_RATIO_LABELS] : null
-                  }
-                </SelectValue>
-                </SelectTrigger>
+                <SelectTrigger><SelectLabelTrigger label={MEDIA_RATIO_LABELS[media.ratio as keyof typeof MEDIA_RATIO_LABELS]} /></SelectTrigger>
                 <SelectContent>
                   {MEDIA_RATIOS.map((r) => (
                     <SelectItem key={r} value={r}>
@@ -243,13 +225,7 @@ export function ImagenDeSeccion({
           <div className="space-y-1.5">
             <Label>Al recortar, conservar</Label>
             <Select value={media.focal} onValueChange={elegido("focal")}>
-              <SelectTrigger>
-                <SelectValue>
-                  {(v: string | null) =>
-                    v ? MEDIA_FOCAL_LABELS[v as keyof typeof MEDIA_FOCAL_LABELS] : null
-                  }
-                </SelectValue>
-              </SelectTrigger>
+              <SelectTrigger><SelectLabelTrigger label={MEDIA_FOCAL_LABELS[media.focal as keyof typeof MEDIA_FOCAL_LABELS]} /></SelectTrigger>
               <SelectContent>
                 {MEDIA_FOCALS.map((f) => (
                   <SelectItem key={f} value={f}>

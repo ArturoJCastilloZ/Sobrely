@@ -44,18 +44,33 @@ export type Bloque = {
    * corrompe la invitacion de un cliente.
    */
   campo: string | null;
+  /**
+   * Permite cambiar la apariencia aunque el bloque agrupe varios textos y no
+   * tenga un solo campo seguro para la edición directa. RSVP es el caso: su
+   * encabezado conserva título, descripción y fecha límite bajo una misma
+   * composición, pero debe poder heredar o sobrescribir la tipografía.
+   */
+  estilable?: boolean;
 };
 
-const b = (id: string, etiqueta: string, campo: string | null = null): Bloque => ({
+const b = (
+  id: string,
+  etiqueta: string,
+  campo: string | null = null,
+  estilable = Boolean(campo),
+): Bloque => ({
   id,
   etiqueta,
   campo,
+  estilable,
 });
 
 /** Por INDICE. El orden es el de los hijos de `Section`, medido del render. */
 const POR_INDICE: Record<Exclude<ModuleType, "hero">, Bloque[]> = {
   welcome: [b("0", "Título", "title"), b("1", "Mensaje", "message")],
-  countdown: [b("0", "Título", "title"), b("1", "Cuenta atrás")],
+  // El contador es un grupo visual, pero es un hijo DOM directo de Section:
+  // puede recibir un override tipográfico conjunto sin inventar campos falsos.
+  countdown: [b("0", "Título", "title"), b("1", "Cuenta atrás", null, true)],
   map: [
     b("0", "Título", "title"),
     b("1", "Lugar", "venueName"),
@@ -79,9 +94,18 @@ const POR_INDICE: Record<Exclude<ModuleType, "hero">, Bloque[]> = {
     b("2", "Enlaces"),
   ],
   music: [b("0", "Título", "title"), b("1", "Enlace")],
-  // El primer bloque de `rsvp` es COMPUESTO: encabeza titulo y descripcion en
-  // un mismo hijo. Por eso `campo` es null — no hay un campo unico que tocar.
-  rsvp: [b("0", "Encabezado"), b("1", "Formulario")],
+  // RSVP expone título y descripción por separado. La fecha es informativa y
+  // el formulario no tiene un único texto que editar, pero SÍ admite un
+  // override tipográfico de conjunto (etiquetas, controles y acción) para
+  // mantenerlo alineado con cada diseño de invitación.
+  rsvp: [
+    b("0", "Título", "title"),
+    b("1", "Descripción", "description"),
+    // No es un campo de texto libre, pero su apariencia es independiente del
+    // título y descripción; se edita como fecha desde Contenido.
+    b("2", "Fecha límite", null, true),
+    b("3", "Formulario", null, true),
+  ],
   signatures: [
     b("0", "Título", "title"),
     b("1", "Descripción", "description"),

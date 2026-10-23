@@ -18,7 +18,22 @@ const hexColor = z
   .string()
   .regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "Color inválido.");
 
-export const FONT_KEYS = ["sans", "serif", "elegant", "script"] as const;
+export const FONT_KEYS = [
+  "sans",
+  "serif",
+  "elegant",
+  "script",
+  "modern",
+  "romantic",
+  "playful",
+  "literary",
+  "clean",
+  "geometric",
+  "friendly",
+  "calligraphy",
+  "poster",
+  "display",
+] as const;
 export type FontKey = (typeof FONT_KEYS)[number];
 
 export const SPACING_KEYS = ["compact", "normal", "relaxed"] as const;
@@ -142,6 +157,16 @@ export const FONT_STACKS: Record<FontKey, string> = {
   serif: 'Georgia, "Times New Roman", serif',
   elegant: 'var(--font-playfair), Georgia, serif',
   script: 'var(--font-dancing), "Segoe Script", cursive',
+  modern: 'var(--font-montserrat), Arial, sans-serif',
+  romantic: 'var(--font-cormorant), Georgia, serif',
+  playful: 'var(--font-pacifico), "Segoe Script", cursive',
+  literary: 'var(--font-lora), Georgia, serif',
+  clean: 'var(--font-dm-sans), Arial, sans-serif',
+  geometric: 'var(--font-space-grotesk), Arial, sans-serif',
+  friendly: 'var(--font-nunito), Arial, sans-serif',
+  calligraphy: 'var(--font-great-vibes), "Segoe Script", cursive',
+  poster: 'var(--font-bebas-neue), Impact, sans-serif',
+  display: 'var(--font-abril-fatface), Georgia, serif',
 };
 
 /**
@@ -199,6 +224,16 @@ export const FONT_LABELS: Record<FontKey, string> = {
   serif: "Clásica (Serif)",
   elegant: "Elegante (Playfair)",
   script: "Manuscrita (Dancing)",
+  modern: "Moderna (Montserrat)",
+  romantic: "Romántica (Cormorant)",
+  playful: "Juguetona (Pacifico)",
+  literary: "Literaria (Lora)",
+  clean: "Limpia (DM Sans)",
+  geometric: "Geométrica (Space Grotesk)",
+  friendly: "Amigable (Nunito)",
+  calligraphy: "Caligráfica (Great Vibes)",
+  poster: "Cartel (Bebas Neue)",
+  display: "Display (Abril Fatface)",
 };
 
 /** Vertical padding per section for each spacing option. */

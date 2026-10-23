@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { RsvpConfig } from "@/lib/modules/types";
+import type { RsvpConfig, TextStyle } from "@/lib/modules/types";
+import { FONT_STACKS } from "@/lib/theme/theme";
 import type { GuestForInvitation } from "@/lib/invitations/public-types";
 import type { BrandingLevel } from "@/lib/billing/types";
 import { respondAsGuest } from "@/lib/guests/actions";
@@ -12,6 +13,20 @@ import { GuestPass } from "@/components/public/guest-pass";
 import { AddToCalendar } from "@/components/public/add-to-calendar";
 
 type GuestStatus = GuestForInvitation["status"];
+
+function rsvpTitleStyle(style: TextStyle | undefined): React.CSSProperties {
+  if (!style) return {};
+  return {
+    ...(style.font ? { fontFamily: FONT_STACKS[style.font] } : {}),
+    ...(style.color ? { color: style.color } : {}),
+    ...(style.size ? { fontSize: `${style.size}rem` } : {}),
+    ...(style.weight ? { fontWeight: style.weight } : {}),
+    ...(style.letterSpacing !== undefined ? { letterSpacing: `${style.letterSpacing}em` } : {}),
+    ...(style.lineHeight ? { lineHeight: style.lineHeight } : {}),
+    ...(style.transform ? { textTransform: style.transform } : {}),
+    ...(style.align ? { alignSelf: "stretch", textAlign: style.align } : {}),
+  };
+}
 
 export function GuestResponsePanel({
   guest,
@@ -65,7 +80,10 @@ export function GuestResponsePanel({
   return (
     <section className="flex flex-col items-center gap-6 bg-[color-mix(in_srgb,var(--inv-text)_7%,transparent)] px-6 py-14 @2xl/inv:gap-8 @2xl/inv:py-20">
       <div className="text-center">
-        <h3 className="text-2xl font-semibold @2xl/inv:text-3xl @4xl/inv:text-4xl @5xl/inv:text-5xl">
+        <h3
+          className="text-2xl font-semibold @2xl/inv:text-3xl @4xl/inv:text-4xl @5xl/inv:text-5xl"
+          style={rsvpTitleStyle(config.textStyles?.["0"])}
+        >
           {config.title || "Confirma tu asistencia"}
         </h3>
         <p className="mt-3 text-xl @2xl/inv:text-2xl @4xl/inv:text-3xl">

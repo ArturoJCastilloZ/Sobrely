@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import type { RsvpConfig } from "@/lib/modules/types";
+import type { RsvpConfig, TextStyle } from "@/lib/modules/types";
+import { FONT_STACKS } from "@/lib/theme/theme";
 import {
   ATTENDANCE_STATUSES,
   ATTENDANCE_SHORT,
@@ -25,6 +26,21 @@ function formatDate(iso: string) {
     month: "long",
     day: "numeric",
   });
+}
+
+/** Los mismos overrides del lienzo, aplicados a la invitación publicada. */
+function rsvpTextStyle(style: TextStyle | undefined): React.CSSProperties {
+  if (!style) return {};
+  return {
+    ...(style.font ? { fontFamily: FONT_STACKS[style.font] } : {}),
+    ...(style.color ? { color: style.color } : {}),
+    ...(style.size ? { fontSize: `${style.size}rem` } : {}),
+    ...(style.weight ? { fontWeight: style.weight } : {}),
+    ...(style.letterSpacing !== undefined ? { letterSpacing: `${style.letterSpacing}em` } : {}),
+    ...(style.lineHeight ? { lineHeight: style.lineHeight } : {}),
+    ...(style.transform ? { textTransform: style.transform } : {}),
+    ...(style.align ? { alignSelf: "stretch", textAlign: style.align } : {}),
+  };
 }
 
 export function PublicRsvpForm({
@@ -53,6 +69,62 @@ export function PublicRsvpForm({
   const fieldSurface =
     "bg-[var(--inv-card)] dark:bg-[var(--inv-card)] border-[color-mix(in_srgb,var(--inv-text)_30%,transparent)]";
   const inputCls = `@4xl/inv:h-11 @4xl/inv:text-base ${fieldSurface}`;
+  const formVariant = config.variant ?? "classic";
+  const formClass = {
+    classic: "",
+    card: "rounded-2xl bg-[var(--inv-card)] p-4 shadow-sm @2xl/inv:p-6",
+    minimal: "border-y border-[color:var(--inv-primary)] py-4 @2xl/inv:py-6",
+    editorial: "border-l-4 border-[color:var(--inv-primary)] bg-[color-mix(in_srgb,var(--inv-primary)_6%,transparent)] p-4 @2xl/inv:p-6",
+  }[formVariant];
+  const fieldVariantClass = formVariant === "minimal"
+    ? "rounded-none border-x-0 border-t-0 bg-transparent"
+    : "";
+  const configuredFieldClass = {
+    soft: "",
+    outline: "border-2 border-[color:var(--inv-primary)] bg-transparent",
+    underline: "rounded-none border-x-0 border-t-0 border-b-2 border-[color:var(--inv-primary)] bg-transparent px-0",
+  }[config.fieldStyle ?? "soft"];
+  const actionPresentation = config.buttonTone === "auto" || !config.buttonTone
+    ? formVariant === "minimal" ? "minimal" : "solid"
+    : config.buttonTone;
+  const actionToneClass = {
+    solid: "",
+    minimal: "border-b-2 bg-transparent text-[var(--inv-primary)]",
+    outline: "border-2 bg-transparent text-[var(--inv-primary)]",
+    soft: "bg-[color-mix(in_srgb,var(--inv-primary)_14%,white)] text-[var(--inv-primary)]",
+  }[actionPresentation];
+  const actionShapeClass = {
+    rounded: "rounded-md",
+    pill: "rounded-full",
+    square: "rounded-none",
+  }[config.buttonStyle ?? "rounded"];
+  const actionStyle = actionPresentation === "solid"
+    ? {
+        backgroundColor: "var(--inv-cta)",
+        color: "var(--inv-cta-fg)",
+        border: "1px solid var(--inv-cta-border)",
+      }
+    : actionPresentation === "soft"
+      ? { color: "var(--inv-primary)" }
+      : actionPresentation === "minimal"
+        ? {
+        color: "var(--inv-primary)",
+        borderBottomColor: "var(--inv-primary)",
+      }
+        : {
+          color: "var(--inv-primary)",
+          borderColor: "var(--inv-primary)",
+        };
+  const formSpacing = {
+    compact: "space-y-2 @2xl/inv:space-y-3",
+    comfortable: "space-y-3 @2xl/inv:space-y-4",
+    airy: "space-y-5 @2xl/inv:space-y-7",
+  }[config.density ?? "comfortable"];
+  const attendanceClass = {
+    cards: "rounded-md border",
+    pills: "rounded-full border",
+    underline: "rounded-none border-x-0 border-t-0 border-b-2",
+  }[config.attendanceStyle ?? "cards"];
 
   // Evaluate the deadline on the client only (deferred), so we don't call an
   // impure Date.now() during render nor risk an SSR/client hydration mismatch.
@@ -103,17 +175,26 @@ export function PublicRsvpForm({
 
   return (
     <section className="flex flex-col items-center gap-4 bg-[color-mix(in_srgb,var(--inv-text)_7%,transparent)] px-6 py-10 @2xl/inv:gap-6 @2xl/inv:py-16">
-      <div className="text-center">
-        <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
+      <div className="flex w-full flex-col items-center gap-1 text-center">
+        <h3
+          className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl"
+          style={rsvpTextStyle(config.textStyles?.["0"])}
+        >
           {config.title || "Confirma tu asistencia"}
         </h3>
         {config.description && (
-          <p className="mt-1 text-sm opacity-70 @2xl/inv:text-base @4xl/inv:text-lg">
+          <p
+            className="text-sm opacity-70 @2xl/inv:text-base @4xl/inv:text-lg"
+            style={rsvpTextStyle(config.textStyles?.["1"])}
+          >
             {config.description}
           </p>
         )}
         {deadlineLabel && (
-          <p className="mt-1 text-xs opacity-60 @2xl/inv:text-sm">
+          <p
+            className="mt-1 text-xs opacity-60 @2xl/inv:text-sm"
+            style={rsvpTextStyle(config.textStyles?.["2"])}
+          >
             Fecha límite: {deadlineLabel}
           </p>
         )}
@@ -134,7 +215,8 @@ export function PublicRsvpForm({
       ) : (
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-sm space-y-3 @2xl/inv:max-w-md @2xl/inv:space-y-4 @4xl/inv:max-w-lg"
+          className={cn("w-full max-w-sm @2xl/inv:max-w-md @4xl/inv:max-w-lg", formSpacing, formClass)}
+          style={rsvpTextStyle(config.textStyles?.["3"])}
         >
           <div className="space-y-1.5">
             <Label htmlFor="guestName" className={labelCls}>
@@ -145,7 +227,7 @@ export function PublicRsvpForm({
               name="guestName"
               required
               maxLength={120}
-              className={inputCls}
+              className={`${inputCls} ${fieldVariantClass} ${configuredFieldClass}`}
             />
           </div>
 
@@ -158,7 +240,7 @@ export function PublicRsvpForm({
               name="guestEmail"
               type="email"
               placeholder="tu@correo.com"
-              className={inputCls}
+              className={`${inputCls} ${fieldVariantClass} ${configuredFieldClass}`}
             />
           </div>
 
@@ -180,7 +262,8 @@ export function PublicRsvpForm({
                       : undefined
                   }
                   className={cn(
-                    "flex h-11 items-center justify-center rounded-md border px-2 text-sm font-medium transition-colors @4xl/inv:text-base",
+                    "flex h-11 items-center justify-center px-2 text-sm font-medium transition-colors @4xl/inv:text-base",
+                    attendanceClass,
                     status === s
                       ? ""
                       : "border-[color-mix(in_srgb,var(--inv-text)_30%,transparent)] hover:bg-[var(--inv-card)]",
@@ -204,7 +287,7 @@ export function PublicRsvpForm({
                 min={1}
                 max={MAX_GUEST_COUNT}
                 value={count}
-                className={inputCls}
+                className={`${inputCls} ${fieldVariantClass} ${configuredFieldClass}`}
                 onChange={(e) =>
                   setCount(
                     Math.min(
@@ -223,7 +306,7 @@ export function PublicRsvpForm({
             values={answers}
             onChange={setAnswers}
             labelClassName={labelCls}
-            inputClassName={inputCls}
+            inputClassName={`${inputCls} ${fieldVariantClass} ${configuredFieldClass}`}
           />
 
           <div className="space-y-1.5">
@@ -234,7 +317,7 @@ export function PublicRsvpForm({
               id="message"
               name="message"
               maxLength={500}
-              className={`@4xl/inv:text-base ${fieldSurface}`}
+              className={`@4xl/inv:text-base ${fieldSurface} ${fieldVariantClass} ${configuredFieldClass}`}
             />
           </div>
 
@@ -247,14 +330,10 @@ export function PublicRsvpForm({
           <button
             type="submit"
             disabled={pending}
-            style={{
-              backgroundColor: "var(--inv-cta)",
-              color: "var(--inv-cta-fg)",
-              border: "1px solid var(--inv-cta-border)",
-            }}
-            className="flex h-11 w-full items-center justify-center rounded-md px-4 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60 @4xl/inv:h-12 @4xl/inv:text-base"
+            style={actionStyle}
+            className={cn("flex h-11 w-full items-center justify-center px-4 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60 @4xl/inv:h-12 @4xl/inv:text-base", actionToneClass, actionShapeClass)}
           >
-            {pending ? "Enviando…" : "Confirmar"}
+            {pending ? "Enviando…" : config.buttonLabel || "Confirmar"}
           </button>
         </form>
       )}

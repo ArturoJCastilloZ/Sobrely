@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ComponentType } from "react";
+import { useMemo, type ComponentType, type ReactNode } from "react";
 import {
   SparklesIcon, MailOpenIcon, TimerIcon, MapPinIcon, ImagesIcon, FilmIcon,
   CalendarClockIcon, ShirtIcon, GiftIcon, MusicIcon, CheckCircle2Icon,
@@ -30,6 +30,43 @@ import {
 import { defaultAnimation } from "@/lib/animation/schema";
 import { ComposicionDeSeccion } from "@/components/editor/composicion-de-seccion";
 import { ImagenDeSeccion } from "@/components/editor/imagen-de-seccion";
+
+/**
+ * Un grupo nativo, plegable y accesible del inspector.
+ *
+ * El editor ya tenía todos estos controles, pero los presentaba como un
+ * formulario continuo. Agruparlos por intención deja el contenido —la tarea
+ * principal— abierto, y revela diseño, imagen y animación cuando el usuario
+ * los necesita. `details` conserva teclado y semántica sin inventar otro
+ * widget compuesto.
+ */
+function GrupoInspector({
+  titulo,
+  abierto = false,
+  children,
+}: {
+  titulo: string;
+  abierto?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details
+      open={abierto}
+      className="group/inspector rounded-[var(--ed-radius-sm)] border bg-card"
+    >
+      <summary className="flex h-10 cursor-pointer list-none items-center justify-between px-3 text-sm font-medium marker:content-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+        {titulo}
+        <span
+          aria-hidden
+          className="text-muted-foreground transition-transform duration-(--ed-fast) group-open/inspector:rotate-180"
+        >
+          ▾
+        </span>
+      </summary>
+      <div className="border-t px-3 pb-3">{children}</div>
+    </details>
+  );
+}
 
 /**
  * Registro de tipos de módulo: un solo lugar por tipo.
@@ -212,8 +249,12 @@ export function ModuleConfigEditor({
 }) {
   const { Editor } = MODULE_REGISTRY[moduleType];
   return (
-    <div>
-      <Editor {...rest} />
+    <div className="space-y-3">
+      <GrupoInspector titulo="Contenido" abierto>
+        <div className="pt-3">
+          <Editor {...rest} />
+        </div>
+      </GrupoInspector>
       {/*
         Va AQUÍ y no en los once editores: el dispatcher ya centraliza el
         despacho por tipo, así que el bloque se escribe una vez y quien decide
@@ -221,22 +262,28 @@ export function ModuleConfigEditor({
         mano. `hero` queda fuera solo, porque compone con `variant`.
       */}
       {tieneComposicionDeSeccion(moduleType) ? (
-        <ComposicionDeSeccion config={rest.config} onChange={rest.onChange} />
+        <GrupoInspector titulo="Diseño">
+          <ComposicionDeSeccion config={rest.config} onChange={rest.onChange} />
+        </GrupoInspector>
       ) : null}
       {/* Misma regla y mismo sitio: lo decide el ESQUEMA
           (`tieneSlotDeMedia`), no una lista. */}
       {tieneSlotDeMedia(moduleType) ? (
-        <ImagenDeSeccion
+        <GrupoInspector titulo="Imagen">
+          <ImagenDeSeccion
+            config={rest.config}
+            onChange={rest.onChange}
+            ctx={rest.ctx}
+          />
+        </GrupoInspector>
+      ) : null}
+      <GrupoInspector titulo="Animación">
+        <AnimationControl
           config={rest.config}
           onChange={rest.onChange}
-          ctx={rest.ctx}
+          defaults={animationDefaults ?? defaultAnimation()}
         />
-      ) : null}
-      <AnimationControl
-        config={rest.config}
-        onChange={rest.onChange}
-        defaults={animationDefaults ?? defaultAnimation()}
-      />
+      </GrupoInspector>
     </div>
   );
 }

@@ -27,7 +27,9 @@ import {
  * defecto estructural del editor viejo.
  */
 export const PANELES_DOC = [
-  { id: "theme", label: "Tema" },
+  // No se llama solo «Tema»: modifica la invitación ENTERA (paleta,
+  // tipografías, fondo, separación, decoración y animación), no una sección.
+  { id: "theme", label: "Diseño global" },
   { id: "guests", label: "Invitados" },
   { id: "settings", label: "Ajustes" },
 ] as const;

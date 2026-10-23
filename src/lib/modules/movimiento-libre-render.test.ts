@@ -169,8 +169,38 @@ describe("las secciones colocan por índice, y su cuenta queda FIJADA", () => {
       const iBloque = html.indexOf('data-bloque=');
       expect(iSec, `${tipo} no renderiza <section>`).toBeGreaterThanOrEqual(0);
       expect(iBloque).toBeGreaterThan(iSec);
+      // Cada sección modular es el contenedor de `cqw`: sin declararlo, los
+      // mismos 80 px de puntero se convertían en una distancia mayor al
+      // resolverse contra el lienzo completo.
+      expect(html).toContain("container-type:inline-size");
     },
   );
+
+  it("mantiene el estilo de un texto aunque se pueda arrastrar", () => {
+    const html = pinta("welcome", {
+      title: "Hola",
+      message: "Mensaje",
+      freeMove: true,
+      textStyles: {
+        "0": {
+          font: "script",
+          color: "#a21caf",
+          align: "left",
+          weight: "bold",
+          letterSpacing: 0.12,
+          lineHeight: 1.4,
+          transform: "uppercase",
+        },
+      },
+    });
+    expect(html).toContain("font-family:var(--font-dancing)");
+    expect(html).toContain("color:#a21caf");
+    expect(html).toContain("text-align:left");
+    expect(html).toContain("font-weight:bold");
+    expect(html).toContain("letter-spacing:0.12em");
+    expect(html).toContain("line-height:1.4");
+    expect(html).toContain("text-transform:uppercase");
+  });
 
   it.each(Object.entries(CONTENIDO))("%s", (tipo, cfg) => {
     const html = pinta(tipo, { ...cfg, freeMove: true });

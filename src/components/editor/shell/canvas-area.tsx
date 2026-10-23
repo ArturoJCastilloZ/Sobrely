@@ -33,7 +33,13 @@ export function CanvasArea() {
   return (
     // Canvas: el protagonista. Antes vivia a la derecha, con un parrafo gris
     // encima que decia "Vista previa en tiempo real".
-    <main className="flex min-h-[60svh] min-w-0 flex-1 flex-col overflow-y-auto bg-muted/40 p-4 max-lg:pb-[calc(var(--ed-barra-movil)+1rem)] lg:min-h-0">
+    <main
+      data-editor-scroll
+      // Al llegar al principio o al final, la rueda no debe encadenarse al
+      // documento. El editor es una pantalla de altura fija: el único scroll
+      // de escritorio debe ser este, nunca la página que lo contiene.
+      className="flex min-h-[60svh] min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-muted/40 p-4 max-lg:pb-[calc(var(--ed-barra-movil)+1rem)] lg:min-h-0"
+    >
       <PreviewPane
         modules={modules}
         theme={theme}

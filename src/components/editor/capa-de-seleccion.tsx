@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from "react";
 
 import { bloquePorId } from "@/lib/editor/bloques";
 import {
+  SOLICITAR_EDICION_BLOQUE,
+  type SolicitudEdicionBloque,
+} from "@/lib/editor/acciones-lienzo";
+import {
   paradaExtrema,
   siguienteParada,
   type Parada,
@@ -120,7 +124,7 @@ export function CapaDeSeleccion({
   onTexto,
 }: {
   /** El contenedor de los módulos. Es donde se escucha, y el origen de coordenadas. */
-  contenedor: React.RefObject<HTMLDivElement | null>;
+  contenedor: HTMLDivElement | null;
   modules: EditorModule[];
   /**
    * Commit de una edición de texto: `(moduloId, campo, valor)`.
@@ -156,7 +160,7 @@ export function CapaDeSeleccion({
 
   // ---- Detección del clic, por BURBUJEO ---------------------------------
   useEffect(() => {
-    const cont = contenedor.current;
+    const cont = contenedor;
     if (!cont) return;
 
     function alPulsar(e: MouseEvent) {
@@ -192,6 +196,15 @@ export function CapaDeSeleccion({
       if (suyo instanceof HTMLElement) suyo.focus({ preventScroll: true });
     }
 
+    // El modo Movimiento libre llama `preventDefault()` en `pointerdown` para
+    // que el navegador no seleccione letras mientras se arrastra. Eso puede
+    // suprimir el `click` que escuchamos arriba. Capturamos el puntero ANTES
+    // de que llegue al arrastre: un toque selecciona el bloque y un movimiento
+    // posterior sigue siendo arrastre, sin perder el inspector tipográfico.
+    function alIniciarPuntero(e: PointerEvent) {
+      alPulsar(e);
+    }
+
     function alPasar(e: MouseEvent) {
       const t = e.target as Element | null;
       const modulo = t?.closest?.("[data-modulo]");
@@ -210,10 +223,12 @@ export function CapaDeSeleccion({
     }
 
     cont.addEventListener("click", alPulsar);
+    cont.addEventListener("pointerdown", alIniciarPuntero, true);
     cont.addEventListener("mousemove", alPasar);
     cont.addEventListener("mouseleave", alSalir);
     return () => {
       cont.removeEventListener("click", alPulsar);
+      cont.removeEventListener("pointerdown", alIniciarPuntero, true);
       cont.removeEventListener("mousemove", alPasar);
       cont.removeEventListener("mouseleave", alSalir);
     };
@@ -238,7 +253,7 @@ export function CapaDeSeleccion({
   // `Esc` cancela y restaura; `Enter` confirma. `Enter` no inserta salto porque
   // ninguno de estos campos es multilínea en el render.
   useEffect(() => {
-    const cont = contenedor.current;
+    const cont = contenedor;
     if (!cont) return;
 
     function entrar(sel: Seleccion) {
@@ -292,6 +307,24 @@ export function CapaDeSeleccion({
     }
 
     /**
+     * El inspector también puede abrir la edición del bloque seleccionado.
+     * Se escucha en `document` y no se pasa un ref de un extremo al otro:
+     * ambos ya comparten la dirección estable `{ moduloId, bloque }`, pero el
+     * nodo editable pertenece al DOM del lienzo y sólo esta capa conoce cómo
+     * prepararlo sin romper React.
+     */
+    function alSolicitarEdicion(e: Event) {
+      if (!(e instanceof CustomEvent)) return;
+      const solicitud = e.detail as SolicitudEdicionBloque | undefined;
+      if (!solicitud?.moduloId || !solicitud.bloque) return;
+      entrar({
+        tipo: "bloque",
+        moduloId: solicitud.moduloId,
+        bloque: solicitud.bloque,
+      });
+    }
+
+    /**
      * `Enter` sobre un bloque enfocado entra a editar — el equivalente por
      * teclado del doble clic.
      *
@@ -322,9 +355,11 @@ export function CapaDeSeleccion({
 
     cont.addEventListener("dblclick", alDobleClic);
     cont.addEventListener("keydown", alTeclado);
+    document.addEventListener(SOLICITAR_EDICION_BLOQUE, alSolicitarEdicion);
     return () => {
       cont.removeEventListener("dblclick", alDobleClic);
       cont.removeEventListener("keydown", alTeclado);
+      document.removeEventListener(SOLICITAR_EDICION_BLOQUE, alSolicitarEdicion);
     };
   }, [contenedor, modules]);
 
@@ -350,7 +385,7 @@ export function CapaDeSeleccion({
   // generacion en la `key`—, asi que este efecto depende de `modules` y vuelve
   // a sembrarlo en cada remonte.
   useEffect(() => {
-    const cont = contenedor.current;
+    const cont = contenedor;
     if (!cont) return;
 
     const paradas = paradasDe(cont);
@@ -413,7 +448,7 @@ export function CapaDeSeleccion({
 
   // ---- Salir de la edición: confirmar o cancelar -------------------------
   useEffect(() => {
-    const cont = contenedor.current;
+    const cont = contenedor;
     if (!cont || !editando) return;
     const nodo = nodoDe(cont, {
       tipo: "bloque",
@@ -517,7 +552,7 @@ export function CapaDeSeleccion({
   // mueve el zoom o cuando otra sección de arriba crece. Una lectura única se
   // queda desfasada y el recuadro flota sobre nada, que es peor que no pintarlo.
   useEffect(() => {
-    const cont = contenedor.current;
+    const cont = contenedor;
     if (!cont) return;
     const releer = () => setCajaSel(medir(cont, nodoDe(cont, seleccion), zoom));
     releer();

@@ -1,9 +1,17 @@
 "use client";
 
-import { MousePointerClickIcon } from "lucide-react";
+import { MousePointerClickIcon, PencilIcon, RotateCcwIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PublishControls } from "@/components/editor/publish-controls";
@@ -14,10 +22,193 @@ import { GuestManager } from "@/components/dashboard/guest-manager";
 import { RsvpModeToggle } from "@/components/dashboard/rsvp-mode-toggle";
 import { ModuleConfigEditor, MODULE_REGISTRY } from "@/components/modules/registry";
 import { detectAnimationConflicts } from "@/lib/animation/conflicts";
+import { solicitarEdicionBloque } from "@/lib/editor/acciones-lienzo";
+import { bloquePorId } from "@/lib/editor/bloques";
 import { useDocumento } from "@/lib/editor/contexto-documento";
 import { PANELES_DOC, useSeleccion } from "@/lib/editor/contexto-seleccion";
-import { MODULE_META } from "@/lib/modules/types";
+import { MODULE_META, type TextStyle } from "@/lib/modules/types";
+import { TEXT_STYLE_PRESETS } from "@/lib/modules/text-style-presets";
+import { FONT_STACKS, type FontKey } from "@/lib/theme/theme";
+import {
+  FontPreviewOptions,
+  FontPreviewTrigger,
+} from "@/components/editor/font-select-options";
+import { SelectLabelTrigger } from "@/components/ui/select-label-trigger";
 import { cn } from "@/lib/utils";
+
+const PESO_LABELS = {
+  normal: "Regular",
+  medium: "Medio",
+  semibold: "Semibold",
+  bold: "Negrita",
+} as const;
+
+const MAYUSCULAS_LABELS = {
+  none: "Original",
+  uppercase: "MAYÚSCULAS",
+  lowercase: "minúsculas",
+} as const;
+
+function ResetProperty({
+  visible,
+  onReset,
+}: {
+  visible: boolean;
+  onReset: () => void;
+}) {
+  if (!visible) return null;
+  return (
+    <button
+      type="button"
+      onClick={onReset}
+      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+      title="Restaurar este valor al diseño global"
+    >
+      <RotateCcwIcon className="size-3" /> Global
+    </button>
+  );
+}
+
+function EditorDeEstiloTexto({
+  bloque,
+  config,
+  onChange,
+}: {
+  bloque: string;
+  config: Record<string, unknown>;
+  onChange: (patch: Record<string, unknown>) => void;
+}) {
+  const styles = (config.textStyles ?? {}) as Record<string, TextStyle>;
+  const style = styles[bloque] ?? {};
+  const patch = (next: Partial<TextStyle>) => {
+    const siguiente = { ...style, ...next };
+    for (const [key, value] of Object.entries(siguiente)) {
+      if (value === undefined) delete siguiente[key as keyof TextStyle];
+    }
+    onChange({ textStyles: { ...styles, [bloque]: siguiente } });
+  };
+  const reset = (key: keyof TextStyle) => patch({ [key]: undefined } as Partial<TextStyle>);
+
+  return (
+    <div className="space-y-3 rounded-[var(--ed-radius-sm)] border bg-muted/30 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-medium">Estilo de este texto</p>
+          <p className="text-xs text-muted-foreground">Sobrescribe el diseño global solo aquí.</p>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Restaurar estilo global"
+          title="Restaurar estilo global"
+          disabled={Object.keys(style).length === 0}
+          onClick={() => {
+            const restored = { ...styles };
+            delete restored[bloque];
+            onChange({ textStyles: restored });
+          }}
+        >
+          <RotateCcwIcon />
+        </Button>
+      </div>
+      {/* La muestra de una fuente necesita ancho real. En dos columnas se
+          montaba sobre Color con nombres como “Moderna (Montserrat)”. */}
+      <div className="grid grid-cols-1 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Fuente</Label>
+          <Select value={style.font ?? "global"} onValueChange={(value) => patch({ font: value === "global" ? undefined : value as FontKey })}>
+            <SelectTrigger className="min-w-0"><FontPreviewTrigger font={style.font} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="global">Diseño global</SelectItem>
+              <FontPreviewOptions />
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Color</Label>
+          <div className="flex h-9 items-center gap-2 rounded-md border px-2">
+            <input type="color" aria-label="Color del texto" value={style.color ?? "#1f2937"} onChange={(event) => patch({ color: event.target.value })} className="size-5 cursor-pointer" />
+            <span className="text-xs text-muted-foreground">{style.color ?? "Global"}</span>
+            <span className="ml-auto"><ResetProperty visible={style.color !== undefined} onReset={() => reset("color")} /></span>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Estilos rápidos</Label>
+        <div className="grid grid-cols-3 gap-1.5">
+          {TEXT_STYLE_PRESETS.map((preset) => (
+            <Button
+              key={preset.key}
+              type="button"
+              variant="outline"
+              className="h-auto min-h-15 flex-col gap-0.5 px-1 py-1.5"
+              onClick={() => patch(preset.style)}
+              title={`Aplicar ${preset.label}`}
+            >
+              <span
+                className="max-w-full truncate text-base leading-none"
+                style={{ fontFamily: FONT_STACKS[preset.style.font] }}
+              >
+                {preset.sample}
+              </span>
+              <span className="text-[10px] font-normal leading-tight text-muted-foreground">
+                {preset.label}
+              </span>
+            </Button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Aplican una receta y luego puedes ajustar cada valor.
+        </p>
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs font-medium">Tamaño <span className="flex items-center gap-1">{style.size ? `${style.size} rem` : "Global"}<ResetProperty visible={style.size !== undefined} onReset={() => reset("size")} /></span></div>
+        <Input type="range" min="0.75" max="5" step="0.05" value={style.size ?? 1} onChange={(event) => patch({ size: Number(event.target.value) })} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Peso</Label>
+          <Select value={style.weight ?? "global"} onValueChange={(value) => patch({ weight: value === "global" ? undefined : value as TextStyle["weight"] })}>
+            <SelectTrigger><SelectLabelTrigger label={style.weight ? PESO_LABELS[style.weight] : "Diseño global"} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="global">Diseño global</SelectItem>
+              {(Object.keys(PESO_LABELS) as Array<keyof typeof PESO_LABELS>).map((peso) => (
+                <SelectItem key={peso} value={peso}>{PESO_LABELS[peso]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Mayúsculas</Label>
+          <Select value={style.transform ?? "global"} onValueChange={(value) => patch({ transform: value === "global" ? undefined : value as TextStyle["transform"] })}>
+            <SelectTrigger><SelectLabelTrigger label={style.transform ? MAYUSCULAS_LABELS[style.transform] : "Diseño global"} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="global">Diseño global</SelectItem>
+              {(Object.keys(MAYUSCULAS_LABELS) as Array<keyof typeof MAYUSCULAS_LABELS>).map((transform) => (
+                <SelectItem key={transform} value={transform}>{MAYUSCULAS_LABELS[transform]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs font-medium">Espaciado <span className="flex items-center gap-1">{style.letterSpacing === undefined ? "Global" : `${style.letterSpacing} em`}<ResetProperty visible={style.letterSpacing !== undefined} onReset={() => reset("letterSpacing")} /></span></div>
+        <Input type="range" min="-0.08" max="0.4" step="0.01" value={style.letterSpacing ?? 0} onChange={(event) => patch({ letterSpacing: Number(event.target.value) })} />
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs font-medium">Interlineado <span className="flex items-center gap-1">{style.lineHeight ?? "Global"}<ResetProperty visible={style.lineHeight !== undefined} onReset={() => reset("lineHeight")} /></span></div>
+        <Input type="range" min="0.8" max="2.5" step="0.05" value={style.lineHeight ?? 1.2} onChange={(event) => patch({ lineHeight: Number(event.target.value) })} />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Alineación</Label>
+        <div className="grid grid-cols-3 gap-1">
+          {(["left", "center", "right"] as const).map((align) => <Button key={align} type="button" size="sm" variant={style.align === align ? "secondary" : "outline"} onClick={() => patch({ align })}>{align === "left" ? "Izq." : align === "center" ? "Centro" : "Der."}</Button>)}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Inspector: contextual a lo que hay seleccionado.
@@ -38,9 +229,13 @@ export function PanelPropiedades() {
     username,
     dirty,
   } = useDocumento();
-  const { moduloId, panel, setPanel, hojaMovil } = useSeleccion();
+  const { seleccion, moduloId, panel, setPanel, hojaMovil } = useSeleccion();
 
   const selected = modules.find((m) => m.id === moduloId) ?? null;
+  const bloqueSeleccionado =
+    selected && seleccion?.tipo === "bloque"
+      ? bloquePorId(selected.module_type, seleccion.bloque)
+      : null;
 
   /** Limpia todos los overrides por modulo para que hereden el del tema. */
   function applyAnimationToAll() {
@@ -84,6 +279,45 @@ export function PanelPropiedades() {
         {panel === "module" &&
           (selected ? (
             <>
+              {bloqueSeleccionado && seleccion?.tipo === "bloque" && (
+                <div className="space-y-3 rounded-[var(--ed-radius-sm)] border bg-muted/40 p-3">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Bloque seleccionado
+                  </p>
+                  <div className="mt-1 flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium">{bloqueSeleccionado.etiqueta}</span>
+                    {bloqueSeleccionado.campo && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() =>
+                          solicitarEdicionBloque({
+                            moduloId: selected.id,
+                            bloque: seleccion.bloque,
+                          })
+                        }
+                      >
+                        <PencilIcon />
+                        Editar
+                      </Button>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {bloqueSeleccionado.campo
+                      ? "Edita el texto directamente en el lienzo."
+                      : bloqueSeleccionado.estilable
+                        ? "Ajusta la tipografía de todo este encabezado."
+                        : "Este bloque se configura desde los controles de la sección."}
+                  </p>
+                  {bloqueSeleccionado.estilable && (
+                    <EditorDeEstiloTexto
+                      bloque={seleccion.bloque}
+                      config={selected.config}
+                      onChange={(patch) => aplicar({ type: "updateConfig", id: selected.id, patch })}
+                    />
+                  )}
+                </div>
+              )}
               {selected.module_type === "rsvp" &&
                 invitation.rsvp_mode === "guest_list" && (
                   <Button

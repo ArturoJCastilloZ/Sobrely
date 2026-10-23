@@ -64,14 +64,14 @@ const MARCADOS_SIN_FREEMOVE: Record<string, string[]> = {
   hero: ["title", "subtitle", "cta"],
   welcome: ["0", "1"],
   countdown: ["0", "1"],
-  map: ["0", "1"],
+  map: ["0", "1", "2"],
   gallery: ["0"],
   video: ["0", "1"],
   itinerary: ["0"],
   dresscode: ["0", "1", "3"],
   gifts: ["0", "1"],
   music: ["0", "1"],
-  rsvp: ["0", "1"],
+  rsvp: ["0", "1", "2", "3"],
   signatures: ["0", "1", "2", "3"],
 };
 
@@ -91,6 +91,21 @@ describe("la tabla cubre los doce tipos", () => {
       const ids = bloquesDe(t).map((b) => b.id);
       expect(new Set(ids).size, t).toBe(ids.length);
     }
+  });
+
+  it("separa título y descripción de RSVP para editarlos y estilarlos individualmente", () => {
+    expect(bloquesDe("rsvp").map((bloque) => [bloque.id, bloque.campo])).toEqual([
+      ["0", "title"],
+      ["1", "description"],
+      ["2", null],
+      ["3", null],
+    ]);
+    expect(bloquePorId("rsvp", "2")?.estilable).toBe(true);
+    expect(bloquePorId("rsvp", "3")?.estilable).toBe(true);
+  });
+
+  it("permite estilizar el grupo de cifras de la cuenta regresiva", () => {
+    expect(bloquePorId("countdown", "1")?.estilable).toBe(true);
   });
 });
 

@@ -1,5 +1,4 @@
 "use client";
-
 import { Button } from "@/components/ui/button";
 import { useDocumento } from "@/lib/editor/contexto-documento";
 
@@ -83,7 +82,11 @@ function BannerConflicto() {
  */
 export function EditorLayout() {
   return (
-    <div className="flex h-svh flex-col overflow-hidden">
+    // El editor es una superficie de aplicación, no contenido del documento.
+    // Anclarla al viewport evita que un navegador calcule `svh` menor que la
+    // ventana visible y deje al documento seguir desplazándose bajo el canvas.
+    // No se modifica `body`: así no se interfieren foco, selección ni modales.
+    <div className="fixed inset-0 flex min-h-0 flex-col overflow-hidden">
       <TopBar />
       <BannerConflicto />
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">

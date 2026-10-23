@@ -18,8 +18,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
+import { SelectLabelTrigger } from "@/components/ui/select-label-trigger";
 
 /**
  * Las perillas de composición de una sección, expuestas como PRESETS.
@@ -55,7 +55,7 @@ export function ComposicionDeSeccion({
     typeof config[k] === "string" && config[k] ? (config[k] as string) : def;
 
   return (
-    <div className="mt-4 space-y-3 border-t pt-4">
+    <div className="space-y-3 pt-3">
       <p className="text-xs font-medium text-muted-foreground">
         Composición de la sección
       </p>
@@ -85,11 +85,7 @@ export function ComposicionDeSeccion({
           value={val("align", "center")}
           onValueChange={(v) => onChange({ align: v })}
         >
-          <SelectTrigger>
-            <SelectValue>
-              {(v: string | null) => (v ? SECTION_ALIGN_LABELS[v as keyof typeof SECTION_ALIGN_LABELS] : null)}
-            </SelectValue>
-          </SelectTrigger>
+          <SelectTrigger><SelectLabelTrigger label={SECTION_ALIGN_LABELS[val("align", "center") as keyof typeof SECTION_ALIGN_LABELS]} /></SelectTrigger>
           <SelectContent>
             {SECTION_ALIGNS.map((a) => (
               <SelectItem key={a} value={a}>
@@ -106,11 +102,7 @@ export function ComposicionDeSeccion({
           value={val("frame", "none")}
           onValueChange={(v) => onChange({ frame: v })}
         >
-          <SelectTrigger>
-            <SelectValue>
-              {(v: string | null) => (v ? SECTION_FRAME_LABELS[v as keyof typeof SECTION_FRAME_LABELS] : null)}
-            </SelectValue>
-          </SelectTrigger>
+          <SelectTrigger><SelectLabelTrigger label={SECTION_FRAME_LABELS[val("frame", "none") as keyof typeof SECTION_FRAME_LABELS]} /></SelectTrigger>
           <SelectContent>
             {SECTION_FRAMES.map((f) => (
               <SelectItem key={f} value={f}>
@@ -132,13 +124,7 @@ export function ComposicionDeSeccion({
           value={val("divider", "none")}
           onValueChange={(v) => (v === null ? undefined : onChange({ divider: v }))}
         >
-          <SelectTrigger>
-            <SelectValue>
-              {(v: string | null) =>
-                v ? SECTION_DIVIDER_LABELS[v as keyof typeof SECTION_DIVIDER_LABELS] : null
-              }
-            </SelectValue>
-          </SelectTrigger>
+          <SelectTrigger><SelectLabelTrigger label={SECTION_DIVIDER_LABELS[val("divider", "none") as keyof typeof SECTION_DIVIDER_LABELS]} /></SelectTrigger>
           <SelectContent>
             {SECTION_DIVIDERS.map((d) => (
               <SelectItem key={d} value={d}>
@@ -155,11 +141,7 @@ export function ComposicionDeSeccion({
           value={val("bleed", "contained")}
           onValueChange={(v) => onChange({ bleed: v })}
         >
-          <SelectTrigger>
-            <SelectValue>
-              {(v: string | null) => (v ? SECTION_BLEED_LABELS[v as keyof typeof SECTION_BLEED_LABELS] : null)}
-            </SelectValue>
-          </SelectTrigger>
+          <SelectTrigger><SelectLabelTrigger label={SECTION_BLEED_LABELS[val("bleed", "contained") as keyof typeof SECTION_BLEED_LABELS]} /></SelectTrigger>
           <SelectContent>
             {SECTION_BLEEDS.map((b) => (
               <SelectItem key={b} value={b}>

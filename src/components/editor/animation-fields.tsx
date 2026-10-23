@@ -36,8 +36,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
+import { SelectLabelTrigger } from "@/components/ui/select-label-trigger";
 
 /**
  * Granular animation controls shared by the global panel (theme.animation) and
@@ -80,13 +80,7 @@ export function AnimationFields({
           value={preset}
           onValueChange={(v) => onPatch({ preset: v as AnimationPreset })}
         >
-          <SelectTrigger className="w-full">
-            <SelectValue>
-              {(v: string) =>
-                ANIMATION_REGISTRY[v as AnimationPreset]?.label ?? "Transición"
-              }
-            </SelectValue>
-          </SelectTrigger>
+          <SelectTrigger className="w-full"><SelectLabelTrigger label={ANIMATION_REGISTRY[preset]?.label ?? "Transición"} /></SelectTrigger>
           <SelectContent>
             {TRANSITIONS.map((t) => (
               <SelectItem key={t.key} value={t.key}>
@@ -203,11 +197,7 @@ export function AnimationFields({
               value={trigger}
               onValueChange={(v) => onPatch({ trigger: v as AnimationConfig["trigger"] })}
             >
-              <SelectTrigger>
-                <SelectValue>
-                  {(v: string) => TRIGGER_LABELS[v] ?? v}
-                </SelectValue>
-              </SelectTrigger>
+              <SelectTrigger><SelectLabelTrigger label={TRIGGER_LABELS[trigger]} /></SelectTrigger>
               <SelectContent>
                 {["scroll", "load"].map((t) => (
                   <SelectItem key={t} value={t}>

@@ -105,6 +105,13 @@ describe("rsvpConfigSchema — las preguntas son opcionales y acotadas", () => {
   it("una config vieja sin preguntas sigue siendo válida", () => {
     const c = rsvpConfigSchema.parse({});
     expect(c.questions).toEqual([]);
+    expect(c.buttonLabel).toBe("Confirmar");
+    expect(c.variant).toBe("classic");
+    expect(c.fieldStyle).toBe("soft");
+    expect(c.buttonStyle).toBe("rounded");
+    expect(c.buttonTone).toBe("auto");
+    expect(c.density).toBe("comfortable");
+    expect(c.attendanceStyle).toBe("cards");
   });
 
   it("rechaza más preguntas de las permitidas", () => {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FONT_KEYS } from "@/lib/theme/theme";
 
 /**
  * Single source of truth for invitation module types, their config schemas
@@ -478,7 +479,12 @@ const mediaShape = {
 
 /** `z.object` + las perillas de composición, para no repetirlas en 11 sitios. */
 const objetoConLayout = <T extends z.ZodRawShape>(shape: T) =>
-  z.object({ ...shape, ...layoutShape, ...mediaShape });
+  z.object({
+    ...shape,
+    ...layoutShape,
+    ...mediaShape,
+    textStyles: sectionTextStylesSchema,
+  });
 
 // ---- Per-module config schemas -------------------------------------------
 
@@ -622,6 +628,40 @@ export const HERO_BLOQUE_LABELS: Record<HeroBloque, string> = {
   cta: "Etiqueta",
 };
 
+/**
+ * Ajustes opcionales para un texto concreto. No hay valores por defecto a
+ * propósito: cuando falta una propiedad el bloque hereda el diseño global y
+ * conserva las clases responsive originales de la plantilla.
+ */
+export const textStyleSchema = z
+  .object({
+    font: z.enum(FONT_KEYS).optional(),
+    color: z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/).optional(),
+    size: z.number().min(0.75).max(5).optional(),
+    align: z.enum(["left", "center", "right"]).optional(),
+    weight: z.enum(["normal", "medium", "semibold", "bold"]).optional(),
+    letterSpacing: z.number().min(-0.08).max(0.4).optional(),
+    lineHeight: z.number().min(0.8).max(2.5).optional(),
+    transform: z.enum(["none", "uppercase", "lowercase"]).optional(),
+  })
+  // Un override corrupto nunca debe invalidar la portada completa.
+  .catch({});
+
+export type TextStyle = z.infer<typeof textStyleSchema>;
+
+export const heroTextStylesSchema = z
+  .object({
+    title: textStyleSchema,
+    subtitle: textStyleSchema,
+    cta: textStyleSchema,
+  })
+  .default({ title: {}, subtitle: {}, cta: {} });
+
+/** Overrides por índice para los bloques que renderiza `Section`. */
+export const sectionTextStylesSchema = z
+  .record(z.string(), textStyleSchema)
+  .default({});
+
 export const heroConfigSchema = z.object({
   title: z.string().max(120).default("Nuestra celebración"),
   subtitle: z.string().max(200).default(""),
@@ -683,10 +723,59 @@ export const heroConfigSchema = z.object({
       subtitle: SIN_DESPLAZAR,
       cta: SIN_DESPLAZAR,
     }),
+  // Overrides de tipografía para cada uno de los tres textos seleccionables.
+  // Vacíos = diseño global, por lo que las invitaciones existentes no cambian.
+  textStyles: heroTextStylesSchema,
 });
+
+/** Composiciones acotadas para la cuenta regresiva, todas responsive. */
+export const COUNTDOWN_VARIANTS = [
+  "cards",
+  "outline",
+  "minimal",
+  "circles",
+  "poster",
+  "timeline",
+  "split",
+  "pill",
+  "ribbon",
+  "stamp",
+] as const;
+export type CountdownVariant = (typeof COUNTDOWN_VARIANTS)[number];
+export const COUNTDOWN_VARIANT_LABELS: Record<CountdownVariant, string> = {
+  cards: "Tarjetas",
+  outline: "Contorno",
+  minimal: "Minimalista",
+  circles: "Círculos",
+  poster: "Cartel",
+  timeline: "Línea de tiempo",
+  split: "Mosaico",
+  pill: "Cápsulas",
+  ribbon: "Cintas",
+  stamp: "Sellos",
+};
+export const COUNTDOWN_LABEL_STYLES = ["short", "full", "initials"] as const;
+export type CountdownLabelStyle = (typeof COUNTDOWN_LABEL_STYLES)[number];
+export const COUNTDOWN_LABEL_STYLE_LABELS: Record<CountdownLabelStyle, string> = {
+  short: "Breve",
+  full: "Completo",
+  initials: "Iniciales",
+};
+export const COUNTDOWN_NUMBER_WEIGHTS = ["medium", "bold", "black"] as const;
+export type CountdownNumberWeight = (typeof COUNTDOWN_NUMBER_WEIGHTS)[number];
+export const COUNTDOWN_NUMBER_WEIGHT_LABELS: Record<CountdownNumberWeight, string> = {
+  medium: "Medio",
+  bold: "Negrita",
+  black: "Máximo",
+};
 
 export const countdownConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Faltan"),
+  variant: z.enum(COUNTDOWN_VARIANTS).default("cards"),
+  /** Fuente exclusiva de las cifras; ausente = hereda el diseño global. */
+  numberFont: z.enum(FONT_KEYS).optional(),
+  labelStyle: z.enum(COUNTDOWN_LABEL_STYLES).default("short"),
+  numberWeight: z.enum(COUNTDOWN_NUMBER_WEIGHTS).default("bold"),
   // ISO datetime string; empty means "not set yet"
   targetDate: z.string().default(""),
   // When true, the countdown uses the invitation's event_date instead of
@@ -694,10 +783,20 @@ export const countdownConfigSchema = objetoConLayout({
   useEventDate: z.boolean().default(false),
 });
 
+export const MAP_VARIANTS = ["classic", "card", "editorial"] as const;
+export type MapVariant = (typeof MAP_VARIANTS)[number];
+export const MAP_VARIANT_LABELS: Record<MapVariant, string> = {
+  classic: "Clásico",
+  card: "Tarjeta",
+  editorial: "Editorial",
+};
+
 export const mapConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Ubicación"),
   venueName: z.string().max(160).default(""),
   address: z.string().max(300).default(""),
+  variant: z.enum(MAP_VARIANTS).default("classic"),
+  mapsActionStyle: z.enum(["link", "button", "pill"]).default("link"),
 });
 
 /**
@@ -740,6 +839,55 @@ export const rsvpQuestionSchema = z.object({
 
 export type RsvpQuestion = z.infer<typeof rsvpQuestionSchema>;
 
+/** Composiciones visuales del formulario de confirmación. */
+export const RSVP_VARIANTS = ["classic", "card", "minimal", "editorial"] as const;
+export type RsvpVariant = (typeof RSVP_VARIANTS)[number];
+export const RSVP_VARIANT_LABELS: Record<RsvpVariant, string> = {
+  classic: "Clásico",
+  card: "Tarjeta",
+  minimal: "Minimalista",
+  editorial: "Editorial",
+};
+export const RSVP_FIELD_STYLES = ["soft", "outline", "underline"] as const;
+export type RsvpFieldStyle = (typeof RSVP_FIELD_STYLES)[number];
+export const RSVP_FIELD_STYLE_LABELS: Record<RsvpFieldStyle, string> = {
+  soft: "Suave",
+  outline: "Contorno",
+  underline: "Subrayado",
+};
+export const RSVP_BUTTON_STYLES = ["rounded", "pill", "square"] as const;
+export type RsvpButtonStyle = (typeof RSVP_BUTTON_STYLES)[number];
+export const RSVP_BUTTON_STYLE_LABELS: Record<RsvpButtonStyle, string> = {
+  rounded: "Redondeado",
+  pill: "Cápsula",
+  square: "Recto",
+};
+/** Jerarquía cromática de la acción; `auto` conserva la intención del layout. */
+export const RSVP_BUTTON_TONES = ["auto", "solid", "outline", "soft"] as const;
+export type RsvpButtonTone = (typeof RSVP_BUTTON_TONES)[number];
+export const RSVP_BUTTON_TONE_LABELS: Record<RsvpButtonTone, string> = {
+  auto: "Automático",
+  solid: "Sólido",
+  outline: "Contorno",
+  soft: "Suave",
+};
+/** Ritmo vertical del formulario; no altera los tamaños táctiles de los campos. */
+export const RSVP_DENSITIES = ["compact", "comfortable", "airy"] as const;
+export type RsvpDensity = (typeof RSVP_DENSITIES)[number];
+export const RSVP_DENSITY_LABELS: Record<RsvpDensity, string> = {
+  compact: "Compacto",
+  comfortable: "Equilibrado",
+  airy: "Amplio",
+};
+/** Apariencia de la decisión de asistencia dentro del formulario. */
+export const RSVP_ATTENDANCE_STYLES = ["cards", "pills", "underline"] as const;
+export type RsvpAttendanceStyle = (typeof RSVP_ATTENDANCE_STYLES)[number];
+export const RSVP_ATTENDANCE_STYLE_LABELS: Record<RsvpAttendanceStyle, string> = {
+  cards: "Tarjetas",
+  pills: "Cápsulas",
+  underline: "Subrayado",
+};
+
 /**
  * ¿Esta pregunta se puede responder siquiera?
  *
@@ -754,6 +902,14 @@ export function isAnswerableQuestion(q: RsvpQuestion): boolean {
 export const rsvpConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Confirma tu asistencia"),
   description: z.string().max(400).default(""),
+  /** Etiqueta de la acción pública; no cambia la semántica del envío. */
+  buttonLabel: z.string().trim().min(1).max(40).default("Confirmar"),
+  variant: z.enum(RSVP_VARIANTS).default("classic"),
+  fieldStyle: z.enum(RSVP_FIELD_STYLES).default("soft"),
+  buttonStyle: z.enum(RSVP_BUTTON_STYLES).default("rounded"),
+  buttonTone: z.enum(RSVP_BUTTON_TONES).default("auto"),
+  density: z.enum(RSVP_DENSITIES).default("comfortable"),
+  attendanceStyle: z.enum(RSVP_ATTENDANCE_STYLES).default("cards"),
   deadline: z.string().default(""),
   allowGuestCount: z.boolean().default(true),
   questions: z.array(rsvpQuestionSchema).max(MAX_RSVP_QUESTIONS).default([]),
@@ -819,8 +975,17 @@ export const videoConfigSchema = objetoConLayout({
   url: optionalUrl, // YouTube o Vimeo
 });
 
+export const ITINERARY_VARIANTS = ["cards", "timeline", "rows"] as const;
+export type ItineraryVariant = (typeof ITINERARY_VARIANTS)[number];
+export const ITINERARY_VARIANT_LABELS: Record<ItineraryVariant, string> = {
+  cards: "Tarjetas",
+  timeline: "Línea de tiempo",
+  rows: "Filas",
+};
+
 export const itineraryConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Itinerario"),
+  variant: z.enum(ITINERARY_VARIANTS).default("cards"),
   items: z
     .array(
       z.object({
@@ -848,19 +1013,36 @@ export const DRESSCODE_LABELS: Record<DresscodeLevel, string> = {
   casual: "Casual",
   custom: "Personalizado",
 };
+export const DRESSCODE_BADGE_STYLES = ["pill", "outline", "banner"] as const;
+export type DresscodeBadgeStyle = (typeof DRESSCODE_BADGE_STYLES)[number];
+export const DRESSCODE_BADGE_STYLE_LABELS: Record<DresscodeBadgeStyle, string> = {
+  pill: "Cápsula",
+  outline: "Contorno",
+  banner: "Cinta",
+};
 
 export const dresscodeConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Código de vestimenta"),
   level: z.enum(DRESSCODE_LEVELS).default("formal"),
+  badgeStyle: z.enum(DRESSCODE_BADGE_STYLES).default("pill"),
   description: z.string().max(400).default(""),
   // Optional custom image (uploaded by the user) shown instead of the built-in
   // illustration.
   imageUrl: optionalUrl,
 });
 
+export const GIFTS_VARIANTS = ["pills", "cards", "list"] as const;
+export type GiftsVariant = (typeof GIFTS_VARIANTS)[number];
+export const GIFTS_VARIANT_LABELS: Record<GiftsVariant, string> = {
+  pills: "Cápsulas",
+  cards: "Tarjetas",
+  list: "Lista",
+};
+
 export const giftsConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Mesa de regalos"),
   description: z.string().max(400).default(""),
+  variant: z.enum(GIFTS_VARIANTS).default("pills"),
   links: z
     .array(
       z.object({
