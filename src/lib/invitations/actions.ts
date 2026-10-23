@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { defaultConfigFor, type ModuleType } from "@/lib/modules/types";
 import { saveEditorSchema, type SaveEditorInput } from "@/lib/invitations/schemas";
@@ -14,6 +14,8 @@ import {
 import { getPlan, resolveExpiry } from "@/lib/billing/plans";
 import { templateToDocument } from "@/lib/invitations/template-render";
 import type { PlanCode } from "@/lib/billing/types";
+import { enlaceConDestino } from "@/lib/auth/ruta-interna";
+import { rutaUsarPlantilla } from "@/lib/templates/marketplace";
 
 /** Short random suffix to keep slugs unique per user without a lookup loop. */
 function randomSuffix() {
@@ -105,13 +107,39 @@ export async function createInvitation(
 /**
  * Creates a new invitation from a template, copying its theme and modules,
  * then redirects into the editor.
+ *
+ * `reemplazar`: que la redirección SUSTITUYA la entrada actual del historial en
+ * vez de apilar otra. Lo usa la creación automática al volver de registrarse
+ * (`?usar=1`): así «atrás» desde el editor no regresa a una página que volvería
+ * a crear la invitación. NO se resuelve quitando el parámetro con
+ * `history.replaceState` antes de la acción: medido, esa navegación interna de
+ * Next compite con la redirección de la acción y la pisa (el servidor creaba
+ * la invitación y el navegador se quedaba en la plantilla). El botón normal
+ * del dashboard no lo pasa y conserva su comportamiento.
  */
-export async function createFromTemplate(templateId: string) {
+export async function createFromTemplate(
+  templateId: string,
+  opciones?: { reemplazar?: boolean },
+) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) {
+    // Sesión caducada a media acción: `/login` pelado perdía la plantilla que la
+    // persona acababa de elegir. Se le devuelve a ELLA, con la señal de crear.
+    const { data: destino } = await supabase
+      .from("templates")
+      .select("slug")
+      .eq("id", templateId)
+      .eq("is_active", true)
+      .maybeSingle();
+    redirect(
+      destino?.slug
+        ? enlaceConDestino("/login", "redirectTo", rutaUsarPlantilla(destino.slug as string))
+        : "/login",
+    );
+  }
 
   // Templates are publicly readable when active (RLS).
   const { data: template, error: tplErr } = await supabase
@@ -180,7 +208,10 @@ export async function createFromTemplate(templateId: string) {
   }
 
   revalidatePath("/dashboard");
-  redirect(`/editor/${invitation.id}`);
+  redirect(
+    `/editor/${invitation.id}`,
+    opciones?.reemplazar ? RedirectType.replace : RedirectType.push,
+  );
 }
 
 export type SetPublishedResult =

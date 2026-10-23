@@ -8,13 +8,20 @@ import { Label } from "@/components/ui/label";
 import { SubmitButton } from "./submit-button";
 import { GoogleButton } from "./google-button";
 import { FormMessage } from "./form-message";
+import { enlaceConDestino } from "@/lib/auth/ruta-interna";
 
-export function RegisterForm() {
+/**
+ * `next` es A DÓNDE iba la persona (p. ej. la plantilla que eligió en la
+ * galería). La página ya lo trae validado; aquí viaja en un campo oculto para
+ * `register`, a Google como `redirectTo` y al enlace de «Inicia sesión».
+ */
+export function RegisterForm({ next = "/dashboard" }: { next?: string }) {
   const [state, formAction] = useActionState(register, null);
 
   return (
     <div className="space-y-4">
       <form action={formAction} className="space-y-4">
+        <input type="hidden" name="next" value={next} />
         <div className="space-y-2">
           <Label htmlFor="displayName">Nombre</Label>
           <Input
@@ -63,11 +70,14 @@ export function RegisterForm() {
         </div>
       </div>
 
-      <GoogleButton />
+      <GoogleButton redirectTo={next} />
 
       <p className="text-center text-sm text-muted-foreground">
         ¿Ya tienes cuenta?{" "}
-        <Link href="/login" className="text-foreground underline underline-offset-4">
+        <Link
+          href={enlaceConDestino("/login", "redirectTo", next)}
+          className="text-foreground underline underline-offset-4"
+        >
           Inicia sesión
         </Link>
       </p>

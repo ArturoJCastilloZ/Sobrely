@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { LoginForm } from "@/components/auth/login-form";
+import { rutaInternaSegura } from "@/lib/auth/ruta-interna";
 
 export const metadata: Metadata = { title: "Iniciar sesión · Sobrely" };
 
@@ -16,8 +17,7 @@ export default async function LoginPage({
   searchParams: Promise<{ redirectTo?: string; error?: string }>;
 }) {
   const { redirectTo } = await searchParams;
-  const safeRedirect =
-    redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+  const safeRedirect = rutaInternaSegura(redirectTo);
 
   return (
     <Card>

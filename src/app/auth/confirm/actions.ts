@@ -3,6 +3,12 @@
 import { redirect } from "next/navigation";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { rutaInternaSegura } from "@/lib/auth/ruta-interna";
+import {
+  elegirDestinoTrasConfirmar,
+  leerIntencion,
+  olvidarIntencion,
+} from "@/lib/auth/intencion";
 
 /**
  * `verifyOtp` uses `email` for the signup/magic-link token in the token_hash
@@ -24,8 +30,9 @@ const TYPE_FALLBACKS: Record<string, EmailOtpType[]> = {
 export async function confirmEmail(formData: FormData) {
   const tokenHash = String(formData.get("token_hash") ?? "");
   const type = String(formData.get("type") ?? "") as EmailOtpType;
-  const nextRaw = String(formData.get("next") ?? "/dashboard");
-  const next = nextRaw.startsWith("/") ? nextRaw : "/dashboard";
+  // `redirect(next)` va directo al navegador, así que aquí `//evil.com` SÍ salía
+  // del sitio: es de los dos sitios realmente explotables.
+  const solicitado = rutaInternaSegura(formData.get("next"));
 
   if (!tokenHash || !type) {
     redirect("/login?error=auth&reason=missing_params");
@@ -40,6 +47,13 @@ export async function confirmEmail(formData: FormData) {
       token_hash: tokenHash,
     });
     if (!error) {
+      // La plantilla del correo trae `next=/dashboard` fijo. Si la persona se
+      // registró viniendo de una plantilla, `register` dejó su destino en una
+      // cookie; solo sustituye al destino por defecto (ver
+      // `elegirDestinoTrasConfirmar`). Se lee DESPUÉS de verificar el token y se
+      // borra: no debe sobrevivir a una confirmación exitosa.
+      const next = elegirDestinoTrasConfirmar(solicitado, await leerIntencion());
+      await olvidarIntencion();
       redirect(next);
     }
     lastError = error.message;

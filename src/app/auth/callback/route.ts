@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { rutaInternaSegura } from "@/lib/auth/ruta-interna";
 
 /**
  * Handles the OAuth (Google) and email-link callbacks. Supabase redirects here
@@ -8,8 +9,10 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
-  const safeNext = next.startsWith("/") ? next : "/dashboard";
+  // Aquí el destino se concatena a `origin`, así que `//evil.com` no salía del
+  // sitio (medido en el análisis); se valida igual para no depender de ese
+  // detalle de cómo se arma la URL, y para que haya UNA sola regla.
+  const safeNext = rutaInternaSegura(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();

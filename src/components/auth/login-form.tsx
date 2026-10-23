@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { SubmitButton } from "./submit-button";
 import { GoogleButton } from "./google-button";
 import { FormMessage } from "./form-message";
+import { enlaceConDestino } from "@/lib/auth/ruta-interna";
 
 export function LoginForm({ redirectTo }: { redirectTo: string }) {
   const [state, formAction] = useActionState(login, null);
@@ -64,7 +65,10 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
 
       <p className="text-center text-sm text-muted-foreground">
         ¿No tienes cuenta?{" "}
-        <Link href="/register" className="text-foreground underline underline-offset-4">
+        <Link
+          href={enlaceConDestino("/register", "next", redirectTo)}
+          className="text-foreground underline underline-offset-4"
+        >
           Regístrate
         </Link>
       </p>

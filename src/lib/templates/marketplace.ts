@@ -125,15 +125,20 @@ export function hrefVistaPlantilla(slug: string): string {
 }
 
 /**
- * Destino del botón «Usar esta plantilla» para quien NO tiene sesión.
- *
- * Lleva `next` con la vista de venta para que, cuando el registro lo respete,
- * la persona vuelva a la plantilla que eligió. HOY el registro lo ignora (el
- * correo fuerza `/dashboard` y Google no recibe destino): cablearlo es la
- * Fase 2 del embudo y vive en la zona de auth. Hasta entonces quien se registra
- * aterriza en el dashboard y tiene que volver a buscar la plantilla. Dejar el
- * parámetro ya puesto hace que la Fase 2 no tenga que tocar la galería.
+ * A dónde se vuelve tras registrarse o iniciar sesión viniendo de «Usar esta
+ * plantilla»: la vista de venta CON `?usar=1`, la señal de que la persona ya
+ * eligió y solo faltaba la cuenta. La vista decide si crea la invitación sola
+ * (ver `esInicioReciente`): el parámetro por sí solo no basta para crear nada.
+ */
+export function rutaUsarPlantilla(slug: string): string {
+  return `${hrefVistaPlantilla(slug)}?usar=1`;
+}
+
+/**
+ * Destino del botón «Usar esta plantilla» para quien NO tiene sesión: el
+ * registro, llevando a dónde volver. El registro (correo, Google) y el inicio
+ * de sesión conservan ese `next` hasta el final; ver `lib/auth/ruta-interna`.
  */
 export function hrefUsarPlantillaSinSesion(slug: string): string {
-  return `/register?next=${encodeURIComponent(hrefVistaPlantilla(slug))}`;
+  return `/register?next=${encodeURIComponent(rutaUsarPlantilla(slug))}`;
 }

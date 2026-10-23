@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { rutaInternaSegura } from "@/lib/auth/ruta-interna";
+import { guardarIntencion } from "@/lib/auth/intencion";
 
 export type AuthActionState = {
   error?: string;
@@ -40,7 +42,10 @@ export async function login(
   }
 
   revalidatePath("/", "layout");
-  redirect(redirectTo.startsWith("/") ? redirectTo : "/dashboard");
+  // `rutaInternaSegura` y no `startsWith("/")`: aquel deja pasar `//evil.com`, y
+  // `redirect()` lo trata como otro host. Medido con el código anterior: tras
+  // iniciar sesión con `redirectTo=//evil.com` la pestaña terminó en evil.com.
+  redirect(rutaInternaSegura(redirectTo));
 }
 
 export async function register(
@@ -50,6 +55,9 @@ export async function register(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const displayName = String(formData.get("displayName") ?? "").trim();
+  // A dónde iba la persona cuando decidió registrarse (p. ej. la plantilla que
+  // eligió). Sin `next`, el destino de siempre.
+  const next = rutaInternaSegura(formData.get("next"));
 
   if (!email || !password) {
     return { error: "Ingresa tu correo y contraseña." };
@@ -65,7 +73,7 @@ export async function register(
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=/dashboard`,
+      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
       data: { display_name: displayName || null },
     },
   });
@@ -84,6 +92,12 @@ export async function register(
     };
   }
 
+  // El correo de confirmación sale de una plantilla de Supabase con
+  // `next=/dashboard` escrito a mano, así que `emailRedirectTo` no basta: la
+  // intención viaja también en una cookie que `confirmEmail` lee al confirmar.
+  // Solo se guarda cuando el registro SÍ prosperó.
+  await guardarIntencion(next);
+
   return {
     success:
       "Cuenta creada. Revisa tu correo y confirma tu cuenta para iniciar sesión.",
@@ -93,7 +107,7 @@ export async function register(
 export async function signInWithGoogle(redirectTo?: string) {
   const supabase = await createClient();
   const origin = await getOrigin();
-  const next = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+  const next = rutaInternaSegura(redirectTo);
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",

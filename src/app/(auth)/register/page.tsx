@@ -7,10 +7,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { RegisterForm } from "@/components/auth/register-form";
+import { rutaInternaSegura } from "@/lib/auth/ruta-interna";
 
 export const metadata: Metadata = { title: "Crear cuenta · Sobrely" };
 
-export default function RegisterPage() {
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
   return (
     <Card>
       <CardHeader>
@@ -20,7 +26,7 @@ export default function RegisterPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <RegisterForm />
+        <RegisterForm next={rutaInternaSegura(next)} />
       </CardContent>
     </Card>
   );

@@ -8,6 +8,8 @@ import { formatPrice } from "@/lib/billing/config";
 import { cn } from "@/lib/utils";
 import { cargarPlantillaPublica } from "@/lib/templates/galeria-publica";
 import { hrefUsarPlantillaSinSesion } from "@/lib/templates/marketplace";
+import { esInicioReciente } from "@/lib/auth/inicio-reciente";
+import { AutoUsarPlantilla } from "@/components/templates/auto-usar-plantilla";
 import PlantillaPage from "@/app/plantilla/[slug]/page";
 
 /**
@@ -40,21 +42,36 @@ export async function generateMetadata({
 
 export default async function VistaDePlantillaPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ usar?: string }>;
 }) {
   const { slug } = await params;
+  const { usar } = await searchParams;
   const supabase = await createClient();
   const [tpl, sesion] = await Promise.all([
     cargarPlantillaPublica(supabase, slug),
     supabase.auth.getUser(),
   ]);
   if (!tpl) notFound();
-  const autenticado = Boolean(sesion.data.user);
+  const usuario = sesion.data.user;
+  const autenticado = Boolean(usuario);
+
+  /*
+    Crear la invitación sola solo si la persona VIENE de elegir esta plantilla:
+    `?usar=1` Y un inicio de sesión de hace segundos. El parámetro por sí solo
+    no basta, porque crear algo por el mero hecho de abrir una URL permitiría
+    que un enlace ajeno cree borradores en la cuenta de quien ya tenga sesión.
+    Con la ventana, eso solo puede ocurrir a quien acaba de entrar.
+  */
+  const autoUsar =
+    usar === "1" && usuario !== null && esInicioReciente(usuario.last_sign_in_at);
 
   return (
     <>
       <PlantillaPage params={params} />
+      {autoUsar && <AutoUsarPlantilla templateId={tpl.id} nombre={tpl.name} />}
 
       {/*
         `sticky bottom-0` y NO `fixed` + un hueco del tamaño de la barra. Con

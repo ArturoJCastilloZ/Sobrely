@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   hrefUsarPlantillaSinSesion,
   hrefVistaPlantilla,
+  rutaUsarPlantilla,
 } from "@/lib/templates/marketplace";
 
 describe("rutas de la galería pública", () => {
@@ -15,11 +16,15 @@ describe("rutas de la galería pública", () => {
     expect(hrefVistaPlantilla("a b/../x")).toBe("/plantillas/a%20b%2F..%2Fx");
   });
 
-  it("sin sesión, el registro recibe la plantilla como `next` ya codificado", () => {
+  it("la ruta de «usar» es la vista de venta con la señal ?usar=1", () => {
+    expect(rutaUsarPlantilla("boda-elegante")).toBe("/plantillas/boda-elegante?usar=1");
+  });
+
+  it("sin sesión, el registro recibe esa ruta como `next` ya codificado", () => {
     const href = hrefUsarPlantillaSinSesion("boda-elegante");
-    expect(href).toBe("/register?next=%2Fplantillas%2Fboda-elegante");
+    expect(href).toBe("/register?next=%2Fplantillas%2Fboda-elegante%3Fusar%3D1");
     const next = new URL(href, "https://sobrely.test").searchParams.get("next");
-    expect(next).toBe("/plantillas/boda-elegante");
+    expect(next).toBe("/plantillas/boda-elegante?usar=1");
   });
 
   it("el `next` es siempre una ruta interna (no puede apuntar a otro host)", () => {
