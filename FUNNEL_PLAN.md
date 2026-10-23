@@ -437,6 +437,50 @@ pruebas de render y de contrato).
 - Correo al borrador sin publicar (24 h, 3 días, 7 días antes del evento).
   Requiere consentimiento y baja (LFPDPPP); revisar `privacidad`/`terminos`.
 
+**Hecho en `skarlette/funnel-fase5`** (operación en `docs/recordatorios.md`).
+
+Supuestos míos, porque no respondiste las dos preguntas: **proveedor = Resend**
+(ya elegido en `docs/resend-smtp.md`) y **consentimiento = interruptor en el panel,
+apagado por omisión; quien no decidió no recibe nada**. Es lo más restrictivo y lo
+más fácil de ampliar después; lo contrario no se deshace.
+
+Decisión de diseño: **no hay casilla en el registro.** Permitiría suscribir el
+correo de otra persona (se registra con la casilla marcada; ella confirma después
+su cuenta y queda suscrita sin haberlo aceptado). Lo guarda una guarda de pruebas.
+
+| Comprobación (Supabase local + Resend falso, navegador) | Resultado medido |
+|---|---|
+| 8 usuarios, 11 borradores en distintos puntos de las ventanas | Se enviaron **4** correos, los previstos (24 h, 3 días, evento, y uno solo para quien tenía dos borradores). Ninguno a: sin consentimiento, con baja, borrador de 2 h, de 30 días, ni al publicado |
+| 2.ª corrida inmediata | 0 envíos (tope de uno por día) |
+| Sin el tope, 3.ª corrida | 1 envío: el **segundo** borrador de una persona; los 4 anteriores no se repitieron |
+| Resend responde 500 | `fallos:1`, reclamo soltado (0 filas); al volver Resend, se envía |
+| Cron sin credencial / mala / correcta | 401 / 401 / 200 |
+| Baja de un clic (POST) | `true/panel` → `false/baja`; token ajeno → 400 sin cambios; **GET no da de baja** (303 a la página) |
+| Página de baja en navegador | Pide confirmación; tras confirmar muestra «Listo», quita el token de la URL; `noindex`, `no-referrer` |
+| Interruptor del panel | Guarda `opted_in`, fuente y versión del texto. Con la escritura bloqueada **vuelve atrás y avisa**. Con la lectura bloqueada (migración sin aplicar) la tarjeta **se oculta** |
+| Migración 0061 aplicada dos veces | Idempotente; `anon`/`authenticated` sin acceso, solo `service_role` |
+
+Pruebas: 1,512 en 103 archivos; **37 mutantes, todos muertos** (3 sobrevivieron al
+primer intento y los cerré: secreto corto en la verificación, guarda de la migración
+satisfecha por un comentario, y un mutante mal planteado). Un fallo que cazó la
+suite existente: la ruta `/recordatorios` debía estar en `RESERVED_SLUGS`.
+
+**Errores míos en el camino:** el `.env.local` de prueba usó `ANON_KEY` y la app lee
+`PUBLISHABLE_KEY` (corregido, solo afectó la prueba); y una aserción de «espacio
+final» que no era un caso real (`Headers` lo recorta, medido).
+
+**NO verificado:**
+- **Envío real por Resend** (dominio verificado, SPF/DKIM, entrega, spam). Solo se probó contra un servidor falso.
+- **Que `List-Unsubscribe-Post` produzca el botón de «Cancelar suscripción»** en Gmail/Apple Mail: depende del cliente y de la reputación del dominio.
+- **Vercel Cron** real (el plan y la hora; en Hobby corre una vez al día con imprecisión de la hora).
+- El correo en clientes reales (Outlook, modo oscuro): solo se vio en un navegador.
+- **Revisión jurídica** del texto de consentimiento y del aviso de privacidad (LFPDPPP): lo redacté yo.
+- La migración `0061` NO está aplicada en producción.
+
+**Para decidir tú:** el tope es por día, no por semana (una persona con 5 borradores
+recibe 5 correos en 5 días); el interruptor parte con base de consentimiento en cero,
+así que al inicio no llegará a nadie hasta que lo active.
+
 ## 4. Riesgos
 
 | Riesgo | Mitigación |

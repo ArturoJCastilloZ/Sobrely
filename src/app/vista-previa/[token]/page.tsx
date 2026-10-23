@@ -27,7 +27,7 @@ import { diasRestantes } from "@/lib/previews/token";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Vista previa · Sobrely",
+  title: "Vista previa",
   robots: { index: false, follow: false, noarchive: true, nosnippet: true },
   referrer: "no-referrer",
 };

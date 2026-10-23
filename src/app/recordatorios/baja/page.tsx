@@ -20,7 +20,8 @@ import { verificarBaja } from "@/lib/recordatorios/baja-token";
  * que no se filtren ni a buscadores ni a ningún sitio al que se navegue desde aquí.
  */
 export const metadata: Metadata = {
-  title: "Recordatorios · Sobrely",
+  // El título raíz ya añade « · Sobrely»; repetirlo lo duplica en la pestaña.
+  title: "Recordatorios",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };

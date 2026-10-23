@@ -92,7 +92,7 @@ export function armarCorreo(e: {
   ].join("\n");
 
   const html = [
-    '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1c1917;line-height:1.5">',
+    '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#ffffff;color:#1c1917;line-height:1.5">',
     ...parrafos.map((p) => `<p style="margin:0 0 16px">${escaparHtml(p)}</p>`),
     `<p style="margin:24px 0"><a href="${escaparHtml(e.editorUrl)}" style="display:inline-block;background:#1c1917;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px">${escaparHtml(boton)}</a></p>`,
     '<hr style="border:none;border-top:1px solid #e7e5e4;margin:24px 0">',

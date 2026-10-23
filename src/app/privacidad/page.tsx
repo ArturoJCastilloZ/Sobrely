@@ -13,7 +13,7 @@ export default function PrivacidadPage() {
   return (
     <LegalPage
       title="Aviso de Privacidad"
-      updated="11 de agosto de 2026"
+      updated="23 de octubre de 2026"
       intro="En Sobrely respetamos tu privacidad. Este aviso explica qué datos recabamos, para qué los usamos y con quién los compartimos cuando creas y compartes invitaciones digitales."
     >
       <section>
@@ -67,6 +67,16 @@ export default function PrivacidadPage() {
           <li>Mejorar y mantener seguro el servicio.</li>
         </ul>
         <p>
+          <strong>Recordatorios por correo (opcional).</strong> Solo si los
+          activas en tu panel, te escribimos para recordarte una invitación que
+          dejaste sin publicar o que tu evento se acerca. Te enviamos como máximo
+          un correo al día. Es una finalidad distinta de las anteriores y no es
+          necesaria para usar el servicio: puedes usar Sobrely sin activarla.
+          Puedes dejar de recibirlos en cualquier momento, con el enlace que
+          incluye cada correo o con el mismo interruptor de tu panel. Guardamos
+          la fecha en que decidiste y la versión del texto que aceptaste.
+        </p>
+        <p>
           No vendemos tus datos personales ni los usamos para publicidad de
           terceros.
         </p>
@@ -89,6 +99,10 @@ export default function PrivacidadPage() {
           <li>
             <strong>Vercel</strong> — hospedaje del sitio y analítica agregada
             sin cookies.
+          </li>
+          <li>
+            <strong>Resend</strong> — envío de correo electrónico, incluidos los
+            recordatorios que actives.
           </li>
           <li>
             <strong>Google</strong> — únicamente si eliges iniciar sesión con tu
@@ -116,8 +130,9 @@ export default function PrivacidadPage() {
           Conservamos tus datos mientras tengas una cuenta activa o mientras sean
           necesarios para prestarte el servicio y cumplir obligaciones legales.
           Las invitaciones publicadas dejan de mostrarse públicamente al vencer
-          su vigencia. Puedes solicitar la eliminación de tu cuenta en cualquier
-          momento.
+          su vigencia. El registro de los recordatorios que se te enviaron y tu
+          decisión sobre ellos se conservan mientras exista tu cuenta. Puedes
+          solicitar la eliminación de tu cuenta en cualquier momento.
         </p>
       </section>
 
