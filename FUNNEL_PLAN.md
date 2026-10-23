@@ -256,6 +256,79 @@ día) que `confirmEmail` lee **solo si el enlace trae el destino por defecto**.
   invitados, medido) y sí ofrece pagar; publicar con plan funciona; una demo
   vieja sigue abierta.
 
+#### Resultados de la Fase 3 (2026-10-23) — **pendiente de tu revisión: es dinero**
+
+Probado de punta a punta en una **base Supabase local descartable** (50
+plantillas activas de 65 filas; producción tiene 65 activas), con **mi servidor y el editor de Codex
+(`a3decbc`) juntos** en un worktree desechable. **Sin llaves de Mercado Pago**: no
+se tocó dinero real. La unión de mi rama con la de Codex fue limpia, sin
+conflictos.
+
+**Lo que la fase NO tuvo que construir.** El plan hablaba de «implementar el flujo
+de checkout», pero ya existía: orden `pending`, preferencia de Mercado Pago,
+webhook, fulfillment y `publishOnPaid` (Codex ya lo pasa desde el editor). Lo que
+faltaba era la señal `needsPayment`, quitar la demo y cerrar agujeros.
+
+| Prueba en el navegador (base local) | Resultado medido |
+|---|---|
+| Contenido de **módulos gratis**, sin entitlement, «Publicar» | Modal de pago del editor; sigue borrador; **0 entitlements creados** (antes: demo de 14 días) |
+| «Ver precio y pagar» con contenido de $199 | Orden `esencial · $199 · publish_on_paid=true`, servidor eligió el plan |
+| Plan Esencial **pagado** + contenido que exige Celebración | El servidor pide **Celebración**; orden `celebracion · $399` |
+| Demo **antigua vigente** | Sigue publicando (`is_published=t`); nada ya publicado se rompe |
+| Demo antigua **vencida** | Modal de pago; no publica |
+| `/billing/checkout`, plan que no cubre | Sin botón de pago; ofrece el plan que sí cubre con su precio |
+| `/billing/checkout`, plan que cubre | «Pagar $399 y publicar»; botón de 44 px, sin desborde a 375 px |
+| Checkout sin sesión | `/login?redirectTo=…` conserva `plan`, `invitation` y `publicar` |
+
+**Defecto de dinero encontrado y cerrado.** `createPlanCheckout` tomaba el monto
+del plan que manda el **cliente** y nada comprobaba que ese plan cubriera la
+invitación: se podía pagar $199 por una invitación que exige $699, y entonces
+`publish_on_paid` no publicaba (el gate sigue cerrado) y la persona se quedaba con
+el cobro y la invitación en borrador. Ahora se rechaza **antes de crear la orden**,
+con el plan que sí hace falta. Probado ejecutando la acción con dobles (con un plan
+que no cubre: 0 órdenes y 0 llamadas a Mercado Pago) y mutado.
+
+**Una sola regla de «qué plan exige esto».** Antes vivía dentro de
+`canPublishInvitation` y yo había escrito una copia para el precio de la galería.
+Ahora `plan-requerido.ts` la comparte con el gate, la galería y el cobro, y el
+gate lee el contenido con la misma `leerContenidoPublicable` (extraída sin cambiar
+su comportamiento: las 178 pruebas de billing, que ejecutan el gate, siguieron en
+verde).
+
+**Mutación:** 12 mutantes sobre la regla, la decisión y las guardas; 11 murieron a
+la primera. **Sobrevivió 1 y era un hueco real de mi prueba** (usé `esencial` como
+único ejemplo, así que «devuelve siempre esencial» pasaba); lo cerré probando con
+los tres planes y ahora muere.
+
+**Cambios deliberados en pruebas ajenas a esta fase (avisa a Codex):**
+- `value-prop.test.ts`: tres aserciones exigían que el copy dijera «demo» y los
+  días. Se invierten a propósito. Antes «solo pagas al publicar» habría sido
+  **falso**; ahora es **cierto**.
+- `plans-schema.test.ts`: su guarda de «≥3 lecturas de `plans`» falló porque quité
+  una lectura legítima (la de la demo). La hice **más fuerte** (exige encontrar por
+  nombre las dos lecturas reales) y comprobé que muere si el detector se rompe.
+
+**Lo que NO está hecho o verificado (dicho sin adornos):**
+- **Ningún pago real, ni webhook, ni auto-publicación al pagar se probó aquí.** Sin
+  llaves de Mercado Pago el cobro falla a propósito. Lo que cubre ese camino son
+  las pruebas que ya existían (`fulfillment-*`) y siguen en verde. **Hace falta una
+  corrida en sandbox de Mercado Pago** (`docs/pruebas-sandbox.md`) con tus
+  credenciales de prueba antes de producción; yo no las uso.
+- **«Modo invitado», OXXO, SPEI y meses sin intereses** (del plan original): no los
+  toqué ni los verifiqué. Dependen de la configuración de tu cuenta de Mercado Pago
+  y de la preferencia; el código no excluye ningún método, pero no lo comprobé.
+- **El modal de Codex manda directo a Mercado Pago**, así que la persona ve el
+  precio por primera vez en Mercado Pago, no en Sobrely (dice «el precio exacto se
+  muestra en el siguiente paso» y el siguiente paso es Mercado Pago). Es zona A: lo
+  pedí en `COORDINACION.md` §6. La pantalla `/billing/checkout` ya está lista para
+  recibirlos con el precio real de **esa** invitación.
+- **Términos y Condiciones** (`terminos/page.tsx:47`) todavía dice «publicar en
+  modo demo es gratuito por tiempo limitado». **Ya es falso.** Es texto legal y no
+  lo cambié: es tu decisión.
+- La columna `plans.publish_trial_days` sigue en 14 en la BD. Nada del código la
+  lee; quitarla exige una migración y no aporta nada (§34: no la hice).
+- Probado contra el catálogo local de 50 plantillas, no contra el de producción (65).
+
 ### Fase 4 — Vista previa privada compartible (reemplaza el valor de la demo)
 - Liga con token para que el anfitrión se la enseñe a su pareja/familia, **sin**
   RSVP real, con marca «Vista previa» y que no sirve para repartirla.
