@@ -10,7 +10,6 @@ import { saveEditor, setPublished } from "@/lib/invitations/actions";
 import { getPublishPreflight } from "@/lib/invitations/publish-preflight";
 import { trackEditorFunnelEvent } from "@/lib/editor/funnel-analytics";
 import { slugify } from "@/lib/invitations/schemas";
-import { CheckoutButton } from "@/components/billing/checkout-button";
 import type { PlanCode } from "@/lib/billing/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -337,8 +336,8 @@ export function InvitationEditor({
       if (!res.ok) {
         // Bloqueo por plan → abre el CTA de mejora en vez de solo un toast.
         // C1: needsPayment es la señal autoritativa del servidor; no se infieren planes en cliente.
-        // TODO(C1): quitar el cast cuando Claude actualice SetPublishedResult con needsPayment.
-        if ((res as { needsPayment?: boolean; requiredPlan?: string }).needsPayment && res.requiredPlan) {
+        // TODO(C1-cast): quitar el cast cuando funnel-fase3 entre a integración (el tipo ya lo tiene).
+        if ((res as { needsPayment?: boolean }).needsPayment && res.requiredPlan) {
           setUpgradePlan(res.requiredPlan);
           return;
         }
@@ -449,13 +448,16 @@ export function InvitationEditor({
                 <Button variant="ghost" onClick={() => setUpgradePlan(null)}>
                   Ahora no
                 </Button>
-                <CheckoutButton
-                  planCode={upgradePlan}
-                  invitationId={invitation.id}
-                  publishOnPaid
+                <Button
+                  onClick={() => {
+                    setUpgradePlan(null);
+                    router.push(
+                      `/billing/checkout?plan=${upgradePlan}&invitation=${invitation.id}&publicar=1`,
+                    );
+                  }}
                 >
                   Ver precio y pagar
-                </CheckoutButton>
+                </Button>
               </div>
             </CardContent>
           </Card>
