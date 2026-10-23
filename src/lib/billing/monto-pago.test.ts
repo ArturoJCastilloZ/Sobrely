@@ -38,8 +38,10 @@ describe("mismoMonto: dinero en centavos, fail-closed", () => {
     expect(mismoMonto(399, Number.NaN)).toBe(false);
   });
   it("infinito contra infinito NO es «el mismo monto» (Infinity === Infinity sería verdadero)", () => {
-    // Sin la comprobación de que el monto sea finito, dos infinitos «coincidían».
-    // Lo cazó un mutante; es exótico, pero el costo de cubrirlo es una línea.
+    // Dos infinitos «coincidirían» con una igualdad ingenua. Hoy los rechaza la
+    // comprobación de finitud de la ORDEN; la del pago es redundante con ella
+    // (defensa en profundidad: quitarla no cambia ningún resultado, y por eso el
+    // mutante que la elimina es EQUIVALENTE y no un hueco de pruebas).
     expect(mismoMonto(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY)).toBe(false);
     expect(mismoMonto(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY)).toBe(false);
   });
