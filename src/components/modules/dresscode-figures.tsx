@@ -88,6 +88,7 @@ function Hanger() {
 
 function Suit({ info }: { info: LevelInfo }) {
   const pant = info.neck === "none" ? info.accent : info.jacket;
+  const isCasual = info.neck === "none";
   return (
     <svg viewBox="0 0 160 240" className="h-44 w-auto @2xl/inv:h-56 @4xl/inv:h-72" role="img" aria-label="Atuendo caballeros">
       <Hanger />
@@ -98,23 +99,38 @@ function Suit({ info }: { info: LevelInfo }) {
       <path d="M58 150 L78 150 L74 226 L60 226 Z" fill={pant} />
       <path d="M82 150 L102 150 L100 226 L86 226 Z" fill={pant} />
       <path d="M68 156 L67 224 M92 156 L93 224" stroke="#000" strokeWidth="1" opacity="0.18" />
-      {/* jacket shoulders + body */}
-      <path d="M56 62 L68 50 Q80 44 92 50 L104 62 L102 152 L58 152 Z" fill={info.jacket} />
-      {/* sleeves */}
-      <path d="M56 62 L46 70 L44 148 L60 148 L60 66 Z" fill={info.jacket} />
-      <path d="M104 62 L114 70 L116 148 L100 148 L100 66 Z" fill={info.jacket} />
-      <path d="M60 66 L60 148 M100 66 L100 148" stroke="#000" strokeWidth="1" opacity="0.15" />
-      {/* right-side shade */}
-      <path d="M80 47 L92 50 L104 62 L102 152 L80 152 Z" fill="#000" opacity="0.07" />
-      {/* shirt + collar */}
-      <path d="M70 54 L80 62 L90 54 L86 116 L74 116 Z" fill={info.shirt} />
-      <path d="M70 54 L78 66 L80 62 Z" fill="#e6e6e6" />
-      <path d="M90 54 L82 66 L80 62 Z" fill="#e6e6e6" />
-      {/* notched lapels */}
-      <path d="M70 54 L60 100 L66 84 L74 72 Z" fill={info.jacketDark} />
-      <path d="M90 54 L100 100 L94 84 L86 72 Z" fill={info.jacketDark} />
-      {/* pocket square */}
-      <path d="M94 96 l8 0 l-4 6 z" fill={info.shirt} />
+      {isCasual ? (
+        <>
+          {/* Camisa de mangas remangadas: una silueta propia para casual. */}
+          <path d="M61 62 L71 52 Q80 47 89 52 L99 62 L96 148 L64 148 Z" fill={info.shirt} />
+          <path d="M61 64 L51 74 L54 119 L65 116 L67 68 Z" fill={info.shirt} />
+          <path d="M99 64 L109 74 L106 119 L95 116 L93 68 Z" fill={info.shirt} />
+          <path d="M70 53 L80 64 L90 53 M80 64 L80 145" stroke={info.jacketDark} strokeWidth="1.4" fill="none" opacity="0.45" />
+          <path d="M54 112 L65 109 M106 112 L95 109" stroke={info.jacketDark} strokeWidth="2" opacity="0.55" />
+          <circle cx="80" cy="83" r="1.4" fill={info.jacketDark} />
+          <circle cx="80" cy="99" r="1.4" fill={info.jacketDark} />
+        </>
+      ) : (
+        <>
+          {/* jacket shoulders + body */}
+          <path d="M56 62 L68 50 Q80 44 92 50 L104 62 L102 152 L58 152 Z" fill={info.jacket} />
+          {/* sleeves */}
+          <path d="M56 62 L46 70 L44 148 L60 148 L60 66 Z" fill={info.jacket} />
+          <path d="M104 62 L114 70 L116 148 L100 148 L100 66 Z" fill={info.jacket} />
+          <path d="M60 66 L60 148 M100 66 L100 148" stroke="#000" strokeWidth="1" opacity="0.15" />
+          {/* right-side shade */}
+          <path d="M80 47 L92 50 L104 62 L102 152 L80 152 Z" fill="#000" opacity="0.07" />
+          {/* shirt + collar */}
+          <path d="M70 54 L80 62 L90 54 L86 116 L74 116 Z" fill={info.shirt} />
+          <path d="M70 54 L78 66 L80 62 Z" fill="#e6e6e6" />
+          <path d="M90 54 L82 66 L80 62 Z" fill="#e6e6e6" />
+          {/* notched lapels */}
+          <path d="M70 54 L60 100 L66 84 L74 72 Z" fill={info.jacketDark} />
+          <path d="M90 54 L100 100 L94 84 L86 72 Z" fill={info.jacketDark} />
+          {/* Pocket square: una línea plegada, no un triángulo que parezca flecha. */}
+          <path d="M94 96 h8 v2 h-8 z" fill={info.shirt} />
+        </>
+      )}
       {/* neckwear */}
       {info.neck === "tie" && (
         <>
@@ -130,8 +146,8 @@ function Suit({ info }: { info: LevelInfo }) {
         </>
       )}
       {/* buttons */}
-      <circle cx="80" cy="118" r="1.8" fill={info.jacketDark} />
-      <circle cx="80" cy="132" r="1.8" fill={info.jacketDark} />
+      {!isCasual && <circle cx="80" cy="118" r="1.8" fill={info.jacketDark} />}
+      {!isCasual && <circle cx="80" cy="132" r="1.8" fill={info.jacketDark} />}
     </svg>
   );
 }
@@ -204,17 +220,23 @@ function Figure({
   desc: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="rounded-3xl bg-[var(--inv-card)] p-2 @2xl/inv:p-4">
-        {children}
+    <article className="group flex min-w-0 flex-1 flex-col items-center text-center">
+      <div className="relative flex w-full items-center justify-center overflow-hidden rounded-[1.75rem] border border-[color:var(--inv-primary)]/10 bg-[var(--inv-card)] px-3 py-4 shadow-sm @2xl/inv:rounded-[2.25rem] @2xl/inv:px-5 @2xl/inv:py-6">
+        <span className="absolute left-4 top-4 h-2 w-2 rounded-full bg-[var(--inv-primary)] opacity-35 @2xl/inv:left-6 @2xl/inv:top-6" />
+        <span className="absolute bottom-4 right-4 h-8 w-8 rounded-full border border-[color:var(--inv-primary)]/15 @2xl/inv:bottom-6 @2xl/inv:right-6 @2xl/inv:h-12 @2xl/inv:w-12" />
+        <div className="relative transition-transform duration-300 group-hover:-translate-y-1">
+          {children}
+        </div>
       </div>
-      <span className="text-xs font-medium @2xl/inv:text-lg @4xl/inv:text-xl @5xl/inv:text-2xl">
-        {label}
-      </span>
-      <span className="max-w-[150px] text-center text-xs opacity-70 @2xl/inv:max-w-[220px] @2xl/inv:text-base @4xl/inv:max-w-[320px] @4xl/inv:text-lg @5xl/inv:text-xl">
-        {desc}
-      </span>
-    </div>
+      <div className="mt-3 flex flex-col items-center gap-1 @2xl/inv:mt-5">
+        <span className="text-xs font-semibold tracking-[0.08em] @2xl/inv:text-lg @4xl/inv:text-xl @5xl/inv:text-2xl">
+          {label}
+        </span>
+        <span className="max-w-[160px] text-xs leading-relaxed opacity-70 @2xl/inv:max-w-[230px] @2xl/inv:text-base @4xl/inv:max-w-[320px] @4xl/inv:text-lg @5xl/inv:text-xl">
+          {desc}
+        </span>
+      </div>
+    </article>
   );
 }
 
@@ -228,7 +250,7 @@ function DresscodeFigurasBase({ level }: { level: DresscodeLevel }) {
   if (level === "custom") return null;
   const info = DRESS_INFO[level];
   return (
-    <div className="flex flex-wrap justify-center gap-5 @2xl/inv:gap-12">
+    <div className="grid w-full max-w-md grid-cols-2 gap-3 @2xl/inv:max-w-3xl @2xl/inv:gap-8 @4xl/inv:gap-12">
       <Figure label="Caballeros" desc={info.men}>
         <Suit info={info} />
       </Figure>

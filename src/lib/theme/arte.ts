@@ -618,6 +618,16 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0,
   },
+  {
+    // Pexels · Juliano Astc · licencia Pexels. La fuente y la fecha de
+    // descarga se documentan en docs/activos-de-terceros.md.
+    clave: "pexels-xv-pastel",
+    tipo: "foto",
+    nombre: "Pastel de quince",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
   // ——— Categoría BABY SHOWER, 2026-09-09 ———
   // Nueve compartían fondo: cinco `revelacion-acuarela.svg` y cuatro
   // `baby-cielo.svg`. Es la categoría con MÁS pares de paleta idéntica —cuatro—
@@ -698,6 +708,15 @@ export const ARTE: readonly DireccionArte[] = [
     clave: "baby-shower-sencillo-arte",
     tipo: "svg",
     nombre: "Punteado",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    // Pexels · Chrys Stam · licencia Pexels. Sin personas ni logotipos.
+    clave: "pexels-baby-zapatos",
+    tipo: "foto",
+    nombre: "Zapatos de bebé",
     eventos: ["Baby shower"],
     polaridad: "oscuro",
     overlay: 0,

@@ -35,7 +35,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { TextReveal } from "@/components/animation/text-reveal";
 import { StaggerGroup } from "@/components/animation/stagger-group";
 import { PhotoGallery } from "@/components/modules/photo-gallery";
-import { DresscodeFigures } from "@/components/modules/dresscode-figures";
 import {
   DRESSCODE_LABELS,
   estiloDeDesplazamiento,
@@ -1289,6 +1288,30 @@ function SignaturesPreviewBase({ config }: { config: SignaturesConfig }) {
 
 // ---- Dress code -----------------------------------------------------------
 
+const DRESSCODE_EDITORIAL_ART: Record<Exclude<DresscodeConfig["level"], "custom">, string> = {
+  etiqueta: "/arte/vestimenta/etiqueta-editorial-v1.png",
+  formal: "/arte/vestimenta/formal-editorial-v1.png",
+  "semi-formal": "/arte/vestimenta/semiformal-editorial-v1.png",
+  casual: "/arte/vestimenta/casual-editorial-v1.png",
+};
+
+function DresscodeEditorialArt({ level }: { level: Exclude<DresscodeConfig["level"], "custom"> }) {
+  return (
+    <figure className="w-full max-w-sm overflow-hidden rounded-[2rem] border border-[color:var(--inv-primary)]/20 bg-[#1c1717] shadow-lg @2xl/inv:max-w-md @2xl/inv:rounded-[2.5rem]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={DRESSCODE_EDITORIAL_ART[level]}
+        alt={`Referencia editorial de vestimenta ${DRESSCODE_LABELS[level].toLowerCase()}`}
+        loading="lazy"
+        className="aspect-[2/3] w-full object-cover object-top"
+      />
+      <figcaption className="px-4 py-3 text-center text-xs font-medium tracking-[0.12em] uppercase text-white/80 @2xl/inv:px-5 @2xl/inv:py-4 @2xl/inv:text-sm">
+        Inspiración de atuendo · {DRESSCODE_LABELS[level]}
+      </figcaption>
+    </figure>
+  );
+}
+
 function DresscodePreviewBase({
   config,
   editorHint = false,
@@ -1319,7 +1342,7 @@ function DresscodePreviewBase({
       divider={config.divider}
       className="flex flex-col items-center gap-3 text-center"
     >
-      <h3 className="text-lg font-semibold @2xl/inv:text-2xl @4xl/inv:text-3xl @5xl/inv:text-4xl">
+      <h3 className="flex flex-col items-center gap-2 text-lg font-semibold before:text-[0.65rem] before:font-semibold before:uppercase before:tracking-[0.24em] before:opacity-55 before:content-['Guía_de_estilo'] @2xl/inv:text-2xl @2xl/inv:before:text-xs @4xl/inv:text-3xl @4xl/inv:before:text-sm @5xl/inv:text-4xl">
         {config.title || "Código de vestimenta"}
       </h3>
       {level !== "custom" && (
@@ -1339,9 +1362,44 @@ function DresscodePreviewBase({
           className="max-h-96 w-full rounded-lg object-contain @2xl/inv:max-h-[32rem]"
         />
       ) : level !== "custom" ? (
-        <DresscodeFigures level={level} />
+        <DresscodeEditorialArt level={level} />
       ) : config.description || !editorHint ? null : (
         <p className="text-sm opacity-70">Indica el código de vestimenta.</p>
+      )}
+      {(config.context || config.suggestions || config.restrictions || config.palette.length > 0) && (
+        <div className="grid w-full max-w-3xl gap-3 text-left @2xl/inv:grid-cols-2 @2xl/inv:gap-4">
+          {config.context && (
+            <p className="col-span-full rounded-2xl border border-[color:var(--inv-primary)]/15 bg-[var(--inv-card)] px-4 py-3 text-sm leading-relaxed @2xl/inv:px-5 @2xl/inv:text-base">
+              <span className="mr-2 font-semibold" style={{ color: ACENTO_TEXTO }}>Considera:</span>
+              {config.context}
+            </p>
+          )}
+          {config.suggestions && (
+            <div className="rounded-2xl border border-[color:var(--inv-primary)]/15 bg-[var(--inv-card)] p-4 @2xl/inv:p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] opacity-60">Sugerencias</p>
+              <p className="mt-2 text-sm leading-relaxed @2xl/inv:text-base">{config.suggestions}</p>
+            </div>
+          )}
+          {config.restrictions && (
+            <div className="rounded-2xl border border-[color:var(--inv-primary)]/15 bg-[var(--inv-card)] p-4 @2xl/inv:p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] opacity-60">Evita</p>
+              <p className="mt-2 text-sm leading-relaxed @2xl/inv:text-base">{config.restrictions}</p>
+            </div>
+          )}
+          {config.palette.length > 0 && (
+            <div className="col-span-full flex flex-wrap items-center justify-center gap-2 pt-1 text-sm @2xl/inv:text-base">
+              <span className="mr-1 font-medium opacity-70">Paleta sugerida</span>
+              {config.palette.map((color) => (
+                <span
+                  key={color}
+                  className="h-7 w-7 rounded-full border-2 border-white shadow-sm @2xl/inv:h-8 @2xl/inv:w-8"
+                  style={{ backgroundColor: color }}
+                  aria-label={`Tono sugerido ${color}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       )}
       {config.description && (
         <p className="max-w-prose text-sm opacity-80 @2xl/inv:text-base @4xl/inv:text-lg @5xl/inv:text-2xl">

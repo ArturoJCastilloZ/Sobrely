@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { CheckCircle2Icon, CircleAlertIcon } from "lucide-react";
 
 import type { EditorInvitation, EditorModule } from "@/lib/invitations/editor-types";
 import { saveEditor, setPublished } from "@/lib/invitations/actions";
+import { getPublishPreflight } from "@/lib/invitations/publish-preflight";
 import { slugify } from "@/lib/invitations/schemas";
 import { CheckoutButton } from "@/components/billing/checkout-button";
 import {
@@ -146,6 +148,7 @@ export function InvitationEditor({
   const [isPublishing, startPublishing] = useTransition();
   // Plan requerido cuando la publicación se bloquea por usar módulos ⭐ premium.
   const [upgradePlan, setUpgradePlan] = useState<PlanCode | null>(null);
+  const [preflightOpen, setPreflightOpen] = useState(false);
   const router = useRouter();
   /** Salir con cambios sin guardar: se ofrece salir igualmente o quedarse. */
   const [salidaEnRiesgo, setSalidaEnRiesgo] = useState(false);
@@ -318,7 +321,7 @@ export function InvitationEditor({
     router.push("/dashboard");
   }, [dirty, guardarAhora, router]);
 
-  const alternarPublicado = useCallback(() => {
+  const ejecutarPublicacion = useCallback(() => {
     const next = !invitation.is_published;
     startPublishing(async () => {
       // Antes "Publicar" estaba deshabilitado mientras hubiera cambios sin
@@ -341,6 +344,22 @@ export function InvitationEditor({
       );
     });
   }, [invitation.is_published, invitation.id, dirty, guardarAhora, aplicar]);
+
+  const alternarPublicado = useCallback(() => {
+    // Despublicar es reversible y no necesita revisión. Antes de hacer pública
+    // una invitación sí mostramos los puntos que suelen quedar pendientes.
+    if (!invitation.is_published) {
+      setPreflightOpen(true);
+      return;
+    }
+    ejecutarPublicacion();
+  }, [invitation.is_published, ejecutarPublicacion]);
+
+  const preflight = useMemo(
+    () => getPublishPreflight(invitation, modules),
+    [invitation, modules],
+  );
+  const preflightComplete = preflight.filter((item) => item.complete).length;
 
   // Deshacer / rehacer. `metaKey` para macOS, `ctrlKey` para el resto.
   useEffect(() => {
@@ -440,6 +459,44 @@ export function InvitationEditor({
           </Card>
         </div>
       )}
+
+      <AlertDialog open={preflightOpen} onOpenChange={setPreflightOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revisa tu invitación antes de publicarla</AlertDialogTitle>
+            <AlertDialogDescription>
+              {preflightComplete} de {preflight.length} puntos están listos. Puedes
+              continuar: algunos elementos pueden ser opcionales para tu evento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <ul className="space-y-3" aria-label="Lista de revisión previa a publicar">
+            {preflight.map((item) => (
+              <li key={item.key} className="flex gap-3 text-sm">
+                {item.complete ? (
+                  <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
+                ) : (
+                  <CircleAlertIcon className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden />
+                )}
+                <span>
+                  <strong>{item.label}</strong>
+                  <span className="block text-muted-foreground">{item.complete ? "Listo" : item.detail}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Seguir editando</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setPreflightOpen(false);
+                ejecutarPublicacion();
+              }}
+            >
+              Publicar de todos modos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/*
         Solo aparece cuando el guardado de salida FALLO. Si el guardado va bien

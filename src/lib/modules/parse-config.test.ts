@@ -56,6 +56,25 @@ describe("parseConfig", () => {
     expect(c.items).toHaveLength(1);
   });
 
+  it("da defaults compatibles al detalle ampliado de vestimenta", () => {
+    const c = parseConfig("dresscode", { title: "Vestimenta", level: "formal" });
+    expect(c.context).toBe("");
+    expect(c.suggestions).toBe("");
+    expect(c.restrictions).toBe("");
+    expect(c.palette).toEqual([]);
+  });
+
+  it("descarta una paleta inválida sin perder las indicaciones de vestimenta", () => {
+    const c = parseConfig("dresscode", {
+      context: "Ceremonia sobre césped.",
+      suggestions: "Zapatos cómodos.",
+      palette: ["#1A2B3C", "no-es-color"],
+    });
+    expect(c.context).toBe("Ceremonia sobre césped.");
+    expect(c.suggestions).toBe("Zapatos cómodos.");
+    expect(c.palette).toEqual([]);
+  });
+
   it("no llama al reporte cuando todo valida", () => {
     const spy = vi.fn();
     parseConfig("welcome", { title: "Hola", message: "Bienvenidos" }, spy);

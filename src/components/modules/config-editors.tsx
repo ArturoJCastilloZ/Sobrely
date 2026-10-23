@@ -765,6 +765,12 @@ export function SignaturesEditor({ config, onChange }: EditorProps) {
 export function DresscodeEditor({ config, onChange, ctx }: EditorProps) {
   const level = (config.level as DresscodeLevel) ?? "formal";
   const badgeStyle = str(config.badgeStyle) || "pill";
+  const palette = Array.isArray(config.palette)
+    ? config.palette.filter((color): color is string => typeof color === "string" && /^#[0-9a-fA-F]{6}$/.test(color))
+    : [];
+  const updatePalette = (index: number, color: string) => {
+    onChange({ palette: palette.map((current, i) => (i === index ? color : current)) });
+  };
   return (
     <div className="space-y-3">
       <Field label="Título">
@@ -814,6 +820,65 @@ export function DresscodeEditor({ config, onChange, ctx }: EditorProps) {
           value={str(config.description)}
           onChange={(e) => onChange({ description: e.target.value })}
         />
+      </Field>
+
+      <Field label="Contexto (opcional)">
+        <Input
+          placeholder="Ej. ceremonia al aire libre sobre césped."
+          value={str(config.context)}
+          onChange={(e) => onChange({ context: e.target.value })}
+        />
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Sugerencias (opcional)">
+          <Textarea
+            placeholder="Ej. telas ligeras y zapatos cómodos."
+            value={str(config.suggestions)}
+            onChange={(e) => onChange({ suggestions: e.target.value })}
+          />
+        </Field>
+        <Field label="Evita (opcional)">
+          <Textarea
+            placeholder="Ej. blanco, mezclilla o tenis."
+            value={str(config.restrictions)}
+            onChange={(e) => onChange({ restrictions: e.target.value })}
+          />
+        </Field>
+      </div>
+      <Field label="Paleta sugerida (opcional)">
+        <div className="flex flex-wrap gap-2">
+          {palette.map((color, index) => (
+            <div key={`${color}-${index}`} className="flex items-center gap-1 rounded-md border p-1">
+              <input
+                aria-label={`Color sugerido ${index + 1}`}
+                className="h-8 w-8 cursor-pointer rounded"
+                type="color"
+                value={color}
+                onChange={(e) => updatePalette(index, e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2"
+                onClick={() => onChange({ palette: palette.filter((_, i) => i !== index) })}
+              >
+                Quitar
+              </Button>
+            </div>
+          ))}
+          {palette.length < 4 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onChange({ palette: [...palette, "#B68A91"] })}
+            >
+              Agregar color
+            </Button>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">Hasta cuatro tonos para orientar a tus invitados.</p>
       </Field>
 
       <Field label="Imagen personalizada (opcional)">

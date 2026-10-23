@@ -1021,11 +1021,18 @@ export const DRESSCODE_BADGE_STYLE_LABELS: Record<DresscodeBadgeStyle, string> =
   banner: "Cinta",
 };
 
+/** Color de una paleta de vestimenta. Hex corto evita CSS arbitrario en el preview. */
+const dresscodeColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color inválido.");
+
 export const dresscodeConfigSchema = objetoConLayout({
   title: z.string().max(120).default("Código de vestimenta"),
   level: z.enum(DRESSCODE_LEVELS).default("formal"),
   badgeStyle: z.enum(DRESSCODE_BADGE_STYLES).default("pill"),
   description: z.string().max(400).default(""),
+  context: z.string().max(160).default(""),
+  suggestions: z.string().max(240).default(""),
+  restrictions: z.string().max(240).default(""),
+  palette: z.array(dresscodeColor).max(4).default([]),
   // Optional custom image (uploaded by the user) shown instead of the built-in
   // illustration.
   imageUrl: optionalUrl,
