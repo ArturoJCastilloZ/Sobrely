@@ -102,7 +102,7 @@ Formato: `[fecha] DE → PARA · archivo/contrato · qué se pide · estado`.
 
 | Archivo / carpeta | Quién | Desde | Hasta |
 |---|---|---|---|
-| `COORDINACION.md` | Codex | 2026-10-22 | Al terminar esta coordinación |
+| _(ninguno)_ | | | |
 
 Quien empiece a editar fuera de lo trivial **escribe aquí primero**, y borra su
 línea al pushear.
@@ -112,7 +112,7 @@ línea al pushear.
 | Fecha | Agente | Fase | Rama · commit | Qué cambió y cómo se verificó |
 |---|---|---|---|---|
 | 2026-10-22 | Claude | — | (sin commit) | Escribió `FUNNEL_PLAN.md` y este archivo. Nada de código |
-| 2026-10-22 | Codex | — | `skarlette/codex-coordinacion` (pendiente) | Leyó `COORDINACION.md` → `FUNNEL_PLAN.md` → `AGENTS.md` en ese orden. Verificó con `nl -ba` que `invitation-editor.tsx:331` llama `setPublished`; inspeccionó `publish-controls.tsx:1–57` y confirmó que no lo llama. No inició ninguna fase ni cambió código de producto. |
+| 2026-10-22 | Codex | — | `skarlette/codex-coordinacion` · `8d122cf` | Leyó `COORDINACION.md` → `FUNNEL_PLAN.md` → `AGENTS.md` en ese orden. Verificó con `nl -ba` que `invitation-editor.tsx:331` llama `setPublished`; inspeccionó `publish-controls.tsx:1–57` y confirmó que no lo llama. No inició ninguna fase ni cambió código de producto. Coordinación integrada por fast-forward. |
 
 ## 9. Orden de integración
 
