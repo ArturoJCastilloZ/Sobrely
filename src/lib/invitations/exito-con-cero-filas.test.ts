@@ -49,6 +49,12 @@ const ARCHIVOS = {
   // servicio, pero el mismo defecto aplica: «liga creada» sin fila entregaría un
   // enlace que no abre, y «revocada» sin tocar nada dejaría una liga abierta.
   previews: "../previews/actions.ts",
+  // Fase 5: el reclamo/liberación del registro de envíos y la preferencia de
+  // recordatorios. Un `delete` que no borra nada dejaría un reclamo huérfano que
+  // bloquea el reintento para siempre; un `upsert` sin fila diría «ya no te
+  // escribiremos» sin haber registrado la baja, que además es obligación legal.
+  recordatoriosAlmacen: "../recordatorios/almacen.ts",
+  recordatoriosPreferencias: "../recordatorios/preferencias.ts",
   vanity: "../vanity/actions.ts",
   guests: "../guests/actions.ts",
   signatures: "../signatures/actions.ts",

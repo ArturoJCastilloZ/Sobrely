@@ -5,6 +5,11 @@ import { MailPlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { NewInvitationButton } from "@/components/dashboard/new-invitation-button";
+import { RecordatoriosCard } from "@/components/dashboard/recordatorios-card";
+import {
+  leerPreferencia,
+  TEXTO_CONSENTIMIENTO,
+} from "@/lib/recordatorios/preferencias";
 import {
   InvitationCard,
   type InvitationSummary,
@@ -61,6 +66,16 @@ export default async function DashboardPage() {
   );
   const vigenciaPorId = new Map(vigencias);
 
+  // Recordatorios por correo (Fase 5). La opción aparece cuando es RELEVANTE
+  // —hay un borrador sin publicar— o cuando la persona ya decidió algo (para que
+  // pueda apagarla aunque ya no tenga borradores). Si no se pudo leer (p. ej. la
+  // migración 0061 aún no está aplicada), se oculta en vez de mostrar un
+  // interruptor que fallaría.
+  const preferencia = await leerPreferencia(user!.id);
+  const hayBorradores = list.some((inv) => !inv.is_published);
+  const mostrarRecordatorios =
+    preferencia !== "no_disponible" && (hayBorradores || preferencia !== null);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -108,6 +123,13 @@ export default async function DashboardPage() {
             />
           ))}
         </div>
+      )}
+
+      {mostrarRecordatorios && (
+        <RecordatoriosCard
+          inicial={typeof preferencia === "object" && preferencia?.optedIn === true}
+          texto={TEXTO_CONSENTIMIENTO}
+        />
       )}
     </div>
   );
