@@ -58,6 +58,55 @@ bajo un entitlement Free-demo y cuándo expiran; el embudo actual.
 - **Parar y decidir** si hay demos vivas que expiren con invitados ya
   respondiendo (qué se les dice y cuándo).
 
+#### Resultados de la Fase 0 (medido 2026-10-22 con `scripts/medir-embudo.mjs`)
+
+Base: `ncxglanrfeepzenrfvoh.supabase.co`, el host que ven los usuarios en el login
+de Google (`HANDOFF.md`, sección «Branding OAuth de Google») → es la base **real**.
+El script es de solo lectura y solo imprime agregados; se repite tras cada fase.
+
+| Paso del embudo | Valor |
+|---|---|
+| Cuentas (`profiles`) | **17** |
+| … que crearon ≥1 invitación | **11** — 6 (35%) **nunca** crearon una |
+| Invitaciones creadas | 14 (6 desde plantilla · 8 en blanco) |
+| Publicadas ahora | 4 |
+| Entitlements alguna vez | 3, **todos Free/demo**; vencieron hace 58, 58 y 32 días |
+| Demos Free **vigentes hoy** | **0** |
+| Publicadas sin entitlement | 1 (comp/admin) |
+| Órdenes | 8: 3 pending · 3 failed · 1 paid · 1 refunded |
+
+Lo que dicen los números, y lo que NO:
+
+- **La Fase 3 no pone en riesgo ninguna invitación viva:** hoy no hay una sola
+  demo vigente. El «parar y decidir» de arriba queda **resuelto sin acción**.
+- **Las 3 demos que se usaron no convirtieron:** las 3 vencieron sin pasar a
+  plan de pago. Es n = 3: indicio, no prueba.
+- **35% de las cuentas nunca crearon una invitación.** Es consistente con el
+  muro de registro previo, pero no lo demuestra: no sé cuántas son cuentas de
+  prueba del propio equipo.
+- **Las 8 órdenes son de un solo día de pruebas** (hace 72–73 días), todas con
+  `invitation_id` nulo (sus invitaciones se borraron; la columna es
+  `on delete set null`). Lo más probable es sandbox (`docs/pruebas-sandbox.md`),
+  pero **la BD no dice si el pago `paid` fue dinero real**: hay que confirmarlo
+  en el panel de Mercado Pago (1 pago de $699, hace ~72 días).
+- **Conversión real medida hasta hoy: 0.** Ningún cliente ha pagado un plan que
+  sobreviva en la BD. El producto está en etapa previa al lanzamiento; con 11
+  usuarios, **ningún porcentaje del embudo es estadísticamente interpretable**.
+  La línea base sirve para comparar cambios grandes, no para optimizar a 1 punto.
+
+**Eventos (decisión tomada, contrato C3):** casi todo el embudo ya sale de la BD
+sin emitir nada: registro = `profiles`, plantilla elegida =
+`invitations.template_id`, checkout iniciado y pago = `orders`, publicada =
+`invitation_entitlements`. Vistas de plantilla y de precios = páginas vistas por
+ruta de Vercel Web Analytics (ya montado en el layout). Solo `editor_abierto` y
+`publicar_tocado` necesitaban evento, y los emite Codex desde el editor
+(`e659663`). **No se emite nada más.**
+
+**Pregunta abierta para el dev:** los eventos personalizados de Vercel son de
+planes **Pro y Enterprise** (documentación de Vercel, consultada hoy). Si el
+proyecto está en Hobby, `editor_abierto` y `publicar_tocado` no se registran y el
+emisor es un no-op. ¿Qué plan tiene el proyecto?
+
 ### Fase 1 — Galería pública que vende
 - `/plantillas` pública (hoy la galería está en `/dashboard/templates`): filtro
   por evento, miniaturas, **precio visible** («desde $199 por evento») y CTA.
