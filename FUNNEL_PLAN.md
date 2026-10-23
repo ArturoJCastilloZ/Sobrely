@@ -547,9 +547,12 @@ fábrica) y la defensa de monto en el webhook: un pago aprobado solo marca la or
 **Pendientes que NO son código** (los resuelve el dev; ninguna fase del plan depende
 de construir algo más):
 
-- Aplicar las migraciones `0060` (vistas previas) y `0061` (recordatorios) en
-  producción, a mano. Sin la `0060` el botón de vista previa avisa que no está
-  disponible; sin la `0061` el panel oculta los recordatorios.
+- **Hecho el 2026-10-23: migraciones `0060` (vistas previas) y `0061`
+  (recordatorios) aplicadas en producción** (`supabase db push --linked`, proyecto
+  `invitaflow`). Verificado después: historial registrado, las 3 tablas con RLS
+  activa y 0 policies, sin acceso para `anon` ni `authenticated`, y 401 (`42501`)
+  al leer o escribir con la llave pública. Ya no falta nada en la base: el botón de
+  vista previa y la tarjeta de recordatorios funcionan donde se despliegue este código.
 - **Hecho el 2026-10-23: la corrida en el sandbox de Mercado Pago** (con pagos
   reales de prueba): orden `paid`, entitlement, publicación e idempotencia
   funcionan, y la defensa de monto bloquea un pago de monto distinto. **Sigue
