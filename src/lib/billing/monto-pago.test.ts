@@ -37,6 +37,12 @@ describe("mismoMonto: dinero en centavos, fail-closed", () => {
   it("una orden con monto inválido no coincide con nada", () => {
     expect(mismoMonto(399, Number.NaN)).toBe(false);
   });
+  it("infinito contra infinito NO es «el mismo monto» (Infinity === Infinity sería verdadero)", () => {
+    // Sin la comprobación de que el monto sea finito, dos infinitos «coincidían».
+    // Lo cazó un mutante; es exótico, pero el costo de cubrirlo es una línea.
+    expect(mismoMonto(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY)).toBe(false);
+    expect(mismoMonto(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY)).toBe(false);
+  });
 });
 
 describe("montoYMonedaCoinciden", () => {
