@@ -31,6 +31,9 @@ export const RESERVED_SLUGS = new Set([
   "forgot-password",
   "reset-password",
   "plantilla",
+  // Galería pública del embudo (`/plantillas`). Distinta de `plantilla`, que es
+  // la superficie de captura de miniaturas y no se toca.
+  "plantillas",
   "pricing",
   "privacidad",
   "public",

@@ -26,6 +26,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    // Galería pública. Solo el ÍNDICE: sus vistas de detalle (`/plantillas/<slug>`)
+    // son casi idénticas entre sí, van `noindex` y no se listan.
+    {
+      url: `${SITE_URL}/plantillas`,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
     // Landing pages por tipo de evento (keywords).
     ...EVENT_LANDING_LIST.map((e) => ({
       url: `${SITE_URL}/${e.slug}`,

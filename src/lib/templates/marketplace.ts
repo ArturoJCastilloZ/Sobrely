@@ -15,6 +15,17 @@
  * cuando el Theme System añada packs y exista un dato que cruce eventos.
  */
 
+/**
+ * Lo que cuesta PUBLICAR la plantilla tal como viene (ver
+ * `precioParaPublicarPlantilla`). Solo lo rellena la galería pública: el
+ * dashboard no lo pide y la tarjeta no pinta nada si falta.
+ */
+export type PrecioMarketplace = {
+  precio: number;
+  /** Precio regular tachado cuando la oferta de lanzamiento aplica. */
+  precioRegular: number | null;
+};
+
 export type PlantillaMarketplace = {
   id: string;
   slug: string;
@@ -22,6 +33,7 @@ export type PlantillaMarketplace = {
   description: string | null;
   event_type: string | null;
   preview_image_url: string | null;
+  precio?: PrecioMarketplace | null;
 };
 
 export type FiltroMarketplace = {
@@ -100,4 +112,28 @@ export function contarPorEvento(
     cuenta.set(tpl.event_type, (cuenta.get(tpl.event_type) ?? 0) + 1);
   }
   return cuenta;
+}
+
+/**
+ * Vista de venta de una plantilla: la invitación completa más el precio y el
+ * botón de usarla. Es una ruta NUEVA (`/plantillas/<slug>`) y no `/plantilla/`
+ * a propósito: esa es la superficie de captura de miniaturas y de cinco
+ * scripts de medición, y un botón de compra ahí se quemaría en las imágenes.
+ */
+export function hrefVistaPlantilla(slug: string): string {
+  return `/plantillas/${encodeURIComponent(slug)}`;
+}
+
+/**
+ * Destino del botón «Usar esta plantilla» para quien NO tiene sesión.
+ *
+ * Lleva `next` con la vista de venta para que, cuando el registro lo respete,
+ * la persona vuelva a la plantilla que eligió. HOY el registro lo ignora (el
+ * correo fuerza `/dashboard` y Google no recibe destino): cablearlo es la
+ * Fase 2 del embudo y vive en la zona de auth. Hasta entonces quien se registra
+ * aterriza en el dashboard y tiene que volver a buscar la plantilla. Dejar el
+ * parámetro ya puesto hace que la Fase 2 no tenga que tocar la galería.
+ */
+export function hrefUsarPlantillaSinSesion(slug: string): string {
+  return `/register?next=${encodeURIComponent(hrefVistaPlantilla(slug))}`;
 }

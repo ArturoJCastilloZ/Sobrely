@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, Search, SearchX, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,8 +23,11 @@ import {
 import {
   contarPorEvento,
   filtrarPlantillas,
+  hrefUsarPlantillaSinSesion,
+  hrefVistaPlantilla,
   type PlantillaMarketplace,
 } from "@/lib/templates/marketplace";
+import { formatPrice } from "@/lib/billing/config";
 import { UseTemplateButton } from "@/components/dashboard/use-template-button";
 import { toggleFavorite } from "@/lib/templates/favorites-actions";
 import { toast } from "sonner";
@@ -52,13 +55,24 @@ export function TemplateMarketplace({
   consultaInicial,
   favoritosIniciales,
   soloFavoritosInicial,
+  modo = "dashboard",
+  autenticado = true,
 }: {
   plantillas: PlantillaMarketplace[];
   eventoInicial: string | null;
   consultaInicial: string;
   favoritosIniciales: string[];
   soloFavoritosInicial: boolean;
+  /**
+   * `publico` es la galería de `/plantillas`, que ve cualquiera: sin favoritas
+   * (exigen sesión), con el precio de publicar en cada tarjeta, y el botón
+   * lleva al registro si no hay sesión. `dashboard` es el de siempre.
+   */
+  modo?: "dashboard" | "publico";
+  /** Solo importa en `publico`: con sesión el botón crea la invitación. */
+  autenticado?: boolean;
 }) {
+  const publico = modo === "publico";
   const [evento, setEvento] = React.useState<string | null>(eventoInicial);
   const [consulta, setConsulta] = React.useState(consultaInicial);
   const [soloFavoritos, setSoloFavoritos] =
@@ -256,23 +270,25 @@ export function TemplateMarketplace({
           independiente que se combina con el tipo de evento, no una opción
           más del grupo. Por eso es `aria-pressed` y no `role="radio"`.
         */}
-        <button
-          type="button"
-          aria-pressed={soloFavoritos}
-          onClick={() => setSoloFavoritos((v) => !v)}
-          className={cn(
-            "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:h-9",
-            soloFavoritos
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-background text-foreground hover:bg-muted",
-          )}
-        >
-          <Heart
-            aria-hidden="true"
-            className={cn("size-3.5", soloFavoritos && "fill-current")}
-          />
-          Favoritas <Cuenta n={favoritos.size} />
-        </button>
+        {!publico && (
+          <button
+            type="button"
+            aria-pressed={soloFavoritos}
+            onClick={() => setSoloFavoritos((v) => !v)}
+            className={cn(
+              "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:h-9",
+              soloFavoritos
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-foreground hover:bg-muted",
+            )}
+          >
+            <Heart
+              aria-hidden="true"
+              className={cn("size-3.5", soloFavoritos && "fill-current")}
+            />
+            Favoritas <Cuenta n={favoritos.size} />
+          </button>
+        )}
         {/*
           La salida sólo aparece cuando hay algo que quitar. Va aquí y no sólo
           en el estado vacío porque un filtro activo CON resultados también
@@ -338,8 +354,13 @@ export function TemplateMarketplace({
               */}
               {tpl.preview_image_url && (
                 <Link
-                  href={`/plantilla/${tpl.slug}`}
-                  target="_blank"
+                  // Público: la vista de venta, en la MISMA pestaña (el botón
+                  // atrás de un teléfono es la salida natural). Dashboard: la
+                  // vista de captura en pestaña nueva, como siempre.
+                  href={
+                    publico ? hrefVistaPlantilla(tpl.slug) : `/plantilla/${tpl.slug}`
+                  }
+                  target={publico ? undefined : "_blank"}
                   style={{
                     aspectRatio: `${PROPORCION_MINIATURA[0]} / ${PROPORCION_MINIATURA[1]}`,
                   }}
@@ -384,28 +405,30 @@ export function TemplateMarketplace({
                 a un lector de pantalla ni qué plantilla es ni en qué estado
                 está.
               */}
-              <button
-                type="button"
-                aria-pressed={favoritos.has(tpl.id)}
-                aria-label={
-                  favoritos.has(tpl.id)
-                    ? `Quitar ${tpl.name} de favoritas`
-                    : `Guardar ${tpl.name} en favoritas`
-                }
-                onClick={() => alternarFavorito(tpl.id)}
-                className="absolute top-2 right-2 z-10 flex size-9 items-center justify-center rounded-full bg-background/85 text-foreground backdrop-blur transition-colors hover:bg-background focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-              >
-                <Heart
-                  aria-hidden="true"
-                  className={cn(
-                    "size-4",
-                    // El relleno es la señal, no el color: en tema oscuro un
-                    // rojo sobre superficie translúcida pierde contraste, y el
-                    // corazón lleno se distingue del vacío por FORMA.
-                    favoritos.has(tpl.id) && "fill-current",
-                  )}
-                />
-              </button>
+              {!publico && (
+                <button
+                  type="button"
+                  aria-pressed={favoritos.has(tpl.id)}
+                  aria-label={
+                    favoritos.has(tpl.id)
+                      ? `Quitar ${tpl.name} de favoritas`
+                      : `Guardar ${tpl.name} en favoritas`
+                  }
+                  onClick={() => alternarFavorito(tpl.id)}
+                  className="absolute top-2 right-2 z-10 flex size-9 items-center justify-center rounded-full bg-background/85 text-foreground backdrop-blur transition-colors hover:bg-background focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                >
+                  <Heart
+                    aria-hidden="true"
+                    className={cn(
+                      "size-4",
+                      // El relleno es la señal, no el color: en tema oscuro un
+                      // rojo sobre superficie translúcida pierde contraste, y el
+                      // corazón lleno se distingue del vacío por FORMA.
+                      favoritos.has(tpl.id) && "fill-current",
+                    )}
+                  />
+                </button>
+              )}
               <CardHeader className="pt-4">
                 {/*
                   A dos columnas la tarjeta mide ~170 px de ancho: el título y
@@ -430,8 +453,46 @@ export function TemplateMarketplace({
                   {tpl.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="mt-auto">
-                <UseTemplateButton templateId={tpl.id} />
+              <CardContent className="mt-auto space-y-3">
+                {publico && tpl.precio && (
+                  /*
+                    El precio de PUBLICAR esta plantilla tal como viene, no un
+                    «desde» único: 20 de las 65 cuestan más que el plan de
+                    entrada y 10 el triple. Se ve antes de elegir, no al pagar.
+                  */
+                  <p className="text-sm">
+                    <span className="font-semibold tabular-nums">
+                      {formatPrice(tpl.precio.precio)}
+                    </span>
+                    {tpl.precio.precioRegular !== null && (
+                      <>
+                        {/* El tachado solo existe a la vista: sin esto un
+                            lector de pantalla lee «$399 $499» sin decir que
+                            el segundo es el precio de antes. */}
+                        <span className="sr-only"> en oferta, antes </span>
+                        <s className="ml-1.5 text-muted-foreground tabular-nums">
+                          {formatPrice(tpl.precio.precioRegular)}
+                        </s>
+                      </>
+                    )}
+                    {/* Debajo en móvil: a dos columnas la tarjeta mide ~170 px
+                        y «para publicar» se partía en dos renglones sueltos. */}
+                    <span className="block text-muted-foreground sm:ml-1 sm:inline">
+                      para publicar
+                    </span>
+                  </p>
+                )}
+                {publico && !autenticado ? (
+                  <Link
+                    href={hrefUsarPlantillaSinSesion(tpl.slug)}
+                    // 44 px en móvil y 36 desde `lg`, como las pastillas.
+                    className={cn(buttonVariants(), "h-11 w-full lg:h-9")}
+                  >
+                    Usar esta plantilla
+                  </Link>
+                ) : (
+                  <UseTemplateButton templateId={tpl.id} />
+                )}
               </CardContent>
             </Card>
           ))}

@@ -71,6 +71,21 @@ export default async function Home() {
           <LogoLockup />
         </Link>
         <nav className="flex items-center gap-2">
+          {/*
+            Oculto por debajo de `sm`: este header ya desbordaba 88 px a 375 con
+            cuatro botones (medido). En móvil la galería la ofrece el botón
+            principal del hero, dos dedos más abajo, así que aquí no se pierde
+            navegación.
+          */}
+          <Button
+            render={<Link href="/plantillas" />}
+            nativeButton={false}
+            variant="ghost"
+            size="sm"
+            className="hidden sm:inline-flex"
+          >
+            Plantillas
+          </Button>
           <Button
             render={<Link href="/blog" />}
             nativeButton={false}
@@ -141,13 +156,18 @@ export default async function Home() {
           compartirla y recibir confirmaciones de tus invitados.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
+          {/*
+            Con sesión, al dashboard. Sin ella, a la GALERÍA y no al registro:
+            enseñar los diseños antes de pedir una cuenta es el cambio de fondo
+            del embudo (FUNNEL_PLAN.md); la cuenta se pide al elegir una.
+          */}
           <Button
-            render={<Link href={user ? "/dashboard" : "/register"} />}
+            render={<Link href={user ? "/dashboard" : "/plantillas"} />}
             nativeButton={false}
             size="lg"
             className="bg-brand-gold text-brand-ink hover:bg-brand-gold-deep hover:text-white"
           >
-            {user ? "Ir al dashboard" : "Empieza gratis"}
+            {user ? "Ir al dashboard" : "Ver plantillas"}
           </Button>
           <Button
             render={<Link href="/login" />}
