@@ -415,6 +415,24 @@ obligó a ello: ninguna escritura a la BD puede quedar fuera).
   la vista previa muestra todo, y el cobro ocurre al publicar. Es lo buscado, pero
   conviene que lo sepas.
 
+#### Botón «Copiar liga de vista previa» (`skarlette/funnel-fase4-boton`)
+
+Lo hice yo porque el dev cedió la zona A («Codex ya no trabajará en esto»).
+Vive en Ajustes, justo debajo de Publicar, y se muestra **publicada o no**.
+
+| Comprobación (navegador, Supabase local) | Resultado medido |
+|---|---|
+| Invitación sin publicar | Dos botones visibles, habilitados, 44 px de alto |
+| Clic en «Copiar liga» | Fila nueva en `invitation_previews`: `vigente`, 7.00 días; la liga abre con **200** sin sesión; una inventada da **404** |
+| Portapapeles | **Lo rechazó el panel** → apareció el campo de solo lectura con la liga y el aviso «No se pudo copiar sola». Es el camino alternativo, no el feliz |
+| «Revocar ligas» | Diálogo de confirmación → «Se revocó 1 liga.»; la fila pasa a `REVOCADA`; la liga da **404** |
+| Móvil 375 px | Sin desborde horizontal; botones dentro del viewport, 44 px |
+
+**NO verificado:** que `navigator.clipboard.writeText` funcione en un navegador real
+(en Safari puede rechazarse por la espera al servidor; por eso existe el campo
+alternativo); el estado deshabilitado con cambios sin guardar *en vivo* (solo con
+pruebas de render y de contrato).
+
 ### Fase 5 — Recuperar abandono
 - Correo al borrador sin publicar (24 h, 3 días, 7 días antes del evento).
   Requiere consentimiento y baja (LFPDPPP); revisar `privacidad`/`terminos`.
