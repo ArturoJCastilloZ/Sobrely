@@ -8,6 +8,7 @@ import { CheckCircle2Icon, CircleAlertIcon } from "lucide-react";
 import type { EditorInvitation, EditorModule } from "@/lib/invitations/editor-types";
 import { saveEditor, setPublished } from "@/lib/invitations/actions";
 import { getPublishPreflight } from "@/lib/invitations/publish-preflight";
+import { trackEditorFunnelEvent } from "@/lib/editor/funnel-analytics";
 import { slugify } from "@/lib/invitations/schemas";
 import { CheckoutButton } from "@/components/billing/checkout-button";
 import {
@@ -108,6 +109,9 @@ export function InvitationEditor({
   // edita, y meterla en el reducer la volveria parte del historial (un ⌘Z
   // retrocederia el token y el guardado siguiente choparia contra si mismo).
   const versionRef = useRef(initialVersion);
+  // React vuelve a ejecutar efectos en desarrollo; este ref evita contar una
+  // apertura doble por el chequeo de Strict Mode.
+  const editorOpenedTracked = useRef(false);
   // Cuando el servidor rechaza por conflicto, el editor deja de guardar. No es
   // un toast y seguir: reintentar un conflicto no lo resuelve, y cada reintento
   // repite el aviso mientras el trabajo del otro sigue en riesgo.
@@ -168,6 +172,12 @@ export function InvitationEditor({
   useEffect(() => {
     docRef.current = historia.presente;
   }, [historia.presente]);
+
+  useEffect(() => {
+    if (editorOpenedTracked.current) return;
+    editorOpenedTracked.current = true;
+    trackEditorFunnelEvent("editor_abierto");
+  }, []);
 
   const guardarDocumento = useCallback(async () => {
     const doc = docRef.current;
@@ -349,6 +359,7 @@ export function InvitationEditor({
     // Despublicar es reversible y no necesita revisión. Antes de hacer pública
     // una invitación sí mostramos los puntos que suelen quedar pendientes.
     if (!invitation.is_published) {
+      trackEditorFunnelEvent("publicar_tocado");
       setPreflightOpen(true);
       return;
     }

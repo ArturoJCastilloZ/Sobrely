@@ -72,7 +72,7 @@ Estos son los puntos donde el trabajo de uno depende del otro. Se acuerdan aquí
 |---|---|---|---|---|
 | C1 | `setPublished` devuelve `{ ok:false, needsPayment:true, requiredPlan }` en vez de crear una demo (Fase 3). El tipo `SetPublishedResult` ya tiene `needsUpgrade`/`requiredPlan`; se **extiende**, no se rompe | Claude (B) | Codex: `invitation-editor.tsx` (~línea 331 de su rama) y `publish-controls.tsx` deben abrir el checkout con la invitación ya elegida | **Pendiente de acordar** |
 | C2 | Helper `rutaInternaSegura(next)` que rechaza `//host` y esquemas externos | Claude (C) | Cualquiera que reciba un `next`/`redirectTo` | Pendiente (Fase 2) |
-| C3 | Nombres de eventos de embudo: `plantilla_vista`, `plantilla_elegida`, `registro_completo`, `editor_abierto`, `publicar_tocado`, `checkout_iniciado`, `pago_completo` | Claude define; **Codex emite** `editor_abierto` y `publicar_tocado` desde su zona | ambos | Pendiente (Fase 0) |
+| C3 | Nombres de eventos de embudo: `plantilla_vista`, `plantilla_elegida`, `registro_completo`, `editor_abierto`, `publicar_tocado`, `checkout_iniciado`, `pago_completo` | Claude define; **Codex emite** `editor_abierto` y `publicar_tocado` desde su zona | ambos | **Codex implementó** `editor_abierto` (una vez por carga) y `publicar_tocado` (solo al intentar publicar); pendiente la definición/emisión de Claude |
 | C4 | El editor **no** decide si se puede publicar: solo muestra lo que `setPublished` responde | Codex respeta | — | Regla fija |
 
 Regla de oro del C1: **la UI de Codex no duplica la lógica de planes.** Si un
@@ -102,7 +102,7 @@ Formato: `[fecha] DE → PARA · archivo/contrato · qué se pide · estado`.
 
 | Archivo / carpeta | Quién | Desde | Hasta |
 |---|---|---|---|
-| _(ninguno)_ | | | |
+| `src/components/editor/**`, `src/lib/editor/**` | Codex | 2026-10-22 | Al integrar Fase 0 |
 
 Quien empiece a editar fuera de lo trivial **escribe aquí primero**, y borra su
 línea al pushear.
@@ -113,6 +113,7 @@ línea al pushear.
 |---|---|---|---|---|
 | 2026-10-22 | Claude | — | (sin commit) | Escribió `FUNNEL_PLAN.md` y este archivo. Nada de código |
 | 2026-10-22 | Codex | — | `skarlette/codex-coordinacion` · `8d122cf` | Leyó `COORDINACION.md` → `FUNNEL_PLAN.md` → `AGENTS.md` en ese orden. Verificó con `nl -ba` que `invitation-editor.tsx:331` llama `setPublished`; inspeccionó `publish-controls.tsx:1–57` y confirmó que no lo llama. No inició ninguna fase ni cambió código de producto. Coordinación integrada por fast-forward. |
+| 2026-10-22 | Codex | Fase 0 | `skarlette/codex-fase0-events` (pendiente) | Añadió eventos sin PII con Vercel Analytics: `editor_abierto` una vez por carga y `publicar_tocado` solo al solicitar publicación. Verificado con prueba unitaria del emisor, mutación negativa observada (falló al emitir el nombre incorrecto), `pnpm lint`, 78 archivos/1207 pruebas y `pnpm build`. |
 
 ## 9. Orden de integración
 
