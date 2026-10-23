@@ -175,6 +175,70 @@ invitación**. Pasó a `sticky bottom-0` al final del flujo (solape medido: 0).
 - Aceptación (por efecto): visitante → plantilla → registro → editor con ESA
   plantilla cargada. Probar con correo y con Google.
 
+#### Resultados de la Fase 2 (2026-10-23) — **pendiente de tu revisión: es auth**
+
+Probado de punta a punta en una **base Supabase local descartable** (no se tocó
+producción), con la **plantilla de correo real** del repo y un usuario nuevo.
+
+**Hallazgo de seguridad medido (redirección abierta).** Con el código original,
+iniciar sesión con `/login?redirectTo=//evil.com` terminó en **`http://evil.com`**
+(origen de la pestaña medido). Con la corrección termina en `/dashboard`. De los 5
+sitios que validaban con `startsWith("/")`, solo 2 eran explotables (`login` y
+`confirmEmail`, que llaman `redirect(valor)` directo); en `callback` el destino
+se concatena a `origin`, y ahí `//evil.com` **no** salía del sitio. Los 5 ahora
+usan una sola función, `rutaInternaSegura`.
+
+**El correo de confirmación ignora el `emailRedirectTo` del código.** La plantilla
+de Supabase trae `next=/dashboard` escrito a mano (medido en el correo real
+recibido en el buzón local). Cambiar el código no la toca. Solución sin tocar
+Supabase: `register` deja el destino en una cookie (`httpOnly`, `SameSite=Lax`, 1
+día) que `confirmEmail` lee **solo si el enlace trae el destino por defecto**.
+
+| Camino | Resultado medido |
+|---|---|
+| Inicio de sesión con `redirectTo=/plantillas/x?usar=1` | Editor con la plantilla; **+1** invitación |
+| Registro por correo → confirmar (plantilla real) → vuelta | Editor con la plantilla; **exactamente 1** invitación `boda-elegante` |
+| «Atrás» desde el editor | No crea nada (total sin cambio) |
+| `?usar=1` con inicio de sesión de hace 10 min | No crea nada; vista normal con su botón |
+| `redirectTo=//evil.com` | `/dashboard`, ya no `evil.com` |
+| Botón de Google en el registro | La acción recibe `"/plantillas/xv-anos?usar=1"` |
+
+**Dos defectos míos, encontrados midiendo (no con las pruebas):**
+1. **Dos invitaciones en vez de una.** Un `useRef` como guardia no bastó: Next
+   monta una **instancia nueva** del componente al reconstruir el árbol desde la
+   caché de la navegación original. La memoria pasó al módulo + `sessionStorage`
+   (`lanzamiento-unico.ts`).
+2. **El usuario se quedaba en la plantilla sin llegar al editor.** Quitar `?usar=1`
+   con `history.replaceState` antes de la acción dispara una navegación interna
+   de Next que **pisa** la redirección de la acción. Ahora la propia redirección
+   *reemplaza* la entrada del historial (`RedirectType.replace`).
+   Además la función nueva tenía un error de lógica (`Number(null) === 0`) que
+   las pruebas atraparon.
+
+**Decisión de seguridad:** crear la invitación al volver solo ocurre con `?usar=1`
+**y** un inicio de sesión de hace ≤ 2 min. Sin esa ventana, un enlace ajeno a
+`…?usar=1` crearía borradores en la cuenta de quien ya tenga sesión.
+
+**Lo que NO está verificado ni hecho (dicho sin adornos):**
+- **Google de punta a punta:** la base local no tiene proveedor OAuth. Solo vi que
+  la acción recibe el destino; el viaje a Google y de vuelta no lo probé.
+- **Confirmar el correo desde OTRO dispositivo o navegador** no conserva la
+  plantilla (la cookie es del navegador donde se registró): cae en `/dashboard`
+  sin error. Cubrirlo exige cambiar la plantilla de correo en el **panel de
+  Supabase** (usar `{{ .Data.* }}`); no lo hago porque es config fuera del repo.
+  Está cubierto por prueba unitaria, **no** lo probé en un segundo navegador real.
+- **Hallazgo de infraestructura, fuera del alcance:** en un Supabase **nuevo**
+  las migraciones del repo no otorgan permisos a los roles de la API
+  (`SELECT` sobre cualquier tabla da 403 / la plantilla da 404). Las imágenes
+  recientes ya no conceden permisos por defecto. Producción funciona porque su
+  proyecto es anterior. Quien levante un proyecto nuevo desde `supabase/migrations`
+  se encontraría con la app rota. Para mis pruebas repliqué los permisos **solo en
+  la base local**. No lo arreglé: es una decisión tuya (§34).
+- El panel «Mis eventos» del dashboard mostró «Aún no tienes invitaciones» con 6
+  creadas en la base local; casi seguro es la misma causa de permisos (no lo
+  investigué más).
+- No probé con Google ni con cuentas reales de producción.
+
 ### Fase 3 — Publicar = pagar (quitar la demo)
 - `setPublished`: sin entitlement activo y sin comp → **no** crear entitlement
   Free; devolver `needsPayment` con el plan mínimo que cubre sus módulos
