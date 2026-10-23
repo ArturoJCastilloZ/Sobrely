@@ -62,9 +62,8 @@ export default async function VistaPreviaPage({
       >
         <strong className="font-semibold">Vista previa privada.</strong>{" "}
         <span className="text-muted-foreground">
-          Así se verá tu invitación. Las confirmaciones y las firmas no funcionan
-          aquí
-          {dias > 0 ? `, y esta liga vence en ${dias} ${dias === 1 ? "día" : "días"}` : ""}.
+          Las confirmaciones y las firmas no funcionan aquí.
+          {dias > 0 ? ` Vence en ${dias} ${dias === 1 ? "día" : "días"}.` : ""}
         </span>
       </div>
       <PublicInvitationView invitation={invitation} vistaPrevia />
