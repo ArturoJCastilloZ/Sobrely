@@ -128,6 +128,15 @@ describe("dimensionesJpeg", () => {
     expect(dimensionesJpeg(Buffer.from("no soy una imagen"))).toBeNull();
   });
 
+  it("un archivo con la estructura de un JPEG pero SIN su firma inicial da null", () => {
+    // Sin esta prueba, quitar la validación de la firma pasaba en verde: los demás
+    // casos «no JPEG» eran tan cortos que el lector no encontraba nada de todos
+    // modos. Aquí el cuerpo es el de una miniatura real; solo faltan los 2 primeros bytes.
+    const real = readFileSync(join(dir, readdirSync(dir).find((f) => f.endsWith(".jpg"))!));
+    expect(dimensionesJpeg(real)).not.toBeNull();
+    expect(dimensionesJpeg(real.subarray(2))).toBeNull();
+  });
+
   it("un JPEG truncado antes del marco da null en vez de lanzar", () => {
     const completo = readFileSync(join(dir, readdirSync(dir).find((f) => f.endsWith(".jpg"))!));
     expect(dimensionesJpeg(completo.subarray(0, 12))).toBeNull();
