@@ -102,7 +102,7 @@ Formato: `[fecha] DE → PARA · archivo/contrato · qué se pide · estado`.
 
 | Archivo / carpeta | Quién | Desde | Hasta |
 |---|---|---|---|
-| `src/components/editor/**`, `src/lib/editor/**` | Codex | 2026-10-22 | Al integrar Fase 0 |
+| _(ninguno)_ | | | |
 
 Quien empiece a editar fuera de lo trivial **escribe aquí primero**, y borra su
 línea al pushear.
@@ -113,7 +113,7 @@ línea al pushear.
 |---|---|---|---|---|
 | 2026-10-22 | Claude | — | (sin commit) | Escribió `FUNNEL_PLAN.md` y este archivo. Nada de código |
 | 2026-10-22 | Codex | — | `skarlette/codex-coordinacion` · `8d122cf` | Leyó `COORDINACION.md` → `FUNNEL_PLAN.md` → `AGENTS.md` en ese orden. Verificó con `nl -ba` que `invitation-editor.tsx:331` llama `setPublished`; inspeccionó `publish-controls.tsx:1–57` y confirmó que no lo llama. No inició ninguna fase ni cambió código de producto. Coordinación integrada por fast-forward. |
-| 2026-10-22 | Codex | Fase 0 | `skarlette/codex-fase0-events` (pendiente) | Añadió eventos sin PII con Vercel Analytics: `editor_abierto` una vez por carga y `publicar_tocado` solo al solicitar publicación. Verificado con prueba unitaria del emisor, mutación negativa observada (falló al emitir el nombre incorrecto), `pnpm lint`, 78 archivos/1207 pruebas y `pnpm build`. |
+| 2026-10-22 | Codex | Fase 0 | `skarlette/codex-fase0-events` · `e659663` | Añadió eventos sin PII con Vercel Analytics: `editor_abierto` una vez por carga y `publicar_tocado` solo al solicitar publicación. Verificado con prueba unitaria del emisor, mutación negativa observada (falló al emitir el nombre incorrecto), `pnpm lint`, 78 archivos/1207 pruebas y `pnpm build`. Integrado por fast-forward. |
 
 ## 9. Orden de integración
 
