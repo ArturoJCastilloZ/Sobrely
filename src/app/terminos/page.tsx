@@ -13,7 +13,7 @@ export default function TerminosPage() {
   return (
     <LegalPage
       title="Términos y Condiciones"
-      updated="11 de agosto de 2026"
+      updated="23 de octubre de 2026"
       intro="Estos términos regulan el uso de Sobrely. Al crear una cuenta o usar el servicio, aceptas lo aquí descrito."
     >
       <section>
@@ -42,9 +42,9 @@ export default function TerminosPage() {
         <h2>3. Planes y pagos</h2>
         <ul>
           <li>
-            Puedes crear borradores y ver la vista previa sin costo. Publicar tu
-            invitación como evento real requiere un plan de pago; publicar en modo
-            demo es gratuito por tiempo limitado.
+            Puedes crear borradores y compartir una vista previa privada sin
+            costo. Publicar tu invitación para que tus invitados la vean requiere
+            un plan de pago; no hay publicación gratuita.
           </li>
           <li>
             El modelo es <strong>pago único por evento</strong> (no suscripción).
