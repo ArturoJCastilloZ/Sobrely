@@ -11,12 +11,7 @@ import { getPublishPreflight } from "@/lib/invitations/publish-preflight";
 import { trackEditorFunnelEvent } from "@/lib/editor/funnel-analytics";
 import { slugify } from "@/lib/invitations/schemas";
 import { CheckoutButton } from "@/components/billing/checkout-button";
-import {
-  formatPrice,
-  getEffectivePrice,
-  getPlan,
-  type PlanCode,
-} from "@/lib/billing";
+import type { PlanCode } from "@/lib/billing/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ThemeConfig } from "@/lib/theme/theme";
@@ -341,7 +336,9 @@ export function InvitationEditor({
       const res = await setPublished(invitation.id, next);
       if (!res.ok) {
         // Bloqueo por plan → abre el CTA de mejora en vez de solo un toast.
-        if (res.needsUpgrade && res.requiredPlan) {
+        // C1: needsPayment es la señal autoritativa del servidor; no se infieren planes en cliente.
+        // TODO(C1): quitar el cast cuando Claude actualice SetPublishedResult con needsPayment.
+        if ((res as { needsPayment?: boolean; requiredPlan?: string }).needsPayment && res.requiredPlan) {
           setUpgradePlan(res.requiredPlan);
           return;
         }
@@ -426,12 +423,12 @@ export function InvitationEditor({
     ],
   );
 
-  const upgradePlanObj = upgradePlan ? getPlan(upgradePlan) : undefined;
+  // upgradePlan es solo el PlanCode; el precio real lo muestra el checkout del servidor.
 
   return (
     <DocumentoProvider value={documento}>
-      {/* Modal de mejora de plan (bloqueo de publicación por módulos premium) */}
-      {upgradePlanObj && (
+      {/* Modal de pago (C1): el servidor decide si se requiere pago; el cliente solo muestra el CTA. */}
+      {upgradePlan && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           role="dialog"
@@ -440,30 +437,24 @@ export function InvitationEditor({
         >
           <Card className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <CardHeader>
-              <CardTitle>Mejora a {upgradePlanObj.name} para publicar</CardTitle>
+              <CardTitle>Publicar esta invitación requiere un plan de pago</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <p className="text-sm text-muted-foreground">
-                Tu invitación usa módulos premium. Publícala con el plan{" "}
-                <strong>{upgradePlanObj.name}</strong> por{" "}
-                <strong>
-                  {formatPrice(
-                    getEffectivePrice(upgradePlanObj),
-                    upgradePlanObj.currency,
-                  )}
-                </strong>{" "}
-                (pago único por evento). Tus módulos se conservan.
+                Tu invitación usa módulos que requieren un plan de pago para publicarse.
+                El precio exacto se muestra en el siguiente paso.
+                Tus módulos se conservan sin importar lo que elijas aquí.
               </p>
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => setUpgradePlan(null)}>
                   Ahora no
                 </Button>
                 <CheckoutButton
-                  planCode={upgradePlanObj.code}
+                  planCode={upgradePlan}
                   invitationId={invitation.id}
                   publishOnPaid
                 >
-                  Mejorar a {upgradePlanObj.name}
+                  Ver precio y pagar
                 </CheckoutButton>
               </div>
             </CardContent>
