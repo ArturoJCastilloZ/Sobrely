@@ -314,6 +314,11 @@ los tres planes y ahora muere.
   las pruebas que ya existían (`fulfillment-*`) y siguen en verde. **Hace falta una
   corrida en sandbox de Mercado Pago** (`docs/pruebas-sandbox.md`) con tus
   credenciales de prueba antes de producción; yo no las uso.
+  **Actualización (2026-10-23): ya se corrió** con pagos reales del sandbox, a
+  petición del dev. Resultados y hallazgos en `docs/reconciliacion-de-pagos.md`:
+  la orden, el entitlement, la publicación y la idempotencia funcionan; las
+  notificaciones de pagos REALES recibieron 401 con el secreto del panel (las del
+  simulador sí validaron) y esa causa sigue sin explicarse.
 - **«Modo invitado», OXXO, SPEI y meses sin intereses** (del plan original): no los
   toqué ni los verifiqué. Dependen de la configuración de tu cuenta de Mercado Pago
   y de la preferencia; el código no excluye ningún método, pero no lo comprobé.
@@ -534,16 +539,30 @@ con la fuente que la respalda.
 3. **¿Quién toma la galería pública?** Claude (Fase 1, `skarlette/funnel-fase1`).
    Fuente: `COORDINACION.md` §8.
 
+**Construido después del plan, a raíz de la prueba de sandbox** (no es una fase):
+el job de reconciliación de pagos (`/api/cron/reconciliar-pagos`, apagado de
+fábrica) y la defensa de monto en el webhook: un pago aprobado solo marca la orden
+`paid` si su monto y su moneda coinciden con los de la orden.
+
 **Pendientes que NO son código** (los resuelve el dev; ninguna fase del plan depende
 de construir algo más):
 
 - Aplicar las migraciones `0060` (vistas previas) y `0061` (recordatorios) en
   producción, a mano. Sin la `0060` el botón de vista previa avisa que no está
   disponible; sin la `0061` el panel oculta los recordatorios.
-- Probar un pago real en el **sandbox de Mercado Pago**: nunca se ha probado un
-  pago ni un webhook de extremo a extremo (`docs/pruebas-sandbox.md`).
-- Definir las variables de entorno de recordatorios con `REMINDERS_DRY_RUN=1` y
-  leer el resumen del cron (`docs/recordatorios.md`), y `NEXT_PUBLIC_SITE_URL`.
+- **Hecho el 2026-10-23: la corrida en el sandbox de Mercado Pago** (con pagos
+  reales de prueba): orden `paid`, entitlement, publicación e idempotencia
+  funcionan, y la defensa de monto bloquea un pago de monto distinto. **Sigue
+  abierto:** las notificaciones de pagos REALES no validaron con el secreto del
+  panel (las del simulador sí), causa sin explicar. Antes de cobrar de verdad hace
+  falta **un pago real pequeño en producción** con el secreto del **modo
+  producción**. Detalle: `docs/reconciliacion-de-pagos.md`.
+- **Devolver la URL de webhook del modo prueba a `sobrely.com`** en el panel de
+  Mercado Pago: se cambió a un túnel temporal para la prueba y ese túnel ya no existe.
+- Definir las variables de entorno y leer el resumen de cada cron, en modo seco
+  primero: recordatorios (`REMINDERS_DRY_RUN=1`, `docs/recordatorios.md`) y
+  reconciliación (`CRON_SECRET` + `RECONCILE_ENABLED=1`,
+  `docs/reconciliacion-de-pagos.md`), más `NEXT_PUBLIC_SITE_URL`.
 - Revisión jurídica de `terminos` y `privacidad` (los redactó Claude).
 - Confirmar si la orden pagada de $699 fue dinero de prueba, y el plan de Vercel
   (los eventos personalizados de Codex necesitan Pro).

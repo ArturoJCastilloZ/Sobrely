@@ -62,10 +62,13 @@ las órdenes aplicadas (UUID, sin datos personales). `montoNoCoincide > 0` o
    token de prueba es de un usuario vendedor de prueba y sus pagos se notifican
    firmados por otra aplicación. Antes de cobrar de verdad hay que confirmar con
    un pago real pequeño en producción y el secreto del **modo producción**.
-2. **El webhook no compara el monto del pago con el de la orden.** `fulfillment.ts`
-   marca `paid` con solo `approved` + `external_reference`. Este job sí lo compara.
-   Con el checkout actual no es explotable (el monto lo fija el servidor al crear la
-   preferencia), pero es una defensa barata que conviene añadir al camino del webhook.
+2. ~~El webhook no compara el monto del pago con el de la orden.~~ **Resuelto**
+   (`skarlette/funnel-monto-webhook`): `applyMercadoPagoPayment` recibe ahora lo
+   cobrado (`pago`, obligatorio) y solo marca `paid` si monto y moneda coinciden con
+   la orden; si no, no escribe nada y responde `amount_mismatch`. El webhook responde
+   200 (definitivo, no se pide reintento) y la alerta es el log y `montoNoCoincide`
+   de esta reconciliación. Aplica solo al paso a `paid`: un reembolso parcial no se
+   bloquea. Comparación compartida con la reconciliación en `monto-pago.ts`.
 3. La página de éxito (`/billing/success`) trae `payment_id` y `status=approved` en la
    URL. Se podría reconciliar ahí mismo, verificando contra Mercado Pago, para que el
    cliente no espere al cron. No se hizo: contradice la regla actual de que solo el
