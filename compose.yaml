@@ -1,0 +1,27 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        # Estas variables se incorporan en el bundle del navegador durante el
+        # build. Ejecuta Compose con --env-file .env.local (ver la guía).
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?Configura NEXT_PUBLIC_SUPABASE_URL en .env.local}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:?Configura NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY en .env.local}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?Configura NEXT_PUBLIC_SITE_URL en .env.local}
+        NEXT_PUBLIC_DEFAULT_CURRENCY: ${NEXT_PUBLIC_DEFAULT_CURRENCY:-MXN}
+        NEXT_PUBLIC_PRICING_LAUNCH_ENABLED: ${NEXT_PUBLIC_PRICING_LAUNCH_ENABLED:-true}
+        NEXT_PUBLIC_LAUNCH_CAMPAIGN_END_DATE: ${NEXT_PUBLIC_LAUNCH_CAMPAIGN_END_DATE:-}
+        NEXT_PUBLIC_MP_PUBLIC_KEY: ${NEXT_PUBLIC_MP_PUBLIC_KEY:-}
+        NEXT_PUBLIC_SUPPORT_WHATSAPP: ${NEXT_PUBLIC_SUPPORT_WHATSAPP:-}
+        NEXT_PUBLIC_REFERRAL_CREDIT_MXN: ${NEXT_PUBLIC_REFERRAL_CREDIT_MXN:-50}
+        NEXT_PUBLIC_REFERRAL_ENABLED: ${NEXT_PUBLIC_REFERRAL_ENABLED:-true}
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    init: true
+    restart: unless-stopped

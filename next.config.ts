@@ -26,6 +26,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Produce un runtime mínimo para el contenedor. Next traza las dependencias
+  // necesarias y genera `.next/standalone/server.js`, que es el único proceso
+  // que ejecuta la imagen de producción.
+  output: "standalone",
   images: {
     /**
      * Permite la query `?v=<revision>` en las miniaturas de plantillas.

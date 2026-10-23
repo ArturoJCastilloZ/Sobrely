@@ -105,6 +105,36 @@ pnpm test       # pruebas unitarias (Vitest)
 pnpm test:watch # Vitest en watch
 ```
 
+### Contenedor de producción
+
+El `Dockerfile` genera una imagen multi-etapa con el runtime `standalone` de
+Next.js. Supabase y Mercado Pago siguen siendo servicios externos; no se
+incluyen bases de datos ni credenciales dentro de la imagen.
+
+1. Crea y rellena `.env.local` como se indica arriba. Para Docker, define
+   `NEXT_PUBLIC_SITE_URL` con la URL que verán los usuarios (por ejemplo,
+   `http://localhost:3000` localmente o el dominio HTTPS en producción).
+2. Construye e inicia el contenedor:
+
+```bash
+docker compose --env-file .env.local up --build
+```
+
+La aplicación queda disponible en `http://localhost:3000`; el estado del
+contenedor se comprueba en `GET /api/health`.
+
+Las variables `NEXT_PUBLIC_*` se fijan en el bundle durante el build. Si se
+cambia cualquiera de ellas, reconstruye la imagen con el mismo comando. Las
+variables secretas (`SUPABASE_SERVICE_ROLE_KEY`, `MP_ACCESS_TOKEN` y
+`MP_WEBHOOK_SECRET`) se cargan solo al arrancar mediante `env_file` y no se
+envían al contexto de Docker gracias a `.dockerignore`.
+
+Para detenerlo:
+
+```bash
+docker compose down
+```
+
 ## 6. Pagos
 
 - Modelo: **pago único por evento** (no suscripción). Planes Free / Esencial /

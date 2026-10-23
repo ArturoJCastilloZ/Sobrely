@@ -1,0 +1,24 @@
+# Dependencias y artefactos que se reconstruyen dentro de la imagen.
+node_modules
+.next
+coverage
+
+# Git y archivos locales del desarrollador.
+.git
+.gitignore
+.DS_Store
+*.log
+
+# Nunca enviar secretos al contexto de build. Las variables se aportan en
+# tiempo de build (solo NEXT_PUBLIC_*) y en tiempo de ejecución (compose).
+.env
+.env.*
+
+# Documentación y metadatos que no participan en el build de Next.
+docs
+HANDOFF.md
+README.md
+Dockerfile
+compose.yaml
+docker-compose.yml
+.dockerignore
