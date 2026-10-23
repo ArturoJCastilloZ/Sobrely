@@ -336,8 +336,7 @@ export function InvitationEditor({
       if (!res.ok) {
         // Bloqueo por plan → abre el CTA de mejora en vez de solo un toast.
         // C1: needsPayment es la señal autoritativa del servidor; no se infieren planes en cliente.
-        // TODO(C1-cast): quitar el cast cuando funnel-fase3 entre a integración (el tipo ya lo tiene).
-        if ((res as { needsPayment?: boolean }).needsPayment && res.requiredPlan) {
+        if (res.needsPayment && res.requiredPlan) {
           setUpgradePlan(res.requiredPlan);
           return;
         }
