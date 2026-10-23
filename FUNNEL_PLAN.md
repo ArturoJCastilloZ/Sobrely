@@ -324,7 +324,9 @@ los tres planes y ahora muere.
   recibirlos con el precio real de **esa** invitación.
 - **Términos y Condiciones** (`terminos/page.tsx:47`) todavía dice «publicar en
   modo demo es gratuito por tiempo limitado». **Ya es falso.** Es texto legal y no
-  lo cambié: es tu decisión.
+  lo cambié: es tu decisión. **Actualización (2026-10-23): corregido** a petición
+  del dev en `e97c03d` («no hay publicación gratuita»), con la fecha de
+  actualización cambiada; pendiente de revisión jurídica.
 - La columna `plans.publish_trial_days` sigue en 14 en la BD. Nada del código la
   lee; quitarla exige una migración y no aporta nada (§34: no la hice).
 - Probado contra el catálogo local de 50 plantillas, no contra el de producción (65).
@@ -515,8 +517,33 @@ Regla: nadie toca la zona del otro sin avisarlo aquí.
 - Pagos MX: [Antom](https://www.antom.com/guides/markets/mexico), [Rebill](https://www.rebill.com/blog/main-payment-methods-in-mexico) (las fuentes discrepan en el peso del efectivo).
 - **Sin evidencia primaria**: ningún estudio comparó «registrarse al elegir plantilla» contra «registrarse antes» para editores; la recomendación es inferencia propia respaldada por Baymard, no por un A/B.
 
-## 7. Preguntas abiertas
+## 7. Preguntas (resueltas) y pendientes
 
-1. ¿La galería pública debe ser indexable (SEO) o seguir `noindex` al inicio?
-2. ¿Qué se le dice a quien tenga una demo viva cuando expire? (depende de Fase 0)
-3. ¿Quién de los dos agentes toma la galería pública (Fase 1)?
+Las tres preguntas que dejó abiertas el plan original ya tienen respuesta; cada una
+con la fuente que la respalda.
+
+1. **¿La galería pública debe ser indexable (SEO)?** Sí, solo el índice.
+   `/plantillas` es indexable, con canonical propio y en el sitemap; sus vistas de
+   detalle `/plantillas/<slug>` van `noindex` y fuera del sitemap por contenido casi
+   duplicado. Fuente: §Fase 1 y `src/app/sitemap.ts`. `/plantilla/<slug>` (la
+   captura) sigue `noindex`.
+2. **¿Qué se le dice a quien tenga una demo viva cuando expire?** Nada: **no había
+   ninguna.** La Fase 0 midió 0 demos Free vigentes (las 3 que existieron vencieron
+   hace 32 a 58 días). Las demos antiguas que pudieran existir siguen publicando
+   hasta vencer y después piden pago. Fuente: §Fase 0 y §Fase 3.
+3. **¿Quién toma la galería pública?** Claude (Fase 1, `skarlette/funnel-fase1`).
+   Fuente: `COORDINACION.md` §8.
+
+**Pendientes que NO son código** (los resuelve el dev; ninguna fase del plan depende
+de construir algo más):
+
+- Aplicar las migraciones `0060` (vistas previas) y `0061` (recordatorios) en
+  producción, a mano. Sin la `0060` el botón de vista previa avisa que no está
+  disponible; sin la `0061` el panel oculta los recordatorios.
+- Probar un pago real en el **sandbox de Mercado Pago**: nunca se ha probado un
+  pago ni un webhook de extremo a extremo (`docs/pruebas-sandbox.md`).
+- Definir las variables de entorno de recordatorios con `REMINDERS_DRY_RUN=1` y
+  leer el resumen del cron (`docs/recordatorios.md`), y `NEXT_PUBLIC_SITE_URL`.
+- Revisión jurídica de `terminos` y `privacidad` (los redactó Claude).
+- Confirmar si la orden pagada de $699 fue dinero de prueba, y el plan de Vercel
+  (los eventos personalizados de Codex necesitan Pro).
