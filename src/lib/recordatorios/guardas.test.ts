@@ -91,11 +91,14 @@ describe("el cron falla cerrado y en orden", () => {
 
   it("vercel.json programa EXACTAMENTE la ruta que existe", () => {
     const v = JSON.parse(leer("vercel.json")) as { crons: { path: string; schedule: string }[] };
-    expect(v.crons).toHaveLength(1);
-    expect(v.crons[0].path).toBe("/api/cron/recordatorios");
+    const suyo = v.crons.filter((c) => c.path === "/api/cron/recordatorios");
+    expect(suyo).toHaveLength(1);
     expect(existsSync(join(RAIZ, "src/app/api/cron/recordatorios/route.ts"))).toBe(true);
     // Una vez al día: el producto promete «como máximo un correo al día».
-    expect(v.crons[0].schedule).toMatch(/^\d+ \d+ \* \* \*$/);
+    expect(suyo[0].schedule).toMatch(/^\d+ \d+ \* \* \*$/);
+    // Y TODO cron del proyecto corre una vez al día: en el plan Hobby de Vercel un
+    // cron más frecuente hace FALLAR el despliegue entero, no solo ese cron.
+    for (const c of v.crons) expect(c.schedule, c.path).toMatch(/^\d+ \d+ \* \* \*$/);
   });
 });
 

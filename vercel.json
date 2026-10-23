@@ -1,5 +1,6 @@
 {
   "crons": [
-    { "path": "/api/cron/recordatorios", "schedule": "0 15 * * *" }
+    { "path": "/api/cron/recordatorios", "schedule": "0 15 * * *" },
+    { "path": "/api/cron/reconciliar-pagos", "schedule": "0 16 * * *" }
   ]
 }
