@@ -37,6 +37,14 @@ describe("token de baja", () => {
     expect(verificarBaja(U1, firmarBaja(U1, SECRETO), undefined)).toBe(false);
     expect(verificarBaja(U1, firmarBaja(U1, SECRETO), "")).toBe(false);
   });
+  it("verificar rechaza un secreto corto AUNQUE el token sea el HMAC correcto de ese secreto", async () => {
+    // Sin esto, quitar la comprobación de longitud en `verificarBaja` pasaba en
+    // verde: el token de prueba nunca coincidía con el secreto corto.
+    const { createHmac } = await import("node:crypto");
+    const corto = "corto";
+    const tokenDelCorto = createHmac("sha256", corto).update(`baja:${U1}`).digest("base64url");
+    expect(verificarBaja(U1, tokenDelCorto, corto)).toBe(false);
+  });
   it("un secreto corto se rechaza al firmar y al verificar", () => {
     expect(() => firmarBaja(U1, "corto")).toThrow();
     expect(verificarBaja(U1, "x", "corto")).toBe(false);

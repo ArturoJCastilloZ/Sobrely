@@ -155,7 +155,13 @@ describe("la página de baja", () => {
 });
 
 describe("la migración", () => {
-  const sql = leer("supabase/migrations/0061_recordatorios.sql");
+  // Sin comentarios: la cabecera de la migración MENCIONA `unique (invitation_id,
+  // kind)` en prosa, y una aserción sobre el texto crudo se satisface con la
+  // explicación aunque la restricción real se borre (lo cazó un mutante).
+  const sql = leer("supabase/migrations/0061_recordatorios.sql")
+    .split("\n")
+    .filter((l) => !l.trim().startsWith("--"))
+    .join("\n");
   it("RLS activada y SIN policies en las dos tablas, con revoke explícito", () => {
     expect(sql).toMatch(/alter table public\.reminder_preferences enable row level security/);
     expect(sql).toMatch(/alter table public\.reminder_log enable row level security/);
