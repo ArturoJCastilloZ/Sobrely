@@ -15,6 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PublishControls } from "@/components/editor/publish-controls";
+import { VistaPreviaControls } from "@/components/editor/vista-previa-controls";
 import { SettingsPanel } from "@/components/editor/settings-panel";
 import { ThemePanel } from "@/components/editor/theme-panel";
 import { VanitySlugCard } from "@/components/editor/vanity-slug-card";
@@ -398,6 +399,8 @@ export function PanelPropiedades() {
               isPublished={invitation.is_published}
               dirty={dirty}
             />
+            {/* Visible publicada o no: sin publicar es cuando más sirve. */}
+            <VistaPreviaControls invitationId={invitation.id} dirty={dirty} />
             {invitation.is_published && (
               <VanitySlugCard invitationId={invitation.id} />
             )}

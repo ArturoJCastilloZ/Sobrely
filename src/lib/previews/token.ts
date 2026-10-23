@@ -13,13 +13,20 @@ import { createHash, randomBytes } from "node:crypto";
  * SHA-256 sin sal es suficiente (la sal protege contraseñas de baja entropía,
  * que no es el caso).
  *
- * Este módulo es PURO (salvo el azar de `generarToken`) para poder demostrarlo
- * con pruebas; el acceso a la base vive en `actions.ts` y `resolver.ts`.
+ * Este módulo es SOLO DEL SERVIDOR (importa `node:crypto`). La vigencia, el
+ * estado de una liga y los días restantes viven en `vigencia.ts`, que es puro y
+ * seguro para el navegador; se re-exportan aquí para que las importaciones
+ * existentes no cambien.
  */
-export const VIGENCIA_DIAS = 7;
-export const MAX_LIGAS_VIGENTES = 10;
-
-const MS_POR_DIA = 24 * 60 * 60 * 1000;
+export {
+  calcularVencimiento,
+  diasRestantes,
+  estadoDeLiga,
+  MAX_LIGAS_VIGENTES,
+  textoDeDias,
+  VIGENCIA_DIAS,
+  type EstadoDeLiga,
+} from "@/lib/previews/vigencia";
 
 /** 32 bytes aleatorios en base64url: 43 caracteres, 256 bits de entropía. */
 export function generarToken(): string {
@@ -38,32 +45,4 @@ export function hashToken(token: string): string {
  */
 export function tieneFormatoDeToken(valor: unknown): valor is string {
   return typeof valor === "string" && /^[A-Za-z0-9_-]{43}$/.test(valor);
-}
-
-export function calcularVencimiento(ahora: Date = new Date()): Date {
-  return new Date(ahora.getTime() + VIGENCIA_DIAS * MS_POR_DIA);
-}
-
-export type EstadoDeLiga = "vigente" | "vencida" | "revocada";
-
-/**
- * Estado de una liga. La revocación manda sobre el vencimiento: una liga
- * revocada que además venció se reporta como revocada (es lo que el anfitrión
- * hizo). Un vencimiento ILEGIBLE cuenta como vencida: ante la duda, cerrada.
- */
-export function estadoDeLiga(
-  liga: { expires_at: string; revoked_at: string | null },
-  ahora: Date = new Date(),
-): EstadoDeLiga {
-  if (liga.revoked_at) return "revocada";
-  const vence = new Date(liga.expires_at).getTime();
-  if (Number.isNaN(vence)) return "vencida";
-  return vence > ahora.getTime() ? "vigente" : "vencida";
-}
-
-/** Días enteros que le quedan a una liga (0 si venció). Para el aviso del banner. */
-export function diasRestantes(expiresAt: string, ahora: Date = new Date()): number {
-  const vence = new Date(expiresAt).getTime();
-  if (Number.isNaN(vence)) return 0;
-  return Math.max(0, Math.ceil((vence - ahora.getTime()) / MS_POR_DIA));
 }
