@@ -337,6 +337,84 @@ los tres planes y ahora muere.
 - Aceptación: la liga abre sin sesión, no aparece en sitemap ni indexada, y se
   puede revocar.
 
+#### Resultados de la Fase 4 (2026-10-23) — **pendiente de tu revisión: migración + seguridad**
+
+Rama `skarlette/funnel-fase4`, **sin mergear**. Probada de punta a punta en una
+**base Supabase local descartable** (nada de producción), con el cliente real, dos
+usuarios distintos y la migración aplicada de verdad.
+
+**Decisiones del dev** (el §34 me obligó a preguntar porque hay migración): tabla
+aparte con el token guardado como **hash SHA-256** y vigencia de **7 días**. Lo que
+Codex había escrito en su nota (columna en `invitations`, 30 días, ruta por slug)
+**no** se siguió; el contrato vigente es C5 v2 en `COORDINACION.md` §4.
+
+**⚠ Una corrección mía, para que decidas con el dato bueno.** Al preguntarte dije que
+una columna `preview_token` en `invitations` quedaría legible por la política
+pública `0001:246-247`. **Era falso:** la `0053` ya retiró esa política y hoy `anon`
+no lee `invitations`. Cité la 0001 sin revisar migraciones posteriores. Las razones
+que SÍ sostienen la tabla aparte son otras: (a) con `DEFAULT gen_random_uuid()` la
+migración crearía un token vivo para **todas** las invitaciones existentes sin que
+nadie lo pida, (b) el token quedaría en claro, (c) solo habría una liga por
+invitación, (d) revocar sería regenerar. Tu elección tuvo una premisa errónea mía:
+**puedes revisarla antes de aplicar la migración** (cambiar a columnas es corto;
+el token, el resolvedor y la ruta no dependen del almacén).
+
+**Qué se construyó**
+- `0060_vistas_previas.sql`: tabla `invitation_previews`, RLS **sin policies**,
+  `revoke all` explícito a `anon`/`authenticated`, `grant` explícito a `service_role`
+  y una **autocomprobación** que aborta la migración si queda abierta.
+- `/vista-previa/[token]`: 404 uniforme, `noindex`, sin `referrer`, sin caché,
+  banner «Vista previa privada».
+- `crearVistaPrevia` / `revocarVistasPrevias` (contrato C5 v2 para el botón de Codex).
+- `vistaPrevia` en `PublicInvitationView` (apagado por omisión).
+
+**Medido contra la base real**
+
+| Prueba | Resultado |
+|---|---|
+| Migración aplicada, y aplicada **otra vez** | Sin error (idempotente); la autocomprobación pasó |
+| Tabla vista por la API: anónimo / usuario con sesión | Leer, insertar y actualizar → **`42501` denegado**; nada se coló |
+| Servidor (llave de servicio) | Puede leer |
+| Liga creada con la acción real | 43 caracteres, **7.00 días**; en la base el **prefijo SHA-256 del token coincide** con el hash guardado |
+| Abrir la liga **sin cookies** | 200, banner, `noindex`, `referrer: no-referrer`, **0 formularios**, el **id real no aparece** |
+| 6 variantes de token malo (inexistente, basura, inyección, +1, −1 carácter, letra cambiada) | **El mismo 404, indistinguibles** |
+| Revocar | 200 → **404 al instante**; base: `REVOCADA` |
+| Vencer | 200 → **404**; base: `VENCIDA` |
+| Crear/revocar sobre la invitación **de otra persona** | «No tienes acceso»; su liga queda **intacta** |
+| 11 ligas | Las 10 primeras entran, la **11.ª se rechaza**; revocadas y vencidas no cuentan |
+| Invitación **ya publicada**: página pública vs. vista previa | Pública: **1 formulario real**; vista previa: **0** (y la pública no cambió) |
+| `robots.txt` / sitemap | Bloquea `/vista-previa`; no aparece en el sitemap |
+
+**Defecto de mi propia medición:** la comparación «los rechazos son idénticos» dio
+falso porque el cuerpo traía un nonce distinto por petición dentro de un `<script>`;
+no era la ruta. La repetí comparando solo lo visible y dio un único valor.
+
+**Mutación:** 20 mutantes sobre token, resolvedor, acciones, vista, migración y
+guardas; **los 20 mueren**. Verificado: `tsc`, `eslint`, `build` y **1,372 pruebas**.
+También extendí la guarda `exito-con-cero-filas` a mi módulo (la propia suite me
+obligó a ello: ninguna escritura a la BD puede quedar fuera).
+
+**Lo que NO está hecho o verificado (dicho sin adornos)**
+- **La migración NO está aplicada en producción.** El repo la aplica a mano
+  (`0054` lo dice). El código se despliega antes sin romper nada: con la tabla
+  ausente, crear devuelve «todavía no está disponible» y abrir una liga da 404.
+- **El botón «Copiar liga» no existe todavía**: es de Codex (zona A). Probé mis
+  acciones con una página temporal en un worktree desechable que **no** se commiteó.
+- **Ligas vencidas o revocadas no se borran.** Una fila pequeña cada una; limpiarlas
+  es un `delete` periódico que hoy no tiene dónde correr. Queda como seguimiento.
+- **El token aparece una vez en el payload interno de Next** (los parámetros de la
+  ruta), igual que en la URL que el visitante ya tiene; **no** aparece en ningún
+  `href`, `src`, `content` ni `action`. Es inherente a las rutas dinámicas.
+- **`NEXT_PUBLIC_SITE_URL` debe estar definida en producción** para que la URL sea
+  absoluta y correcta; si falta, se arma con los encabezados de la petición
+  (probado con una prueba unitaria, no en vivo).
+- Probado contra el catálogo local, no contra producción. Los permisos de las demás
+  tablas los repliqué a mano en la base local (un Supabase nuevo ya no los da solo);
+  para `invitation_previews` **no**: se midió lo que dejó la migración.
+- Una vista previa de una invitación **con módulos premium sin pagar** se ve completa:
+  la vista previa muestra todo, y el cobro ocurre al publicar. Es lo buscado, pero
+  conviene que lo sepas.
+
 ### Fase 5 — Recuperar abandono
 - Correo al borrador sin publicar (24 h, 3 días, 7 días antes del evento).
   Requiere consentimiento y baja (LFPDPPP); revisar `privacidad`/`terminos`.
