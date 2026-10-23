@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  */
 let corridas = 0;
 let ordenes: { id: string; amount: number; currency: string }[] = [];
-const aplicados: { orderId: string; paymentId: string }[] = [];
+const aplicados: { orderId: string; paymentId: string; mpStatus?: string; pago?: unknown }[] = [];
 
 vi.mock("@/lib/billing/fulfillment", () => ({
   applyMercadoPagoPayment: async (p: { orderId: string; paymentId: string }) => {
@@ -93,7 +93,9 @@ describe("GET /api/cron/reconciliar-pagos: las puertas, en orden", () => {
     const { GET } = await import("@/app/api/cron/reconciliar-pagos/route");
     const r = await GET(pedir("Bearer cron-secreto"));
     expect(r.status).toBe(200);
-    expect(aplicados).toEqual([{ orderId: "o1", paymentId: "pago-1", mpStatus: "approved" }]);
+    expect(aplicados).toEqual([
+      { orderId: "o1", paymentId: "pago-1", mpStatus: "approved", pago: { amount: 399, currency: "MXN" } },
+    ]);
     const cuerpo = await r.json();
     expect(Object.keys(cuerpo).sort()).toEqual(
       ["aplicadas", "errores", "montoNoCoincide", "ordenesAplicadas", "revisadas", "sinPagoAprobado"].sort(),
@@ -134,10 +136,12 @@ describe("guardas estructurales", () => {
     const p = fuente("src/lib/billing/reconciliar.ts");
     expect(p).toContain('p.status === "approved"');
     expect(p).toContain("p.externalReference === orden.id");
-    expect(p).toContain("mismoMonto(p.amount, orden.amount)");
-    expect(p).toContain("toUpperCase() === orden.currency.toUpperCase()");
-    // Y el monto se valida ANTES de llamar a `aplicar`.
-    expect(p.indexOf("mismoMonto(p.amount")).toBeLessThan(p.indexOf("o.aplicar("));
+    // El monto y la moneda se comparan con la función COMPARTIDA con el webhook
+    // (`monto-pago.ts`, probada aparte), y se validan ANTES de llamar a `aplicar`.
+    expect(p).toContain("montoYMonedaCoinciden(");
+    expect(p).toContain("{ amount: p.amount, currency: p.currency }");
+    expect(p).toContain("{ amount: orden.amount, currency: orden.currency }");
+    expect(p.indexOf("montoYMonedaCoinciden(")).toBeLessThan(p.indexOf("o.aplicar("));
   });
 
   it("los adaptadores solo LEEN: no escriben en la base", () => {

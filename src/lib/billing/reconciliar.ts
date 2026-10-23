@@ -22,6 +22,8 @@
  *   - No mira órdenes de hace más de `VENTANA_MS`: una orden `pending` de hace
  *     meses es un checkout abandonado, no un pago perdido.
  */
+import { montoYMonedaCoinciden } from "@/lib/billing/monto-pago";
+
 export const MARGEN_MS = 10 * 60 * 1000;
 export const VENTANA_MS = 30 * 24 * 60 * 60 * 1000;
 export const MAX_ORDENES_POR_CORRIDA = 50;
@@ -52,6 +54,8 @@ export type AplicarPago = (p: {
   orderId: string;
   paymentId: string;
   mpStatus: string;
+  /** Lo que Mercado Pago dice que se cobró: `applyMercadoPagoPayment` lo vuelve a comparar. */
+  pago: { amount: number | null; currency: string | null };
 }) => Promise<{ ok: boolean; reason?: string }>;
 
 export type ResumenDeReconciliacion = {
@@ -66,12 +70,6 @@ export type ResumenDeReconciliacion = {
   /** Ids de las órdenes aplicadas (acotado), para trazabilidad. */
   ordenesAplicadas: string[];
 };
-
-/** Igualdad de dinero sin que `199` y `"199.00"` se tomen por distintos. */
-function mismoMonto(pago: number | null, orden: number): boolean {
-  if (pago === null || !Number.isFinite(pago)) return false;
-  return Math.round(pago * 100) === Math.round(Number(orden) * 100);
-}
 
 export async function reconciliarPagos(o: {
   almacen: AlmacenDeOrdenes;
@@ -119,11 +117,11 @@ export async function reconciliarPagos(o: {
 
     // Si hubiera varios aprobados para la misma orden, se aplica el primero que
     // cuadre en monto y moneda; si ninguno cuadra, se reporta y no se aplica.
-    const valido = aprobados.find(
-      (p) =>
-        mismoMonto(p.amount, orden.amount) &&
-        p.currency !== null &&
-        p.currency.toUpperCase() === orden.currency.toUpperCase(),
+    const valido = aprobados.find((p) =>
+      montoYMonedaCoinciden(
+        { amount: p.amount, currency: p.currency },
+        { amount: orden.amount, currency: orden.currency },
+      ),
     );
     if (!valido) {
       resumen.montoNoCoincide += 1;
@@ -135,6 +133,7 @@ export async function reconciliarPagos(o: {
         orderId: orden.id,
         paymentId: valido.id,
         mpStatus: valido.status,
+        pago: { amount: valido.amount, currency: valido.currency },
       });
       if (r.ok) {
         resumen.aplicadas += 1;

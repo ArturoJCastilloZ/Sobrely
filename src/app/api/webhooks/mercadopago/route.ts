@@ -3,6 +3,7 @@ import {
   verifyMercadoPagoSignature,
 } from "@/lib/billing/mercadopago";
 import { applyMercadoPagoPayment } from "@/lib/billing/fulfillment";
+import { REASON_MONTO_DISTINTO } from "@/lib/billing/monto-pago";
 
 /**
  * Webhook de Mercado Pago.
@@ -77,7 +78,25 @@ export async function POST(request: Request) {
       orderId,
       paymentId: String(payment.id ?? dataId),
       mpStatus: status,
+      pago: {
+        amount:
+          typeof payment.transaction_amount === "number"
+            ? payment.transaction_amount
+            : null,
+        currency: payment.currency_id ?? null,
+      },
     });
+
+    // Monto o moneda distintos: NO se marcó nada. Se responde 200 (no 500) porque
+    // es definitivo: con 500 Mercado Pago reintentaría durante días un pago que
+    // nunca va a coincidir. La alerta es el log de `fulfillment` y el contador
+    // `montoNoCoincide` del job de reconciliación.
+    if (!result.ok && result.reason === REASON_MONTO_DISTINTO) {
+      return Response.json(
+        { ok: false, note: REASON_MONTO_DISTINTO },
+        { status: 200 },
+      );
+    }
 
     if (!result.ok) {
       console.error("[mercadopago webhook] fulfillment falló:", result.reason);

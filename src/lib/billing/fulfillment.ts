@@ -15,6 +15,11 @@ import {
   type MpPaymentStatus,
 } from "@/lib/billing/mp-status";
 import type { PlanCode } from "@/lib/billing/types";
+import {
+  montoYMonedaCoinciden,
+  REASON_MONTO_DISTINTO,
+  type PagoCobrado,
+} from "@/lib/billing/monto-pago";
 
 /**
  * Cumplimiento de una orden tras confirmar el pago server-side.
@@ -48,13 +53,20 @@ export async function applyMercadoPagoPayment(params: {
   orderId: string;
   paymentId: string;
   mpStatus: MpPaymentStatus;
+  /**
+   * Lo que Mercado Pago dice que se COBRÓ. Obligatorio a propósito: un llamador
+   * que lo olvide no compila, en vez de marcar `paid` sin comparar el monto.
+   */
+  pago: PagoCobrado;
 }): Promise<FulfillmentResult> {
-  const { orderId, paymentId, mpStatus } = params;
+  const { orderId, paymentId, mpStatus, pago } = params;
   const admin = createAdminClient();
 
   const { data: order, error: orderErr } = await admin
     .from("orders")
-    .select("id, user_id, status, product_type, invitation_id, plan_id, metadata")
+    .select(
+      "id, user_id, status, product_type, invitation_id, plan_id, amount, currency, metadata",
+    )
     .eq("id", orderId)
     .maybeSingle();
 
@@ -116,6 +128,29 @@ export async function applyMercadoPagoPayment(params: {
       "[fulfillment] reentrando en una orden ya `paid` porque falta el acceso:",
       { orderId, motivo: reentrada.motivo },
     );
+  }
+
+  // Defensa de monto. Un pago `approved` solo vuelve `paid` una orden si lo que se
+  // COBRÓ es lo que se VENDIÓ: mismo monto y misma moneda. Va ANTES de cualquier
+  // escritura —ni la orden ni el acceso se tocan con un monto distinto— y también
+  // frena la reentrada. Solo aplica al paso a `paid`: un reembolso o un rechazo
+  // pueden traer otro monto (reembolso parcial) y no deben quedar bloqueados.
+  if (
+    newStatus === "paid" &&
+    !montoYMonedaCoinciden(pago, {
+      amount: Number(order.amount),
+      currency: String(order.currency ?? ""),
+    })
+  ) {
+    console.error(
+      "[fulfillment] pago aprobado con monto o moneda DISTINTOS a la orden; NO se marca paid:",
+      { orderId, paymentId },
+    );
+    return {
+      ok: false,
+      orderStatus: order.status ?? undefined,
+      reason: REASON_MONTO_DISTINTO,
+    };
   }
 
   const { data: ordenTocada, error: updErr } = await admin

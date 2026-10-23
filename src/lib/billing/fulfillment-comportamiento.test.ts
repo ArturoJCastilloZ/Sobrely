@@ -78,8 +78,21 @@ const ORDEN_PAGABLE = {
   product_type: "plan",
   invitation_id: "inv-1",
   plan_id: "plan-esencial",
+  amount: 199,
+  currency: "MXN",
   metadata: null,
 };
+
+/** Lo que Mercado Pago dice que cobró: coincide con `ORDEN_PAGABLE`. */
+const PAGO_COINCIDE = { amount: 199, currency: "MXN" };
+
+/** Las pruebas antiguas no hablan de monto: reciben un cobro que SÍ coincide. */
+const aplicar = (p: {
+  orderId: string;
+  paymentId: string;
+  mpStatus: string;
+  pago?: { amount: number | null; currency: string | null };
+}) => applyMercadoPagoPayment({ pago: PAGO_COINCIDE, ...p });
 
 function escenario(over: Record<string, Resp> = {}) {
   respuestas = {
@@ -103,7 +116,7 @@ beforeEach(() => {
 
 describe("un pago aprobado activa el acceso", () => {
   it("marca la orden y escribe el entitlement, en ese orden", async () => {
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1",
       paymentId: "pay-1",
       mpStatus: "approved",
@@ -122,7 +135,7 @@ describe("un fallo de escritura NO se reporta como éxito", () => {
     escenario({
       "invitation_entitlements:upsert": { data: null, error: { message: "boom" } },
     });
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved",
     });
     expect(r.ok).toBe(false);
@@ -131,7 +144,7 @@ describe("un fallo de escritura NO se reporta como éxito", () => {
 
   it("y si el upsert afecta 0 filas tampoco —eso en PostgREST no es error", async () => {
     escenario({ "invitation_entitlements:upsert": { data: [], error: null } });
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved",
     });
     expect(r.ok).toBe(false);
@@ -140,7 +153,7 @@ describe("un fallo de escritura NO se reporta como éxito", () => {
 
   it("un update de la ORDEN con 0 filas corta ANTES de tocar el acceso", async () => {
     escenario({ "orders:update": { data: [], error: null } });
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved",
     });
     expect(r.ok).toBe(false);
@@ -157,7 +170,7 @@ describe("la reentrada: el reintento de MP tiene que servir de algo", () => {
       "orders:select": { data: { ...ORDEN_PAGABLE, status: "paid" }, error: null },
       "invitation_entitlements:select": { data: null, error: null },
     });
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved",
     });
     expect(r).toMatchObject({ ok: true, entitlementActivated: true });
@@ -170,7 +183,7 @@ describe("la reentrada: el reintento de MP tiene que servir de algo", () => {
       "orders:select": { data: { ...ORDEN_PAGABLE, status: "paid" }, error: null },
       "invitation_entitlements:select": { data: { status: "active" }, error: null },
     });
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved",
     });
     expect(r).toMatchObject({ ok: true, idempotent: true });
@@ -183,7 +196,7 @@ describe("la reentrada: el reintento de MP tiene que servir de algo", () => {
       "orders:select": { data: { ...ORDEN_PAGABLE, status: "paid" }, error: null },
       "invitation_entitlements:select": { data: null, error: { message: "sin red" } },
     });
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved",
     });
     expect(r.ok).toBe(false);
@@ -199,7 +212,7 @@ describe("un reembolso sólo toca lo suyo", () => {
       },
       "invitation_entitlements:update": { data: [], error: null },
     });
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "refunded",
     });
     expect(r).toMatchObject({ ok: true, entitlementActivated: false });
@@ -213,7 +226,7 @@ describe("un reembolso sólo toca lo suyo", () => {
         data: { ...ORDEN_PAGABLE, status: "paid", plan_id: null }, error: null,
       },
     });
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "refunded",
     });
     expect(r.reason).toBe("refund_sin_plan_id_revision_manual");
@@ -231,7 +244,7 @@ describe("la auto-publicación no puede mentir", () => {
 
   it("publica y lo reporta cuando de verdad afectó una fila", async () => {
     escenario(conPublishOnPaid);
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved",
     });
     expect(r.published).toBe(true);
@@ -242,7 +255,7 @@ describe("la auto-publicación no puede mentir", () => {
     // update sin filas no da error. El cliente pagó desde el botón «Publicar»,
     // no se publicó nada, y el resultado decía que sí.
     escenario({ ...conPublishOnPaid, "invitations:update": { data: [], error: null } });
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved",
     });
     expect(r.ok).toBe(true);
@@ -252,10 +265,78 @@ describe("la auto-publicación no puede mentir", () => {
   it("y si el gate de plan no lo permite, no se publica ni se pretende", async () => {
     permitirPublicar.valor = false;
     escenario(conPublishOnPaid);
-    const r = await applyMercadoPagoPayment({
+    const r = await aplicar({
       orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved",
     });
     expect(r.published).toBe(false);
     expect(registro).not.toContain("invitations:update");
+  });
+});
+
+describe("defensa de monto: se cobra lo que se vendió, o no se marca paid", () => {
+  /** Nada de esto puede haberse escrito si el monto no cuadra. */
+  const ESCRITURAS = ["orders:update", "invitation_entitlements:upsert", "invitations:update"];
+
+  it.each([
+    ["monto menor", { amount: 1, currency: "MXN" }],
+    ["monto mayor", { amount: 4000, currency: "MXN" }],
+    ["un centavo menos", { amount: 198.99, currency: "MXN" }],
+    ["moneda distinta", { amount: 199, currency: "USD" }],
+    ["monto ausente", { amount: null, currency: "MXN" }],
+    ["moneda ausente", { amount: 199, currency: null }],
+  ])("%s → no marca la orden, no da acceso, no publica", async (_n, pago) => {
+    const r = await aplicar({ orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved", pago });
+    expect(r).toMatchObject({ ok: false, reason: "amount_mismatch" });
+    for (const w of ESCRITURAS) expect(registro, w).not.toContain(w);
+  });
+
+  it("el monto de la orden puede venir como texto de la base (\"199.00\")", async () => {
+    escenario({
+      "orders:select": { data: { ...ORDEN_PAGABLE, amount: "199.00" }, error: null },
+    });
+    const r = await aplicar({ orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved" });
+    expect(r).toMatchObject({ ok: true, orderStatus: "paid" });
+  });
+
+  it("monto y moneda correctos siguen activando el acceso", async () => {
+    const r = await aplicar({ orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved" });
+    expect(r).toMatchObject({ ok: true, orderStatus: "paid", entitlementActivated: true });
+    expect(registro).toContain("orders:update");
+  });
+
+  it("la REENTRADA (orden ya paid sin acceso) tampoco da acceso con un monto distinto", async () => {
+    escenario({
+      "orders:select": { data: { ...ORDEN_PAGABLE, status: "paid" }, error: null },
+      "invitation_entitlements:select": { data: null, error: null },
+    });
+    const r = await aplicar({
+      orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved",
+      pago: { amount: 1, currency: "MXN" },
+    });
+    expect(r).toMatchObject({ ok: false, reason: "amount_mismatch" });
+    expect(registro).not.toContain("invitation_entitlements:upsert");
+  });
+
+  it("un REEMBOLSO con otro monto (parcial) NO se bloquea: revoca igual", async () => {
+    escenario({
+      "orders:select": { data: { ...ORDEN_PAGABLE, status: "paid" }, error: null },
+      "invitation_entitlements:update": { data: [{ invitation_id: "inv-1" }], error: null },
+    });
+    const r = await aplicar({
+      orderId: "ord-1", paymentId: "pay-1", mpStatus: "refunded",
+      pago: { amount: 50, currency: "MXN" },
+    });
+    expect(r.reason).not.toBe("amount_mismatch");
+    expect(registro).toContain("orders:update");
+  });
+
+  it("un pago RECHAZADO con otro monto marca la orden como fallida (no se bloquea)", async () => {
+    const r = await aplicar({
+      orderId: "ord-1", paymentId: "pay-1", mpStatus: "rejected",
+      pago: { amount: null, currency: null },
+    });
+    expect(r.reason).not.toBe("amount_mismatch");
+    expect(registro).toContain("orders:update");
+    expect(registro).not.toContain("invitation_entitlements:upsert");
   });
 });

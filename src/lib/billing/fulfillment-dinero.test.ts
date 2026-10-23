@@ -99,7 +99,10 @@ describe("la ruta del webhook traduce el fallo a un reintento", () => {
     ).replace(/\/\/[^\n]*/g, "");
     // Sin esto, todo lo de arriba es decorativo: `ok: false` tiene que acabar
     // en un status que MP reintente.
-    const i = ruta.indexOf("!result.ok");
+    // Se busca la rama GENÉRICA (`if (!result.ok) {`): la del monto distinto
+    // (`!result.ok && result.reason === …`) responde 200 a propósito, porque es una
+    // condición definitiva que reintentar no arregla; ver `webhook-monto.test.ts`.
+    const i = ruta.indexOf("if (!result.ok) {");
     expect(i).toBeGreaterThan(-1);
     expect(ruta.slice(i, i + 260)).toMatch(/status:\s*500/);
   });

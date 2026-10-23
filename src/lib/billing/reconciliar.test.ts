@@ -39,7 +39,13 @@ describe("aplica el pago aprobado de una orden pendiente", () => {
     const aplicar = vi.fn<AplicarPago>(aplicarOk);
     const buscar: BuscarPagos = async (ref) => [pago({ id: "184715785625", externalReference: ref })];
     const r = await reconciliarPagos({ almacen: almacenCon([orden("o1")]).almacen, buscarPagos: buscar, aplicar, ahora: AHORA });
-    expect(aplicar).toHaveBeenCalledWith({ orderId: "o1", paymentId: "184715785625", mpStatus: "approved" });
+    expect(aplicar).toHaveBeenCalledWith({
+      orderId: "o1",
+      paymentId: "184715785625",
+      mpStatus: "approved",
+      // Lo cobrado viaja a `applyMercadoPagoPayment`, que lo vuelve a comparar.
+      pago: { amount: 399, currency: "MXN" },
+    });
     expect(r).toMatchObject({ revisadas: 1, aplicadas: 1, sinPagoAprobado: 0, montoNoCoincide: 0, errores: 0, ordenesAplicadas: ["o1"] });
   });
 
