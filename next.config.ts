@@ -29,7 +29,15 @@ const nextConfig: NextConfig = {
   // Produce un runtime mínimo para el contenedor. Next traza las dependencias
   // necesarias y genera `.next/standalone/server.js`, que es el único proceso
   // que ejecuta la imagen de producción.
-  output: "standalone",
+  //
+  // NO en Vercel. Con Next 16.3.x, `output: "standalone"` hace fallar el build en
+  // Vercel DESPUÉS de compilar bien: el paso final (`onBuildComplete`) lee
+  // `.next/next-server.js.nft.json`, que Next 16.3 no escribe cuando corre un
+  // adaptador de despliegue (error ENOENT; vercel/next.js#96646, abierto al
+  // escribir esto). Vercel no usa la carpeta `standalone`, así que quitarla ahí
+  // no pierde nada, y el contenedor (que no define `VERCEL`) conserva la suya.
+  // Cuando una versión de Next lo corrija, se puede quitar esta condición.
+  output: process.env.VERCEL ? undefined : "standalone",
   images: {
     /**
      * Permite la query `?v=<revision>` en las miniaturas de plantillas.
