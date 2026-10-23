@@ -38,6 +38,8 @@ export const RESERVED_SLUGS = new Set([
   "privacidad",
   "public",
   "terminos",
+  // Ligas de vista previa privada (`/vista-previa/<token>`, Fase 4).
+  "vista-previa",
   "invitaciones-digitales-baby-shower",
   "invitaciones-digitales-boda",
   "invitaciones-digitales-corporativas",

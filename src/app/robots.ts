@@ -28,6 +28,9 @@ export default function robots(): MetadataRoute.Robots {
         "/forgot-password",
         "/reset-password",
         "/auth",
+        // Ligas de vista previa privada: el token va en la ruta y es una
+        // credencial. Además llevan `noindex`; esto evita incluso el rastreo.
+        "/vista-previa",
       ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,

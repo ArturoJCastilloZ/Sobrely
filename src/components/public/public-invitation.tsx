@@ -28,12 +28,22 @@ export function PublicInvitationView({
   invitation,
   guest,
   guestToken,
+  vistaPrevia = false,
 }: {
   invitation: PublicInvitation;
   /** Si viene, la invitación es nominal (modo lista): el RSVP abierto se
    * reemplaza por el panel del invitado (confirmar / menos / cancelar + pase). */
   guest?: GuestForInvitation;
   guestToken?: string;
+  /**
+   * Vista previa privada (Fase 4): el RSVP y el libro de firmas se pintan en su
+   * forma ESTÁTICA (la del editor) en vez de los formularios que escriben en la
+   * base. Es necesario aunque `invitation.id` sea sintético: si el anfitrión
+   * comparte la liga de una invitación YA publicada, un formulario real recibiría
+   * confirmaciones de verdad desde la vista previa. Apagado por omisión: la
+   * página pública no cambia.
+   */
+  vistaPrevia?: boolean;
 }) {
   const theme = parseTheme(invitation.theme_config);
   const branding = brandingForPlanCode(invitation.plan_code);
@@ -87,7 +97,7 @@ export function PublicInvitationView({
                   `ModulePreview`: necesitan el id de la invitación y hablan
                   con el servidor. `ModulePreview` es la vista estática que
                   comparten el editor y el preview. */}
-              {m.module_type === "rsvp" ? (
+              {m.module_type === "rsvp" && !vistaPrevia ? (
                 guest && guestToken ? (
                   <GuestResponsePanel
                     guest={guest}
@@ -102,7 +112,7 @@ export function PublicInvitationView({
                     config={parseConfig("rsvp", m.config) as RsvpConfig}
                   />
                 )
-              ) : m.module_type === "signatures" ? (
+              ) : m.module_type === "signatures" && !vistaPrevia ? (
                 <SignatureWall
                   invitationId={invitation.id}
                   config={

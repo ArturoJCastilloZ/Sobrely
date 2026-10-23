@@ -45,6 +45,10 @@ const ARCHIVOS = {
     es tuya devuelve 0 filas sin error, que es el caso que este guard persigue.
   */
   billing: "../billing/actions.ts",
+  // Fase 4: crear y revocar ligas de vista previa. Escribe con el cliente de
+  // servicio, pero el mismo defecto aplica: «liga creada» sin fila entregaría un
+  // enlace que no abre, y «revocada» sin tocar nada dejaría una liga abierta.
+  previews: "../previews/actions.ts",
   vanity: "../vanity/actions.ts",
   guests: "../guests/actions.ts",
   signatures: "../signatures/actions.ts",
