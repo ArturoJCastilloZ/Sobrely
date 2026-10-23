@@ -1,11 +1,7 @@
 import type { ModuleType } from "@/lib/modules/types";
 import type { Plan } from "@/lib/billing/types";
-import {
-  getActivePlans,
-  getEffectivePrice,
-  isOnLaunchOffer,
-} from "@/lib/billing/plans";
-import { isThemePackPremium } from "@/lib/theme/theme-packs";
+import { getEffectivePrice, isOnLaunchOffer } from "@/lib/billing/plans";
+import { planDePagoRequerido } from "@/lib/billing/plan-requerido";
 
 /**
  * ¿Cuánto cuesta PUBLICAR esta plantilla tal como viene?
@@ -44,15 +40,10 @@ export function precioParaPublicarPlantilla(
   themePack?: string,
   ahora: Date = new Date(),
 ): PrecioPlantilla | null {
-  const exigeAvanzada = isThemePackPremium(themePack);
-  const plan = getActivePlans()
-    .filter((p) => p.billingType === "per_event")
-    .filter((p) => modulosVisibles.every((m) => p.allowedModules.includes(m)))
-    .filter(
-      (p) => !exigeAvanzada || p.features.includes("advanced_personalization"),
-    )
-    // Mismo criterio de orden que `minimalPlanForModules`.
-    .sort((a, b) => a.priceRegular - b.priceRegular)[0];
+  // La regla vive en `plan-requerido.ts`, compartida con `setPublished` y con la
+  // validación del cobro. El arte de una plantilla lo sirve la app, no es arte
+  // propio y no cobra nada: de ahí `usaArtePropio: false`.
+  const plan = planDePagoRequerido({ modulosVisibles, themePack, usaArtePropio: false });
 
   if (!plan) return null;
   return {

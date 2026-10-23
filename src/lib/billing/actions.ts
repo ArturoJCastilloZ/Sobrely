@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mpPreference } from "@/lib/billing/mercadopago";
 import { getEffectivePrice, getPlan } from "@/lib/billing/plans";
-import { getStorageStatus } from "@/lib/billing/entitlements";
+import { getStorageStatus, leerContenidoPublicable } from "@/lib/billing/entitlements";
+import { planCubreContenido, planDePagoRequerido } from "@/lib/billing/plan-requerido";
 import type { PlanCode } from "@/lib/billing/types";
 
 /**
@@ -97,6 +98,24 @@ export async function createPlanCheckout(
     .maybeSingle();
   if (invErr || !invitation || invitation.user_id !== user.id) {
     return { ok: false, error: "Invitación no encontrada." };
+  }
+
+  // No se cobra un plan que NO cubre la invitación. El monto sale del plan que
+  // manda el cliente, y nada comprobaba que ese plan sirviera: se podía pagar
+  // el plan de $199 por una invitación que exige el de $699, y entonces
+  // `publish_on_paid` no publicaba (el gate sigue cerrado) y la persona se
+  // quedaba con el cobro y la invitación en borrador. Se rechaza ANTES de
+  // crear la orden, con el plan que sí hace falta. Es la misma regla
+  // (`planCubreContenido`) que `setPublished` y el precio de la galería.
+  const contenido = await leerContenidoPublicable(supabase, invitation.id);
+  if (!planCubreContenido(plan, contenido)) {
+    const necesario = planDePagoRequerido(contenido);
+    return {
+      ok: false,
+      error: necesario
+        ? `El plan ${plan.name} no cubre lo que usa tu invitación. Necesitas el plan ${necesario.name}.`
+        : "Tu invitación usa elementos que no están disponibles en ningún plan activo.",
+    };
   }
 
   // URL base PÚBLICA para las back_urls y el webhook. Mercado Pago exige que la

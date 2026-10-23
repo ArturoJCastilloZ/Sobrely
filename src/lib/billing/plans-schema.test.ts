@@ -119,9 +119,21 @@ describe("esquema de public.plans vs. el código", () => {
   it("el detector encuentra las lecturas reales de la tabla", () => {
     // Guarda del guardián: si el regex deja de emparejar, las dos pruebas de
     // abajo pasarían con una lista vacía sin revisar nada.
+    //
+    // Antes pedía «≥3 lecturas en ≥3 archivos»: un número que salió de contar
+    // las lecturas de entonces. La Fase 3 quitó una legítima (la de la
+    // publicación DEMO en `setPublished`, que ya no existe) y el umbral falló
+    // por un dato, no por un defecto. Bajar el 3 a ciegas dejaba la guarda
+    // igual de débil; en su lugar exige encontrar POR NOMBRE las lecturas que se
+    // sabe que existen. Si el regex deja de emparejar, esto falla de verdad.
     const found = selectedColumns();
-    expect(found.length, "no se detectó ninguna lectura de plans").toBeGreaterThanOrEqual(3);
-    expect(new Set(found.map((f) => f.file)).size).toBeGreaterThanOrEqual(3);
+    const archivos = new Set(found.map((f) => f.file.replace(/\\/g, "/")));
+    for (const esperado of ["src/lib/billing/actions.ts", "src/lib/billing/fulfillment.ts"]) {
+      expect(
+        [...archivos].some((a) => a.endsWith(esperado)),
+        `no se detectó la lectura de plans en ${esperado}`,
+      ).toBe(true);
+    }
   });
 
   it("el código solo selecciona columnas que siguen existiendo", () => {

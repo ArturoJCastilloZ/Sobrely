@@ -51,7 +51,9 @@ export function featureLabel(feature: PlanFeature): string {
 
 /** Vigencia en texto legible según el plan. */
 function vigenciaLabel(p: Plan): string {
-  if (p.publishTrialDays !== null) return `Demo ${p.publishTrialDays} días`;
+  // Free ya no publica (Fase 3). Sin esta rama caía al último `return` y la
+  // columna mostraba «0 meses» (14 / 30 redondeado).
+  if (p.billingType === "free") return "Solo borradores";
   if (p.graceDaysAfterEvent !== null) {
     return `Evento + ${p.graceDaysAfterEvent} días`;
   }

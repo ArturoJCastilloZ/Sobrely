@@ -53,12 +53,15 @@ export const PLANS: readonly Plan[] = [
     name: "Free",
     tagline: "Crea gratis y paga solo cuando quieras publicar.",
     description:
-      "Arma tu invitación y vela en preview sin costo. Publícala como demo por 14 días o elige un plan para tu evento.",
+      "Arma tu invitación y vela en vista previa sin costo. Para publicarla, elige el plan que cubra tu evento: pago único.",
     billingType: "free",
     priceLaunch: 0,
     priceRegular: 0,
     currency: "MXN",
-    publishTrialDays: 14,
+    // Sin demo (Fase 3): Free ya no publica. El campo se conserva en el tipo y
+    // en la BD (`plans.publish_trial_days` sigue en 14: es dato informativo y
+    // ningún código lo lee), así no hace falta una migración para quitarlo.
+    publishTrialDays: null,
     graceDaysAfterEvent: null,
     fallbackDurationDays: 14,
     maxGuests: 25,
@@ -75,7 +78,7 @@ export const PLANS: readonly Plan[] = [
       "Templates gratuitos",
       "Vista previa completa",
       "Módulos básicos (Hero, Bienvenida, Countdown, RSVP)",
-      "Publicación demo por 14 días, con branding de Sobrely",
+      "Para publicar, elige un plan por evento (pago único)",
       "Soporte por documentación",
     ],
   },
@@ -274,8 +277,9 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
  *
  * Regla (aprobada): la invitación vive hasta `eventDate + graceDaysAfterEvent`.
  * Si no hay fecha de evento, se usa `publishedAt + fallbackDurationDays`. Free
- * expira a `publishedAt + publishTrialDays` (demo), ignorando la fecha de
- * evento.
+ * expira a `publishedAt + fallbackDurationDays` ignorando la fecha de evento;
+ * es el caso LEGADO de las demos publicadas antes de la Fase 3: ya no se crean,
+ * y hoy solo el cobro (planes de pago) llama a esta función.
  *
  * Pura y testeable: no lee el reloj. La consume el enforcement de entitlements
  * (Subfase 8.4).
@@ -288,7 +292,7 @@ export function resolveExpiry(
   const fromPublish = () =>
     new Date(publishedAt.getTime() + plan.fallbackDurationDays * MS_PER_DAY);
 
-  // Free: siempre demo desde la publicación.
+  // Free (legado, demos anteriores): siempre desde la publicación.
   if (plan.billingType === "free" || plan.graceDaysAfterEvent === null) {
     return fromPublish();
   }

@@ -1,21 +1,29 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { billingPitch } from "@/lib/billing/value-prop";
-import { getPlan } from "@/lib/billing/plans";
+import { getActivePlans, getEffectivePrice, getPlan } from "@/lib/billing/plans";
+import { formatPrice } from "@/lib/billing/config";
 
-describe("billingPitch · se deriva del plan, no se escribe a mano", () => {
-  const free = getPlan("free")!;
+/**
+ * Fase 3: se quitó la demo de 14 días. Estas pruebas estaban ACOPLADAS al demo
+ * (exigían que el copy dijera «demo» y el número de días); cambian a propósito.
+ * Lo que defienden ahora es lo contrario: que el copy NO prometa publicar gratis,
+ * y que el precio salga de los planes y no se escriba a mano.
+ */
+const planesDePago = getActivePlans().filter((p) => p.billingType === "per_event");
+const minimo = Math.min(...planesDePago.map((p) => getEffectivePrice(p)));
 
-  it("los días de demo salen de publishTrialDays", () => {
-    expect(billingPitch().demoDays).toBe(free.publishTrialDays);
+describe("billingPitch · se deriva de los planes, no se escribe a mano", () => {
+  it("el precio «desde» es el del plan de pago MÁS BARATO", () => {
+    expect(billingPitch().desdePrecio).toBe(formatPrice(minimo, planesDePago[0].currency));
   });
 
-  it("el número aparece en el copy, así que un cambio de plan lo arrastra", () => {
+  it("el precio aparece en el copy, así que un cambio de precios lo arrastra", () => {
     const pitch = billingPitch();
-    const days = String(free.publishTrialDays);
-    expect(pitch.micro).toContain(days);
-    expect(pitch.long).toContain(days);
-    expect(pitch.faqAnswer).toContain(days);
+    const precio = pitch.desdePrecio!;
+    expect(pitch.micro).toContain(precio);
+    expect(pitch.long).toContain(precio);
+    expect(pitch.faqAnswer).toContain(precio);
   });
 
   it("ningún texto queda vacío", () => {
@@ -28,20 +36,38 @@ describe("billingPitch · se deriva del plan, no se escribe a mano", () => {
   });
 });
 
-describe("billingPitch · exactitud del mensaje", () => {
-  // El plan Free SÍ publica (demo con marca). Un copy que diga o insinúe que
-  // publicar exige pagar es falso, y es justo la simplificación tentadora.
+describe("billingPitch · exactitud del mensaje (la frase que se INVIRTIÓ)", () => {
   const pitch = billingPitch();
+  const textos = [pitch.micro, pitch.long, pitch.faqAnswer];
 
-  it("reconoce que publicar gratis es posible", () => {
-    for (const text of [pitch.micro, pitch.long, pitch.faqAnswer]) {
-      expect(text.toLowerCase(), text).toContain("demo");
+  it("ya NO promete una demo ni publicar gratis: eso dejó de ser cierto", () => {
+    for (const text of textos) {
+      expect(text.toLowerCase(), text).not.toContain("demo");
+      expect(text.toLowerCase(), text).not.toMatch(/publica[^.]{0,20}gratis|gratis[^.]{0,20}public/);
     }
   });
 
-  it("el FAQ dice que la demo lleva la marca de Sobrely", () => {
-    // Prometer "gratis" sin decir que va con marca sería vender de más.
-    expect(pitch.faqAnswer.toLowerCase()).toContain("marca");
+  it("dice que se paga AL PUBLICAR", () => {
+    for (const text of textos) {
+      expect(text.toLowerCase(), text).toContain("publicar");
+    }
+  });
+
+  it("no promete un precio único: dice «desde» y que depende de los módulos", () => {
+    expect(pitch.micro).toContain("desde");
+    expect(pitch.faqAnswer).toContain("depende de los módulos");
+  });
+
+  it("el FAQ dice que el precio exacto se ve antes de pagar, y eso tiene que ser cierto", () => {
+    // La galería muestra el precio por plantilla y el checkout muestra el de la
+    // invitación. Si alguien quitara cualquiera de los dos, esta frase mentiría.
+    expect(pitch.faqAnswer).toContain("antes de pagar");
+    expect(readFileSync("src/lib/billing/precio-plantilla.ts", "utf8")).toContain(
+      "precioParaPublicarPlantilla",
+    );
+    expect(readFileSync("src/app/billing/checkout/page.tsx", "utf8")).toContain(
+      "getEffectivePrice",
+    );
   });
 
   it("no promete ausencia de cobro recurrente sin ser cierto", () => {
@@ -52,6 +78,27 @@ describe("billingPitch · exactitud del mensaje", () => {
     );
     expect(paid.every((p) => p.billingType === "per_event")).toBe(true);
     expect(pitch.faqAnswer.toLowerCase()).toContain("suscripción");
+  });
+});
+
+describe("el plan Free ya no vende una publicación", () => {
+  const free = getPlan("free")!;
+
+  it("no tiene días de demo", () => {
+    expect(free.publishTrialDays).toBeNull();
+  });
+
+  it("ninguno de sus textos promete publicar", () => {
+    const textos = [free.tagline, free.description, ...free.highlights];
+    for (const t of textos) {
+      expect(t.toLowerCase(), t).not.toContain("demo");
+      expect(t.toLowerCase(), t).not.toMatch(/publicaci[oó]n demo|publica[^.]*gratis/);
+    }
+  });
+
+  it("la tabla comparativa no inventa «0 meses» de vigencia para Free", () => {
+    const fuente = readFileSync("src/lib/billing/features.ts", "utf8");
+    expect(fuente).toContain("Solo borradores");
   });
 });
 
@@ -70,16 +117,14 @@ describe("cableado: el pitch llega al tope del embudo", () => {
     expect(src).toContain("billingPitch().micro");
   });
 
-  it("el copy no repite el número de días a mano en las páginas", () => {
-    const days = String(getPlan("free")!.publishTrialDays);
+  it("las páginas no escriben el precio a mano", () => {
+    const precio = formatPrice(minimo, planesDePago[0].currency);
     for (const file of [
       "src/app/page.tsx",
       "src/components/seo/event-landing.tsx",
     ]) {
       const src = readFileSync(file, "utf8");
-      expect(src, `${file} escribe "${days} días" a mano`).not.toContain(
-        `${days} días`,
-      );
+      expect(src, `${file} escribe "${precio}" a mano`).not.toContain(precio);
     }
   });
 });

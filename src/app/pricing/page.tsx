@@ -162,8 +162,7 @@ export default async function PricingPage() {
             <dt className="font-medium">Vigencia</dt>
             <dd className="text-muted-foreground">
               Tu invitación permanece publicada hasta la fecha de tu evento más
-              un margen según el plan (7, 30 o 90 días). Si publicas en el plan
-              Free, es una demo que expira a los 14 días. Al expirar, la
+              un margen según el plan (7, 30 o 90 días). Al expirar, la
               invitación deja de estar publicada; tu contenido no se borra y
               puedes renovarla.
             </dd>

@@ -1,4 +1,5 @@
-import { getPlan } from "@/lib/billing/plans";
+import { getActivePlans, getEffectivePrice } from "@/lib/billing/plans";
+import { formatPrice } from "@/lib/billing/config";
 
 /**
  * El mensaje del modelo de cobro, para el tope del embudo.
@@ -10,13 +11,15 @@ import { getPlan } from "@/lib/billing/plans";
  * recortada? El mecanismo real —armas todo sin pagar y decides después— estaba
  * enterrado en una respuesta del FAQ.
  *
- * Se DERIVA de `plans.ts` en vez de escribirse a mano: los días de demo salen
- * de `publishTrialDays`, así que si el plan cambia el copy cambia con él.
+ * Se DERIVA de `plans.ts` en vez de escribirse a mano: el precio sale del plan
+ * de pago más barato, así que si los precios cambian el copy cambia con ellos.
  *
- * Precisión deliberada: decir "solo pagas al publicar" sería FALSO. Con el plan
- * Free sí se puede publicar — como demo, con la marca de Sobrely y tope de
- * invitados. Lo cierto es que no hay muro para armar la invitación, y que lo
- * que se cobra es que siga en línea hasta el evento.
+ * Precisión deliberada, y esta frase se INVIRTIÓ en la Fase 3: antes decir
+ * «solo pagas al publicar» habría sido FALSO, porque Free publicaba como demo de
+ * 14 días con la marca de Sobrely. Sin demo es CIERTO: no hay muro para armar la
+ * invitación, y publicarla siempre cuesta. Lo que NO se puede decir es un precio
+ * único: depende de los módulos y la temática (35 de 65 plantillas caben en el
+ * plan de entrada, el resto cuesta más), por eso el copy dice «desde».
  */
 export interface BillingPitch {
   /** Una línea para debajo del CTA. */
@@ -25,30 +28,34 @@ export interface BillingPitch {
   readonly long: string;
   /** Respuesta lista para el FAQ de "¿cuánto cuesta?". */
   readonly faqAnswer: string;
-  /** Días de demo del plan Free, para copy que necesite el número suelto. */
-  readonly demoDays: number | null;
+  /** El precio del plan de pago más barato, ya formateado; `null` si no hay planes. */
+  readonly desdePrecio: string | null;
+}
+
+/** El precio efectivo más bajo entre los planes de pago por evento. */
+function precioDesde(): string | null {
+  const planes = getActivePlans().filter((p) => p.billingType === "per_event");
+  if (planes.length === 0) return null;
+  const minimo = Math.min(...planes.map((p) => getEffectivePrice(p)));
+  return formatPrice(minimo, planes[0].currency);
 }
 
 export function billingPitch(): BillingPitch {
-  const free = getPlan("free");
-  const days = free?.publishTrialDays ?? null;
-  const demo = days ? `demo de ${days} días` : "una demo";
-
-  const demoFrase = days
-    ? `Puedes publicarla gratis como demo por ${days} días, con la marca de Sobrely`
-    : "Puedes publicarla gratis como demo, con la marca de Sobrely";
+  const desde = precioDesde();
+  const desdeCorto = desde ? `, desde ${desde}` : "";
+  const desdeLargo = desde ? ` desde ${desde}` : "";
 
   return {
-    micro: `Sin tarjeta · borradores ilimitados · publica una ${demo} gratis`,
+    micro: `Sin tarjeta para empezar · borradores ilimitados · pagas solo al publicar${desdeCorto}`,
     long:
-      `Armas tu invitación completa sin pagar y sin tarjeta. Publícala gratis ` +
-      `como ${demo}, o elige un plan por evento —pago único— para que siga en ` +
-      `línea hasta tu día.`,
+      `Armas tu invitación completa sin pagar y sin tarjeta. Pagas una sola vez, ` +
+      `por evento, cuando decides publicarla${desde ? ` (desde ${desde})` : ""}.`,
     faqAnswer:
       `Crearla y prepararla no cuesta nada, y los borradores son ilimitados. ` +
-      `${demoFrase}; si quieres que siga en línea hasta tu evento y sin marca, ` +
-      `eliges un plan con pago único por evento. No hay suscripción ni cobros ` +
-      `recurrentes. Consulta los planes en la página de precios.`,
-    demoDays: days,
+      `Pagas solo cuando decides publicarla, con un pago único por evento${desdeLargo}; ` +
+      `el precio exacto depende de los módulos y la temática que uses, y lo ves ` +
+      `antes de pagar. No hay suscripción ni cobros recurrentes. Consulta los ` +
+      `planes en la página de precios.`,
+    desdePrecio: desde,
   };
 }

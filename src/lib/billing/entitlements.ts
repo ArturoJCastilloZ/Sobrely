@@ -13,6 +13,10 @@ import { parseTheme } from "@/lib/theme/theme";
 import { urlDelSlotDeMedia } from "@/lib/billing/arte-del-slot-de-media";
 import { esArteDeLaApp } from "@/lib/theme/arte";
 import { isThemePackPremium } from "@/lib/theme/theme-packs";
+import {
+  planDePagoRequerido,
+  type ContenidoPublicable,
+} from "@/lib/billing/plan-requerido";
 
 /**
  * Helpers de ENTITLEMENTS (Subfase 8.4).
@@ -195,21 +199,18 @@ export interface PublishCheck {
 }
 
 /**
- * ¿Se puede publicar la invitación con su plan efectivo?
+ * Lee de la BD lo que hay que cubrir para PUBLICAR una invitación: sus módulos
+ * visibles, su theme pack y si usa arte propio.
  *
- * Regla: todos los módulos VISIBLES deben estar cubiertos por el plan efectivo,
- * y si la invitación tiene aplicado un theme pack ⭐ premium, el plan debe
- * incluir `advanced_personalization`. Si algo excede el plan se bloquea y se
- * indica el plan mínimo que lo desbloquea (el más alto que cubra módulos Y
- * temática). NUNCA se borran los módulos ni el tema bloqueados (se conservan
- * para que el usuario pueda actualizar y publicar después).
+ * Es la lectura que antes vivía dentro de `canPublishInvitation`, movida sin
+ * cambiar una sola regla. Se extrajo para que `canPublishInvitation` (qué cubre
+ * el plan que ya tiene) y `planDePagoRequeridoParaInvitacion` (qué plan comprar)
+ * partan EXACTAMENTE del mismo contenido.
  */
-export async function canPublishInvitation(
+export async function leerContenidoPublicable(
   supabase: AnyClient,
   invitationId: string,
-): Promise<PublishCheck> {
-  const plan = await getInvitationEffectivePlan(supabase, invitationId);
-
+): Promise<ContenidoPublicable> {
   const { data: mods } = await supabase
     .from("invitation_modules")
     .select("module_type, is_visible, config")
@@ -218,20 +219,12 @@ export async function canPublishInvitation(
   const visibles = (mods ?? []).filter((m) => m.is_visible !== false);
   const visible = visibles.map((m) => m.module_type as ModuleType);
 
-  const premiumModulesUsed = visible.filter((m) => !planAllowsModule(plan, m));
-
-  // Gate de temática: un theme pack ⭐ premium exige advanced_personalization.
   const { data: inv } = await supabase
     .from("invitations")
-    .select("theme_config, rsvp_mode")
+    .select("theme_config")
     .eq("id", invitationId)
     .maybeSingle();
   const parsedTheme = parseTheme(inv?.theme_config);
-  const themePackKey = parsedTheme.themePack;
-  const themePackGated =
-    isThemePackPremium(themePackKey) &&
-    !planHasFeature(plan, "advanced_personalization");
-  const premiumThemePackUsed = themePackGated ? themePackKey : undefined;
 
   // Gate de arte PROPIO (B2, Premium): fondo de imagen, stickers o imagen de
   // decoración que subió el USUARIO. El arte que sirve la app —el de las
@@ -259,6 +252,62 @@ export async function canPublishInvitation(
         urlDelSlotDeMedia(m.module_type as ModuleType, m.config),
       ),
     );
+
+  return {
+    modulosVisibles: visible,
+    themePack: parsedTheme.themePack,
+    usaArtePropio: usesCustomArt,
+  };
+}
+
+/**
+ * El plan de PAGO que exige esta invitación para publicarse (el más barato que
+ * cubre módulos, temática y arte propio a la vez), o `undefined` si ningún plan
+ * activo lo cubre.
+ *
+ * Existe porque, sin demo, "no hay entitlement" ya no significa "publica como
+ * Free": significa "hay que comprar", y la pregunta pasa a ser CUÁL plan.
+ */
+export async function planDePagoRequeridoParaInvitacion(
+  supabase: AnyClient,
+  invitationId: string,
+): Promise<Plan | undefined> {
+  return planDePagoRequerido(await leerContenidoPublicable(supabase, invitationId));
+}
+
+/**
+ * ¿Se puede publicar la invitación con su plan efectivo?
+ *
+ * Regla: todos los módulos VISIBLES deben estar cubiertos por el plan efectivo,
+ * y si la invitación tiene aplicado un theme pack ⭐ premium, el plan debe
+ * incluir `advanced_personalization`. Si algo excede el plan se bloquea y se
+ * indica el plan mínimo que lo desbloquea (el más alto que cubra módulos Y
+ * temática). NUNCA se borran los módulos ni el tema bloqueados (se conservan
+ * para que el usuario pueda actualizar y publicar después).
+ */
+export async function canPublishInvitation(
+  supabase: AnyClient,
+  invitationId: string,
+): Promise<PublishCheck> {
+  const plan = await getInvitationEffectivePlan(supabase, invitationId);
+
+  // El contenido se lee en `leerContenidoPublicable`, la MISMA lectura que usa
+  // `planDePagoRequeridoParaInvitacion`: así lo que el gate valida y lo que se
+  // le cobra no pueden divergir.
+  const {
+    modulosVisibles: visible,
+    themePack: themePackKey,
+    usaArtePropio: usesCustomArt,
+  } = await leerContenidoPublicable(supabase, invitationId);
+
+  const premiumModulesUsed = visible.filter((m) => !planAllowsModule(plan, m));
+
+  // Gate de temática: un theme pack ⭐ premium exige advanced_personalization.
+  const themePackGated =
+    isThemePackPremium(themePackKey) &&
+    !planHasFeature(plan, "advanced_personalization");
+  const premiumThemePackUsed = themePackGated ? themePackKey : undefined;
+
   const customArtGated = usesCustomArt && !planHasFeature(plan, "custom_art");
 
   // El modo lista de invitados NO gatea la publicación: está disponible en

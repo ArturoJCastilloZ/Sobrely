@@ -5,13 +5,13 @@ import { redirect, RedirectType } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { defaultConfigFor, type ModuleType } from "@/lib/modules/types";
 import { saveEditorSchema, type SaveEditorInput } from "@/lib/invitations/schemas";
-import { createAdminClient } from "@/lib/supabase/admin";
 import {
   canPublishInvitation,
   getInvitationEntitlement,
   isOwnerComped,
+  planDePagoRequeridoParaInvitacion,
 } from "@/lib/billing/entitlements";
-import { getPlan, resolveExpiry } from "@/lib/billing/plans";
+import { decidirPublicacion } from "@/lib/billing/decision-publicacion";
 import { templateToDocument } from "@/lib/invitations/template-render";
 import type { PlanCode } from "@/lib/billing/types";
 import { enlaceConDestino } from "@/lib/auth/ruta-interna";
@@ -216,17 +216,33 @@ export async function createFromTemplate(
 
 export type SetPublishedResult =
   | { ok: true; is_published: boolean }
-  | { ok: false; error: string; requiredPlan?: PlanCode; needsUpgrade?: boolean };
+  | {
+      ok: false;
+      error: string;
+      /** Plan de pago que desbloquea la publicación (lo decide el SERVIDOR). */
+      requiredPlan?: PlanCode;
+      /**
+       * Contrato C1: señal AUTORITATIVA de que publicar requiere pagar. El
+       * editor la usa para abrir el cobro sin leer `plans.ts` en el cliente.
+       */
+      needsPayment?: boolean;
+      /** Compatibilidad: igual que `needsPayment`; se conserva hasta que nadie la lea. */
+      needsUpgrade?: boolean;
+    };
 
 /**
  * Publica o despublica una invitación (solo el dueño).
  *
- * Gate de entitlements (Subfase 8.4): al PUBLICAR, todos los módulos visibles
- * deben estar cubiertos por el plan efectivo. Si usa módulos ⭐ sin un plan
- * pagado que los cubra, se bloquea con el plan requerido (para el CTA de compra
- * de la 8.5) y NO se borra nada. Si el plan efectivo es Free (sin entitlement
- * pagado), se publica como DEMO creando un entitlement Free con vigencia de 14
- * días (server-side, con el cliente admin).
+ * Publicar cuesta (Fase 3: se quitó la demo de 14 días). Con comp (cuenta de
+ * cortesía) o con un entitlement vigente manda el gate de entitlements
+ * (Subfase 8.4): los módulos visibles, la temática y el arte propio deben
+ * caber en el plan que ya tiene. SIN ninguno de los dos no se crea nada gratis:
+ * se devuelve `needsPayment` con el plan de pago más barato que cubre la
+ * invitación. En ambos casos NO se borra nada; el contenido se conserva para
+ * publicar después de pagar. La decisión vive en `decidirPublicacion`.
+ *
+ * Los entitlements Free que ya existían siguen vigentes hasta vencer: caen en
+ * la rama del gate y no se rompe ninguna invitación ya publicada.
  */
 export async function setPublished(
   invitationId: string,
@@ -269,70 +285,41 @@ export async function setPublished(
     return { ok: false, error: "No tienes acceso a esta invitación." };
   }
 
-  // Gate: módulos ⊆ plan efectivo.
-  const check = await canPublishInvitation(supabase, invitationId);
-  if (!check.allowed) {
+  // ¿Hay con qué publicar? Comp de admin, o un entitlement vigente. El comp NO
+  // crea fila: `is_entitlement_active` en la BD ya deja pública la invitación
+  // comped, y un entitlement aparte ensuciaría el estado al vencer.
+  const ent = await getInvitationEntitlement(supabase, invitationId);
+  const comped = await isOwnerComped(supabase, invitationId);
+  const tieneCobertura = comped || Boolean(ent?.isActive);
+
+  // Con cobertura manda el gate (¿el plan que ya tiene cubre lo que usa?). Sin
+  // ella se calcula el plan de pago que haría falta. Cada rama solo hace la
+  // consulta que necesita.
+  const gate = tieneCobertura
+    ? await canPublishInvitation(supabase, invitationId)
+    : null;
+  const planDePago = tieneCobertura
+    ? undefined
+    : await planDePagoRequeridoParaInvitacion(supabase, invitationId);
+
+  const decision = decidirPublicacion({
+    tieneComp: comped,
+    entitlementVigente: Boolean(ent?.isActive),
+    gate,
+    planDePago,
+  });
+
+  if (decision.tipo === "pagar") {
     return {
       ok: false,
-      error:
-        check.reason ??
-        "Necesitas un plan superior para publicar esta invitación.",
-      requiredPlan: check.requiredPlanCode,
+      error: decision.mensaje,
+      requiredPlan: decision.planRequerido,
+      needsPayment: true,
       needsUpgrade: true,
     };
   }
-
-  // Sin entitlement activo → publicación DEMO en Free (14 días). El comp de
-  // admin NO crea la fila: sería un entitlement Free (branding y `guest_limit`
-  // de Free) encima del plan de cortesía, y al vencer ensuciaría el estado.
-  // `is_entitlement_active` en la BD ya deja pública la invitación comped.
-  const ent = await getInvitationEntitlement(supabase, invitationId);
-  const comped = await isOwnerComped(supabase, invitationId);
-  if (!ent?.isActive && !comped) {
-    const free = getPlan("free")!;
-    const now = new Date();
-    const eventDate = inv.event_date ? new Date(inv.event_date as string) : null;
-    const expiresAt = resolveExpiry(free, now, eventDate);
-
-    const admin = createAdminClient();
-    const { data: planRow } = await admin
-      .from("plans")
-      .select("id")
-      .eq("code", "free")
-      .maybeSingle();
-    // FAIL-CLOSED, y esto es el origen del defecto U-2. Antes: si no habia
-    // `planRow` el bloque se saltaba en silencio, y si el upsert fallaba
-    // tampoco se miraba — pero la invitacion se publicaba igual dos lineas mas
-    // abajo. Resultado: `is_published = true` para el anfitrion y 404 para sus
-    // invitados, porque `get_public_invitation` exige el entitlement vigente
-    // (0012:61). Las dos verdades no se reconciliaban y nadie avisaba a nadie.
-    // Mejor un error visible al publicar que un enlace repartido que no abre.
-    if (!planRow) {
-      return {
-        ok: false,
-        error: "No se pudo preparar la publicación. Inténtalo de nuevo.",
-      };
-    }
-    const { data: entFilas, error: entErr } = await admin
-      .from("invitation_entitlements")
-      .upsert(
-        {
-          invitation_id: invitationId,
-          plan_id: planRow.id,
-          status: "active",
-          starts_at: now.toISOString(),
-          expires_at: expiresAt.toISOString(),
-          guest_limit: free.maxGuests,
-        },
-        { onConflict: "invitation_id" },
-      )
-      .select("invitation_id");
-    if (entErr || !entFilas || entFilas.length === 0) {
-      return {
-        ok: false,
-        error: "No se pudo preparar la publicación. Inténtalo de nuevo.",
-      };
-    }
+  if (decision.tipo === "sin_plan_disponible") {
+    return { ok: false, error: decision.mensaje };
   }
 
   const { data: filas, error } = await supabase

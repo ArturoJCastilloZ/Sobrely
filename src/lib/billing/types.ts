@@ -54,8 +54,9 @@ export type PlanFeature =
  *
  * Vigencia relativa al evento: la invitación vive hasta `event_date +
  * graceDaysAfterEvent`. Si la invitación no tiene fecha de evento, se usa
- * `fallbackDurationDays` desde la publicación. El plan Free publica como demo
- * temporal (`publishTrialDays`).
+ * `fallbackDurationDays` desde la publicación. El plan Free YA NO publica (se
+ * quitó la demo de 14 días en la Fase 3): solo existen demos LEGADAS, las que se
+ * publicaron antes de ese cambio y siguen vigentes hasta vencer.
  */
 export interface Plan {
   /** Código estable; no cambiar una vez en producción. */
@@ -70,19 +71,22 @@ export interface Plan {
   readonly priceRegular: number;
   readonly currency: Currency;
   /**
-   * Días de demo al publicar en Free (la invitación pública expira a los N días
-   * de publicarse). `null` en planes pagados.
+   * LEGADO: días de la demo que tuvo Free. Es `null` en TODOS los planes desde la
+   * Fase 3 (ya no se crean demos). El campo se conserva porque la BD tiene la
+   * columna `plans.publish_trial_days`; quitarlo exigiría una migración y no
+   * aporta nada.
    */
   readonly publishTrialDays: number | null;
   /**
    * Margen de vigencia DESPUÉS de la fecha del evento, en días. La invitación
-   * vive hasta `event_date + graceDaysAfterEvent`. `null` en Free (usa
-   * `publishTrialDays`).
+   * vive hasta `event_date + graceDaysAfterEvent`. `null` en Free (que ya no
+   * publica; las demos legadas expiran desde su publicación).
    */
   readonly graceDaysAfterEvent: number | null;
   /**
    * Vigencia de respaldo en días desde la publicación, usada cuando la
-   * invitación no tiene fecha de evento. En Free equivale a la demo.
+   * invitación no tiene fecha de evento. En Free es la vigencia de las demos
+   * legadas.
    */
   readonly fallbackDurationDays: number;
   /**
