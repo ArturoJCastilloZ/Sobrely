@@ -155,6 +155,8 @@ export default async function CheckoutPage({
                           planCode={plan.code}
                           invitationId={inv.id}
                           publishOnPaid={publicarAlPagar}
+                          // 44 px en móvil: es la pantalla donde se paga.
+                          className="h-11 shrink-0 lg:h-9"
                         >
                           {publicarAlPagar
                             ? `Pagar ${precioDelPlan} y publicar`
@@ -177,7 +179,10 @@ export default async function CheckoutPage({
                         </p>
                         <Link
                           href={`/billing/checkout?${volver}`}
-                          className={cn(buttonVariants({ variant: "outline" }), "self-start")}
+                          className={cn(
+                            buttonVariants({ variant: "outline" }),
+                            "h-11 self-start lg:h-9",
+                          )}
                         >
                           Ver el plan {necesario.name}
                         </Link>
