@@ -146,6 +146,18 @@ describe("guardas estructurales", () => {
     expect(a).toMatch(/import "server-only"/);
   });
 
+  it("el adaptador SOLO trae órdenes pendientes de Mercado Pago, dentro de la ventana", () => {
+    // Los adaptadores no tienen prueba de unidad: sin esta guarda, cambiar el
+    // filtro a «todo lo que no sea paid» (traería fallidas, canceladas y
+    // reembolsadas) pasaba en verde. Lo cazó un mutante.
+    const a = fuente("src/lib/billing/reconciliar-adaptadores.ts");
+    expect(a).toContain('.eq("status", "pending")');
+    expect(a).toContain('.eq("payment_provider", "mercadopago")');
+    expect(a).toContain('.gt("created_at", desde.toISOString())');
+    expect(a).toContain('.lt("created_at", hasta.toISOString())');
+    expect(a).toContain(".limit(limite)");
+  });
+
   it("ningún módulo del job usa `console.`", () => {
     for (const rel of [
       "src/lib/billing/reconciliar.ts",

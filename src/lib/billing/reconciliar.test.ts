@@ -135,6 +135,20 @@ describe("dinero: monto y moneda distintos NO se aplican y se reportan", () => {
     expect(r).toMatchObject({ montoNoCoincide: 1, aplicadas: 0, sinPagoAprobado: 0 });
   });
 
+  it("una orden de monto 0 NO acepta un pago sin monto (ausente no es lo mismo que cero)", async () => {
+    // Sin esto, tomar el monto ausente por 0 pasaba en verde: todas las pruebas
+    // usaban órdenes de 399, donde 0 ≠ 399 hacía fallar igual el caso.
+    const aplicar = vi.fn<AplicarPago>(aplicarOk);
+    const r = await reconciliarPagos({
+      almacen: almacenCon([orden("o1", 0, "MXN")]).almacen,
+      buscarPagos: async (ref) => [pago({ externalReference: ref, amount: null })],
+      aplicar,
+      ahora: AHORA,
+    });
+    expect(aplicar).not.toHaveBeenCalled();
+    expect(r.montoNoCoincide).toBe(1);
+  });
+
   it("con varios aprobados, se aplica el que cuadra (no el primero a ciegas)", async () => {
     const aplicar = vi.fn<AplicarPago>(aplicarOk);
     await reconciliarPagos({
