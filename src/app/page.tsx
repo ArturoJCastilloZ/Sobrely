@@ -12,6 +12,7 @@ import { billingPitch } from "@/lib/billing/value-prop";
 import { HeroPlantillas, type PlantillaHero } from "@/components/landing/hero-plantillas";
 import { ComoFunciona, CtaFinal, PaseQr } from "@/components/landing/secciones";
 import { MuestraEventos } from "@/components/landing/muestra-eventos";
+import { metadatosSociales } from "@/lib/seo/social";
 
 export const metadata: Metadata = {
   // Homepage: título absoluto (ignora el template "%s · Sobrely") con keywords.
@@ -24,6 +25,12 @@ export const metadata: Metadata = {
   description:
     "Invitaciones digitales con pase QR y control de acceso en la entrada. Confirmación de asistencia en un panel. Para bodas, XV años y eventos de empresa.",
   alternates: { canonical: "/" },
+  ...metadatosSociales({
+    titulo: "Invitaciones digitales para boda, XV años y más — Sobrely",
+    descripcion:
+      "Invitaciones digitales con pase QR y control de acceso en la entrada. Confirmación de asistencia en un panel. Para bodas, XV años y eventos de empresa.",
+    ruta: "/",
+  }),
 };
 
 // Preguntas frecuentes: contenido visible + FAQPage JSON-LD (deben coincidir).

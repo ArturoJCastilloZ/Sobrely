@@ -7,6 +7,7 @@ import { LocalLine } from "@/components/seo/local-line";
 import { TemplateMarketplace } from "@/components/dashboard/template-marketplace";
 import { createClient } from "@/lib/supabase/server";
 import { cargarGaleriaPublica } from "@/lib/templates/galeria-publica";
+import { metadatosSociales } from "@/lib/seo/social";
 
 /**
  * Galería PÚBLICA de plantillas: la puerta de entrada del embudo. Cualquiera la
@@ -22,6 +23,12 @@ export const metadata: Metadata = {
   description:
     "Plantillas de invitaciones digitales para boda, XV años, cumpleaños, baby shower y eventos. Diseñar es gratis; pagas una sola vez, por evento, al publicar.",
   alternates: { canonical: "/plantillas" },
+  ...metadatosSociales({
+    titulo: "Plantillas de invitaciones digitales · Sobrely",
+    descripcion:
+      "Plantillas de invitaciones digitales para boda, XV años, cumpleaños, baby shower y eventos. Diseñar es gratis; pagas una sola vez, por evento, al publicar.",
+    ruta: "/plantillas",
+  }),
 };
 
 export default async function PlantillasPage({

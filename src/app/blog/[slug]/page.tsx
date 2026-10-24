@@ -6,6 +6,7 @@ import { PostBody } from "@/components/blog/post-body";
 import { JsonLd } from "@/components/seo/json-ld";
 import { BLOG_POSTS, getBlogPost, readingMinutes } from "@/lib/blog/posts";
 import { EVENT_LANDINGS } from "@/lib/seo/event-landings";
+import { metadatosSociales } from "@/lib/seo/social";
 
 const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -29,12 +30,13 @@ export async function generateMetadata({
     title: { absolute: `${post.title} | Sobrely` },
     description: post.description,
     alternates: { canonical: `/blog/${post.slug}` },
-    openGraph: {
-      type: "article",
-      title: post.title,
-      description: post.description,
-      publishedTime: post.date,
-    },
+    ...metadatosSociales({
+      titulo: post.title,
+      descripcion: post.description,
+      ruta: `/blog/${post.slug}`,
+      tipo: "article",
+      publicadoEn: post.date,
+    }),
   };
 }
 

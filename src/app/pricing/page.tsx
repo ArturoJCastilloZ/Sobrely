@@ -14,6 +14,7 @@ import {
 } from "@/lib/billing";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LocalLine } from "@/components/seo/local-line";
+import { metadatosSociales } from "@/lib/seo/social";
 
 const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -28,11 +29,12 @@ export const metadata: Metadata = {
   description:
     "Crea gratis y paga solo cuando quieras publicar. Planes por evento en pesos mexicanos, sin cobros recurrentes.",
   alternates: { canonical: "/pricing" },
-  openGraph: {
-    title: "Precios de invitaciones digitales sin mensualidad · Sobrely",
-    description:
+  ...metadatosSociales({
+    titulo: "Precios de invitaciones digitales sin mensualidad · Sobrely",
+    descripcion:
       "Crea gratis y paga solo cuando quieras publicar. Planes por evento en pesos mexicanos, sin cobros recurrentes.",
-  },
+    ruta: "/pricing",
+  }),
 };
 
 export default async function PricingPage() {

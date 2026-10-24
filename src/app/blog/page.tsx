@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BlogShell } from "@/components/blog/blog-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import { BLOG_POSTS, readingMinutes } from "@/lib/blog/posts";
+import { metadatosSociales } from "@/lib/seo/social";
 
 const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -13,6 +14,12 @@ export const metadata: Metadata = {
   description:
     "Guías y consejos para crear invitaciones digitales: bodas, XV años, cumpleaños y más. Aprende a diseñarlas, redactarlas y compartirlas.",
   alternates: { canonical: "/blog" },
+  ...metadatosSociales({
+    titulo: "Blog — guías de invitaciones digitales · Sobrely",
+    descripcion:
+      "Guías y consejos para crear invitaciones digitales: bodas, XV años, cumpleaños y más. Aprende a diseñarlas, redactarlas y compartirlas.",
+    ruta: "/blog",
+  }),
 };
 
 function formatDate(iso: string): string {
