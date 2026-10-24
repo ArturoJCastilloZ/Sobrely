@@ -91,9 +91,14 @@ export default async function AdminPage() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight">Panel de administración</h1>
-        <Link href="/admin/embudo" className="text-sm font-medium text-primary hover:underline">
-          Ver el embudo comercial →
-        </Link>
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          <Link href="/admin/embudo" className="text-sm font-medium text-primary hover:underline">
+            Ver el embudo comercial →
+          </Link>
+          <Link href="/admin/errores" className="text-sm font-medium text-primary hover:underline">
+            Ver los errores →
+          </Link>
+        </div>
       </div>
 
       {/* Métricas principales */}

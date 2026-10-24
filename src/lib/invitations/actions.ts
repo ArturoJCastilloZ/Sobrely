@@ -1,6 +1,7 @@
 "use server";
 
 import { registrarEvento } from "@/lib/analytics/embudo";
+import { registrarError } from "@/lib/errores/registrar";
 import { registrarBorradorCompleto } from "@/lib/analytics/borrador-evento";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
@@ -351,7 +352,13 @@ export async function setPublished(
     .eq("id", invitationId)
     .eq("user_id", user.id)
     .select("id");
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    await registrarError("publicar", `no se pudo publicar: ${error.message}`, {
+      severidad: "aviso",
+      contexto: { invitation_id: invitationId, codigo: error.code },
+    });
+    return { ok: false, error: error.message };
+  }
   if (!filas || filas.length === 0) {
     return { ok: false, error: "No tienes acceso a esta invitación." };
   }

@@ -1,3 +1,4 @@
+import { registrarError } from "@/lib/errores/registrar";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rutaInternaSegura } from "@/lib/auth/ruta-interna";
@@ -48,5 +49,9 @@ export async function GET(request: Request) {
     }
   }
 
+  if (code) {
+    // Había código y el intercambio falló (el que llega sin código no es un fallo nuestro).
+    await registrarError("auth", "falló el intercambio del código de acceso", { severidad: "aviso" });
+  }
   return NextResponse.redirect(`${origin}/login?error=auth`);
 }

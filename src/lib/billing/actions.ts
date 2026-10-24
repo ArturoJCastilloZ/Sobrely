@@ -1,5 +1,6 @@
 "use server";
 
+import { registrarError } from "@/lib/errores/registrar";
 import { registrarEvento } from "@/lib/analytics/embudo";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -168,6 +169,10 @@ export async function createPlanCheckout(
     .select("id")
     .single();
   if (orderErr || !order) {
+    await registrarError("checkout", `no se pudo crear la orden: ${orderErr?.message ?? "sin fila"}`, {
+      severidad: "critico",
+      contexto: { invitation_id: invitation.id },
+    });
     return { ok: false, error: "No se pudo registrar la orden." };
   }
 
@@ -245,6 +250,10 @@ export async function createPlanCheckout(
     }
     const message = err instanceof Error ? err.message : "error desconocido";
     console.error("[mercadopago] create preference failed:", message);
+    await registrarError("checkout", `no se pudo crear la preferencia de pago: ${message}`, {
+      severidad: "critico",
+      contexto: { order_id: order.id, invitation_id: invitation.id },
+    });
     return { ok: false, error: "No se pudo iniciar el pago." };
   }
 }

@@ -1,3 +1,4 @@
+import { registrarError } from "@/lib/errores/registrar";
 import { timingSafeEqual } from "node:crypto";
 import { applyMercadoPagoPayment } from "@/lib/billing/fulfillment";
 import { reconciliarPagos } from "@/lib/billing/reconciliar";
@@ -52,7 +53,8 @@ export async function GET(request: Request) {
       ahora: new Date(),
     });
     return Response.json(resumen);
-  } catch {
+  } catch (e) {
+    await registrarError("reconciliar", e, { severidad: "critico" });
     return Response.json({ error: "falló la corrida" }, { status: 500 });
   }
 }

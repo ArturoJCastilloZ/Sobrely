@@ -1,3 +1,4 @@
+import { registrarError } from "@/lib/errores/registrar";
 import {
   mpPayment,
   verifyMercadoPagoSignature,
@@ -19,6 +20,14 @@ import { REASON_MONTO_DISTINTO } from "@/lib/billing/monto-pago";
  * Nunca se activa un plan por visitar la página de éxito: solo aquí, tras
  * confirmar `approved` con MP.
  */
+/** Anota el fallo en el registro propio de errores (T04). Nunca lanza. */
+async function avisarFalloDeFulfillment(orderId: string, motivo: string | undefined) {
+  await registrarError("webhook_pago", `fulfillment falló: ${motivo}`, {
+    severidad: "critico",
+    contexto: { order_id: orderId },
+  });
+}
+
 export async function POST(request: Request) {
   const rawBody = await request.text();
 
@@ -50,6 +59,9 @@ export async function POST(request: Request) {
   });
   if (!signatureOk) {
     console.warn("[mercadopago webhook] firma inválida");
+    await registrarError("webhook_pago", "firma inválida en el webhook de Mercado Pago", {
+      severidad: "aviso",
+    });
     return new Response("invalid signature", { status: 401 });
   }
 
@@ -100,6 +112,7 @@ export async function POST(request: Request) {
 
     if (!result.ok) {
       console.error("[mercadopago webhook] fulfillment falló:", result.reason);
+      await avisarFalloDeFulfillment(orderId, result.reason);
       // 500 → MP reintenta.
       return new Response("fulfillment error", { status: 500 });
     }
@@ -108,6 +121,9 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "error desconocido";
     console.error("[mercadopago webhook] error consultando pago:", message);
+    await registrarError("webhook_pago", `error consultando el pago: ${message}`, {
+      severidad: "critico",
+    });
     return new Response("error", { status: 500 });
   }
 }

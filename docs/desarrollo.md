@@ -51,6 +51,7 @@ Todas están documentadas en `.env.example`. Los **valores** viven solo en
 | `NEXT_PUBLIC_REFERRAL_ENABLED` / `NEXT_PUBLIC_REFERRAL_CREDIT_MXN` | Programa de referidos (default $50). |
 | `NEXT_PUBLIC_SUPPORT_WHATSAPP` | Número de soporte para servicios asistidos. |
 | `GOOGLE_SITE_VERIFICATION` | Código de verificación de Google Search Console (método "HTML tag"). Opcional; si está, renderiza el `<meta name="google-site-verification">`. |
+| `ALERTAS_ENABLED` / `ALERTAS_EMAIL` | Correo de alerta de errores críticos (T04). Opcional y **apagado por defecto**: sin `ALERTAS_ENABLED=1`, `ALERTAS_EMAIL`, `RESEND_API_KEY` y `REMINDER_FROM` no se manda nada. Los errores se anotan siempre en `error_events` y se ven en `/admin/errores`. Un correo por hora y por causa. |
 
 > ⚠️ **Nunca** pongas la `service_role` / secret key ni el `MP_ACCESS_TOKEN` en
 > variables `NEXT_PUBLIC_*` ni en el cliente.
