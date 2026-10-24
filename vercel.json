@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/cron/recordatorios", "schedule": "0 15 * * *" },
-    { "path": "/api/cron/reconciliar-pagos", "schedule": "0 16 * * *" }
+    { "path": "/api/cron/reconciliar-pagos", "schedule": "0 16 * * *" },
+    { "path": "/api/cron/limpiar-invitados", "schedule": "0 17 * * *" }
   ]
 }

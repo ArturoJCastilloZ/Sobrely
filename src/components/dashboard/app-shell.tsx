@@ -61,7 +61,7 @@ export function AppShell({
       {invitado && <BannerInvitado />}
 
       <div className="flex min-h-0 flex-1">
-        <DashboardSidebar showAdmin={showAdmin} />
+        <DashboardSidebar showAdmin={showAdmin} invitado={invitado} />
         <main className="min-w-0 flex-1 overflow-y-auto px-4 py-8 lg:px-8">
           <div className="mx-auto w-full max-w-5xl">{children}</div>
         </main>

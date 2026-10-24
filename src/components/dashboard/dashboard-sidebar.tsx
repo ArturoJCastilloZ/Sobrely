@@ -89,7 +89,14 @@ function Grupo({ titulo, items, pathname }: { titulo: string; items: Item[]; pat
   );
 }
 
-export function DashboardSidebar({ showAdmin }: { showAdmin: boolean }) {
+export function DashboardSidebar({
+  showAdmin,
+  invitado = false,
+}: {
+  showAdmin: boolean;
+  /** Sin cuenta: facturación y referidos no aplican todavía. */
+  invitado?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
@@ -98,7 +105,7 @@ export function DashboardSidebar({ showAdmin }: { showAdmin: boolean }) {
       className="hidden w-(--ed-sidebar-w) shrink-0 flex-col gap-5 border-r border-sidebar-border bg-sidebar p-3 lg:flex"
     >
       <Grupo titulo="Eventos" items={PRINCIPALES} pathname={pathname} />
-      <Grupo titulo="Cuenta" items={CUENTA} pathname={pathname} />
+      {!invitado && <Grupo titulo="Cuenta" items={CUENTA} pathname={pathname} />}
       {showAdmin && (
         <Grupo
           titulo="Interno"

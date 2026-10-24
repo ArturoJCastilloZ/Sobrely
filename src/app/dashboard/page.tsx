@@ -76,7 +76,9 @@ export default async function DashboardPage() {
   const preferencia = await leerPreferencia(user!.id);
   const hayBorradores = list.some((inv) => !inv.is_published);
   const mostrarRecordatorios =
-    preferencia !== "no_disponible" && (hayBorradores || preferencia !== null);
+    user!.is_anonymous !== true &&
+    preferencia !== "no_disponible" &&
+    (hayBorradores || preferencia !== null);
 
   return (
     <div className="space-y-6">
