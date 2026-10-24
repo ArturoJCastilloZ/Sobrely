@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { registrarEvento } from "@/lib/analytics/embudo";
 import { rutaInternaSegura } from "@/lib/auth/ruta-interna";
 import {
   elegirDestinoTrasConfirmar,
@@ -52,6 +53,16 @@ export async function confirmEmail(formData: FormData) {
       // cookie; solo sustituye al destino por defecto (ver
       // `elegirDestinoTrasConfirmar`). Se lee DESPUÉS de verificar el token y se
       // borra: no debe sobrevivir a una confirmación exitosa.
+      // Embudo (T05): confirmar el correo de un registro o de la conversión de
+      // un invitado es el `sign_up`. Recuperar contraseña no lo es. Una vez por
+      // persona (la clave es su id); un enlace mágico de alguien que nunca se
+      // contó también cuenta una vez, y es el único caso que puede confundirse.
+      if (type !== "recovery") {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) await registrarEvento("sign_up", user.id, { method: "correo" });
+      }
       const next = elegirDestinoTrasConfirmar(solicitado, await leerIntencion());
       await olvidarIntencion();
       redirect(next);

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rutaInternaSegura } from "@/lib/auth/ruta-interna";
 import { leerSesionAnonimaActual, trasladarBorradores } from "@/lib/auth/traspaso";
+import { registrarEvento } from "@/lib/analytics/embudo";
+import { decidirRegistro } from "@/lib/analytics/registro-regla";
 
 /**
  * Handles the OAuth (Google) and email-link callbacks. Supabase redirects here
@@ -23,6 +25,18 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       if (invitadoId && data.user) await trasladarBorradores(invitadoId, data.user.id);
+      // Embudo (T05): `sign_up` solo si fue un registro (cuenta nueva o invitado
+      // que convirtió su sesión), una vez por persona.
+      if (data.user) {
+        const reg = decidirRegistro({
+          userId: data.user.id,
+          creadoEn: data.user.created_at,
+          invitadoId,
+          proveedor: data.user.app_metadata?.provider,
+          ahora: Date.now(),
+        });
+        if (reg.registrar) await registrarEvento("sign_up", data.user.id, { method: reg.metodo });
+      }
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
       if (isLocalEnv) {
