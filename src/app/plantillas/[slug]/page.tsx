@@ -10,6 +10,7 @@ import { cargarPlantillaPublica } from "@/lib/templates/galeria-publica";
 import { BotonUsarComoInvitado } from "@/components/templates/boton-usar-como-invitado";
 import { esInicioReciente } from "@/lib/auth/inicio-reciente";
 import { AutoUsarPlantilla } from "@/components/templates/auto-usar-plantilla";
+import { ResumenDeFicha } from "@/components/templates/resumen-ficha";
 import PlantillaPage from "@/app/plantilla/[slug]/page";
 import { RegistrarVisita } from "@/components/analytics/registrar-visita";
 
@@ -75,6 +76,8 @@ export default async function VistaDePlantillaPage({
       <PlantillaPage params={params} />
       {autoUsar && <AutoUsarPlantilla templateId={tpl.id} nombre={tpl.name} />}
 
+      <ResumenDeFicha tpl={tpl} autenticado={autenticado} />
+
       {/*
         `sticky bottom-0` y NO `fixed` + un hueco del tamaño de la barra. Con
         `fixed` hacía falta un espaciador con un número a mano, y medido en
@@ -107,6 +110,14 @@ export default async function VistaDePlantillaPage({
                 )}{" "}
                 para publicar · pago único
                 <span className="hidden sm:inline"> · editar es gratis</span>
+                {tpl.incluye && (
+                  <a
+                    href="#que-incluye"
+                    className="ml-2 font-medium text-foreground underline underline-offset-4"
+                  >
+                    Qué incluye
+                  </a>
+                )}
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">Editar es gratis.</p>

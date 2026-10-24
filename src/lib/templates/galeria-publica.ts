@@ -4,6 +4,8 @@ import { parseTheme } from "@/lib/theme/theme";
 import { precioParaPublicarPlantilla } from "@/lib/billing/precio-plantilla";
 import type { PlantillaMarketplace } from "@/lib/templates/marketplace";
 import { estiloDe } from "@/lib/templates/estilos";
+import { resumenDeFicha, type ResumenFicha } from "@/lib/templates/resumen-ficha";
+import { planDePagoRequerido } from "@/lib/billing/plan-requerido";
 
 /**
  * Carga de la galería PÚBLICA de plantillas.
@@ -82,15 +84,33 @@ export async function cargarGaleriaPublica(
   return ((data ?? []) as FilaPlantillaPublica[]).map((f) => aPlantillaPublica(f));
 }
 
+/**
+ * La ficha de una plantilla: lo mismo que la tarjeta de la galería más el
+ * resumen de «qué incluye» (T12). El resumen solo se calcula aquí: en la
+ * galería de 65 no se pide ni se manda.
+ */
+export type PlantillaFicha = PlantillaMarketplace & { incluye: ResumenFicha | null };
+
 export async function cargarPlantillaPublica(
   supabase: SupabaseClient,
   slug: string,
-): Promise<PlantillaMarketplace | null> {
+): Promise<PlantillaFicha | null> {
   const { data } = await supabase
     .from("templates")
     .select(COLUMNAS)
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
-  return data ? aPlantillaPublica(data as FilaPlantillaPublica) : null;
+  if (!data) return null;
+  const fila = data as FilaPlantillaPublica;
+  const modulos = modulosVisibles(fila.modules_config);
+  const plan = planDePagoRequerido({
+    modulosVisibles: modulos,
+    themePack: parseTheme(fila.theme_config).themePack,
+    usaArtePropio: false,
+  });
+  return {
+    ...aPlantillaPublica(fila),
+    incluye: plan ? resumenDeFicha(modulos, plan.code) : null,
+  };
 }
