@@ -1,5 +1,6 @@
 "use server";
 
+import { registrarEvento } from "@/lib/analytics/embudo";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mpPreference } from "@/lib/billing/mercadopago";
@@ -169,6 +170,13 @@ export async function createPlanCheckout(
   if (orderErr || !order) {
     return { ok: false, error: "No se pudo registrar la orden." };
   }
+
+  // Embudo (T05): pago iniciado. El valor sale del plan en el servidor.
+  await registrarEvento("begin_checkout", order.id, {
+    plan_code: plan.code,
+    value: amount,
+    currency: plan.currency,
+  });
 
   try {
     const pref = await mpPreference().create({

@@ -1,3 +1,4 @@
+import { registrarEvento } from "@/lib/analytics/embudo";
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -186,6 +187,15 @@ export async function applyMercadoPagoPayment(params: {
     // En PostgREST un update que no encuentra fila NO es error. Seguir aquí
     // dejaría la orden con su estado viejo y activaría el entitlement igual.
     return { ok: false, reason: "order_update_sin_filas" };
+  }
+
+  // Embudo (T05): un rechazo cuenta como `payment_failed`, una vez por orden.
+  // Mejor esfuerzo: `registrarEvento` nunca lanza ni frena el fulfillment.
+  if (newStatus === "failed") {
+    await registrarEvento("payment_failed", orderId, {
+      plan_code: (order.metadata as { plan_code?: string } | null)?.plan_code,
+      reason_code: mpStatus,
+    });
   }
 
   // Reembolso / contracargo de un plan: revoca el entitlement (el gate público
@@ -446,6 +456,15 @@ export async function applyMercadoPagoPayment(params: {
       }
     }
   }
+
+  // Embudo (T05): `purchase` solo aquí, con el pago verificado, la orden `paid`
+  // y el entitlement activo. El monto sale de la orden, no del navegador.
+  await registrarEvento("purchase", orderId, {
+    transaction_id: orderId,
+    plan_code: plan.code,
+    value: Number(order.amount),
+    currency: order.currency,
+  });
 
   return {
     ok: true,

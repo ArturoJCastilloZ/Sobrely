@@ -63,6 +63,7 @@ const ARCHIVOS = {
   // Edicion anonima: el traslado de borradores usa `.select("id")` y compara las
   // filas movidas con las contadas antes; si no cuadran NO borra al invitado.
   traspaso: "../auth/traspaso.ts",
+  embudo: "../analytics/embudo.ts",
 } as const;
 
 /** Fuente sin comentarios: una aserción no debe satisfacerse con la prosa. */

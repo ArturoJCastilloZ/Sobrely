@@ -1,5 +1,6 @@
 "use server";
 
+import { registrarEvento } from "@/lib/analytics/embudo";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -145,7 +146,7 @@ export async function createFromTemplate(
   // Templates are publicly readable when active (RLS).
   const { data: template, error: tplErr } = await supabase
     .from("templates")
-    .select("id, name, event_type, theme_config, modules_config, is_active")
+    .select("id, slug, name, event_type, theme_config, modules_config, is_active")
     .eq("id", templateId)
     .eq("is_active", true)
     .single();
@@ -207,6 +208,14 @@ export async function createFromTemplate(
       );
     }
   }
+
+  // Embudo (T05): personalización iniciada, solo si la invitación quedó creada
+  // con sus secciones. Una vez por invitación.
+  await registrarEvento("start_customization", invitation.id, {
+    template_slug: template.slug,
+    event_type: template.event_type,
+    is_guest: user.is_anonymous === true,
+  });
 
   revalidatePath("/dashboard");
   redirect(
