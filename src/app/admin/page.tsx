@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/admin";
 import { formatPrice } from "@/lib/billing";
 import { StatCard } from "@/components/admin/stat-card";
@@ -88,7 +89,12 @@ export default async function AdminPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-2xl font-bold tracking-tight">Panel de administración</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight">Panel de administración</h1>
+        <Link href="/admin/embudo" className="text-sm font-medium text-primary hover:underline">
+          Ver el embudo comercial →
+        </Link>
+      </div>
 
       {/* Métricas principales */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

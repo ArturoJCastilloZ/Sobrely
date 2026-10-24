@@ -69,7 +69,6 @@ export function filtrarParametros(
   for (const [clave, tipo] of Object.entries(permitidos)) {
     const valor = crudos?.[clave];
     if (tipo === "string" && typeof valor === "string") {
-      // eslint-disable-next-line no-control-regex
       const limpio = valor.replace(/[\u0000-\u001f\u007f]/g, "").trim();
       if (limpio) salida[clave] = limpio.slice(0, LARGO_MAXIMO);
     } else if (tipo === "number" && typeof valor === "number" && Number.isFinite(valor)) {
