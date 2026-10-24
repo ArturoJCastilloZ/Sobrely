@@ -10,6 +10,7 @@ import { LocalLine } from "@/components/seo/local-line";
 import { billingPitch } from "@/lib/billing/value-prop";
 import { HeroPlantillas, type PlantillaHero } from "@/components/landing/hero-plantillas";
 import { ComoFunciona, CtaFinal, PaseQr } from "@/components/landing/secciones";
+import { MuestraEventos } from "@/components/landing/muestra-eventos";
 
 export const metadata: Metadata = {
   // Homepage: título absoluto (ignora el template "%s · Sobrely") con keywords.
@@ -72,7 +73,7 @@ export default async function Home() {
     .from("templates")
     .select("slug, name, event_type, preview_image_url")
     .eq("is_active", true)
-    .in("event_type", ["XV años", "Boda", "Cumpleaños"])
+    .in("event_type", ["XV años", "Boda", "Cumpleaños", "Baby shower", "Corporativo"])
     .not("preview_image_url", "is", null)
     .order("name");
   const porEvento = (tipo: string) =>
@@ -81,6 +82,10 @@ export default async function Home() {
       | undefined;
   const [xv, boda, cumple] = [porEvento("XV años"), porEvento("Boda"), porEvento("Cumpleaños")];
   const vistaPrevia = xv && boda && cumple ? ([xv, boda, cumple] as const) : null;
+  // La tira de la sección de eventos: una por tipo, en este orden, las que existan.
+  const muestra = ["Boda", "XV años", "Cumpleaños", "Baby shower", "Corporativo"]
+    .map(porEvento)
+    .filter((p): p is PlantillaHero => Boolean(p));
 
   return (
     <main className="flex flex-1 flex-col">
@@ -222,7 +227,8 @@ export default async function Home() {
         <h2 className="text-center font-display text-2xl font-bold tracking-tight sm:text-3xl">
           Invitaciones para cada evento
         </h2>
-        <ul className="mt-6 flex flex-wrap justify-center gap-3">
+        {muestra.length > 0 && <MuestraEventos items={muestra} />}
+        <ul className="mt-4 flex flex-wrap justify-center gap-3">
           {EVENT_LANDING_LIST.map((e) => (
             <li key={e.slug}>
               <Link
