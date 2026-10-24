@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { DepsLimpieza } from "@/lib/auth/limpiar-invitados";
+import { recopilarRutas } from "@/lib/auth/limpiar-invitados-almacen";
 
 const BUCKET = "invitation-images";
 const POR_PAGINA = 1000;
@@ -43,15 +44,18 @@ export function crearDepsLimpieza(): DepsLimpieza {
     },
 
     async borrar(usuarioId) {
-      // Archivos primero: la cascada de la base no toca el almacenamiento.
-      const { data: archivos, error: errLista } = await admin.storage
-        .from(BUCKET)
-        .list(usuarioId, { limit: 1000 });
-      if (errLista) return false;
-      const rutas = (archivos ?? []).map((a) => `${usuarioId}/${a.name}`);
+      // Archivos primero: la cascada de la base no toca el almacenamiento. Los archivos viven en
+      // `<usuario>/<invitación>/…`, así que se recorren las carpetas (ver `limpiar-invitados-almacen`).
+      const rutas = await recopilarRutas(async (prefijo) => {
+        const { data, error } = await admin.storage.from(BUCKET).list(prefijo, { limit: 1000 });
+        if (error) return null;
+        return (data ?? []).map((a) => ({ name: a.name, id: a.id ?? null }));
+      }, usuarioId);
+      if (rutas === null) return false;
       if (rutas.length > 0) {
-        const { error: errBorrado } = await admin.storage.from(BUCKET).remove(rutas);
-        if (errBorrado) return false;
+        const { data: borrados, error: errBorrado } = await admin.storage.from(BUCKET).remove(rutas);
+        // `remove` devuelve los objetos que borró: si no coincide con lo pedido, quedó algo.
+        if (errBorrado || (borrados?.length ?? 0) !== rutas.length) return false;
       }
       const { error } = await admin.auth.admin.deleteUser(usuarioId);
       return !error;
