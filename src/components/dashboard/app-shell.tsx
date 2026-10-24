@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LogoLockup } from "@/components/brand/logo-lockup";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
+import { BannerInvitado } from "@/components/dashboard/banner-invitado";
 
 /**
  * Shell de la aplicación: header + sidebar + contenido.
@@ -25,8 +26,11 @@ export function AppShell({
   displayName,
   avatarUrl,
   badge,
+  invitado = false,
   children,
 }: {
+  /** Sesión sin cuenta (invitado): muestra el aviso para crearla. */
+  invitado?: boolean;
   showAdmin: boolean;
   email: string;
   displayName: string | null;
@@ -50,9 +54,11 @@ export function AppShell({
             email={email}
             displayName={displayName}
             avatarUrl={avatarUrl}
+            invitado={invitado}
           />
         </div>
       </header>
+      {invitado && <BannerInvitado />}
 
       <div className="flex min-h-0 flex-1">
         <DashboardSidebar showAdmin={showAdmin} />

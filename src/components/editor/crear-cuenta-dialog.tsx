@@ -24,17 +24,17 @@ import { cn } from "@/lib/utils";
 export function CrearCuentaDialog({
   open,
   onOpenChange,
-  invitationId,
+  destino,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  invitationId: string;
+  /** Ruta interna a la que volver tras crear la cuenta. */
+  destino: string;
 }) {
   const [correo, setCorreo] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [enviado, setEnviado] = useState(false);
   const [pending, startTransition] = useTransition();
-  const destino = `/editor/${invitationId}`;
 
   function enviarCorreo(e: React.FormEvent) {
     e.preventDefault();

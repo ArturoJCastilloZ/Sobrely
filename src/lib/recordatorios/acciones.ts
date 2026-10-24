@@ -24,6 +24,10 @@ export async function guardarPreferenciaRecordatorios(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Inicia sesión para cambiar esta opción." };
+  // Sin cuenta no hay correo al que avisar.
+  if (user.is_anonymous === true) {
+    return { ok: false, error: "Crea tu cuenta para activar los recordatorios." };
+  }
 
   const guardado = await registrarDecision(user.id, optedIn, "panel");
   if (!guardado) {

@@ -60,6 +60,9 @@ const ARCHIVOS = {
   signatures: "../signatures/actions.ts",
   reports: "../reports/actions.ts",
   favoritos: "../templates/favorites-actions.ts",
+  // Edicion anonima: el traslado de borradores usa `.select("id")` y compara las
+  // filas movidas con las contadas antes; si no cuadran NO borra al invitado.
+  traspaso: "../auth/traspaso.ts",
 } as const;
 
 /** Fuente sin comentarios: una aserción no debe satisfacerse con la prosa. */

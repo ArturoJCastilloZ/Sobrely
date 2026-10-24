@@ -30,14 +30,14 @@ function depsConAdmin(): DepsTraspaso {
       return count ?? 0;
     },
     async moverInvitaciones(origenId, destinoId) {
-      const { data, error } = await admin
+      const { data: filas, error } = await admin
         .from("invitations")
         .update({ user_id: destinoId })
         .eq("user_id", origenId)
         .select("id");
       if (error) throw new Error("mover");
       // 0 filas no es un error de PostgREST: el llamador compara con el conteo previo.
-      return data?.length ?? 0;
+      return (filas?.length ?? 0);
     },
     async borrarUsuario(id) {
       const { error } = await admin.auth.admin.deleteUser(id);

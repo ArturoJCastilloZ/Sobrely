@@ -65,7 +65,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && !invitado && isAuthRoute) {
+  // /register queda cerrado a invitados: un alta nueva dejaría huérfano su borrador. Para
+  // crear cuenta usan el aviso del dashboard/editor, que conserva su sesión.
+  const bloqueaInvitado = invitado && pathname === "/register";
+
+  if (user && (!invitado || bloqueaInvitado) && isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     url.search = "";

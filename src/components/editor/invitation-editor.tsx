@@ -473,7 +473,7 @@ export function InvitationEditor({
       <CrearCuentaDialog
         open={cuentaOpen}
         onOpenChange={setCuentaOpen}
-        invitationId={invitation.id}
+        destino={`/editor/${invitation.id}`}
       />
 
       <AlertDialog open={preflightOpen} onOpenChange={setPreflightOpen}>

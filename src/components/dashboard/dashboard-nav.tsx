@@ -28,11 +28,14 @@ export function DashboardNav({
   email,
   displayName,
   avatarUrl,
+  invitado = false,
 }: {
   showAdmin: boolean;
   email: string;
   displayName: string | null;
   avatarUrl: string | null;
+  /** Sesión sin cuenta: no se ofrece cerrar sesión (perdería su borrador). */
+  invitado?: boolean;
 }) {
   return (
     <div className="flex items-center gap-1 sm:gap-2">
@@ -57,6 +60,12 @@ export function DashboardNav({
               Animaciones
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            {invitado ? (
+              <DropdownMenuItem render={<Link href="/login?redirectTo=/dashboard" />} className="px-3 py-2.5">
+                Ya tengo cuenta: iniciar sesión
+              </DropdownMenuItem>
+            ) : (
+            <>
             <DropdownMenuItem render={<Link href="/dashboard/billing" />} className="px-3 py-2.5">
               Facturación
             </DropdownMenuItem>
@@ -86,6 +95,8 @@ export function DashboardNav({
                 Cerrar sesión
               </DropdownMenuItem>
             </form>
+            </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -97,6 +108,7 @@ export function DashboardNav({
           displayName={displayName}
           avatarUrl={avatarUrl}
           showAdmin={showAdmin}
+          invitado={invitado}
         />
       </div>
     </div>

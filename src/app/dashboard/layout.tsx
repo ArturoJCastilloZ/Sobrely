@@ -33,6 +33,7 @@ export default async function DashboardLayout({
   return (
     <AppShell
       showAdmin={showAdmin}
+      invitado={user.is_anonymous === true}
       email={user.email ?? ""}
       displayName={profile?.display_name ?? null}
       avatarUrl={profile?.avatar_url ?? null}

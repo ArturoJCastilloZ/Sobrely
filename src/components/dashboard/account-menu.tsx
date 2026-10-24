@@ -30,11 +30,14 @@ export function AccountMenu({
   displayName,
   avatarUrl,
   showAdmin,
+  invitado = false,
 }: {
   email: string;
   displayName: string | null;
   avatarUrl: string | null;
   showAdmin: boolean;
+  /** Sesión sin cuenta: cerrar sesión borraría su borrador, así que se ofrece iniciar sesión. */
+  invitado?: boolean;
 }) {
   const nombre = displayName?.trim() || null;
 
@@ -59,11 +62,21 @@ export function AccountMenu({
           )}
           {/* `break-all`: un correo largo sin esto ensancha el menú entero. */}
           <span className="text-[length:var(--ed-text-mini)]/(--ed-leading-mini) break-all text-muted-foreground">
-            {email}
+            {invitado ? "Invitado, sin cuenta" : email}
           </span>
         </div>
 
         <DropdownMenuSeparator />
+
+        {invitado ? (
+          <DropdownMenuItem
+            render={<Link href="/login?redirectTo=/dashboard" />}
+            className="gap-2.5 px-2.5 py-2"
+          >
+            Ya tengo cuenta: iniciar sesión
+          </DropdownMenuItem>
+        ) : (
+          <>
 
         <DropdownMenuItem render={<Link href="/dashboard/billing" />} className="gap-2.5 px-2.5 py-2">
           <CreditCardIcon className="size-4" />
@@ -104,6 +117,8 @@ export function AccountMenu({
             Cerrar sesión
           </DropdownMenuItem>
         </form>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

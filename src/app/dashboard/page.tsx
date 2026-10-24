@@ -37,7 +37,9 @@ export default async function DashboardPage() {
     .eq("user_id", user!.id)
     .order("updated_at", { ascending: false });
 
-  const name = profile?.display_name || profile?.username || user!.email;
+  const name =
+    profile?.display_name ||
+    (user!.is_anonymous === true ? null : profile?.username || user!.email);
   const list = (invitations ?? []) as InvitationSummary[];
 
   // VIGENCIA: la fuente de verdad es la RPC `is_entitlement_active` (0013), la
@@ -81,7 +83,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-[length:var(--ed-text-2xl)]/(--ed-leading-2xl) font-(--ed-weight-semibold) tracking-(--ed-tracking-2xl)">
-            Hola, {name}
+            {name ? `Hola, ${name}` : "Hola"}
           </h1>
           <p className="text-[length:var(--ed-text-sm)]/(--ed-leading-sm) tracking-(--ed-tracking-sm) text-muted-foreground">
             Gestiona tus invitaciones.

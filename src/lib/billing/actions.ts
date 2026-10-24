@@ -89,6 +89,9 @@ export async function createPlanCheckout(
   if (!user) {
     return { ok: false, error: "Debes iniciar sesión." };
   }
+  if (user.is_anonymous === true) {
+    return { ok: false, error: "Crea tu cuenta para pagar y publicar." };
+  }
 
   // Propiedad de la invitación (RLS ya lo garantiza, pero validamos explícito).
   const { data: invitation, error: invErr } = await supabase

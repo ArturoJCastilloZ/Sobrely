@@ -59,7 +59,8 @@ export default async function CheckoutPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
+  // Un invitado no puede pagar: se le manda a iniciar sesión (que traslada su borrador).
+  if (!user || user.is_anonymous === true) {
     // Con `enlaceConDestino` y no a mano: la URL de vuelta lleva `&`, que sin
     // codificar cortaría el `redirectTo` y perdería la invitación elegida.
     const vuelta = new URLSearchParams({ plan: plan.code });
