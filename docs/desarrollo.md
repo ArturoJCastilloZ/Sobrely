@@ -201,3 +201,24 @@ proxy.ts          refresco de sesión y guardas de ruta
 supabase/migrations/  SQL (0001→0012)
 docs/             desarrollo, pruebas sandbox, checklist de pagos reales
 ```
+
+## Desarrollo con Docker y recarga en caliente
+
+`compose.yaml` es la imagen de **producción**: compila el código dentro de la imagen y no ve tus
+archivos, así que cada cambio exige reconstruirla. Para desarrollar usa `compose.dev.yaml`
+(servidor `next dev`, tu carpeta montada, recarga al guardar):
+
+```bash
+supabase start                                   # la base local
+scripts/dev-env.sh                               # genera .env.dev.local (llaves de la base LOCAL)
+docker compose -f compose.dev.yaml up            # http://localhost:3000
+```
+
+- Si el contenedor de producción ocupa el 3000, ejecuta `docker compose down` en la raíz o usa
+  `DEV_PORT=3200 docker compose -f compose.dev.yaml up`.
+- Nunca lee `.env.local` (producción): su entorno sale solo de `.env.dev.local`, y `.env.local` se
+  tapa dentro del contenedor.
+- Para que el enlace de un correo (Mailpit, `http://127.0.0.1:54324`) vuelva a `localhost:3000`, la
+  base local debe permitirlo (`additional_redirect_urls` en `supabase/config.toml`); tras cambiarlo,
+  `supabase stop && supabase start`.
+- Google no funciona en local (la base local no tiene credenciales de Google).
