@@ -32,56 +32,83 @@ const geistSans = Geist({
 });
 
 const geistMono = Geist_Mono({
+  preload: false,
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
 // Fonts offered by the per-invitation theme panel (Fase 5).
+// Las 11 de tema y Geist Mono llevan `preload: false`: el @font-face sigue
+// declarado y el navegador la baja solo cuando una página la usa, pero ya no se
+// precargan en TODAS las rutas. Medido en producción (24 oct 2026): los 14
+// archivos (411 KB) se pedían a la vez con prioridad alta y el LCP móvil de
+// las páginas de marketing llegaba a ~4 s. Playfair (`--font-display`) y Geist
+// Sans sí se precargan: son la tipografía de la marca.
 const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
 });
 
 const dancing = Dancing_Script({
+  preload: false,
   variable: "--font-dancing",
   subsets: ["latin"],
 });
 
 const montserrat = Montserrat({
+  preload: false,
   variable: "--font-montserrat",
   subsets: ["latin"],
 });
 
 const cormorant = Cormorant_Garamond({
+  preload: false,
   variable: "--font-cormorant",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
 const pacifico = Pacifico({
+  preload: false,
   variable: "--font-pacifico",
   subsets: ["latin"],
   weight: "400",
 });
 
-const lora = Lora({ variable: "--font-lora", subsets: ["latin"] });
-const dmSans = DM_Sans({ variable: "--font-dm-sans", subsets: ["latin"] });
+const lora = Lora({
+  variable: "--font-lora",
+  subsets: ["latin"],
+  preload: false,
+});
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+  preload: false,
+});
 const spaceGrotesk = Space_Grotesk({
+  preload: false,
   variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
-const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"] });
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin"],
+  preload: false,
+});
 const greatVibes = Great_Vibes({
+  preload: false,
   variable: "--font-great-vibes",
   subsets: ["latin"],
   weight: "400",
 });
 const bebasNeue = Bebas_Neue({
+  preload: false,
   variable: "--font-bebas-neue",
   subsets: ["latin"],
   weight: "400",
 });
 const abrilFatface = Abril_Fatface({
+  preload: false,
   variable: "--font-abril-fatface",
   subsets: ["latin"],
   weight: "400",

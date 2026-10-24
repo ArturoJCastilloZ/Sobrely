@@ -27,3 +27,19 @@ Umbral «bueno» de LCP: ≤ 2.5 s; «deficiente»: > 4 s. **En móvil las 5 pá
 Fuentes < 100 KB por página; LCP móvil por debajo de la línea base de esta tabla, medido con el mismo método.
 
 Reproducir: `npx lighthouse@13.5.0 <url> --only-categories=performance --form-factor=mobile --chrome-flags="--headless=new"`.
+
+## T10, parte 1: fuentes (resultado)
+
+Cambio: `preload: false` en las 11 fuentes de tema de invitación y en Geist Mono (`src/app/layout.tsx`). Playfair y Geist Sans siguen precargadas. Las demás se descargan cuando una página las usa.
+
+Comparación A/B con la misma compilación de producción servida en local (`next start`), Lighthouse 13.5.0 móvil, 3 corridas por página, mediana. Los valores absolutos no son comparables con la tabla de producción de arriba (otra red y sin CDN); lo comparable es antes contra después.
+
+| Página | LCP antes | LCP después | Fuentes antes | Fuentes después | Puntaje |
+|---|---|---|---|---|---|
+| `/` | 5.17 s | 3.15 s | 14 · 414 KB | 2 · 67 KB | 81 → 93 |
+| `/pricing` | 5.31 s | 3.06 s | 14 · 414 KB | 2 · 67 KB | 80 → 94 |
+| `/invitaciones-digitales-boda` | 5.16 s | 2.91 s | 14 · 414 KB | 2 · 67 KB | 81 → 95 |
+
+La hipótesis de la sección anterior queda confirmada: el LCP baja unos 2 s y el FCP no cambia. Faltan dos cosas de T10: cachear la home y las landings (la home sigue sin caché) y repetir la medición en producción tras el despliegue.
+
+Comprobado: la variable `--font-dancing` se resuelve en cualquier página y el archivo se descarga bajo demanda. **No comprobado:** una invitación publicada con una tipografía de tema en producción; la única publicada en la base local usa la fuente por defecto. Riesgo conocido: sin precarga, una invitación con tipografía decorativa puede mostrar un instante la fuente de reserva antes del cambio.
