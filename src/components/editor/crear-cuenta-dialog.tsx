@@ -12,7 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { convertirConCorreo, vincularGoogle } from "@/lib/auth/invitado";
+import { unstable_rethrow } from "next/navigation";
+import { convertirConCorreo } from "@/lib/auth/invitado";
+import { signInWithGoogle } from "@/lib/auth/actions";
 import { enlaceConDestino } from "@/lib/auth/ruta-interna";
 import { cn } from "@/lib/utils";
 
@@ -48,10 +50,17 @@ export function CrearCuentaDialog({
 
   function conGoogle() {
     setError(null);
+    // Inicio de sesión normal con Google, NO vincular: si ese Google ya tiene cuenta,
+    // vincularlo falla (`identity_already_exists`) y mandaba al login. Con inicio de
+    // sesión funciona igual para cuenta nueva y existente, y el callback traslada el
+    // borrador del invitado a la cuenta con la que entra.
     startTransition(async () => {
-      const r = await vincularGoogle(destino);
-      if ("error" in r) setError(r.error);
-      else window.location.assign(r.url);
+      try {
+        await signInWithGoogle(destino);
+      } catch (e) {
+        unstable_rethrow(e);
+        setError("No pudimos conectar con Google. Inténtalo de nuevo.");
+      }
     });
   }
 

@@ -14,7 +14,7 @@ galería → «Usar esta plantilla» → sesión anónima + borrador → editor 
 ```
 
 La clave de «no perder la invitación»: Supabase **convierte** la sesión anónima en cuenta
-permanente (`updateUser({ email })` / `linkIdentity`). Es el **mismo `user_id`**, así que
+permanente (`updateUser({ email })`; con Google se inicia sesión y el callback traslada el borrador, ver el hallazgo del 2026-10-24 en §7). Es el **mismo `user_id`**, así que
 `invitations.user_id` no cambia y el borrador sigue siendo suyo. Esto se **midió** en una base
 local (ver §7); la documentación oficial no lo afirma explícitamente.
 
@@ -88,7 +88,7 @@ tipos permitidos excluye SVG y todo lo que no sea imagen.
 
 En el panel de Supabase del proyecto de producción, **antes** de desplegar esto:
 1. **Authentication → Sign In / Providers → Allow anonymous sign-ins: ON.**
-2. **Authentication → Sign In / Providers → Allow manual linking: ON** (para vincular Google).
+2. **Allow manual linking**: ya no hace falta (Google usa inicio de sesión, no vinculación).
 3. Revisar el límite de «Anonymous users» por hora e IP (30 por defecto).
 4. Aplicar la migración `0062`.
 5. Variables en Vercel: `CLEANUP_INVITADOS_ENABLED=1` (y `CRON_SECRET`, que ya hace falta).
@@ -110,9 +110,15 @@ Medido el 2026-10-24 contra Supabase local (no producción), con sesiones reales
 | Cron de limpieza | Dry-run lista solo al viejo sin nada que proteger; el real lo borra; el viejo con publicación y el reciente sobreviven; sin credencial → 401 |
 | Pruebas | 1655 pasan (vitest); `tsc`, `eslint` y `next build` sin errores |
 
-**No verificado** (necesita un servicio real o producción): Google (`linkIdentity`); el correo
+**No verificado** (necesita un servicio real o producción): Google con cuenta nueva; el correo
 con la plantilla `docs/email-templates/change-email.html` pegada en el panel; la lista de
 redirecciones de producción; el CAPTCHA (no activado, riesgo aceptado en §5).
 
 **Hallazgo**: Supabase solo respeta `emailRedirectTo` si la URL está en la lista permitida;
 en local falló hasta añadir el puerto de desarrollo a `additional_redirect_urls`.
+
+**Hallazgo en producción (video del dueño, 2026-10-23):** con `linkIdentity`, un invitado cuyo
+Google ya tenía cuenta recibía `identity_already_exists` y caía en `/login` (la sesión y el
+borrador seguían ahí, pero la persona tenía que volver a pulsar «Continuar con Google»). Se
+cambió a `signInWithOAuth` (inicio de sesión normal): sirve igual para cuenta nueva y existente,
+y el callback traslada el borrador. Corrección: `crear-cuenta-dialog.tsx`; `vincularGoogle` se eliminó.

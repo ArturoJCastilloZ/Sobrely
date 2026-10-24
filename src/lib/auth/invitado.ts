@@ -113,28 +113,3 @@ export async function convertirConCorreo(
   }
   return { enviado: true };
 }
-
-/** Vincula Google a la sesión de invitado; devuelve la URL de Google a la que ir. */
-export async function vincularGoogle(
-  next: string,
-): Promise<{ error: string } | { url: string }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user || !esAnonimo(user)) {
-    return { error: "Tu sesión terminó. Inicia sesión para continuar." };
-  }
-  const destino = rutaInternaSegura(next);
-  const { data, error } = await supabase.auth.linkIdentity({
-    provider: "google",
-    options: {
-      redirectTo: `${await origenActual()}/auth/callback?next=${encodeURIComponent(destino)}`,
-    },
-  });
-  if (error || !data?.url) {
-    console.error("[invitado] linkIdentity:", error?.status, error?.code);
-    return { error: "No pudimos conectar con Google. Inténtalo de nuevo." };
-  }
-  return { url: data.url };
-}
