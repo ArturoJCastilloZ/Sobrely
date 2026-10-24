@@ -190,5 +190,6 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  redirect("/login");
+  // A la landing, no al login: quien cierra sesión no pidió volver a autenticarse.
+  redirect("/");
 }
