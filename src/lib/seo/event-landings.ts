@@ -224,3 +224,15 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
 };
 
 export const EVENT_LANDING_LIST = Object.values(EVENT_LANDINGS);
+
+/**
+ * Tipo de evento (`templates.event_type`) de cada landing. Lo usa el embudo para
+ * contar la intención por evento (`view_category`).
+ */
+export const TIPO_DE_EVENTO_POR_SLUG: Record<string, string> = {
+  "invitaciones-digitales-boda": "Boda",
+  "invitaciones-digitales-xv-anos": "XV años",
+  "invitaciones-digitales-cumpleanos": "Cumpleaños",
+  "invitaciones-digitales-baby-shower": "Baby shower",
+  "invitaciones-digitales-corporativas": "Corporativo",
+};

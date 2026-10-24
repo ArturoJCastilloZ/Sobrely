@@ -11,6 +11,7 @@ import { BotonUsarComoInvitado } from "@/components/templates/boton-usar-como-in
 import { esInicioReciente } from "@/lib/auth/inicio-reciente";
 import { AutoUsarPlantilla } from "@/components/templates/auto-usar-plantilla";
 import PlantillaPage from "@/app/plantilla/[slug]/page";
+import { RegistrarVisita } from "@/components/analytics/registrar-visita";
 
 /**
  * Vista de VENTA de una plantilla: la invitación completa, tal como la verá un
@@ -70,6 +71,7 @@ export default async function VistaDePlantillaPage({
 
   return (
     <>
+      <RegistrarVisita evento="view_template" valor={slug} />
       <PlantillaPage params={params} />
       {autoUsar && <AutoUsarPlantilla templateId={tpl.id} nombre={tpl.name} />}
 

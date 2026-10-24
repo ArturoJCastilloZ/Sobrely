@@ -15,6 +15,7 @@ import {
 import { JsonLd } from "@/components/seo/json-ld";
 import { LocalLine } from "@/components/seo/local-line";
 import { metadatosSociales } from "@/lib/seo/social";
+import { RegistrarVisita } from "@/components/analytics/registrar-visita";
 
 const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -88,6 +89,7 @@ export default async function PricingPage() {
 
   return (
     <main className="flex flex-1 flex-col">
+      <RegistrarVisita evento="view_pricing" valor="pagina" />
       <JsonLd data={appLd} />
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
         <Link href="/" aria-label="Sobrely — inicio">

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { LogoLockup } from "@/components/brand/logo-lockup";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LocalLine } from "@/components/seo/local-line";
-import type { EventLanding } from "@/lib/seo/event-landings";
+import { TIPO_DE_EVENTO_POR_SLUG, type EventLanding } from "@/lib/seo/event-landings";
+import { RegistrarVisita } from "@/components/analytics/registrar-visita";
 import { billingPitch } from "@/lib/billing/value-prop";
 
 const SITE_URL = (
@@ -50,6 +51,9 @@ export function EventLandingPage({ data }: { data: EventLanding }) {
 
   return (
     <main className="flex flex-1 flex-col">
+      {TIPO_DE_EVENTO_POR_SLUG[data.slug] && (
+        <RegistrarVisita evento="view_category" valor={TIPO_DE_EVENTO_POR_SLUG[data.slug]} />
+      )}
       <JsonLd data={[faqLd, breadcrumbLd]} />
 
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-5">
