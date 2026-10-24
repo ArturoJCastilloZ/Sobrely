@@ -8,6 +8,7 @@ import { EVENT_LANDING_LIST } from "@/lib/seo/event-landings";
 import { LOCAL_BUSINESS_LD, WEBSITE_LD } from "@/lib/seo/site";
 import { LocalLine } from "@/components/seo/local-line";
 import { billingPitch } from "@/lib/billing/value-prop";
+import { HeroPlantillas, type PlantillaHero } from "@/components/landing/hero-plantillas";
 
 export const metadata: Metadata = {
   // Homepage: título absoluto (ignora el template "%s · Sobrely") con keywords.
@@ -63,6 +64,22 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   const pitch = billingPitch();
+
+  // Tres plantillas reales para el hero (XV años, boda, cumpleaños). Pública por RLS; si la
+  // consulta falla o faltan, el hero se queda sin imagen y centrado, nunca se rompe.
+  const { data: filas } = await supabase
+    .from("templates")
+    .select("slug, name, event_type, preview_image_url")
+    .eq("is_active", true)
+    .in("event_type", ["XV años", "Boda", "Cumpleaños"])
+    .not("preview_image_url", "is", null)
+    .order("name");
+  const porEvento = (tipo: string) =>
+    (filas ?? []).find((f) => f.event_type === tipo && f.preview_image_url) as
+      | PlantillaHero
+      | undefined;
+  const [xv, boda, cumple] = [porEvento("XV años"), porEvento("Boda"), porEvento("Cumpleaños")];
+  const vistaPrevia = xv && boda && cumple ? ([xv, boda, cumple] as const) : null;
 
   return (
     <main className="flex flex-1 flex-col">
@@ -140,49 +157,64 @@ export default async function Home() {
         </nav>
       </header>
 
-      <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-4 py-20 text-center">
-        <span className="rounded-full border border-brand-gold/40 bg-brand-gold/10 px-3 py-1 text-xs font-medium text-brand-gold-deep dark:text-brand-gold">
-          Invitaciones digitales, sin complicaciones
-        </span>
-        <h1 className="font-display text-balance text-4xl font-bold tracking-tight sm:text-6xl">
-          Crea invitaciones digitales dinámicas y{" "}
-          <span className="text-brand-gold-deep italic">personalizables</span>
-        </h1>
-        <p className="max-w-xl text-balance text-muted-foreground">
-          <strong className="font-semibold text-foreground">Sobrely</strong> es
-          la plataforma para crear invitaciones digitales para bodas, XV años,
-          cumpleaños, baby showers y eventos corporativos: elige un template,
-          personaliza módulos y publica tu invitación en una URL única para
-          compartirla y recibir confirmaciones de tus invitados.
-        </p>
-        <div className="flex flex-col gap-3 sm:flex-row">
+      <section
+        className={
+          vistaPrevia
+            ? "mx-auto grid w-full max-w-5xl flex-1 items-center gap-10 px-4 py-12 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:gap-8"
+            : "mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-4 py-20 text-center"
+        }
+      >
+        <div
+          className={
+            vistaPrevia
+              ? "flex flex-col items-center gap-6 text-center lg:items-start lg:text-left"
+              : "contents"
+          }
+        >
+          <span className="rounded-full border border-brand-gold/40 bg-brand-gold/10 px-3 py-1 text-xs font-medium text-brand-gold-deep dark:text-brand-gold">
+            Invitaciones digitales, sin complicaciones
+          </span>
+          <h1
+            className={`font-display text-balance text-4xl font-bold tracking-tight ${
+              vistaPrevia ? "sm:text-5xl" : "sm:text-6xl"
+            }`}
+          >
+            Crea invitaciones digitales dinámicas y{" "}
+            <span className="text-brand-gold-deep italic">personalizables</span>
+          </h1>
+          <p className="max-w-xl text-balance text-muted-foreground">
+            Elige un diseño, personalízalo y compártelo con un enlace. Tus invitados
+            confirman su asistencia y entran con un pase QR.
+          </p>
           {/*
-            Con sesión, al dashboard. Sin ella, a la GALERÍA y no al registro:
-            enseñar los diseños antes de pedir una cuenta es el cambio de fondo
-            del embudo (FUNNEL_PLAN.md); la cuenta se pide al elegir una.
+            UN solo botón dominante. Sin sesión va a la GALERÍA (elegir una plantilla abre el
+            editor sin pedir cuenta; la cuenta se pide al publicar). «Ya tengo cuenta» pasa a
+            enlace de texto: antes competía con el botón principal con el mismo peso, y el
+            encabezado ya trae «Iniciar sesión».
           */}
-          <Button
-            render={<Link href={user ? "/dashboard" : "/plantillas"} />}
-            nativeButton={false}
-            size="lg"
-            className="bg-brand-gold text-brand-ink hover:bg-brand-gold-deep hover:text-white"
-          >
-            {user ? "Ir al dashboard" : "Ver plantillas"}
-          </Button>
-          <Button
-            render={<Link href="/login" />}
-            nativeButton={false}
-            size="lg"
-            variant="outline"
-          >
-            Ya tengo cuenta
-          </Button>
+          <div className="flex flex-col items-center gap-3 sm:flex-row lg:items-center">
+            <Button
+              render={<Link href={user ? "/dashboard" : "/plantillas"} />}
+              nativeButton={false}
+              size="lg"
+              className="bg-brand-gold text-brand-ink hover:bg-brand-gold-deep hover:text-white"
+            >
+              {user ? "Ir al dashboard" : "Empezar a diseñar"}
+            </Button>
+            {!user && (
+              <Link
+                href="/login"
+                className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Ya tengo cuenta
+              </Link>
+            )}
+          </div>
+          {/* El mecanismo de cobro, donde se decide: "Empieza gratis" a secas no
+              dice si hay tarjeta, prueba o versión recortada. */}
+          {!user && <p className="text-sm text-muted-foreground">{pitch.micro}</p>}
         </div>
-        {/* El mecanismo de cobro, donde se decide: "Empieza gratis" a secas no
-            dice si hay tarjeta, prueba o versión recortada. */}
-        {!user && (
-          <p className="text-sm text-muted-foreground">{pitch.micro}</p>
-        )}
+        {vistaPrevia && <HeroPlantillas items={[...vistaPrevia]} />}
       </section>
 
       <section className="mx-auto w-full max-w-4xl px-4 py-12">
