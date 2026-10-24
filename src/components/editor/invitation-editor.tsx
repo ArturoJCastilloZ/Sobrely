@@ -43,6 +43,7 @@ import {
 } from "@/lib/editor/contexto-seleccion";
 import { LienzoProvider } from "@/lib/editor/contexto-lienzo";
 import { EditorLayout } from "./shell/editor-layout";
+import { CrearCuentaDialog } from "./crear-cuenta-dialog";
 
 /**
  * Dueno del DOCUMENTO: el historial, el autoguardado y la publicacion.
@@ -146,6 +147,7 @@ export function InvitationEditor({
   const [isPublishing, startPublishing] = useTransition();
   // Plan requerido cuando la publicación se bloquea por usar módulos ⭐ premium.
   const [upgradePlan, setUpgradePlan] = useState<PlanCode | null>(null);
+  const [cuentaOpen, setCuentaOpen] = useState(false);
   const [preflightOpen, setPreflightOpen] = useState(false);
   const router = useRouter();
   /** Salir con cambios sin guardar: se ofrece salir igualmente o quedarse. */
@@ -334,6 +336,11 @@ export function InvitationEditor({
       if (dirty) await guardarAhora();
       const res = await setPublished(invitation.id, next);
       if (!res.ok) {
+        // Invitado: se le pide la cuenta aquí, con su invitación intacta.
+        if (res.needsAccount) {
+          setCuentaOpen(true);
+          return;
+        }
         // Bloqueo por plan → abre el CTA de mejora en vez de solo un toast.
         // C1: needsPayment es la señal autoritativa del servidor; no se infieren planes en cliente.
         if (res.needsPayment && res.requiredPlan) {
@@ -462,6 +469,12 @@ export function InvitationEditor({
           </Card>
         </div>
       )}
+
+      <CrearCuentaDialog
+        open={cuentaOpen}
+        onOpenChange={setCuentaOpen}
+        invitationId={invitation.id}
+      />
 
       <AlertDialog open={preflightOpen} onOpenChange={setPreflightOpen}>
         <AlertDialogContent>

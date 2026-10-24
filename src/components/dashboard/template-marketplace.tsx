@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, Search, SearchX, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,12 +23,12 @@ import {
 import {
   contarPorEvento,
   filtrarPlantillas,
-  hrefUsarPlantillaSinSesion,
   hrefVistaPlantilla,
   type PlantillaMarketplace,
 } from "@/lib/templates/marketplace";
 import { formatPrice } from "@/lib/billing/config";
 import { UseTemplateButton } from "@/components/dashboard/use-template-button";
+import { BotonUsarComoInvitado } from "@/components/templates/boton-usar-como-invitado";
 import { toggleFavorite } from "@/lib/templates/favorites-actions";
 import { toast } from "sonner";
 
@@ -483,13 +483,8 @@ export function TemplateMarketplace({
                   </p>
                 )}
                 {publico && !autenticado ? (
-                  <Link
-                    href={hrefUsarPlantillaSinSesion(tpl.slug)}
-                    // 44 px en móvil y 36 desde `lg`, como las pastillas.
-                    className={cn(buttonVariants(), "h-11 w-full lg:h-9")}
-                  >
-                    Usar esta plantilla
-                  </Link>
+                  // 44 px en móvil y 36 desde `lg`, como las pastillas.
+                  <BotonUsarComoInvitado slug={tpl.slug} className="h-11 lg:h-9" />
                 ) : (
                   <UseTemplateButton templateId={tpl.id} />
                 )}

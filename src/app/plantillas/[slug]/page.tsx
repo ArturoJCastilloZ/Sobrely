@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatPrice } from "@/lib/billing/config";
 import { cn } from "@/lib/utils";
 import { cargarPlantillaPublica } from "@/lib/templates/galeria-publica";
-import { hrefUsarPlantillaSinSesion } from "@/lib/templates/marketplace";
+import { BotonUsarComoInvitado } from "@/components/templates/boton-usar-como-invitado";
 import { esInicioReciente } from "@/lib/auth/inicio-reciente";
 import { AutoUsarPlantilla } from "@/components/templates/auto-usar-plantilla";
 import PlantillaPage from "@/app/plantilla/[slug]/page";
@@ -124,12 +124,7 @@ export default async function VistaDePlantillaPage({
               {autenticado ? (
                 <UseTemplateButton templateId={tpl.id} />
               ) : (
-                <Link
-                  href={hrefUsarPlantillaSinSesion(slug)}
-                  className={cn(buttonVariants(), "h-11 w-full lg:h-9")}
-                >
-                  Usar esta plantilla
-                </Link>
+                <BotonUsarComoInvitado slug={slug} className="h-11 lg:h-9" />
               )}
             </div>
           </div>
