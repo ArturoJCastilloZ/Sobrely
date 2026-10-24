@@ -11,7 +11,7 @@ import { LocalLine } from "@/components/seo/local-line";
 import { billingPitch } from "@/lib/billing/value-prop";
 import { HeroPlantillas, type PlantillaHero } from "@/components/landing/hero-plantillas";
 import { ComoFunciona, CtaFinal, PaseQr } from "@/components/landing/secciones";
-import { MuestraEventos } from "@/components/landing/muestra-eventos";
+import { MuestraEventos, type PlantillaMuestra } from "@/components/landing/muestra-eventos";
 import { metadatosSociales } from "@/lib/seo/social";
 
 export const metadata: Metadata = {
@@ -82,8 +82,11 @@ export default async function Home() {
     .select("slug, name, event_type, preview_image_url")
     .eq("is_active", true)
     .in("event_type", ["XV años", "Boda", "Cumpleaños", "Baby shower", "Corporativo"])
-    .not("preview_image_url", "is", null)
     .order("name");
+  // OJO: sin `.not("preview_image_url", "is", null)` en la consulta. Ese filtro dejaba fuera a las
+  // plantillas sin imagen guardada y el conteo de «Ver N plantillas» salía menor que el que muestra
+  // la galería (en la base local: 10 por tipo en vez de 13/12/12/12/11). El filtro va solo donde
+  // hace falta una imagen: elegir la portada de cada tipo.
   const porEvento = (tipo: string) =>
     (filas ?? []).find((f) => f.event_type === tipo && f.preview_image_url) as
       | PlantillaHero
@@ -92,8 +95,11 @@ export default async function Home() {
   const vistaPrevia = xv && boda && cumple ? ([xv, boda, cumple] as const) : null;
   // La tira de la sección de eventos: una por tipo, en este orden, las que existan.
   const muestra = ["Boda", "XV años", "Cumpleaños", "Baby shower", "Corporativo"]
-    .map(porEvento)
-    .filter((p): p is PlantillaHero => Boolean(p));
+    .map((tipo) => {
+      const p = porEvento(tipo);
+      return p ? { ...p, total: (filas ?? []).filter((f) => f.event_type === tipo).length } : undefined;
+    })
+    .filter((p): p is PlantillaMuestra => Boolean(p));
 
   return (
     <main className="flex flex-1 flex-col">
@@ -237,8 +243,11 @@ export default async function Home() {
 
       <section className="mx-auto w-full max-w-4xl px-4 py-12">
         <h2 className="text-center font-display text-2xl font-bold tracking-tight sm:text-3xl">
-          Invitaciones para cada evento
+          ¿Qué vas a celebrar?
         </h2>
+        <p className="mx-auto mt-2 max-w-prose text-center text-muted-foreground">
+          Elige el tipo de evento y verás plantillas listas para editar.
+        </p>
         {muestra.length > 0 && <MuestraEventos items={muestra} />}
         <ul className="mt-4 flex flex-wrap justify-center gap-3">
           {EVENT_LANDING_LIST.map((e) => (

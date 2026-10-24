@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   contarFacetas,
   contarPorEvento,
+  hrefGaleriaDelEvento,
   filtrarPlantillas,
   normalizar,
   topesDePrecio,
@@ -289,6 +290,17 @@ describe("contarFacetas", () => {
     }
     for (const [tipo, n] of f.evento) {
       expect(n).toBe(filtrarPlantillas(catalogo, { ...filtro, evento: tipo }).length);
+    }
+  });
+});
+
+describe("hrefGaleriaDelEvento", () => {
+  it("codifica el tipo de evento y lo recupera tal cual en la galería", () => {
+    for (const tipo of ["Boda", "XV años", "Baby shower", "Cumpleaños", "Corporativo"]) {
+      const href = hrefGaleriaDelEvento(tipo);
+      expect(href.startsWith("/plantillas?evento=")).toBe(true);
+      const recuperado = new URL(href, "https://sobrely.com").searchParams.get("evento");
+      expect(recuperado).toBe(tipo);
     }
   });
 });

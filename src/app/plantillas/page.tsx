@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cargarGaleriaPublica } from "@/lib/templates/galeria-publica";
 import { estiloDeLaUrl, precioDeLaUrl, topesDePrecio } from "@/lib/templates/marketplace";
 import { metadatosSociales } from "@/lib/seo/social";
+import { RegistrarVisita } from "@/components/analytics/registrar-visita";
 
 /**
  * Galería PÚBLICA de plantillas: la puerta de entrada del embudo. Cualquiera la
@@ -57,6 +58,7 @@ export default async function PlantillasPage({
 
   return (
     <main className="flex flex-1 flex-col">
+      {eventoInicial && <RegistrarVisita evento="view_category" valor={eventoInicial} />}
       {/*
         Tres botones y no cuatro: medido a 375 px en la landing, cuatro botones
         en este header desbordaban 88 px en horizontal. «Iniciar sesión» se

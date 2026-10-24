@@ -209,6 +209,15 @@ export function precioDeLaUrl(
 }
 
 /**
+ * Enlace a la galería pública YA filtrada por tipo de evento (lo usa la tira
+ * «¿Qué vas a celebrar?» de la home). `evento` es el `event_type` exacto de la
+ * base, con acentos y espacios («XV años»), así que se codifica.
+ */
+export function hrefGaleriaDelEvento(tipo: string): string {
+  return `/plantillas?evento=${encodeURIComponent(tipo)}`;
+}
+
+/**
  * Vista de venta de una plantilla: la invitación completa más el precio y el
  * botón de usarla. Es una ruta NUEVA (`/plantillas/<slug>`) y no `/plantilla/`
  * a propósito: esa es la superficie de captura de miniaturas y de cinco

@@ -2,24 +2,30 @@ import Image from "next/image";
 import Link from "next/link";
 import { PROPORCION_MINIATURA, REVISION_MINIATURAS } from "@/lib/invitations/template-preview";
 import type { PlantillaHero } from "@/components/landing/hero-plantillas";
+import { hrefGaleriaDelEvento } from "@/lib/templates/marketplace";
 
 /**
- * Una plantilla real por tipo de evento, en una tira que se desliza. Reemplaza el «¿qué voy a
- * recibir?» que antes solo respondían los chips de texto (que se conservan debajo: enlazan a
- * las páginas de cada evento y ayudan al SEO). Cada tarjeta lleva a la ficha de la plantilla.
+ * «¿Qué vas a celebrar?» (T17): una plantilla real por tipo de evento, en una tira que se desliza.
+ * Cada tarjeta lleva a la galería YA filtrada por ese evento (`/plantillas?evento=…`), un paso
+ * menos que antes, cuando llevaba a la ficha de UNA plantilla y la galería arrancaba con las 65
+ * sin filtrar. La imagen sigue siendo producto real y no un icono. Los chips de texto que van
+ * debajo (en `page.tsx`) se conservan: enlazan a las páginas de cada evento y ayudan al SEO.
  *
+ * El conteo sale del mismo catálogo que pinta la galería, no de un número escrito a mano.
  * Están debajo del pliegue, así que NO llevan `priority`: carga perezosa.
  */
-export function MuestraEventos({ items }: { items: PlantillaHero[] }) {
+export type PlantillaMuestra = PlantillaHero & { total: number };
+
+export function MuestraEventos({ items }: { items: PlantillaMuestra[] }) {
   return (
     <ul
-      aria-label="Una plantilla de ejemplo por tipo de evento"
+      aria-label="Tipos de evento"
       className="-mx-4 mt-8 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0 sm:[justify-content:safe_center]"
     >
       {items.map((p) => (
         <li key={p.slug} className="w-40 shrink-0 snap-start">
           <Link
-            href={`/plantillas/${p.slug}`}
+            href={hrefGaleriaDelEvento(p.event_type)}
             className="group block rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
             <span
@@ -35,7 +41,9 @@ export function MuestraEventos({ items }: { items: PlantillaHero[] }) {
               />
             </span>
             <span className="mt-2 block text-sm font-semibold text-foreground">{p.event_type}</span>
-            <span className="block text-sm text-muted-foreground">{p.name}</span>
+            <span className="block text-sm text-muted-foreground">
+              Ver {p.total} {p.total === 1 ? "plantilla" : "plantillas"}
+            </span>
           </Link>
         </li>
       ))}
