@@ -43,3 +43,20 @@ Comparación A/B con la misma compilación de producción servida en local (`nex
 La hipótesis de la sección anterior queda confirmada: el LCP baja unos 2 s y el FCP no cambia. Faltan dos cosas de T10: cachear la home y las landings (la home sigue sin caché) y repetir la medición en producción tras el despliegue.
 
 Comprobado: la variable `--font-dancing` se resuelve en cualquier página y el archivo se descarga bajo demanda. **No comprobado:** una invitación publicada con una tipografía de tema en producción; la única publicada en la base local usa la fuente por defecto. Riesgo conocido: sin precarga, una invitación con tipografía decorativa puede mostrar un instante la fuente de reserva antes del cambio.
+
+## T10, parte 2: caché (decisión: no se hace ahora)
+
+Medido en producción el 24 oct 2026 (cabeceras y TTFB, mediana de 5 peticiones desde la máquina de desarrollo):
+
+| Ruta | Caché (`x-vercel-cache`) | TTFB |
+|---|---|---|
+| `/invitaciones-digitales-boda` | HIT (pública) | 0.17 s |
+| `/blog`, artículos, `/privacidad` | HIT / PRERENDER | 0.16 s |
+| `/pricing` | MISS (`private, no-store`) | 0.22 s |
+| `/` | MISS (`private, no-store`) | 0.30 s |
+| `/plantillas` | MISS (`private, no-store`) | 0.31 s |
+
+- Las landings, el blog y las páginas legales **ya se sirven desde caché**; el supuesto de la auditoría («cachear la home y las landings») solo aplica a la home, `/pricing` y `/plantillas`.
+- Esas tres son dinámicas porque leen la sesión (`supabase.auth.getUser()`) y cambian el botón principal según haya sesión (`user ? "Ir al dashboard" : "Empezar a diseñar"`, y el destino de cada plan en `/pricing`).
+- La ganancia posible es de unos 50 a 130 ms de TTFB, contra un LCP móvil de ~4 s (≈ 3 %). Para lograrla habría que pasar el botón de sesión a un componente de cliente, lo que pone un parpadeo en el botón principal, justo en la zona del LCP, o servir un botón equivocado a quien ya tiene sesión.
+- Decisión: no se toca. Se reevalúa tras medir en producción el efecto de las fuentes.
