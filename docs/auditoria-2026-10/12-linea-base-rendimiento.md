@@ -60,3 +60,22 @@ Medido en producción el 24 oct 2026 (cabeceras y TTFB, mediana de 5 peticiones 
 - Esas tres son dinámicas porque leen la sesión (`supabase.auth.getUser()`) y cambian el botón principal según haya sesión (`user ? "Ir al dashboard" : "Empezar a diseñar"`, y el destino de cada plan en `/pricing`).
 - La ganancia posible es de unos 50 a 130 ms de TTFB, contra un LCP móvil de ~4 s (≈ 3 %). Para lograrla habría que pasar el botón de sesión a un componente de cliente, lo que pone un parpadeo en el botón principal, justo en la zona del LCP, o servir un botón equivocado a quien ya tiene sesión.
 - Decisión: no se toca. Se reevalúa tras medir en producción el efecto de las fuentes.
+
+## T10: medición en producción tras el despliegue (24 oct 2026)
+
+Mismo método que la línea base (Lighthouse 13.5.0 contra `https://sobrely.com`, móvil con 3 corridas y mediana, escritorio con 1 corrida), con el cambio de fuentes ya desplegado: la página precarga 2 fuentes en lugar de 14.
+
+| Página | LCP móvil antes | LCP móvil después | Puntaje móvil | Fuentes |
+|---|---|---|---|---|
+| `/` | 4.27 s | 2.46 s | 85 → 97 | 14 · 411 KB → 2 · 67 KB |
+| `/pricing` | 4.06 s | 2.32 s | 87 → 98 | igual |
+| `/plantillas` | 4.49 s | 2.89 s | 84 → 95 | igual |
+| `/invitaciones-digitales-boda` | 3.98 s | 2.32 s | 88 → 98 | igual |
+| `/blog/invitacion-digital-o-impresa` | 4.18 s | 2.31 s | 86 → 98 | igual |
+
+Escritorio: LCP de 0.79–0.94 s a 0.50–0.60 s en las cinco páginas (puntaje 99–100). CLS 0 y TBT ≤ 8 ms en móvil, sin cambio.
+
+- **Resultado:** el LCP móvil baja entre 1.7 y 1.9 s en las cinco páginas, confirmado en producción y de acuerdo con la comparación local (que daba unos 2 s). Cuatro de cinco quedan en o muy cerca del umbral «bueno» (≤ 2.5 s); `/plantillas` queda en 2.89 s.
+- **Lo que queda en `/` y `/plantillas`:** el elemento LCP es una imagen del hero o de la galería, y su fase dominante es el retraso de render (~1.0 s), no la descarga (~0.15 s). Lighthouse marca «entrega de imágenes» con 0.5 y «descubrimiento del LCP» con 0 en las dos. Es el siguiente punto a mirar si se quiere bajar de 2.5 s; no se investigó la causa.
+- **Límite:** son datos de laboratorio, 3 corridas por página (la primera corrida de `/` dio 2.51 s y la tercera 1.79 s: hay variación). Sin datos de campo (CrUX), no se sabe qué ven los visitantes reales hasta que haya tráfico.
+- **No comprobado en producción:** una invitación pública con una tipografía de tema; no hay una publicada con esa característica a la mano.
