@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { rutaInternaSegura } from "@/lib/auth/ruta-interna";
 import { guardarIntencion } from "@/lib/auth/intencion";
+import { leerSesionAnonimaActual, trasladarBorradores } from "@/lib/auth/traspaso";
 
 export type AuthActionState = {
   error?: string;
@@ -35,11 +36,15 @@ export async function login(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  // Antes de iniciar sesión: si venía editando como invitado, esa sesión se reemplaza y su
+  // borrador quedaría huérfano. Se lee aquí, en el servidor; no lo manda el cliente.
+  const invitadoId = await leerSesionAnonimaActual(supabase);
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) {
+  if (error || !data.user) {
     return { error: "Credenciales inválidas o correo sin confirmar." };
   }
+  if (invitadoId) await trasladarBorradores(invitadoId, data.user.id);
 
   revalidatePath("/", "layout");
   // `rutaInternaSegura` y no `startsWith("/")`: aquel deja pasar `//evil.com`, y

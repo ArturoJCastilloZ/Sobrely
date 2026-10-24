@@ -54,7 +54,18 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
+  // Un invitado (sesión anónima) no es una cuenta: puede entrar a /login y /register para
+  // crearla o iniciar sesión, y no entra a /admin.
+  const invitado = user?.is_anonymous === true;
+
+  if (invitado && (pathname === "/admin" || pathname.startsWith("/admin/"))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  if (user && !invitado && isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     url.search = "";

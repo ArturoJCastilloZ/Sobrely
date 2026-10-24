@@ -15,6 +15,7 @@ import { decidirPublicacion } from "@/lib/billing/decision-publicacion";
 import { templateToDocument } from "@/lib/invitations/template-render";
 import type { PlanCode } from "@/lib/billing/types";
 import { enlaceConDestino } from "@/lib/auth/ruta-interna";
+import { esAnonimo } from "@/lib/auth/sesion";
 import { rutaUsarPlantilla } from "@/lib/templates/marketplace";
 
 /** Short random suffix to keep slugs unique per user without a lookup loop. */
@@ -228,6 +229,8 @@ export type SetPublishedResult =
       needsPayment?: boolean;
       /** Compatibilidad: igual que `needsPayment`; se conserva hasta que nadie la lea. */
       needsUpgrade?: boolean;
+      /** El que publica es un invitado: hay que pedirle que cree su cuenta primero. */
+      needsAccount?: boolean;
     };
 
 /**
@@ -253,6 +256,16 @@ export async function setPublished(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sesión expirada." };
+
+  // Un invitado diseña sin cuenta; publicar es el momento de pedírsela. La base también lo
+  // rechaza (trigger `ANONIMO_NO_PUBLICA`), esto solo devuelve la señal para el modal.
+  if (published && esAnonimo(user)) {
+    return {
+      ok: false,
+      error: "Crea tu cuenta para publicar. Tu invitación se queda como la diseñaste.",
+      needsAccount: true,
+    };
+  }
 
   // Despublicar: solo apaga la bandera.
   if (!published) {

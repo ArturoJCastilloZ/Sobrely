@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rutaInternaSegura } from "@/lib/auth/ruta-interna";
+import { leerSesionAnonimaActual, trasladarBorradores } from "@/lib/auth/traspaso";
 
 /**
  * Handles the OAuth (Google) and email-link callbacks. Supabase redirects here
@@ -16,8 +17,12 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    // Un invitado que entra con Google (cuenta que ya tenía) cambia de usuario: se traslada
+    // su borrador. Si solo convierte su sesión (mismo id) no hay nada que mover.
+    const invitadoId = await leerSesionAnonimaActual(supabase);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      if (invitadoId && data.user) await trasladarBorradores(invitadoId, data.user.id);
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
       if (isLocalEnv) {
