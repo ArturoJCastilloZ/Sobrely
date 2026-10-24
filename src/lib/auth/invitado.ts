@@ -20,6 +20,10 @@ export type ResultadoInvitado = { error: string };
 
 /** Origen de la petición, para armar el enlace que vuelve del correo de verificación. */
 async function origenActual(): Promise<string> {
+  // La variable manda: una cabecera Host/X-Forwarded-Host la controla quien llama, y el
+  // enlace del correo no debe depender de ella (misma regla que `getOrigin` en actions.ts).
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (envUrl) return envUrl.replace(/\/$/, "");
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto = h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");

@@ -97,4 +97,22 @@ Sin (1) y (2) el botón «Usar esta plantilla» fallará con un aviso, sin rompe
 
 ## 7. Verificación
 
-(se completa al terminar: resultados medidos en base local y en navegador)
+Medido el 2026-10-24 contra Supabase local (no producción), con sesiones reales:
+
+| Qué | Resultado |
+|---|---|
+| Visitante sin sesión pulsa «Usar esta plantilla» | Abre `/editor/<id>` sin pedir cuenta (la cookie de `signInAnonymously` sí es visible en la misma acción) |
+| Invitado pulsa «Publicar» | Checklist y luego modal «Crea tu cuenta para publicar»; `setPublished` devuelve `needsAccount` |
+| Conversión por correo (`updateUser`) | Mismo `user_id`, `is_anonymous` pasa a `false`, la invitación sigue siendo suya |
+| Invitado inicia sesión en una cuenta que ya existía | La invitación pasa a esa cuenta y el usuario anónimo se borra (0 anónimos restantes) |
+| Dos invitados distintos | El 2.º no lee, edita ni borra lo del 1.º (0 filas en las tres) |
+| Invitado publica directo por la API | Rechazado por el trigger: `ANONIMO_NO_PUBLICA` |
+| Cron de limpieza | Dry-run lista solo al viejo sin nada que proteger; el real lo borra; el viejo con publicación y el reciente sobreviven; sin credencial → 401 |
+| Pruebas | 1655 pasan (vitest); `tsc`, `eslint` y `next build` sin errores |
+
+**No verificado** (necesita un servicio real o producción): Google (`linkIdentity`); el correo
+con la plantilla `docs/email-templates/change-email.html` pegada en el panel; la lista de
+redirecciones de producción; el CAPTCHA (no activado, riesgo aceptado en §5).
+
+**Hallazgo**: Supabase solo respeta `emailRedirectTo` si la URL está en la lista permitida;
+en local falló hasta añadir el puerto de desarrollo a `additional_redirect_urls`.
