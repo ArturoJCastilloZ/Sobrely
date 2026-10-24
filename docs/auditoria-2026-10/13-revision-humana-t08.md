@@ -12,7 +12,7 @@ Fecha: 24 oct 2026. Es la guía para quien revise el código de **autenticación
 
 | # | Hallazgo | Estado | Gravedad |
 |---|---|---|---|
-| H1 | Un invitado puede **insertar** una invitación ya publicada (`is_published = true`, `status = 'published'`) llamando a la API directo: el disparador `impedir_publicar_anonimo` solo corre en `UPDATE`. | **Verificado**, abierto | Baja |
+| H1 | Un invitado puede **insertar** una invitación ya publicada (`is_published = true`, `status = 'published'`) llamando a la API directo: el disparador `impedir_publicar_anonimo` solo corre en `UPDATE`. | **Verificado.** Migración `0065` escrita y probada en local; **sin aplicar en producción** | Baja |
 | H2 | La limpieza de invitados **no borraba los archivos** del almacenamiento. | **Verificado y corregido** (commit pendiente) | Media, sin daño aún: el cron está apagado |
 | H3 | La limpieza mide «actividad» con `last_sign_in_at`, no con ediciones. | Lectura de código, **decisión tuya** | Media si se enciende tal cual |
 | H4 | El traspaso de borradores mueve las invitaciones, pero no los archivos subidos mientras eran invitado. | **Sin verificar** | Baja |
@@ -21,7 +21,7 @@ Fecha: 24 oct 2026. Es la guía para quien revise el código de **autenticación
 ### H1 · Insertar publicada
 - **Prueba** (transacción con JWT anónimo, revertida): `INSERT ... is_published = true, status = 'published'` → aceptado. `UPDATE ... is_published = true` → `ANONIMO_NO_PUBLICA`. El cuarto `INSERT` → `LIMITE_ANONIMO_INVITACIONES`.
 - **Por qué importa poco:** la RPC pública exige `is_published` **y** `is_entitlement_active(...)`, y `invitation_entitlements` solo tiene política de lectura para `authenticated` (sin política de escritura: la escritura es del servicio). Sin acceso pagado no se sirve. Lo que sí pasa es que su propio panel la marcaría «publicada».
-- **Arreglo propuesto:** extender el disparador a `before insert or update` (una migración `0065`). **No se aplicó**: tocar producción requiere tu visto bueno.
+- **Arreglo:** `supabase/migrations/0065_anonimo_no_inserta_publicada.sql` extiende el disparador a `before insert or update` (la función distingue el `INSERT`, donde no existe `old`). Probada en local en seis casos: anónimo `INSERT` publicada → rechazado; anónimo `INSERT` con `status = 'published'` → rechazado; anónimo `INSERT` borrador → aceptado; anónimo `UPDATE` a publicada → rechazado; cuenta real `INSERT` publicada → aceptado; servicio sin JWT → aceptado. **Sin aplicar en producción** hasta tu visto bueno.
 
 ### H2 · Limpieza sin borrar archivos
 - **Causa:** los archivos viven en `<usuario>/<invitación>/<archivo>`. `list('<usuario>')` devuelve **carpetas** (sin `id`); `remove(['<usuario>/<invitación>'])` responde `[]` y el archivo sigue ahí.
