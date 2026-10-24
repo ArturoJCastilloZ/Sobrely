@@ -9,6 +9,7 @@ import { LOCAL_BUSINESS_LD, WEBSITE_LD } from "@/lib/seo/site";
 import { LocalLine } from "@/components/seo/local-line";
 import { billingPitch } from "@/lib/billing/value-prop";
 import { HeroPlantillas, type PlantillaHero } from "@/components/landing/hero-plantillas";
+import { ComoFunciona, CtaFinal, PaseQr } from "@/components/landing/secciones";
 
 export const metadata: Metadata = {
   // Homepage: título absoluto (ignora el template "%s · Sobrely") con keywords.
@@ -235,6 +236,9 @@ export default async function Home() {
         </ul>
       </section>
 
+      <ComoFunciona />
+      <PaseQr />
+
       <section className="mx-auto w-full max-w-3xl px-4 py-16">
         <JsonLd data={[LOCAL_BUSINESS_LD, WEBSITE_LD, FAQ_LD]} />
         <h2 className="text-center font-display text-2xl font-bold tracking-tight sm:text-3xl">
@@ -249,6 +253,8 @@ export default async function Home() {
           ))}
         </dl>
       </section>
+
+      <CtaFinal conSesion={!!user} micro={pitch.micro} />
 
       <footer className="mx-auto w-full max-w-5xl px-4 py-6 text-center text-xs text-muted-foreground">
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
