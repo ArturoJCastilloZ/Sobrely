@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  contarFacetas,
   contarPorEvento,
   filtrarPlantillas,
   normalizar,
+  topesDePrecio,
   type PlantillaMarketplace,
 } from "./marketplace";
 
@@ -178,5 +180,115 @@ describe("filtrarPlantillas · favoritos", () => {
       favoritos: new Set(["plantilla-borrada"]),
     });
     expect(r).toHaveLength(0);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* T14: estilo, precio y conteos por faceta                           */
+/* ------------------------------------------------------------------ */
+const plantilla = (
+  id: string,
+  event_type: string,
+  estilo: "elegante" | "natural" | "moderno" | "divertido" | "romantico" | null,
+  precio: number | null,
+): PlantillaMarketplace => ({
+  id,
+  slug: id,
+  name: id,
+  description: null,
+  event_type,
+  preview_image_url: null,
+  estilo,
+  precio: precio === null ? null : { precio, precioRegular: null },
+});
+
+const catalogo = [
+  plantilla("b1", "Boda", "elegante", 399),
+  plantilla("b2", "Boda", "natural", 199),
+  plantilla("b3", "Boda", "natural", 699),
+  plantilla("c1", "Cumpleaños", "divertido", 199),
+  plantilla("c2", "Cumpleaños", "moderno", 199),
+  plantilla("x1", "XV años", "elegante", 699),
+];
+
+describe("filtrarPlantillas · estilo y precio (T14)", () => {
+  it("filtra por estilo", () => {
+    expect(filtrarPlantillas(catalogo, { estilo: "natural" }).map((t) => t.id)).toEqual(["b2", "b3"]);
+  });
+
+  it("filtra por precio máximo, inclusivo", () => {
+    expect(filtrarPlantillas(catalogo, { precioMax: 199 }).map((t) => t.id)).toEqual(["b2", "c1", "c2"]);
+    expect(filtrarPlantillas(catalogo, { precioMax: 399 })).toHaveLength(4);
+  });
+
+  it("los filtros se combinan con AND, incluido el evento y la búsqueda", () => {
+    expect(
+      filtrarPlantillas(catalogo, { evento: "Boda", estilo: "natural", precioMax: 199 }).map((t) => t.id),
+    ).toEqual(["b2"]);
+    expect(filtrarPlantillas(catalogo, { evento: "Cumpleaños", estilo: "elegante" })).toEqual([]);
+    expect(filtrarPlantillas(catalogo, { estilo: "elegante", q: "x1" }).map((t) => t.id)).toEqual(["x1"]);
+  });
+
+  it("sin precio calculado no pasa un filtro de precio, pero sí sin filtro", () => {
+    const sin = [plantilla("s1", "Boda", "natural", null)];
+    expect(filtrarPlantillas(sin, { precioMax: 999 })).toEqual([]);
+    expect(filtrarPlantillas(sin, {})).toHaveLength(1);
+  });
+
+  it("precioMax 0 es un filtro real y null/ausente no filtra", () => {
+    expect(filtrarPlantillas(catalogo, { precioMax: 0 })).toEqual([]);
+    expect(filtrarPlantillas(catalogo, { precioMax: null })).toHaveLength(6);
+  });
+});
+
+describe("topesDePrecio", () => {
+  it("devuelve los precios que hay, ordenados, sin el más alto", () => {
+    expect(topesDePrecio(catalogo)).toEqual([199, 399]);
+  });
+  it("con un solo precio o sin precios no ofrece pastillas", () => {
+    expect(topesDePrecio([plantilla("a", "Boda", null, 199)])).toEqual([]);
+    expect(topesDePrecio([plantilla("a", "Boda", null, null)])).toEqual([]);
+    expect(topesDePrecio([])).toEqual([]);
+  });
+});
+
+describe("contarFacetas", () => {
+  it("sin filtros cuenta todo el catálogo", () => {
+    const f = contarFacetas(catalogo, {}, [199, 399]);
+    expect(f.evento.get("Boda")).toBe(3);
+    expect(f.estilo.get("elegante")).toBe(2);
+    expect(f.precio.get(199)).toBe(3);
+    expect(f.precio.get(399)).toBe(4);
+  });
+
+  it("elegir un evento no pone en 0 a los demás eventos", () => {
+    const f = contarFacetas(catalogo, { evento: "Boda" }, [199, 399]);
+    expect(f.evento.get("Boda")).toBe(3);
+    expect(f.evento.get("Cumpleaños")).toBe(2);
+    expect(f.evento.get("XV años")).toBe(1);
+  });
+
+  it("el estilo y el precio se cuentan dentro del evento elegido", () => {
+    const f = contarFacetas(catalogo, { evento: "Boda" }, [199, 399]);
+    expect(f.estilo.get("natural")).toBe(2);
+    expect(f.estilo.get("divertido")).toBeUndefined();
+    expect(f.precio.get(199)).toBe(1);
+  });
+
+  it("un cruce sin resultados se refleja: Boda + Divertido no existe", () => {
+    const f = contarFacetas(catalogo, { estilo: "divertido" }, [199, 399]);
+    expect(f.evento.get("Boda")).toBeUndefined();
+    expect(f.evento.get("Cumpleaños")).toBe(1);
+  });
+
+  it("el conteo de cada grupo coincide con lo que mostraría pulsarlo", () => {
+    const filtro = { evento: "Boda", precioMax: 399 };
+    const f = contarFacetas(catalogo, filtro, [199, 399]);
+    for (const e of ["elegante", "natural"] as const) {
+      expect(f.estilo.get(e)).toBe(filtrarPlantillas(catalogo, { ...filtro, estilo: e }).length);
+    }
+    for (const [tipo, n] of f.evento) {
+      expect(n).toBe(filtrarPlantillas(catalogo, { ...filtro, evento: tipo }).length);
+    }
   });
 });

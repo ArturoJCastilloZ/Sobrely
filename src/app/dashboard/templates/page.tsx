@@ -5,15 +5,17 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TemplateMarketplace } from "@/components/dashboard/template-marketplace";
 import type { PlantillaMarketplace } from "@/lib/templates/marketplace";
+import { estiloDe } from "@/lib/templates/estilos";
+import { estiloDeLaUrl } from "@/lib/templates/marketplace";
 
 export const metadata: Metadata = { title: "Plantillas" };
 
 export default async function TemplatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ evento?: string; q?: string; favoritas?: string }>;
+  searchParams: Promise<{ evento?: string; q?: string; favoritas?: string; estilo?: string }>;
 }) {
-  const { evento, q, favoritas } = await searchParams;
+  const { evento, q, favoritas, estilo } = await searchParams;
   const supabase = await createClient();
   const { data: templates } = await supabase
     .from("templates")
@@ -24,7 +26,10 @@ export default async function TemplatesPage({
     .eq("is_active", true)
     .order("name", { ascending: true });
 
-  const list = (templates ?? []) as PlantillaMarketplace[];
+  const list = ((templates ?? []) as PlantillaMarketplace[]).map((t) => ({
+    ...t,
+    estilo: estiloDe(t.slug),
+  }));
 
   /*
     El filtro se aplica en cliente (§12: son 50 filas), pero el estado inicial
@@ -100,6 +105,7 @@ export default async function TemplatesPage({
           plantillas={list}
           eventoInicial={eventoInicial}
           consultaInicial={q ?? ""}
+          estiloInicial={estiloDeLaUrl(estilo)}
           favoritosIniciales={favoritosIniciales}
           soloFavoritosInicial={favoritas === "1"}
         />

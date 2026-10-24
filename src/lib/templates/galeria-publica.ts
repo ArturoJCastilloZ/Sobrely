@@ -3,6 +3,7 @@ import type { ModuleType } from "@/lib/modules/types";
 import { parseTheme } from "@/lib/theme/theme";
 import { precioParaPublicarPlantilla } from "@/lib/billing/precio-plantilla";
 import type { PlantillaMarketplace } from "@/lib/templates/marketplace";
+import { estiloDe } from "@/lib/templates/estilos";
 
 /**
  * Carga de la galería PÚBLICA de plantillas.
@@ -56,6 +57,7 @@ export function aPlantillaPublica(
     description: fila.description,
     event_type: fila.event_type,
     preview_image_url: fila.preview_image_url,
+    estilo: estiloDe(fila.slug),
     precio: precio
       ? { precio: precio.precio, precioRegular: precio.precioRegular }
       : null,

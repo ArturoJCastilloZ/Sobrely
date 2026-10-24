@@ -21,11 +21,14 @@ import {
   REVISION_MINIATURAS,
 } from "@/lib/invitations/template-preview";
 import {
+  contarFacetas,
   contarPorEvento,
   filtrarPlantillas,
   hrefVistaPlantilla,
+  topesDePrecio,
   type PlantillaMarketplace,
 } from "@/lib/templates/marketplace";
+import { ESTILOS, type EstiloClave } from "@/lib/templates/estilos";
 import { formatPrice } from "@/lib/billing/config";
 import { UseTemplateButton } from "@/components/dashboard/use-template-button";
 import { BotonUsarComoInvitado } from "@/components/templates/boton-usar-como-invitado";
@@ -46,13 +49,17 @@ import { toast } from "sonner";
  * recoge `*.test.ts`, así que una función pura se puede probar de verdad
  * (verificada por mutación) mientras que un `.tsx` no se probaría en absoluto.
  *
- * NO hay filtro por estilo. El porqué —medido, no supuesto— está en la
- * cabecera de ese módulo.
+ * También filtra por ESTILO y, en la galería pública, por PRECIO (T14). Los
+ * conteos de cada grupo se calculan con los otros filtros activos: una pastilla
+ * sin resultados se ve en 0 y se deshabilita. La razón está en la cabecera de
+ * `marketplace.ts`.
  */
 export function TemplateMarketplace({
   plantillas,
   eventoInicial,
   consultaInicial,
+  estiloInicial = null,
+  precioMaxInicial = null,
   favoritosIniciales,
   soloFavoritosInicial,
   modo = "dashboard",
@@ -61,6 +68,8 @@ export function TemplateMarketplace({
   plantillas: PlantillaMarketplace[];
   eventoInicial: string | null;
   consultaInicial: string;
+  estiloInicial?: EstiloClave | null;
+  precioMaxInicial?: number | null;
   favoritosIniciales: string[];
   soloFavoritosInicial: boolean;
   /**
@@ -75,6 +84,10 @@ export function TemplateMarketplace({
   const publico = modo === "publico";
   const [evento, setEvento] = React.useState<string | null>(eventoInicial);
   const [consulta, setConsulta] = React.useState(consultaInicial);
+  const [estilo, setEstilo] = React.useState<EstiloClave | null>(estiloInicial);
+  const [precioMax, setPrecioMax] = React.useState<number | null>(
+    precioMaxInicial,
+  );
   const [soloFavoritos, setSoloFavoritos] =
     React.useState(soloFavoritosInicial);
   /*
@@ -113,15 +126,31 @@ export function TemplateMarketplace({
     pastillas en 0 y parecería que el catálogo se vació.
   */
   const conteo = React.useMemo(() => contarPorEvento(plantillas), [plantillas]);
+  const topes = React.useMemo(() => topesDePrecio(plantillas), [plantillas]);
+  const filtro = React.useMemo(
+    () => ({
+      evento,
+      estilo,
+      precioMax,
+      q: consulta,
+      soloFavoritos,
+      favoritos,
+    }),
+    [evento, estilo, precioMax, consulta, soloFavoritos, favoritos],
+  );
   const visibles = React.useMemo(
-    () =>
-      filtrarPlantillas(plantillas, {
-        evento,
-        q: consulta,
-        soloFavoritos,
-        favoritos,
-      }),
-    [plantillas, evento, consulta, soloFavoritos, favoritos],
+    () => filtrarPlantillas(plantillas, filtro),
+    [plantillas, filtro],
+  );
+  /*
+    Los números de las pastillas salen de AQUÍ: cada grupo cuenta con los otros
+    filtros activos y sin el suyo. El orden de las pastillas de evento sigue
+    saliendo de `conteo` (catálogo completo) para que no salten de sitio al
+    filtrar.
+  */
+  const facetas = React.useMemo(
+    () => contarFacetas(plantillas, filtro, topes),
+    [plantillas, filtro, topes],
   );
 
   /*
@@ -138,6 +167,10 @@ export function TemplateMarketplace({
     else params.delete("evento");
     if (consulta.trim()) params.set("q", consulta);
     else params.delete("q");
+    if (estilo) params.set("estilo", estilo);
+    else params.delete("estilo");
+    if (precioMax !== null) params.set("precio", String(precioMax));
+    else params.delete("precio");
     if (soloFavoritos) params.set("favoritas", "1");
     else params.delete("favoritas");
     const qs = params.toString();
@@ -146,11 +179,18 @@ export function TemplateMarketplace({
       "",
       qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
     );
-  }, [evento, consulta, soloFavoritos]);
+  }, [evento, consulta, estilo, precioMax, soloFavoritos]);
 
-  const hayFiltro = evento !== null || consulta.trim() !== "" || soloFavoritos;
+  const hayFiltro =
+    evento !== null ||
+    estilo !== null ||
+    precioMax !== null ||
+    consulta.trim() !== "" ||
+    soloFavoritos;
   const limpiar = () => {
     setEvento(null);
+    setEstilo(null);
+    setPrecioMax(null);
     setConsulta("");
     setSoloFavoritos(false);
   };
@@ -253,15 +293,19 @@ export function TemplateMarketplace({
           className="flex flex-nowrap gap-2 [&>*]:shrink-0 lg:flex-wrap"
         >
           <Pastilla activa={evento === null} onClick={() => setEvento(null)}>
-            Todas <Cuenta n={plantillas.length} />
+            Todas{" "}
+            <Cuenta
+              n={[...facetas.evento.values()].reduce((a, b) => a + b, 0)}
+            />
           </Pastilla>
           {tipos.map((tipo) => (
             <Pastilla
               key={tipo}
               activa={evento === tipo}
+              deshabilitada={(facetas.evento.get(tipo) ?? 0) === 0}
               onClick={() => setEvento(evento === tipo ? null : tipo)}
             >
-              {tipo} <Cuenta n={conteo.get(tipo) ?? 0} />
+              {tipo} <Cuenta n={facetas.evento.get(tipo) ?? 0} />
             </Pastilla>
           ))}
         </div>
@@ -308,6 +352,76 @@ export function TemplateMarketplace({
         )}
       </div>
 
+      {/* Estilo y precio (T14): cada grupo es una elección ÚNICA, como el de evento. */}
+      {/*
+        Cada grupo en su PROPIA fila desplazable en móvil. Con los dos en una
+        sola fila el precio quedaba fuera de pantalla a la derecha del estilo
+        (medido a 375 px) y nadie sabría que existe. A partir de `lg`, los dos
+        comparten fila y se envuelven.
+      */}
+      <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-6">
+        <div className="-mx-4 overflow-x-auto px-4 pb-1 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0">
+          <div
+            role="radiogroup"
+            aria-label="Filtrar por estilo"
+            className="flex flex-nowrap items-center gap-2 [&>*]:shrink-0 lg:flex-wrap"
+          >
+            <span
+              className="shrink-0 text-sm text-muted-foreground"
+              aria-hidden="true"
+            >
+              Estilo
+            </span>
+            <Pastilla activa={estilo === null} onClick={() => setEstilo(null)}>
+              Todos
+            </Pastilla>
+            {ESTILOS.map((e) => (
+              <Pastilla
+                key={e.clave}
+                activa={estilo === e.clave}
+                deshabilitada={(facetas.estilo.get(e.clave) ?? 0) === 0}
+                onClick={() => setEstilo(estilo === e.clave ? null : e.clave)}
+              >
+                {e.etiqueta} <Cuenta n={facetas.estilo.get(e.clave) ?? 0} />
+              </Pastilla>
+            ))}
+          </div>
+        </div>
+        {topes.length > 0 && (
+          <div className="-mx-4 overflow-x-auto px-4 pb-1 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0">
+            <div
+              role="radiogroup"
+              aria-label="Filtrar por precio de publicación"
+              className="flex flex-nowrap items-center gap-2 [&>*]:shrink-0 lg:flex-wrap"
+            >
+              <span
+                className="shrink-0 text-sm text-muted-foreground"
+                aria-hidden="true"
+              >
+                Precio
+              </span>
+              <Pastilla
+                activa={precioMax === null}
+                onClick={() => setPrecioMax(null)}
+              >
+                Cualquiera
+              </Pastilla>
+              {topes.map((tope) => (
+                <Pastilla
+                  key={tope}
+                  activa={precioMax === tope}
+                  deshabilitada={(facetas.precio.get(tope) ?? 0) === 0}
+                  onClick={() => setPrecioMax(precioMax === tope ? null : tope)}
+                >
+                  Hasta {formatPrice(tope)}{" "}
+                  <Cuenta n={facetas.precio.get(tope) ?? 0} />
+                </Pastilla>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {visibles.length === 0 ? (
         <EmptyState
           icon={soloFavoritos && favoritos.size === 0 ? <Heart /> : <SearchX />}
@@ -319,7 +433,7 @@ export function TemplateMarketplace({
           description={
             soloFavoritos && favoritos.size === 0
               ? "Toca el corazón de una plantilla para tenerla a mano aquí."
-              : "Prueba con otras palabras o quita el filtro de tipo de evento."
+              : "Prueba con otras palabras o quita algún filtro."
           }
           action={
             <Button variant="outline" onClick={limpiar}>
@@ -358,7 +472,9 @@ export function TemplateMarketplace({
                   // atrás de un teléfono es la salida natural). Dashboard: la
                   // vista de captura en pestaña nueva, como siempre.
                   href={
-                    publico ? hrefVistaPlantilla(tpl.slug) : `/plantilla/${tpl.slug}`
+                    publico
+                      ? hrefVistaPlantilla(tpl.slug)
+                      : `/plantilla/${tpl.slug}`
                   }
                   target={publico ? undefined : "_blank"}
                   style={{
@@ -484,7 +600,10 @@ export function TemplateMarketplace({
                 )}
                 {publico && !autenticado ? (
                   // 44 px en móvil y 36 desde `lg`, como las pastillas.
-                  <BotonUsarComoInvitado slug={tpl.slug} className="h-11 lg:h-9" />
+                  <BotonUsarComoInvitado
+                    slug={tpl.slug}
+                    className="h-11 lg:h-9"
+                  />
                 ) : (
                   <UseTemplateButton templateId={tpl.id} />
                 )}
@@ -500,10 +619,13 @@ export function TemplateMarketplace({
 function Pastilla({
   activa,
   onClick,
+  deshabilitada = false,
   children,
 }: {
   activa: boolean;
   onClick: () => void;
+  /** Sin resultados con los otros filtros. La activa nunca se deshabilita: hay que poder quitarla. */
+  deshabilitada?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -511,8 +633,10 @@ function Pastilla({
       type="button"
       role="radio"
       aria-checked={activa}
+      disabled={deshabilitada && !activa}
       onClick={onClick}
       className={cn(
+        "disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-background",
         // 44 px en móvil (`h-11`) y 36 a partir de `lg`.
         //
         // El comentario anterior decía que «el padding vertical del contenedor

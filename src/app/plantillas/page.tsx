@@ -7,6 +7,7 @@ import { LocalLine } from "@/components/seo/local-line";
 import { TemplateMarketplace } from "@/components/dashboard/template-marketplace";
 import { createClient } from "@/lib/supabase/server";
 import { cargarGaleriaPublica } from "@/lib/templates/galeria-publica";
+import { estiloDeLaUrl, precioDeLaUrl, topesDePrecio } from "@/lib/templates/marketplace";
 import { metadatosSociales } from "@/lib/seo/social";
 
 /**
@@ -34,9 +35,9 @@ export const metadata: Metadata = {
 export default async function PlantillasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ evento?: string; q?: string }>;
+  searchParams: Promise<{ evento?: string; q?: string; estilo?: string; precio?: string }>;
 }) {
-  const { evento, q } = await searchParams;
+  const { evento, q, estilo, precio } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -125,6 +126,8 @@ export default async function PlantillasPage({
             plantillas={plantillas}
             eventoInicial={eventoInicial}
             consultaInicial={q ?? ""}
+            estiloInicial={estiloDeLaUrl(estilo)}
+            precioMaxInicial={precioDeLaUrl(precio, topesDePrecio(plantillas))}
             favoritosIniciales={[]}
             soloFavoritosInicial={false}
           />
