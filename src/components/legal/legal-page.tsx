@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { LogoLockup } from "@/components/brand/logo-lockup";
 import { LocalLine } from "@/components/seo/local-line";
 
@@ -23,12 +24,15 @@ export function LegalPage({
         <Link href="/" aria-label="Sobrely — inicio">
           <LogoLockup />
         </Link>
-        <Link
-          href="/"
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← Inicio
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            ← Inicio
+          </Link>
+        </div>
       </header>
 
       <article className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">

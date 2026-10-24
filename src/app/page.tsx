@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogoLockup } from "@/components/brand/logo-lockup";
@@ -93,7 +94,8 @@ export default async function Home() {
         <Link href="/" aria-label="Sobrely — inicio">
           <LogoLockup />
         </Link>
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1 sm:gap-2">
+          <ThemeToggle />
           {/*
             Oculto por debajo de `sm`: este header ya desbordaba 88 px a 375 con
             cuatro botones (medido). En móvil la galería la ofrece el botón
@@ -109,11 +111,14 @@ export default async function Home() {
           >
             Plantillas
           </Button>
+          {/* Oculto en móvil por el mismo desborde (ahora con el interruptor de tema, +40 px);
+              el enlace al blog sigue en el pie. */}
           <Button
             render={<Link href="/blog" />}
             nativeButton={false}
             variant="ghost"
             size="sm"
+            className="hidden sm:inline-flex"
           >
             Blog
           </Button>
@@ -264,6 +269,9 @@ export default async function Home() {
 
       <footer className="mx-auto w-full max-w-5xl px-4 py-6 text-center text-xs text-muted-foreground">
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+          <Link href="/blog" className="hover:text-foreground">
+            Blog
+          </Link>
           <Link href="/privacidad" className="hover:text-foreground">
             Aviso de Privacidad
           </Link>

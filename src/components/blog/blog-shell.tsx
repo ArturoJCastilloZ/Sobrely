@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { LogoLockup } from "@/components/brand/logo-lockup";
 import { LocalLine } from "@/components/seo/local-line";
@@ -11,12 +12,14 @@ export function BlogShell({ children }: { children: React.ReactNode }) {
         <Link href="/" aria-label="Sobrely — inicio">
           <LogoLockup />
         </Link>
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1 sm:gap-2">
+          <ThemeToggle />
           <Button
             render={<Link href="/blog" />}
             nativeButton={false}
             variant="ghost"
             size="sm"
+            className="hidden sm:inline-flex"
           >
             Blog
           </Button>

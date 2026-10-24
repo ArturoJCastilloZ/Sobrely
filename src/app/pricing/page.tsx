@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import Link from "next/link";
 import { LogoLockup } from "@/components/brand/logo-lockup";
 
@@ -90,7 +91,8 @@ export default async function PricingPage() {
         <Link href="/" aria-label="Sobrely — inicio">
           <LogoLockup />
         </Link>
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1 sm:gap-2">
+          <ThemeToggle />
           {user ? (
             <Button render={<Link href="/dashboard" />} nativeButton={false} size="sm">
               Ir al dashboard
