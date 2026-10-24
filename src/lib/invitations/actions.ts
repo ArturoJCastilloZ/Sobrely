@@ -1,6 +1,7 @@
 "use server";
 
 import { registrarEvento } from "@/lib/analytics/embudo";
+import { registrarBorradorCompleto } from "@/lib/analytics/borrador-evento";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -617,6 +618,19 @@ export async function saveEditor(
     .order("sort_order", { ascending: true });
 
   revalidatePath(`/editor/${invitationId}`);
+  // Embudo (T05): `complete_draft` si el borrador ya tiene nombres, fecha, lugar y
+  // foto propios. Mejor esfuerzo y barato en el camino común.
+  await registrarBorradorCompleto({
+    supabase,
+    invitationId,
+    fechaDelEvento: settings.eventDate,
+    modulos: (fresh ?? []) as {
+      module_type: string;
+      is_visible: boolean;
+      config: Record<string, unknown>;
+    }[],
+  });
+
   revalidatePath("/dashboard");
   return {
     ok: true,

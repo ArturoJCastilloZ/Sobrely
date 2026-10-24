@@ -124,8 +124,9 @@ export default async function EmbudoPage({
             </tbody>
           </table>
           <p className="mt-3 text-xs text-muted-foreground">
-            «Completaron el borrador» aún no se registra: falta definir qué es un borrador
-            completo.
+            «Completaron el borrador» cuenta una invitación cuando tiene nombres propios (el
+            título de la portada ya no es el de la plantilla), fecha, lugar y una foto que
+            subió la persona.
           </p>
         </CardContent>
       </Card>
