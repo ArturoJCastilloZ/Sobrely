@@ -62,3 +62,32 @@ describe("nombresPersonalizados", () => {
     expect(nombresPersonalizados([mod("hero", { title: "Ana" }, false)], "x")).toBe(false);
   });
 });
+
+import { progresoEsencial } from "./borrador-completo";
+
+describe("progresoEsencial (lista del editor)", () => {
+  const SUBIDA2 = "https://x.supabase.co/storage/v1/object/public/invitation-images/u/i/f.jpg";
+  const m = (module_type: string, config: Record<string, unknown>, is_visible = true) => ({
+    module_type, is_visible, config,
+  });
+
+  it("devuelve los cuatro puntos en orden y todos pendientes en una plantilla recién elegida", () => {
+    const p = progresoEsencial({
+      fechaDelEvento: "",
+      modulos: [m("hero", { title: "Ana & Carlos", imageUrl: "/arte/x.jpg" }), m("map", {})],
+      tituloDeLaPlantilla: "Ana & Carlos",
+    });
+    expect(p.map((x) => x.clave)).toEqual(["nombres", "fecha", "lugar", "foto"]);
+    expect(p.every((x) => !x.hecho)).toBe(true);
+    expect(p.every((x) => x.ayuda.length > 0)).toBe(true);
+  });
+
+  it("coincide con el criterio de complete_draft: completo si y solo si los cuatro están hechos", () => {
+    const modulos = [m("hero", { title: "Ana y Luis", imageUrl: SUBIDA2 }), m("map", { venueName: "Salón" })];
+    const completo = progresoEsencial({ fechaDelEvento: "2026-12-12", modulos, tituloDeLaPlantilla: "Ana & Carlos" });
+    expect(completo.every((x) => x.hecho)).toBe(true);
+    expect(faltantesSinNombres({ fechaDelEvento: "2026-12-12", modulos })).toEqual([]);
+    const sinFecha = progresoEsencial({ fechaDelEvento: "", modulos, tituloDeLaPlantilla: "Ana & Carlos" });
+    expect(sinFecha.filter((x) => !x.hecho).map((x) => x.clave)).toEqual(["fecha"]);
+  });
+});

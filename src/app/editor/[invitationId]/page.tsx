@@ -8,15 +8,19 @@ import type {
   EditorModule,
 } from "@/lib/invitations/editor-types";
 import { InvitationEditor } from "@/components/editor/invitation-editor";
+import { esInicioReciente } from "@/lib/auth/inicio-reciente";
 
 export const metadata: Metadata = { title: "Editor" };
 
 export default async function EditorPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ invitationId: string }>;
+  searchParams: Promise<{ publicar?: string }>;
 }) {
   const { invitationId } = await params;
+  const { publicar } = await searchParams;
 
   const supabase = await createClient();
   const {
@@ -86,8 +90,47 @@ export default async function EditorPage({
     };
   });
 
+  // Título que traía la plantilla de origen, para saber si la persona ya puso sus nombres
+  // (lista de progreso del editor, T13). `null` si la invitación nació en blanco.
+  let tituloDePlantilla: string | null = null;
+  const { data: origen } = await supabase
+    .from("invitations")
+    .select("template_id")
+    .eq("id", invitationId)
+    .maybeSingle();
+  if (origen?.template_id) {
+    const { data: tpl } = await supabase
+      .from("templates")
+      .select("modules_config")
+      .eq("id", origen.template_id as string)
+      .maybeSingle();
+    const portada = Array.isArray(tpl?.modules_config)
+      ? (tpl!.modules_config as { module_type?: string; config?: { title?: unknown } }[]).find(
+          (m) => m?.module_type === "hero",
+        )
+      : undefined;
+    if (typeof portada?.config?.title === "string") tituloDePlantilla = portada.config.title;
+  }
+
+  /*
+    Reanudar la publicación tras crear la cuenta (T13). El invitado ya pulsó Publicar y confirmó
+    la lista previa; la cuenta se creó sobre la misma sesión y vuelve aquí con `?publicar=1`.
+    El parámetro por sí solo NO basta: publicar porque una URL lo pide es un cambio de estado
+    disparado por navegación (el mismo patrón que `?usar=1` de las plantillas), así que además
+    exige una cuenta real, una invitación aún sin publicar y un inicio de sesión o un cambio de
+    cuenta de hace segundos. Aun así, el servidor sigue decidiendo: sin plan pagado, `setPublished`
+    no publica y la persona ve el aviso de pago.
+  */
+  const reanudarPublicacion =
+    publicar === "1" &&
+    user.is_anonymous !== true &&
+    !initialInvitation.is_published &&
+    (esInicioReciente(user.last_sign_in_at) || esInicioReciente(user.updated_at));
+
   return (
     <InvitationEditor
+      tituloDePlantilla={tituloDePlantilla}
+      reanudarPublicacion={reanudarPublicacion}
       initialInvitation={initialInvitation}
       initialVersion={initialVersion}
       initialModules={initialModules}

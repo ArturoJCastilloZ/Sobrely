@@ -51,6 +51,8 @@ export type DocumentoApi = {
   username: string;
   siteUrl: string;
   uploadCtx: UploadContext;
+  /** Título de la portada que traía la plantilla de origen; `null` si nació en blanco. */
+  tituloDePlantilla: string | null;
 };
 
 const DocumentoContext = createContext<DocumentoApi | null>(null);

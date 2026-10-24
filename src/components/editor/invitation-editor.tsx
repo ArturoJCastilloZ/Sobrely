@@ -77,6 +77,8 @@ export function InvitationEditor({
   initialTheme,
   username,
   userId,
+  tituloDePlantilla,
+  reanudarPublicacion,
 }: {
   initialInvitation: EditorInvitation;
   /** Token de bloqueo optimista de la invitacion (columna `version`, `0027`). */
@@ -85,6 +87,10 @@ export function InvitationEditor({
   initialTheme: ThemeConfig;
   username: string;
   userId: string;
+  /** Título que traía la plantilla de origen (para la lista de progreso). */
+  tituloDePlantilla: string | null;
+  /** Viene de crear la cuenta tras pulsar Publicar: retoma la publicación sola, una vez. */
+  reanudarPublicacion: boolean;
 }) {
   // UN documento, no tres estados sueltos. Es la precondicion del historial:
   // un ⌘Z tiene que capturar invitacion, modulos y tema a la vez.
@@ -149,6 +155,12 @@ export function InvitationEditor({
   const [upgradePlan, setUpgradePlan] = useState<PlanCode | null>(null);
   const [cuentaOpen, setCuentaOpen] = useState(false);
   const [preflightOpen, setPreflightOpen] = useState(false);
+  /**
+   * La persona ya vio la lista previa y eligió «Publicar de todos modos». No se le repite en
+   * esta sesión del editor: pasaba justo al volver de crear la cuenta o del pago, donde la
+   * misma lista aparecía una segunda vez (T13, F2). Es una ref: no pinta nada.
+   */
+  const preflightConfirmado = useRef(false);
   const router = useRouter();
   /** Salir con cambios sin guardar: se ofrece salir igualmente o quedarse. */
   const [salidaEnRiesgo, setSalidaEnRiesgo] = useState(false);
@@ -362,11 +374,26 @@ export function InvitationEditor({
     // una invitación sí mostramos los puntos que suelen quedar pendientes.
     if (!invitation.is_published) {
       trackEditorFunnelEvent("publicar_tocado");
-      setPreflightOpen(true);
-      return;
+      if (!preflightConfirmado.current) {
+        setPreflightOpen(true);
+        return;
+      }
     }
     ejecutarPublicacion();
   }, [invitation.is_published, ejecutarPublicacion]);
+
+  // Reanuda la publicación al volver de crear la cuenta (T13). Una sola vez: la ref cubre el
+  // doble efecto de Strict Mode y se limpia el parámetro para que recargar no lo repita.
+  const reanudado = useRef(false);
+  useEffect(() => {
+    if (!reanudarPublicacion || reanudado.current) return;
+    reanudado.current = true;
+    preflightConfirmado.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("publicar");
+    window.history.replaceState(null, "", url.pathname + url.search);
+    ejecutarPublicacion();
+  }, [reanudarPublicacion, ejecutarPublicacion]);
 
   const preflight = useMemo(
     () => getPublishPreflight(invitation, modules),
@@ -420,11 +447,13 @@ export function InvitationEditor({
       username,
       siteUrl,
       uploadCtx,
+      tituloDePlantilla,
     }),
     [
       invitation, modules, theme, aplicar, deshacer, rehacer, historia, dirty,
       guardando, errorGuardado, conflicto, guardarAhora, isPublishing,
       alternarPublicado, salirAlPanel, saliendo, username, siteUrl, uploadCtx,
+      tituloDePlantilla,
     ],
   );
 
@@ -473,7 +502,7 @@ export function InvitationEditor({
       <CrearCuentaDialog
         open={cuentaOpen}
         onOpenChange={setCuentaOpen}
-        destino={`/editor/${invitation.id}`}
+        destino={`/editor/${invitation.id}?publicar=1`}
       />
 
       <AlertDialog open={preflightOpen} onOpenChange={setPreflightOpen}>
@@ -504,6 +533,7 @@ export function InvitationEditor({
             <AlertDialogCancel>Seguir editando</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
+                preflightConfirmado.current = true;
                 setPreflightOpen(false);
                 ejecutarPublicacion();
               }}

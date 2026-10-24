@@ -55,7 +55,7 @@ export function TopBar() {
               aria-label="Volver al panel"
               render={<Link href="/dashboard" />}
               nativeButton={false}
-              className="shrink-0"
+              className="shrink-0 max-sm:size-11"
               disabled={saliendo}
               onClick={(e) => {
                 if (!dirty) return;
@@ -110,6 +110,7 @@ export function TopBar() {
               size="icon-sm"
               aria-label="Deshacer"
               title="Deshacer (⌘Z)"
+              className="max-sm:size-11"
               disabled={!puedeDeshacer}
               onClick={deshacer}
             >
@@ -120,6 +121,7 @@ export function TopBar() {
               size="icon-sm"
               aria-label="Rehacer"
               title="Rehacer (⌘⇧Z)"
+              className="max-sm:size-11"
               disabled={!puedeRehacer}
               onClick={rehacer}
             >
@@ -135,6 +137,7 @@ export function TopBar() {
               <Button
                 variant="outline"
                 size="sm"
+                className="max-sm:h-11"
                 nativeButton={false}
                 render={
                   <a
@@ -153,6 +156,7 @@ export function TopBar() {
               disabled={publicando}
               variant={invitation.is_published ? "outline" : "default"}
               size="sm"
+              className="max-sm:h-11 max-sm:px-4"
             >
               {publicando
                 ? "…"

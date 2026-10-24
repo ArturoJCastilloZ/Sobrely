@@ -6,6 +6,7 @@ import { BarraMovil, VeloDeHoja } from "./barra-movil";
 import { CanvasArea } from "./canvas-area";
 import { PanelPropiedades } from "./panel-propiedades";
 import { RielSecciones } from "./riel-secciones";
+import { ProgresoEsencial } from "./progreso-esencial";
 import { TopBar } from "./top-bar";
 
 /**
@@ -88,6 +89,7 @@ export function EditorLayout() {
     // No se modifica `body`: así no se interfieren foco, selección ni modales.
     <div className="fixed inset-0 flex min-h-0 flex-col overflow-hidden">
       <TopBar />
+      <ProgresoEsencial />
       <BannerConflicto />
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <RielSecciones />
