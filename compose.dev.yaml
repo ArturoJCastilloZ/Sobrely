@@ -5,8 +5,9 @@
 #   2. scripts/dev-env.sh                  (genera .env.dev.local con las llaves de la base LOCAL)
 #   3. docker compose -f compose.dev.yaml up
 #
-# Si el contenedor de producción ya ocupa el 3000: `docker compose down` en la raíz, o usa otro
-# puerto con `DEV_PORT=3200 docker compose -f compose.dev.yaml up`.
+# Si el contenedor de producción ya ocupa el 3000 (error «port is already allocated»):
+# `docker stop invitaflow-web-1` (NO `docker compose down` a secas: pide `--env-file .env.local`),
+# o usa otro puerto con `DEV_PORT=3200 docker compose -f compose.dev.yaml up`.
 #
 # Seguridad: este servicio NUNCA lee `.env.local` (es el de producción: Supabase real,
 # Mercado Pago). Su entorno sale solo de `.env.dev.local`, y `.env.local` se tapa con un archivo

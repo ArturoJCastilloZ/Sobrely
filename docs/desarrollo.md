@@ -214,8 +214,9 @@ scripts/dev-env.sh                               # genera .env.dev.local (llaves
 docker compose -f compose.dev.yaml up            # http://localhost:3000
 ```
 
-- Si el contenedor de producción ocupa el 3000, ejecuta `docker compose down` en la raíz o usa
-  `DEV_PORT=3200 docker compose -f compose.dev.yaml up`.
+- Si el contenedor de producción ocupa el 3000 (error `port is already allocated`), ejecuta
+  `docker stop invitaflow-web-1` o usa `DEV_PORT=3200 docker compose -f compose.dev.yaml up`.
+  `docker compose down` a secas falla en la raíz: pide `--env-file .env.local`.
 - Nunca lee `.env.local` (producción): su entorno sale solo de `.env.dev.local`, y `.env.local` se
   tapa dentro del contenedor.
 - Para que el enlace de un correo (Mailpit, `http://127.0.0.1:54324`) vuelva a `localhost:3000`, la
