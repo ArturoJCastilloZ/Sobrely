@@ -110,3 +110,16 @@ Comparación con compilaciones de producción servidas en local (`next start`, b
 | CLS | 0 | 0 |
 
 Comprobado en el navegador: la vista rápida abre, muestra los nombres en la invitación, cierra y vuelve a abrir. **Pendiente:** repetir la medición en producción tras el despliegue.
+
+**Medición en producción tras el arreglo (26 oct 2026, `main` en `81befa4`).** Mismo método, 3 corridas, `https://sobrely.com/plantillas`:
+
+| `/plantillas` en producción | T10 | Tras fases 1 a 5 | Tras el arreglo |
+|---|---|---|---|
+| LCP móvil (mediana) | 2.89 s | 3.36 s | **2.76 s** (2.70 · 2.76 · 2.76) |
+| JavaScript transferido | sin medir | 500 KB | **203 KB** |
+| TBT | < 9 ms | 36–39 ms | **2–8 ms** |
+| Peso total | sin medir | 735 KB | **440 KB** |
+| Puntaje | 95 | 91–94 | **96** |
+| CLS | 0 | 0 | 0 |
+
+La página queda mejor que en T10 (2.89 s) y 0.6 s por debajo de lo medido tras las fases. El elemento LCP sigue siendo una imagen de la galería; no se investigó el retraso de render restante.
