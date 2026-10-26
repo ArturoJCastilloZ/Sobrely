@@ -32,3 +32,15 @@ Cuatro de las cinco cosas necesitan lo mismo: que alguien escriba **sus nombres,
 | 5 | **Editor A**: asistente de 4 pasos | El más grande y el que toca el flujo de publicar; al final, con datos de T13 si ya hay tráfico |
 
 Los eventos nuevos (`quick_view_open`, `demo_start`, etc.) exigen ampliar la restricción de `funnel_events` con una migración, y la prueba que la mantiene sincronizada con el código.
+
+## Avance
+
+**Fase 1 (24-26 oct 2026): pieza común y vista rápida con nombres.** Hecha en la rama `plan/90-dias`.
+
+- `src/lib/templates/datos-iniciales.ts`: modelo de datos (nombres y fecha), limpieza y dónde van los nombres en la portada. Medido en las 65 plantillas: en las bodas el título SON los nombres («Ana & Carlos»); en XV años, bautizo, comunión y graduación el título es una frase y los nombres van en el subtítulo.
+- `GET /api/plantillas/<slug>/documento`: el documento de escaparate de una plantilla, el mismo que pinta `/plantilla/<slug>`.
+- `VistaRapida` (botón «Probar con tus nombres» en cada tarjeta): la invitación real en un marco de teléfono que cambia al escribir; «Usar con estos datos» abre el editor con los nombres y la fecha ya puestos (`createFromTemplate` y `empezarComoInvitado` aceptan `datos`, que se vuelven a limpiar en el servidor).
+- Evento `quick_view_open` (migración `0066`) y parámetro `con_datos` en `start_customization`.
+- La lista de progreso del editor y el evento `complete_draft` ahora cuentan los nombres si cambia el título **o** el subtítulo de la portada: antes, quien escribía su nombre en un XV seguía viendo «nombres» pendiente.
+
+Pendiente de la pieza común: la **paleta** (se construye con la demo de la landing, fase 4, que es donde se elige).

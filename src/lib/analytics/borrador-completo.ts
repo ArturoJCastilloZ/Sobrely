@@ -64,17 +64,47 @@ export function faltantesSinNombres(datos: {
   return faltan;
 }
 
-/** El título de la portada ya no es el de la plantilla (ni está vacío). */
+/** Título y subtítulo de la portada tal como los traía la plantilla de origen. */
+export type PortadaBase = { title: string; subtitle: string };
+
+/**
+ * Lee la portada de `templates.modules_config` (tolerante a datos raros). `null` si no hay.
+ * Una sola función para el servidor del evento, la página del editor y las pruebas.
+ */
+export function leerPortadaDePlantilla(modulesConfig: unknown): PortadaBase | null {
+  if (!Array.isArray(modulesConfig)) return null;
+  const portada = (modulesConfig as { module_type?: unknown; config?: Record<string, unknown> }[]).find(
+    (m) => m?.module_type === "hero",
+  );
+  if (!portada?.config) return null;
+  const { title, subtitle } = portada.config;
+  return {
+    title: typeof title === "string" ? title : "",
+    subtitle: typeof subtitle === "string" ? subtitle : "",
+  };
+}
+
+/**
+ * ¿La persona ya puso SUS nombres en la portada? Es cierto si el título O el subtítulo ya no
+ * son los de la plantilla. Los dos, porque según la plantilla los nombres van en uno u otro: en
+ * una boda el título SON los nombres («Ana & Carlos») y en XV años el título es una frase y el
+ * nombre va en el subtítulo (`ranuraDeNombres` en `datos-iniciales.ts`). Mirar solo el título
+ * dejaba «nombres» pendiente a quien ya había escrito su nombre en un XV.
+ * Sin plantilla (invitación en blanco) se compara con el título por defecto y un subtítulo vacío.
+ */
 export function nombresPersonalizados(
   modulos: ModuloLeve[],
-  tituloDeLaPlantilla: string | null | undefined,
+  base: PortadaBase | null | undefined,
 ): boolean {
   const portada = visible(modulos, "hero");
   if (!portada) return false;
-  const actual = texto(portada.config, "title");
-  if (!actual) return false;
-  const base = (tituloDeLaPlantilla ?? "").trim() || TITULO_PORTADA_POR_DEFECTO;
-  return actual !== base;
+  const titulo = texto(portada.config, "title");
+  const subtitulo = texto(portada.config, "subtitle");
+  const tituloBase = (base?.title ?? "").trim() || TITULO_PORTADA_POR_DEFECTO;
+  const subtituloBase = (base?.subtitle ?? "").trim();
+  const tituloNuevo = titulo !== "" && titulo !== tituloBase;
+  const subtituloNuevo = subtitulo !== "" && subtitulo !== subtituloBase;
+  return tituloNuevo || subtituloNuevo;
 }
 
 /**
@@ -96,7 +126,7 @@ export type PasoDeProgreso = {
 export function progresoEsencial(datos: {
   fechaDelEvento: string | null | undefined;
   modulos: ModuloLeve[];
-  tituloDeLaPlantilla: string | null | undefined;
+  portadaDeLaPlantilla: PortadaBase | null | undefined;
 }): PasoDeProgreso[] {
   const faltan = new Set(
     faltantesSinNombres({ fechaDelEvento: datos.fechaDelEvento, modulos: datos.modulos }),
@@ -105,7 +135,7 @@ export function progresoEsencial(datos: {
     {
       clave: "nombres",
       etiqueta: "Tus nombres",
-      hecho: nombresPersonalizados(datos.modulos, datos.tituloDeLaPlantilla),
+      hecho: nombresPersonalizados(datos.modulos, datos.portadaDeLaPlantilla),
       ayuda: "Cambia el título de la portada por el de tu evento.",
     },
     {

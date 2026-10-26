@@ -13,7 +13,7 @@ import { useEffect } from "react";
  * - Nunca falla hacia la persona: todo va en `try/catch` y no espera respuesta.
  */
 type Props = {
-  evento: "view_category" | "view_template" | "view_pricing";
+  evento: "view_category" | "view_template" | "quick_view_open" | "view_pricing";
   valor: string;
 };
 

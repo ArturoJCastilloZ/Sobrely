@@ -15,9 +15,14 @@ import { cn } from "@/lib/utils";
 export function BotonUsarComoInvitado({
   slug,
   className,
+  datos,
+  etiqueta = "Usar esta plantilla",
 }: {
   slug: string;
   className?: string;
+  /** Nombres y fecha de la vista rápida; el servidor los vuelve a limpiar. */
+  datos?: unknown;
+  etiqueta?: string;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -28,7 +33,7 @@ export function BotonUsarComoInvitado({
       onClick={() =>
         startTransition(async () => {
           try {
-            const r = await empezarComoInvitado(slug);
+            const r = await empezarComoInvitado(slug, datos);
             if (r?.error) toast.error(r.error);
           } catch (e) {
             unstable_rethrow(e);
@@ -37,7 +42,7 @@ export function BotonUsarComoInvitado({
         })
       }
     >
-      {pending ? "Abriendo el editor…" : "Usar esta plantilla"}
+      {pending ? "Abriendo el editor…" : etiqueta}
     </Button>
   );
 }

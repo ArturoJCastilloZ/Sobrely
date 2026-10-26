@@ -124,6 +124,11 @@ export default async function EmbudoPage({
             </tbody>
           </table>
           <p className="mt-3 text-xs text-muted-foreground">
+            Aperturas de la vista rápida del catálogo: {conteos.quick_view_open ?? 0}. No es un paso
+            obligatorio del embudo (se puede pasar de la galería al editor sin abrirla), por eso no
+            entra en la tabla ni en los porcentajes.
+          </p>
+          <p className="mt-3 text-xs text-muted-foreground">
             «Completaron el borrador» cuenta una invitación cuando tiene nombres propios (el
             título de la portada ya no es el de la plantilla), fecha, lugar y una foto que
             subió la persona.

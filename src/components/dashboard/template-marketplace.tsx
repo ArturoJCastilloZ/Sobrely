@@ -32,6 +32,7 @@ import { ESTILOS, type EstiloClave } from "@/lib/templates/estilos";
 import { formatPrice } from "@/lib/billing/config";
 import { UseTemplateButton } from "@/components/dashboard/use-template-button";
 import { BotonUsarComoInvitado } from "@/components/templates/boton-usar-como-invitado";
+import { VistaRapida } from "@/components/templates/vista-rapida";
 import { toggleFavorite } from "@/lib/templates/favorites-actions";
 import { toast } from "sonner";
 
@@ -82,6 +83,8 @@ export function TemplateMarketplace({
   autenticado?: boolean;
 }) {
   const publico = modo === "publico";
+  /** La plantilla cuya vista rápida (con tus nombres) está abierta, o `null`. */
+  const [vistaRapida, setVistaRapida] = React.useState<PlantillaMarketplace | null>(null);
   const [evento, setEvento] = React.useState<string | null>(eventoInicial);
   const [consulta, setConsulta] = React.useState(consultaInicial);
   const [estilo, setEstilo] = React.useState<EstiloClave | null>(estiloInicial);
@@ -598,6 +601,15 @@ export function TemplateMarketplace({
                     </span>
                   </p>
                 )}
+                {/* Vista rápida con tus nombres (docs/auditoria-2026-10/14, fase 1). */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full lg:h-9"
+                  onClick={() => setVistaRapida(tpl)}
+                >
+                  Probar con tus nombres
+                </Button>
                 {publico && !autenticado ? (
                   // 44 px en móvil y 36 desde `lg`, como las pastillas.
                   <BotonUsarComoInvitado
@@ -612,6 +624,12 @@ export function TemplateMarketplace({
           ))}
         </div>
       )}
+
+      <VistaRapida
+        plantilla={vistaRapida}
+        autenticado={!publico || autenticado}
+        onCerrar={() => setVistaRapida(null)}
+      />
     </div>
   );
 }

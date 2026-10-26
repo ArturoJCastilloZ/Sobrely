@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     if (superaTope(count ?? 0)) return sinContenido();
 
     let parametros: Record<string, string> | null = null;
-    if (visita.evento === "view_template") {
+    if (visita.evento === "view_template" || visita.evento === "quick_view_open") {
       const { data } = await admin
         .from("templates")
         .select("slug, event_type")

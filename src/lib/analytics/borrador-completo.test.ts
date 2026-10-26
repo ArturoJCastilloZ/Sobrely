@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { faltantesSinNombres, nombresPersonalizados } from "./borrador-completo";
+import {
+  faltantesSinNombres,
+  leerPortadaDePlantilla,
+  nombresPersonalizados,
+  progresoEsencial,
+} from "./borrador-completo";
 
 const SUBIDA = "https://x.supabase.co/storage/v1/object/public/invitation-images/u/i/foto.jpg";
 const mod = (module_type: string, config: Record<string, unknown>, is_visible = true) => ({
@@ -46,24 +51,40 @@ describe("faltantesSinNombres", () => {
 });
 
 describe("nombresPersonalizados", () => {
-  it("es verdadero solo si el título cambió respecto de la plantilla", () => {
-    expect(nombresPersonalizados([mod("hero", { title: "Ana y Luis" })], "Ana & Carlos")).toBe(true);
-    expect(nombresPersonalizados([mod("hero", { title: "Ana & Carlos" })], "Ana & Carlos")).toBe(false);
+  const base = { title: "Ana & Carlos", subtitle: "Nos casamos" };
+  const portada = (title: string, subtitle: string, visible = true) => [mod("hero", { title, subtitle }, visible)];
+
+  it("es verdadero solo si el título o el subtítulo cambiaron respecto de la plantilla", () => {
+    expect(nombresPersonalizados(portada("Ana y Luis", "Nos casamos"), base)).toBe(true);
+    expect(nombresPersonalizados(portada("Ana & Carlos", "Nos casamos"), base)).toBe(false);
   });
 
-  it("sin plantilla (invitación en blanco) compara con el título por defecto", () => {
-    expect(nombresPersonalizados([mod("hero", { title: "Nuestra celebración" })], null)).toBe(false);
-    expect(nombresPersonalizados([mod("hero", { title: "Boda de Ana" })], undefined)).toBe(true);
+  it("en XV años el nombre va en el subtítulo y también cuenta", () => {
+    const xv = { title: "Mis XV años", subtitle: "Sofía" };
+    expect(nombresPersonalizados(portada("Mis XV años", "Valentina"), xv)).toBe(true);
+    expect(nombresPersonalizados(portada("Mis XV años", "Sofía"), xv)).toBe(false);
   });
 
-  it("título vacío o portada ausente u oculta: no", () => {
-    expect(nombresPersonalizados([mod("hero", { title: "  " })], "x")).toBe(false);
-    expect(nombresPersonalizados([], "x")).toBe(false);
-    expect(nombresPersonalizados([mod("hero", { title: "Ana" }, false)], "x")).toBe(false);
+  it("sin plantilla (invitación en blanco) compara con el título por defecto y un subtítulo vacío", () => {
+    expect(nombresPersonalizados(portada("Nuestra celebración", ""), null)).toBe(false);
+    expect(nombresPersonalizados(portada("Boda de Ana", ""), undefined)).toBe(true);
+    expect(nombresPersonalizados(portada("Nuestra celebración", "Sofía"), null)).toBe(true);
+  });
+
+  it("vacíos, portada ausente u oculta: no", () => {
+    expect(nombresPersonalizados(portada("  ", ""), base)).toBe(false);
+    expect(nombresPersonalizados([], base)).toBe(false);
+    expect(nombresPersonalizados(portada("Ana", "x", false), base)).toBe(false);
   });
 });
 
-import { progresoEsencial } from "./borrador-completo";
+describe("leerPortadaDePlantilla", () => {
+  it("lee título y subtítulo de la portada y tolera datos raros", () => {
+    expect(leerPortadaDePlantilla([{ module_type: "map" }, { module_type: "hero", config: { title: "A", subtitle: "B" } }])).toEqual({ title: "A", subtitle: "B" });
+    expect(leerPortadaDePlantilla([{ module_type: "hero", config: { title: 5 } }])).toEqual({ title: "", subtitle: "" });
+    for (const v of [null, undefined, "x", {}, [], [{ module_type: "hero" }]]) expect(leerPortadaDePlantilla(v)).toBeNull();
+  });
+});
 
 describe("progresoEsencial (lista del editor)", () => {
   const SUBIDA2 = "https://x.supabase.co/storage/v1/object/public/invitation-images/u/i/f.jpg";
@@ -75,7 +96,7 @@ describe("progresoEsencial (lista del editor)", () => {
     const p = progresoEsencial({
       fechaDelEvento: "",
       modulos: [m("hero", { title: "Ana & Carlos", imageUrl: "/arte/x.jpg" }), m("map", {})],
-      tituloDeLaPlantilla: "Ana & Carlos",
+      portadaDeLaPlantilla: { title: "Ana & Carlos", subtitle: "" },
     });
     expect(p.map((x) => x.clave)).toEqual(["nombres", "fecha", "lugar", "foto"]);
     expect(p.every((x) => !x.hecho)).toBe(true);
@@ -84,10 +105,10 @@ describe("progresoEsencial (lista del editor)", () => {
 
   it("coincide con el criterio de complete_draft: completo si y solo si los cuatro están hechos", () => {
     const modulos = [m("hero", { title: "Ana y Luis", imageUrl: SUBIDA2 }), m("map", { venueName: "Salón" })];
-    const completo = progresoEsencial({ fechaDelEvento: "2026-12-12", modulos, tituloDeLaPlantilla: "Ana & Carlos" });
+    const completo = progresoEsencial({ fechaDelEvento: "2026-12-12", modulos, portadaDeLaPlantilla: { title: "Ana & Carlos", subtitle: "" } });
     expect(completo.every((x) => x.hecho)).toBe(true);
     expect(faltantesSinNombres({ fechaDelEvento: "2026-12-12", modulos })).toEqual([]);
-    const sinFecha = progresoEsencial({ fechaDelEvento: "", modulos, tituloDeLaPlantilla: "Ana & Carlos" });
+    const sinFecha = progresoEsencial({ fechaDelEvento: "", modulos, portadaDeLaPlantilla: { title: "Ana & Carlos", subtitle: "" } });
     expect(sinFecha.filter((x) => !x.hecho).map((x) => x.clave)).toEqual(["fecha"]);
   });
 });

@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
  * a ningún hook de contexto.
  */
 export function ProgresoEsencial() {
-  const { invitation, modules, tituloDePlantilla } = useDocumento();
+  const { invitation, modules, portadaDePlantilla } = useDocumento();
   const { seleccionarModulo, irAPanel } = useSeleccion();
   const [abierto, setAbierto] = useState(false);
 
@@ -33,9 +33,9 @@ export function ProgresoEsencial() {
       progresoEsencial({
         fechaDelEvento: invitation.event_date,
         modulos: modules,
-        tituloDeLaPlantilla: tituloDePlantilla,
+        portadaDeLaPlantilla: portadaDePlantilla,
       }),
-    [invitation.event_date, modules, tituloDePlantilla],
+    [invitation.event_date, modules, portadaDePlantilla],
   );
   const hechos = pasos.filter((p) => p.hecho).length;
   const completo = hechos === pasos.length;

@@ -1,6 +1,11 @@
 "use server";
 
 import { registrarEvento } from "@/lib/analytics/embudo";
+import {
+  aplicarNombresAModulos,
+  datosIniciales,
+  fechaAEventDate,
+} from "@/lib/templates/datos-iniciales";
 import { registrarError } from "@/lib/errores/registrar";
 import { registrarBorradorCompleto } from "@/lib/analytics/borrador-evento";
 import { revalidatePath } from "next/cache";
@@ -123,7 +128,15 @@ export async function createInvitation(
  */
 export async function createFromTemplate(
   templateId: string,
-  opciones?: { reemplazar?: boolean },
+  opciones?: {
+    reemplazar?: boolean;
+    /**
+     * Nombres y fecha que la persona escribió en la vista rápida ANTES de abrir el editor
+     * (`datos-iniciales.ts`). Llega del navegador: se vuelve a limpiar aquí y no se confía en
+     * su forma.
+     */
+    datos?: unknown;
+  },
 ) {
   const supabase = await createClient();
   const {
@@ -163,18 +176,24 @@ export async function createFromTemplate(
   // miniaturas con esta misma funcion, asi que lo que se ve en el catalogo es
   // por construccion lo que se recibe al elegirla.
   const doc = templateToDocument(template);
+  const datos = datosIniciales(opciones?.datos);
+  const modulosIniciales = datos?.nombres
+    ? aplicarNombresAModulos(doc.modules, datos.nombres)
+    : doc.modules;
 
   const { data: invitation, error } = await supabase
     .from("invitations")
     .insert({
       user_id: user.id,
       template_id: template.id,
-      title: template.name ?? "Invitación sin título",
+      title: datos?.nombres || (template.name ?? "Invitación sin título"),
       slug,
       event_type: template.event_type ?? null,
       status: "draft",
       is_published: false,
       theme_config: doc.theme,
+      // Solo si la persona la escribió: sin fecha la invitación sigue naciendo sin ella.
+      ...(datos?.fecha ? { event_date: fechaAEventDate(datos.fecha) } : {}),
     })
     .select("id")
     .single();
@@ -183,7 +202,7 @@ export async function createFromTemplate(
     throw new Error(error?.message ?? "No se pudo crear la invitación.");
   }
 
-  const modules = doc.modules;
+  const modules = modulosIniciales;
 
   if (modules.length > 0) {
     // Supabase NO lanza: devuelve { error }. Ignorarlo dejaba la invitacion
@@ -217,6 +236,7 @@ export async function createFromTemplate(
     template_slug: template.slug,
     event_type: template.event_type,
     is_guest: user.is_anonymous === true,
+    con_datos: datos !== null,
   });
 
   revalidatePath("/dashboard");

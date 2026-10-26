@@ -9,6 +9,7 @@ import type {
 } from "@/lib/invitations/editor-types";
 import { InvitationEditor } from "@/components/editor/invitation-editor";
 import { esInicioReciente } from "@/lib/auth/inicio-reciente";
+import { leerPortadaDePlantilla, type PortadaBase } from "@/lib/analytics/borrador-completo";
 
 export const metadata: Metadata = { title: "Editor" };
 
@@ -90,9 +91,9 @@ export default async function EditorPage({
     };
   });
 
-  // Título que traía la plantilla de origen, para saber si la persona ya puso sus nombres
+  // Portada que traía la plantilla de origen, para saber si la persona ya puso sus nombres
   // (lista de progreso del editor, T13). `null` si la invitación nació en blanco.
-  let tituloDePlantilla: string | null = null;
+  let portadaDePlantilla: PortadaBase | null = null;
   const { data: origen } = await supabase
     .from("invitations")
     .select("template_id")
@@ -104,12 +105,7 @@ export default async function EditorPage({
       .select("modules_config")
       .eq("id", origen.template_id as string)
       .maybeSingle();
-    const portada = Array.isArray(tpl?.modules_config)
-      ? (tpl!.modules_config as { module_type?: string; config?: { title?: unknown } }[]).find(
-          (m) => m?.module_type === "hero",
-        )
-      : undefined;
-    if (typeof portada?.config?.title === "string") tituloDePlantilla = portada.config.title;
+    portadaDePlantilla = leerPortadaDePlantilla(tpl?.modules_config);
   }
 
   /*
@@ -129,7 +125,7 @@ export default async function EditorPage({
 
   return (
     <InvitationEditor
-      tituloDePlantilla={tituloDePlantilla}
+      portadaDePlantilla={portadaDePlantilla}
       reanudarPublicacion={reanudarPublicacion}
       initialInvitation={initialInvitation}
       initialVersion={initialVersion}

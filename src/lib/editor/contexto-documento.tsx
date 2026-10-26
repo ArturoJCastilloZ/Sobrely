@@ -1,5 +1,6 @@
 "use client";
 
+import type { PortadaBase } from "@/lib/analytics/borrador-completo";
 import { createContext, useContext } from "react";
 
 import type { EditorAction } from "@/lib/invitations/editor-document";
@@ -51,8 +52,8 @@ export type DocumentoApi = {
   username: string;
   siteUrl: string;
   uploadCtx: UploadContext;
-  /** Título de la portada que traía la plantilla de origen; `null` si nació en blanco. */
-  tituloDePlantilla: string | null;
+  /** Portada que traía la plantilla de origen; `null` si nació en blanco. */
+  portadaDePlantilla: PortadaBase | null;
 };
 
 const DocumentoContext = createContext<DocumentoApi | null>(null);

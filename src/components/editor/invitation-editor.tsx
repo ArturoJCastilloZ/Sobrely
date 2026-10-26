@@ -8,6 +8,7 @@ import { CheckCircle2Icon, CircleAlertIcon } from "lucide-react";
 import type { EditorInvitation, EditorModule } from "@/lib/invitations/editor-types";
 import { saveEditor, setPublished } from "@/lib/invitations/actions";
 import { getPublishPreflight } from "@/lib/invitations/publish-preflight";
+import type { PortadaBase } from "@/lib/analytics/borrador-completo";
 import { trackEditorFunnelEvent } from "@/lib/editor/funnel-analytics";
 import { slugify } from "@/lib/invitations/schemas";
 import type { PlanCode } from "@/lib/billing/types";
@@ -77,7 +78,7 @@ export function InvitationEditor({
   initialTheme,
   username,
   userId,
-  tituloDePlantilla,
+  portadaDePlantilla,
   reanudarPublicacion,
 }: {
   initialInvitation: EditorInvitation;
@@ -87,8 +88,8 @@ export function InvitationEditor({
   initialTheme: ThemeConfig;
   username: string;
   userId: string;
-  /** Título que traía la plantilla de origen (para la lista de progreso). */
-  tituloDePlantilla: string | null;
+  /** Portada que traía la plantilla de origen (para la lista de progreso). */
+  portadaDePlantilla: PortadaBase | null;
   /** Viene de crear la cuenta tras pulsar Publicar: retoma la publicación sola, una vez. */
   reanudarPublicacion: boolean;
 }) {
@@ -447,13 +448,13 @@ export function InvitationEditor({
       username,
       siteUrl,
       uploadCtx,
-      tituloDePlantilla,
+      portadaDePlantilla,
     }),
     [
       invitation, modules, theme, aplicar, deshacer, rehacer, historia, dirty,
       guardando, errorGuardado, conflicto, guardarAhora, isPublishing,
       alternarPublicado, salirAlPanel, saliendo, username, siteUrl, uploadCtx,
-      tituloDePlantilla,
+      portadaDePlantilla,
     ],
   );
 

@@ -5,7 +5,12 @@
  * texto corto. El endpoint además comprueba contra la base que la plantilla o
  * el tipo de evento existan, y deriva de ahí los parámetros que se guardan.
  */
-export const EVENTOS_VISITA = ["view_category", "view_template", "view_pricing"] as const;
+export const EVENTOS_VISITA = [
+  "view_category",
+  "view_template",
+  "quick_view_open",
+  "view_pricing",
+] as const;
 export type EventoVisita = (typeof EVENTOS_VISITA)[number];
 
 export const TOPE_EVENTOS_POR_MINUTO = 300;

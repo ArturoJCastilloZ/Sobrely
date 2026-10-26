@@ -34,7 +34,10 @@ async function origenActual(): Promise<string> {
  * Crea (si hace falta) la sesión de invitado y le abre su borrador de la plantilla `slug`.
  * Redirige al editor; solo devuelve algo si falla.
  */
-export async function empezarComoInvitado(slug: string): Promise<ResultadoInvitado> {
+export async function empezarComoInvitado(
+  slug: string,
+  datos?: unknown,
+): Promise<ResultadoInvitado> {
   if (typeof slug !== "string" || !SLUG.test(slug)) {
     return { error: "No encontramos esa plantilla." };
   }
@@ -61,7 +64,7 @@ export async function empezarComoInvitado(slug: string): Promise<ResultadoInvita
 
   // Redirige al editor (lanza NEXT_REDIRECT); un fallo de la base se muestra como error.
   try {
-    await createFromTemplate(plantilla.id as string, { reemplazar: true });
+    await createFromTemplate(plantilla.id as string, { reemplazar: true, datos });
   } catch (e) {
     if (e instanceof Error && /LIMITE_ANONIMO_INVITACIONES/.test(e.message)) {
       return {

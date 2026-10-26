@@ -1,7 +1,12 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { registrarEvento } from "./embudo";
-import { faltantesSinNombres, nombresPersonalizados } from "./borrador-completo";
+import {
+  faltantesSinNombres,
+  leerPortadaDePlantilla,
+  nombresPersonalizados,
+  type PortadaBase,
+} from "./borrador-completo";
 
 /**
  * Registra `complete_draft` cuando, tras un guardado, el borrador cumple el
@@ -37,7 +42,7 @@ export async function registrarBorradorCompleto(datos: {
       .select("template_id")
       .eq("id", invitationId)
       .maybeSingle();
-    let tituloDePlantilla: string | null = null;
+    let portadaBase: PortadaBase | null = null;
     let slug: string | undefined;
     if (inv?.template_id) {
       const { data: tpl } = await supabase
@@ -46,15 +51,10 @@ export async function registrarBorradorCompleto(datos: {
         .eq("id", inv.template_id as string)
         .maybeSingle();
       slug = (tpl?.slug as string | undefined) ?? undefined;
-      const portada = Array.isArray(tpl?.modules_config)
-        ? (tpl!.modules_config as { module_type?: string; config?: { title?: unknown } }[]).find(
-            (m) => m?.module_type === "hero",
-          )
-        : undefined;
-      if (typeof portada?.config?.title === "string") tituloDePlantilla = portada.config.title;
+      portadaBase = leerPortadaDePlantilla(tpl?.modules_config);
     }
 
-    if (!nombresPersonalizados(modulos, tituloDePlantilla)) return;
+    if (!nombresPersonalizados(modulos, portadaBase)) return;
 
     await registrarEvento("complete_draft", invitationId, {
       template_slug: slug,

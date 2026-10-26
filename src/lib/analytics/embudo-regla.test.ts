@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   EVENTOS_EMBUDO,
@@ -21,6 +21,14 @@ describe("filtrarParametros", () => {
       event_type: "XV años",
       is_guest: true,
     });
+  });
+
+  it("conserva con_datos (vista rápida) y descarta lo que no sea booleano", () => {
+    expect(filtrarParametros("start_customization", { template_slug: "x", con_datos: true })).toEqual({
+      template_slug: "x",
+      con_datos: true,
+    });
+    expect(filtrarParametros("start_customization", { con_datos: "sí" })).toEqual({});
   });
 
   it("descarta valores con el tipo equivocado y no coacciona", () => {
@@ -58,22 +66,20 @@ describe("claveOpaca", () => {
 });
 
 describe("EVENTOS_EMBUDO", () => {
-  it("coincide con la lista de la migración 0063", () => {
-    expect([...EVENTOS_EMBUDO].sort()).toEqual(
-      [
-        "view_category", "view_template", "start_customization", "sign_up",
-        "complete_draft", "view_pricing", "begin_checkout", "payment_failed",
-        "purchase",
-      ].sort(),
-    );
-    expect(esEventoEmbudo("purchase")).toBe(true);
-    expect(esEventoEmbudo("page_view")).toBe(false);
-  });
-
-  it("no se desfasa de la restricción CHECK de la migración", () => {
-    const sql = readFileSync("supabase/migrations/0063_funnel_events.sql", "utf8");
-    const bloque = sql.match(/check \(event in \(([^)]*)\)\)/)?.[1] ?? "";
+  it("coincide con la restricción CHECK de la ÚLTIMA migración que la define", () => {
+    // La 0063 la crea y las siguientes (0066…) la amplían: manda la más reciente.
+    const archivos = readdirSync("supabase/migrations")
+      .filter((f) => f.endsWith(".sql"))
+      .sort();
+    const ultima = archivos
+      .filter((f) => /add constraint funnel_events_event_chk|constraint funnel_events_event_chk check/.test(readFileSync(`supabase/migrations/${f}`, "utf8")))
+      .pop();
+    expect(ultima, "ninguna migración define funnel_events_event_chk").toBeDefined();
+    const sql = readFileSync(`supabase/migrations/${ultima}`, "utf8");
+    const bloque = sql.match(/event_chk\s+check \(event in \(([^)]*)\)\)/)?.[1] ?? "";
     const enSql = [...bloque.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
     expect(enSql).toEqual([...EVENTOS_EMBUDO].sort());
+    expect(esEventoEmbudo("purchase")).toBe(true);
+    expect(esEventoEmbudo("page_view")).toBe(false);
   });
 });

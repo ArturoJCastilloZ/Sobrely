@@ -4,19 +4,31 @@ import { unstable_rethrow } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { createFromTemplate } from "@/lib/invitations/actions";
 
-export function UseTemplateButton({ templateId }: { templateId: string }) {
+export function UseTemplateButton({
+  templateId,
+  datos,
+  etiqueta = "Usar esta plantilla",
+  className,
+}: {
+  templateId: string;
+  /** Nombres y fecha de la vista rápida; el servidor los vuelve a limpiar. */
+  datos?: unknown;
+  etiqueta?: string;
+  className?: string;
+}) {
   const [pending, startTransition] = useTransition();
 
   return (
     <Button
-      className="w-full"
+      className={cn("w-full", className)}
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
           try {
-            await createFromTemplate(templateId);
+            await createFromTemplate(templateId, datos ? { datos } : undefined);
           } catch (e) {
             // La accion termina en redirect(), y en el App Router eso llega al
             // cliente como una excepcion NEXT_REDIRECT — medido: la navegacion
@@ -28,7 +40,7 @@ export function UseTemplateButton({ templateId }: { templateId: string }) {
         })
       }
     >
-      {pending ? "Creando…" : "Usar esta plantilla"}
+      {pending ? "Creando…" : etiqueta}
     </Button>
   );
 }

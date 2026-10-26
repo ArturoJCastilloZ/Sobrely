@@ -16,6 +16,7 @@ describe("parsearVisita", () => {
       evento: "view_template", sesion, valor: "xv-con-salon",
     });
     expect(parsearVisita({ evento: "view_category", sesion, valor: "XV años" })?.valor).toBe("XV años");
+    expect(parsearVisita({ evento: "quick_view_open", sesion, valor: "xv-con-salon" })?.evento).toBe("quick_view_open");
   });
 
   it("rechaza eventos que no son de visita (no se puede falsificar una compra)", () => {

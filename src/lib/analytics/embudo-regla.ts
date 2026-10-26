@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 export const EVENTOS_EMBUDO = [
   "view_category",
   "view_template",
+  "quick_view_open",
   "start_customization",
   "sign_up",
   "complete_draft",
@@ -28,10 +29,13 @@ type Tipo = "string" | "number" | "boolean";
 const PARAMETROS: Record<EventoEmbudo, Record<string, Tipo>> = {
   view_category: { event_type: "string" },
   view_template: { template_slug: "string", event_type: "string" },
+  quick_view_open: { template_slug: "string", event_type: "string" },
   start_customization: {
     template_slug: "string",
     event_type: "string",
     is_guest: "boolean",
+    // Si llegó con nombres o fecha escritos en la vista rápida (docs/auditoria-2026-10/14).
+    con_datos: "boolean",
   },
   sign_up: { method: "string" },
   complete_draft: { template_slug: "string", modules_count: "number" },
