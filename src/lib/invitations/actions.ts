@@ -6,6 +6,7 @@ import {
   datosIniciales,
   fechaAEventDate,
 } from "@/lib/templates/datos-iniciales";
+import { aplicarPaleta } from "@/lib/templates/paletas";
 import { registrarError } from "@/lib/errores/registrar";
 import { registrarBorradorCompleto } from "@/lib/analytics/borrador-evento";
 import { revalidatePath } from "next/cache";
@@ -191,7 +192,7 @@ export async function createFromTemplate(
       event_type: template.event_type ?? null,
       status: "draft",
       is_published: false,
-      theme_config: doc.theme,
+      theme_config: aplicarPaleta(doc.theme, datos?.paleta ?? ""),
       // Solo si la persona la escribió: sin fecha la invitación sigue naciendo sin ella.
       ...(datos?.fecha ? { event_date: fechaAEventDate(datos.fecha) } : {}),
     })

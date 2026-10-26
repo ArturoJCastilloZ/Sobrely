@@ -75,7 +75,9 @@ describe("cableado: createFromTemplate resuelve el theme", () => {
     // miniaturas de la galeria usen la MISMA logica. La propiedad que importa
     // no cambia: el call site tiene que escribir el theme EXPANDIDO.
     expect(src).toContain("templateToDocument(template)");
-    expect(src).toContain("theme_config: doc.theme");
+    // Con paleta elegida en la demo de la landing, el tema expandido pasa por
+    // `aplicarPaleta`, que solo cambia colores y modo; sin paleta lo devuelve igual.
+    expect(src).toContain("theme_config: aplicarPaleta(doc.theme");
   });
 
   it("y templateToDocument es quien expande el pack", () => {

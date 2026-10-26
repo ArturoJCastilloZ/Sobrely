@@ -7,11 +7,15 @@
  * Todo es PURO y probado: la entrada viene del navegador (el servidor la vuelve a limpiar con
  * estas mismas funciones antes de usarla) y decide qué texto de la portada se reescribe.
  */
+import { limpiarPaleta, type PaletaClave } from "@/lib/templates/paletas";
+
 export type DatosIniciales = {
   /** Nombres tal como se mostrarán («Sofía y Mateo», «Valentina»). Vacío = sin cambio. */
   nombres: string;
   /** Fecha del evento, `YYYY-MM-DD`. Vacía = sin cambio. */
   fecha: string;
+  /** Clave de una paleta de `paletas.ts`; ausente = los colores de la plantilla. */
+  paleta?: PaletaClave;
 };
 
 export const NOMBRES_MAXIMO = 60;
@@ -46,8 +50,13 @@ export function limpiarFecha(crudo: unknown): string {
 export function datosIniciales(crudo: unknown): DatosIniciales | null {
   if (typeof crudo !== "object" || crudo === null) return null;
   const c = crudo as Record<string, unknown>;
-  const datos = { nombres: limpiarNombres(c.nombres), fecha: limpiarFecha(c.fecha) };
-  return datos.nombres || datos.fecha ? datos : null;
+  const paleta = limpiarPaleta(c.paleta);
+  const datos: DatosIniciales = {
+    nombres: limpiarNombres(c.nombres),
+    fecha: limpiarFecha(c.fecha),
+    ...(paleta ? { paleta } : {}),
+  };
+  return datos.nombres || datos.fecha || datos.paleta ? datos : null;
 }
 
 /**

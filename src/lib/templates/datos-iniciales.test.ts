@@ -105,3 +105,15 @@ describe("aplicarNombresAModulos", () => {
     expect(r[0].config.subtitle).toBe("Val entina");
   });
 });
+
+describe("paleta en los datos iniciales", () => {
+  it("solo se conserva una clave de paleta que exista", () => {
+    expect(datosIniciales({ nombres: "", fecha: "", paleta: "salvia" })).toEqual({
+      nombres: "",
+      fecha: "",
+      paleta: "salvia",
+    });
+    expect(datosIniciales({ nombres: "", fecha: "", paleta: "#ff0000" })).toBeNull();
+    expect(datosIniciales({ nombres: "Ana", paleta: "x" })).toEqual({ nombres: "Ana", fecha: "" });
+  });
+});

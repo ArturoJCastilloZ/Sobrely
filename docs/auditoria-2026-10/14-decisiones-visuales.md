@@ -59,3 +59,11 @@ Pendiente de la pieza común: la **paleta** (se construye con la demo de la land
 - `/plantillas`: tira «Colecciones por estilo» con el conteo de cada una. Las cinco páginas entran al `sitemap.xml`.
 - La prueba exige texto único por campo, título + « · Sobrely» ≤ 60 caracteres, descripción ≤ 160 y que el texto no lleve números.
 - Aviso: «Romántico» tiene solo 6 plantillas, repartidas en XV años (4), boda (1) y revelación (1); es la página más delgada.
+
+**Fase 4 (26 oct 2026): demo en vivo de la landing.** Hecha en la rama `plan/90-dias`.
+
+- Sección «Pruébala con tu evento» entre «¿Qué vas a celebrar?» y «Cómo funciona»: cinco tipos de evento (la misma plantilla de la tira de arriba), nombres, fecha y seis paletas. La invitación es la real (`PublicInvitationView`) y cambia al instante. «Probar con mi evento» abre el editor con esos datos y esa paleta, sin cuenta.
+- Carga perezosa: el código de la invitación y el documento de la plantilla se piden solo cuando la sección está a 400 px de verse (`import()` en un `IntersectionObserver`); hasta entonces hay una reserva de alto fijo, sin efecto en el LCP del hero ni en el CLS.
+- Paleta, la pieza común que faltaba: `src/lib/templates/paletas.ts`, lista cerrada de 6 (la clave llega del navegador y el servidor busca los colores; nada libre entra a `theme_config`). Cambia colores y modo, y quita el arte de fondo de la plantilla, que está dibujado con otros colores y tapaba la paleta (se vio con «Azul noche» sobre `xv-anos`: texto claro sobre arte claro). `createFromTemplate` la aplica; el texto de contraste mínimo 4.5:1 de cada paleta lo comprueba una prueba.
+- Sin evento de analítica nuevo (exigiría otra migración): la demo cuenta como `start_customization` con `con_datos`.
+- La paleta aún no está en la vista rápida del catálogo.

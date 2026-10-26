@@ -11,6 +11,7 @@ import { LocalLine } from "@/components/seo/local-line";
 import { billingPitch } from "@/lib/billing/value-prop";
 import { HeroPlantillas, type PlantillaHero } from "@/components/landing/hero-plantillas";
 import { ComoFunciona, CtaFinal, PaseQr } from "@/components/landing/secciones";
+import { DemoEnVivo } from "@/components/landing/demo-en-vivo";
 import { MuestraEventos, type PlantillaMuestra } from "@/components/landing/muestra-eventos";
 import { metadatosSociales } from "@/lib/seo/social";
 
@@ -79,7 +80,7 @@ export default async function Home() {
   // consulta falla o faltan, el hero se queda sin imagen y centrado, nunca se rompe.
   const { data: filas } = await supabase
     .from("templates")
-    .select("slug, name, event_type, preview_image_url")
+    .select("id, slug, name, event_type, preview_image_url")
     .eq("is_active", true)
     .in("event_type", ["XV años", "Boda", "Cumpleaños", "Baby shower", "Corporativo"])
     .order("name");
@@ -100,6 +101,12 @@ export default async function Home() {
       return p ? { ...p, total: (filas ?? []).filter((f) => f.event_type === tipo).length } : undefined;
     })
     .filter((p): p is PlantillaMuestra => Boolean(p));
+
+  // La demo usa una plantilla por tipo de evento (las mismas de la tira de arriba).
+  const demo = muestra.map((m) => {
+    const fila = (filas ?? []).find((f) => f.slug === m.slug);
+    return { id: String(fila?.id ?? ""), slug: m.slug, event_type: m.event_type };
+  }).filter((d) => d.id);
 
   return (
     <main className="flex flex-1 flex-col">
@@ -262,6 +269,18 @@ export default async function Home() {
           ))}
         </ul>
       </section>
+
+      {demo.length > 0 && (
+        <section className="mx-auto w-full max-w-4xl px-4 pb-12">
+          <h2 className="text-center font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            Pruébala con tu evento
+          </h2>
+          <p className="mx-auto mt-2 mb-6 max-w-prose text-center text-muted-foreground">
+            Escribe tus nombres y la fecha, elige tus colores y mira cómo queda la invitación.
+          </p>
+          <DemoEnVivo plantillas={demo} autenticado={!!user} />
+        </section>
+      )}
 
       <ComoFunciona />
       <PaseQr />
