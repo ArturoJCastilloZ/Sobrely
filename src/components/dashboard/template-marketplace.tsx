@@ -32,9 +32,18 @@ import { ESTILOS, type EstiloClave } from "@/lib/templates/estilos";
 import { formatPrice } from "@/lib/billing/config";
 import { UseTemplateButton } from "@/components/dashboard/use-template-button";
 import { BotonUsarComoInvitado } from "@/components/templates/boton-usar-como-invitado";
-import { VistaRapida } from "@/components/templates/vista-rapida";
 import { toggleFavorite } from "@/lib/templates/favorites-actions";
 import { toast } from "sonner";
+
+/*
+  La vista rápida arrastra `PublicInvitationView` y todos los módulos de la invitación (medido en
+  producción: 500 KB de JavaScript en `/plantillas` contra 188 KB en la home). Casi nadie la abre,
+  así que su código se pide al primer clic, o antes si el puntero o el foco llegan al botón.
+*/
+const cargarVistaRapida = () => import("@/components/templates/vista-rapida");
+const VistaRapida = React.lazy(() =>
+  cargarVistaRapida().then((m) => ({ default: m.VistaRapida })),
+);
 
 /**
  * El MARKETPLACE de plantillas (Fase 4): pastillas por tipo de evento y
@@ -88,6 +97,8 @@ export function TemplateMarketplace({
   const publico = modo === "publico";
   /** La plantilla cuya vista rápida (con tus nombres) está abierta, o `null`. */
   const [vistaRapida, setVistaRapida] = React.useState<PlantillaMarketplace | null>(null);
+  /** Una vez abierta se queda montada, para que el diálogo pueda animar su cierre. */
+  const [vistaRapidaUsada, setVistaRapidaUsada] = React.useState(false);
   const [evento, setEvento] = React.useState<string | null>(eventoInicial);
   const [consulta, setConsulta] = React.useState(consultaInicial);
   const [estilo, setEstilo] = React.useState<EstiloClave | null>(estiloInicial);
@@ -611,7 +622,12 @@ export function TemplateMarketplace({
                   type="button"
                   variant="outline"
                   className="h-11 w-full lg:h-9"
-                  onClick={() => setVistaRapida(tpl)}
+                  onPointerEnter={cargarVistaRapida}
+                  onFocus={cargarVistaRapida}
+                  onClick={() => {
+                    setVistaRapidaUsada(true);
+                    setVistaRapida(tpl);
+                  }}
                 >
                   Probar con tus nombres
                 </Button>
@@ -630,11 +646,15 @@ export function TemplateMarketplace({
         </div>
       )}
 
-      <VistaRapida
-        plantilla={vistaRapida}
-        autenticado={!publico || autenticado}
-        onCerrar={() => setVistaRapida(null)}
-      />
+      {vistaRapidaUsada && (
+        <React.Suspense fallback={null}>
+          <VistaRapida
+            plantilla={vistaRapida}
+            autenticado={!publico || autenticado}
+            onCerrar={() => setVistaRapida(null)}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 }

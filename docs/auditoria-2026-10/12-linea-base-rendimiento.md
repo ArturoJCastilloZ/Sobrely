@@ -94,3 +94,19 @@ Mismo método (Lighthouse 13.5.0 contra `https://sobrely.com`, móvil, 3 corrida
 - **`/plantillas` empeoró unos 0.5 s** y el TBT pasó de menos de 9 ms a unos 38 ms. Es la única de las tres que cambió de forma notable.
 - **Lo medido:** el JavaScript de `/plantillas` es de 500 KB contra 188 KB en la home, y su «retraso de render del elemento LCP» es de 358 ms contra 66 ms en la home.
 - **Hipótesis (no verificada):** la vista rápida (fase 1) arrastra `PublicInvitationView` y todos los módulos de la invitación al paquete de la galería, que se carga entera aunque nadie abra la vista rápida. No hay medición del peso de JavaScript de `/plantillas` antes de la fase 1, así que la causa no está confirmada. El arreglo, si se confirma, es cargar `VistaRapida` bajo demanda al primer clic.
+
+### Arreglo de `/plantillas`: la vista rápida se carga al primer clic
+
+Causa confirmada con A/B. La vista rápida (`VistaRapida`, que trae `PublicInvitationView` y todos los módulos) iba dentro del paquete de la galería. Ahora se pide con `React.lazy` al primer clic en «Probar con tus nombres», o antes si el puntero o el foco llegan al botón.
+
+Comparación con compilaciones de producción servidas en local (`next start`, base local), Lighthouse 13.5.0 móvil, 3 corridas; los valores absolutos no son comparables con producción, lo comparable es antes contra después:
+
+| `/plantillas` | Antes | Después |
+|---|---|---|
+| LCP (mediana) | 5.19 s (4.98 · 5.19 · 5.19) | **3.52 s** (3.15 · 3.52 · 3.52) |
+| JavaScript transferido | 492 KB | **202 KB** |
+| TBT | 51–86 ms | **2–5 ms** |
+| Puntaje | 81 | 91–93 |
+| CLS | 0 | 0 |
+
+Comprobado en el navegador: la vista rápida abre, muestra los nombres en la invitación, cierra y vuelve a abrir. **Pendiente:** repetir la medición en producción tras el despliegue.
