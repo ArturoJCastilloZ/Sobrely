@@ -79,3 +79,18 @@ Escritorio: LCP de 0.79–0.94 s a 0.50–0.60 s en las cinco páginas (puntaje 
 - **Lo que queda en `/` y `/plantillas`:** el elemento LCP es una imagen del hero o de la galería, y su fase dominante es el retraso de render (~1.0 s), no la descarga (~0.15 s). Lighthouse marca «entrega de imágenes» con 0.5 y «descubrimiento del LCP» con 0 en las dos. Es el siguiente punto a mirar si se quiere bajar de 2.5 s; no se investigó la causa.
 - **Límite:** son datos de laboratorio, 3 corridas por página (la primera corrida de `/` dio 2.51 s y la tercera 1.79 s: hay variación). Sin datos de campo (CrUX), no se sabe qué ven los visitantes reales hasta que haya tráfico.
 - **No comprobado en producción:** una invitación pública con una tipografía de tema; no hay una publicada con esa característica a la mano.
+
+## Medición en producción tras las fases 1 a 5 de la propuesta visual (26 oct 2026)
+
+Mismo método (Lighthouse 13.5.0 contra `https://sobrely.com`, móvil, 3 corridas, mediana), con `main` en `7b60c72` ya desplegado (la home trae la sección «Pruébala con tu evento»).
+
+| Página | LCP móvil (T10) | LCP móvil ahora | Corridas | Puntaje | TBT | Peso | CLS |
+|---|---|---|---|---|---|---|---|
+| `/` | 2.46 s | **2.55 s** | 2.69 · 2.54 · 2.55 | 96–97 | 0–6 ms | 362 KB | 0 |
+| `/pricing` | 2.32 s | **2.31 s** | 2.31 · 2.53 · 2.31 | 97–98 | 10–15 ms | 299 KB | 0 |
+| `/plantillas` | 2.89 s | **3.36 s** | 3.00 · 3.36 · 3.43 | 91–94 | 36–39 ms | 735 KB | 0 |
+
+- **Home y precios:** sin cambio medible. La diferencia de la home (+0.09 s) está dentro de la variación entre corridas (2.54 a 2.69). La demo no pesa: no se pide hasta que la sección está a punto de verse, y el CLS sigue en 0.
+- **`/plantillas` empeoró unos 0.5 s** y el TBT pasó de menos de 9 ms a unos 38 ms. Es la única de las tres que cambió de forma notable.
+- **Lo medido:** el JavaScript de `/plantillas` es de 500 KB contra 188 KB en la home, y su «retraso de render del elemento LCP» es de 358 ms contra 66 ms en la home.
+- **Hipótesis (no verificada):** la vista rápida (fase 1) arrastra `PublicInvitationView` y todos los módulos de la invitación al paquete de la galería, que se carga entera aunque nadie abra la vista rápida. No hay medición del peso de JavaScript de `/plantillas` antes de la fase 1, así que la causa no está confirmada. El arreglo, si se confirma, es cargar `VistaRapida` bajo demanda al primer clic.
