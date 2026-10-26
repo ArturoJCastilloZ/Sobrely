@@ -51,3 +51,11 @@ Pendiente de la pieza común: la **paleta** (se construye con la demo de la land
 - `recomendar-plan.test.ts` recorre las 9 combinaciones y comprueba que el plan recomendado cubre lo elegido y que ningún plan de pago más barato lo cubre. Si alguien cambia un tope o un módulo en `plans.ts`, la recomendación cambia sola y la prueba sigue valiendo.
 - `/pricing`: el selector va arriba de las tarjetas; el servidor calcula las 9 respuestas (precio con oferta de lanzamiento incluido) y el componente solo las muestra.
 - Pendiente: la pregunta sobre el pase QR espera a T02. No se añadió evento de analítica para el selector (exigiría otra migración); la distribución de planes se ve en `begin_checkout`.
+
+**Fase 3 (26 oct 2026): colecciones por estilo.** Hecha en la rama `plan/90-dias`, **con el texto pendiente de aprobación del dueño** (no se fusiona a `main` hasta entonces).
+
+- `src/lib/templates/colecciones.ts`: cinco colecciones (elegante, romántico, natural, moderno, divertido) con h1, título y descripción para el buscador, una introducción y un «cuándo elegirla», únicos cada uno. Sin cifras: los conteos salen del catálogo.
+- `/plantillas/estilo/<estilo>`: página indexable con la galería filtrada a ese estilo (con vista rápida con nombres), enlaces a los otros cuatro estilos y a precios. Una ruta que no sea de las cinco da 404.
+- `/plantillas`: tira «Colecciones por estilo» con el conteo de cada una. Las cinco páginas entran al `sitemap.xml`.
+- La prueba exige texto único por campo, título + « · Sobrely» ≤ 60 caracteres, descripción ≤ 160 y que el texto no lleve números.
+- Aviso: «Romántico» tiene solo 6 plantillas, repartidas en XV años (4), boda (1) y revelación (1); es la página más delgada.

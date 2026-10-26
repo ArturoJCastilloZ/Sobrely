@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { EVENT_LANDING_LIST } from "@/lib/seo/event-landings";
+import { COLECCIONES, hrefColeccion } from "@/lib/templates/colecciones";
 import { BLOG_POSTS } from "@/lib/blog/posts";
 
 // Normaliza: sin `/` final para no generar `//` en las URLs del sitemap.
@@ -33,6 +34,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    // Colecciones por estilo: texto propio cada una, a diferencia de las fichas.
+    ...COLECCIONES.map((c) => ({
+      url: `${SITE_URL}${hrefColeccion(c.clave)}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
     // Landing pages por tipo de evento (keywords).
     ...EVENT_LANDING_LIST.map((e) => ({
       url: `${SITE_URL}/${e.slug}`,

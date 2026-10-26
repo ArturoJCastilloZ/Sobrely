@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cargarGaleriaPublica } from "@/lib/templates/galeria-publica";
 import { estiloDeLaUrl, precioDeLaUrl, topesDePrecio } from "@/lib/templates/marketplace";
 import { metadatosSociales } from "@/lib/seo/social";
+import { COLECCIONES, hrefColeccion } from "@/lib/templates/colecciones";
 import { RegistrarVisita } from "@/components/analytics/registrar-visita";
 
 /**
@@ -111,6 +112,32 @@ export default async function PlantillasPage({
           cuesta publicarla tal como viene.
         </p>
       </section>
+
+      {plantillas.length > 0 && (
+        <nav
+          aria-label="Colecciones por estilo"
+          className="mx-auto w-full max-w-5xl px-4 pb-6"
+        >
+          <p className="mb-2 text-sm font-medium">Colecciones por estilo</p>
+          <ul className="flex flex-wrap gap-2">
+            {COLECCIONES.map((c) => {
+              const n = plantillas.filter((t) => t.estilo === c.clave).length;
+              if (n === 0) return null;
+              return (
+                <li key={c.clave}>
+                  <Link
+                    href={hrefColeccion(c.clave)}
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm hover:bg-muted"
+                  >
+                    {c.h1.replace("Invitaciones digitales ", "")}
+                    <span className="text-muted-foreground tabular-nums">{n}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
 
       <section className="mx-auto w-full max-w-5xl px-4 pb-16">
         {plantillas.length === 0 ? (

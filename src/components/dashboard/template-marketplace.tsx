@@ -65,6 +65,7 @@ export function TemplateMarketplace({
   soloFavoritosInicial,
   modo = "dashboard",
   autenticado = true,
+  ocultarEstilo = false,
 }: {
   plantillas: PlantillaMarketplace[];
   eventoInicial: string | null;
@@ -81,6 +82,8 @@ export function TemplateMarketplace({
   modo?: "dashboard" | "publico";
   /** Solo importa en `publico`: con sesión el botón crea la invitación. */
   autenticado?: boolean;
+  /** En la página de una colección por estilo, el filtro de estilo sobra. */
+  ocultarEstilo?: boolean;
 }) {
   const publico = modo === "publico";
   /** La plantilla cuya vista rápida (con tus nombres) está abierta, o `null`. */
@@ -363,6 +366,7 @@ export function TemplateMarketplace({
         comparten fila y se envuelven.
       */}
       <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-6">
+        {!ocultarEstilo && (
         <div className="-mx-4 overflow-x-auto px-4 pb-1 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0">
           <div
             role="radiogroup"
@@ -390,6 +394,7 @@ export function TemplateMarketplace({
             ))}
           </div>
         </div>
+        )}
         {topes.length > 0 && (
           <div className="-mx-4 overflow-x-auto px-4 pb-1 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0">
             <div
