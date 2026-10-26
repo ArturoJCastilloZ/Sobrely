@@ -242,7 +242,8 @@ export async function createFromTemplate(
 
   revalidatePath("/dashboard");
   redirect(
-    `/editor/${invitation.id}`,
+    // `?asistente=1`: un borrador recién creado desde una plantilla abre la guía de 4 pasos.
+    `/editor/${invitation.id}?asistente=1`,
     opciones?.reemplazar ? RedirectType.replace : RedirectType.push,
   );
 }

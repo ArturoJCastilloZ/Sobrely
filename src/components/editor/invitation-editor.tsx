@@ -43,6 +43,8 @@ import {
   type SeleccionApi,
 } from "@/lib/editor/contexto-seleccion";
 import { LienzoProvider } from "@/lib/editor/contexto-lienzo";
+import { AsistenteProvider } from "@/lib/editor/contexto-asistente";
+import { AsistenteInicial } from "./asistente-inicial";
 import { EditorLayout } from "./shell/editor-layout";
 import { CrearCuentaDialog } from "./crear-cuenta-dialog";
 
@@ -80,6 +82,7 @@ export function InvitationEditor({
   userId,
   portadaDePlantilla,
   reanudarPublicacion,
+  asistenteInicial = false,
 }: {
   initialInvitation: EditorInvitation;
   /** Token de bloqueo optimista de la invitacion (columna `version`, `0027`). */
@@ -92,6 +95,8 @@ export function InvitationEditor({
   portadaDePlantilla: PortadaBase | null;
   /** Viene de crear la cuenta tras pulsar Publicar: retoma la publicación sola, una vez. */
   reanudarPublicacion: boolean;
+  /** Abre el asistente de 4 pasos al entrar (borrador recién creado desde una plantilla). */
+  asistenteInicial?: boolean;
 }) {
   // UN documento, no tres estados sueltos. Es la precondicion del historial:
   // un ⌘Z tiene que capturar invitacion, modulos y tema a la vez.
@@ -462,6 +467,7 @@ export function InvitationEditor({
 
   return (
     <DocumentoProvider value={documento}>
+      <AsistenteProvider abiertoInicial={asistenteInicial}>
       {/* Modal de pago (C1): el servidor decide si se requiere pago; el cliente solo muestra el CTA. */}
       {upgradePlan && (
         <div
@@ -583,6 +589,8 @@ export function InvitationEditor({
           <EditorLayout />
         </LienzoProvider>
       </SeleccionProvider>
+      <AsistenteInicial />
+      </AsistenteProvider>
     </DocumentoProvider>
   );
 }

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDocumento } from "@/lib/editor/contexto-documento";
 import { useSeleccion } from "@/lib/editor/contexto-seleccion";
+import { useAsistente } from "@/lib/editor/contexto-asistente";
 import { progresoEsencial, type ClaveProgreso } from "@/lib/analytics/borrador-completo";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ import { cn } from "@/lib/utils";
 export function ProgresoEsencial() {
   const { invitation, modules, portadaDePlantilla } = useDocumento();
   const { seleccionarModulo, irAPanel } = useSeleccion();
+  const asistente = useAsistente();
   const [abierto, setAbierto] = useState(false);
 
   const pasos = useMemo(
@@ -99,6 +101,17 @@ export function ProgresoEsencial() {
           <p className="mt-0.5 text-xs text-muted-foreground">
             Es una guía: puedes publicar cuando quieras.
           </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2 h-9 w-full"
+            onClick={() => {
+              setAbierto(false);
+              asistente.abrir();
+            }}
+          >
+            Abrir el asistente paso a paso
+          </Button>
           <ul className="mt-3 space-y-2">
             {pasos.map((p) => (
               <li key={p.clave} className="flex items-start gap-2.5 text-sm">

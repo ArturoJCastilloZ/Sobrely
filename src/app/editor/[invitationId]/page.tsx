@@ -18,10 +18,10 @@ export default async function EditorPage({
   searchParams,
 }: {
   params: Promise<{ invitationId: string }>;
-  searchParams: Promise<{ publicar?: string }>;
+  searchParams: Promise<{ publicar?: string; asistente?: string }>;
 }) {
   const { invitationId } = await params;
-  const { publicar } = await searchParams;
+  const { publicar, asistente } = await searchParams;
 
   const supabase = await createClient();
   const {
@@ -127,6 +127,8 @@ export default async function EditorPage({
     <InvitationEditor
       portadaDePlantilla={portadaDePlantilla}
       reanudarPublicacion={reanudarPublicacion}
+      // Solo abre una guía; no cambia ningún estado, así que el parámetro por sí solo basta.
+      asistenteInicial={asistente === "1" && !initialInvitation.is_published}
       initialInvitation={initialInvitation}
       initialVersion={initialVersion}
       initialModules={initialModules}
