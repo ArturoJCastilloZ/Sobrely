@@ -44,3 +44,10 @@ Los eventos nuevos (`quick_view_open`, `demo_start`, etc.) exigen ampliar la res
 - La lista de progreso del editor y el evento `complete_draft` ahora cuentan los nombres si cambia el título **o** el subtítulo de la portada: antes, quien escribía su nombre en un XV seguía viendo «nombres» pendiente.
 
 Pendiente de la pieza común: la **paleta** (se construye con la demo de la landing, fase 4, que es donde se elige).
+
+**Fase 2 (26 oct 2026): Precios B, selector de 2 preguntas.** Hecha en la rama `plan/90-dias`.
+
+- `src/lib/billing/recomendar-plan.ts`: la regla sale de `plans.ts`. Las opciones de invitados se derivan de los topes de los planes de pago (hoy «Hasta 100», «101 a 250», «Más de 250») y la de funciones usa los módulos que distinguen a cada plan (galería, música, itinerario y dress code; video). Recomienda el plan de pago más barato que cubre ambas cosas; nunca Free.
+- `recomendar-plan.test.ts` recorre las 9 combinaciones y comprueba que el plan recomendado cubre lo elegido y que ningún plan de pago más barato lo cubre. Si alguien cambia un tope o un módulo en `plans.ts`, la recomendación cambia sola y la prueba sigue valiendo.
+- `/pricing`: el selector va arriba de las tarjetas; el servidor calcula las 9 respuestas (precio con oferta de lanzamiento incluido) y el componente solo las muestra.
+- Pendiente: la pregunta sobre el pase QR espera a T02. No se añadió evento de analítica para el selector (exigiría otra migración); la distribución de planes se ve en `begin_checkout`.

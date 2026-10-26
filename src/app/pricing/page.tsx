@@ -11,11 +11,20 @@ import {
   getActivePlans,
   isLaunchCampaignActive,
   getEffectivePrice,
+  formatPrice,
+  isOnLaunchOffer,
 } from "@/lib/billing";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LocalLine } from "@/components/seo/local-line";
 import { metadatosSociales } from "@/lib/seo/social";
 import { RegistrarVisita } from "@/components/analytics/registrar-visita";
+import { SelectorDePlan } from "@/components/billing/selector-de-plan";
+import type { RecomendacionPlan } from "@/components/billing/selector-de-plan";
+import {
+  OPCIONES_FUNCIONES,
+  opcionesInvitados,
+  recomendarPlan,
+} from "@/lib/billing/recomendar-plan";
 
 const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -87,6 +96,42 @@ export default async function PricingPage() {
     return `/billing/checkout?plan=${planCode}`;
   }
 
+  // Las nueve recomendaciones del selector, calculadas con la misma fuente que
+  // el servidor (plans.ts) y pasadas ya resueltas al componente.
+  const opcionesInv = opcionesInvitados();
+  const resultados: Record<string, Record<string, RecomendacionPlan>> = {};
+  for (const inv of opcionesInv) {
+    resultados[inv.id] = {};
+    for (const f of OPCIONES_FUNCIONES) {
+      const plan = recomendarPlan(inv.necesita, f.modulos);
+      if (!plan) continue;
+      const motivos = [
+        plan.maxGuests === null
+          ? "Invitados sin límite"
+          : `Hasta ${plan.maxGuests} invitados`,
+        f.id === "extras"
+          ? "Galería, itinerario, dress code y música incluidos"
+          : f.id === "video"
+            ? "Módulo de video incluido"
+            : "Lo necesario para publicar tu evento",
+      ];
+      if (plan.graceDaysAfterEvent !== null) {
+        motivos.push(
+          `Publicada hasta tu evento + ${plan.graceDaysAfterEvent} días`,
+        );
+      }
+      resultados[inv.id][f.id] = {
+        nombre: plan.name,
+        precio: formatPrice(getEffectivePrice(plan), plan.currency),
+        precioRegular: isOnLaunchOffer(plan)
+          ? formatPrice(plan.priceRegular, plan.currency)
+          : null,
+        motivos,
+        href: hrefFor(plan.code, false),
+      };
+    }
+  }
+
   return (
     <main className="flex flex-1 flex-col">
       <RegistrarVisita evento="view_pricing" valor="pagina" />
@@ -134,7 +179,16 @@ export default async function PricingPage() {
         )}
       </section>
 
-      <section className="mx-auto grid w-full max-w-6xl gap-5 px-4 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+      <SelectorDePlan
+        invitados={opcionesInv.map((o) => ({ id: o.id, etiqueta: o.etiqueta }))}
+        funciones={OPCIONES_FUNCIONES.map((f) => ({
+          id: f.id,
+          etiqueta: f.etiqueta,
+        }))}
+        resultados={resultados}
+      />
+
+      <section className="mx-auto grid w-full max-w-6xl gap-5 px-4 pt-10 sm:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => (
           <PlanCard
             key={plan.code}
