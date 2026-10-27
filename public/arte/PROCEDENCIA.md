@@ -357,3 +357,22 @@ impresor debajo del ornamento. Llegó hasta la miniatura y sólo se vio MIRANDO 
 render. Se amputa con un `clipPath` que conserva el 58 % superior de la pieza, y
 hay una prueba que falla si alguien lo quita. Conviene revisar cualquier
 ornamento nuevo de esta plancha por lo mismo.
+
+## Ilustraciones de ChatGPT o Gemini (piloto del 2026-10-26)
+
+Cinco piezas generadas por el dueño con ChatGPT o Gemini (no indicó cuál para cada una) a partir de
+los prompts de `docs/auditoria-2026-10/17-prompts-de-arte.md`. Entregadas como WebP de 1024 × 1536;
+aquí se recortan al centro a 716 × 1536 (la proporción 7:15 del lienzo) y se escalan a 840 × 1800,
+WebP con calidad 82, de 18 a 86 KB. Revisadas a ojo: sin personas, sin texto, sin marcas. Centro
+vacío medido (desviación < 2 en el 60 % × 45 % central, 0 % de bordes).
+
+| archivo (`public/arte/ia/`) | sirve a | peso |
+|---|---|---|
+| `boda-acuarela-eucalipto.webp` | `boda-acuarela-eucalipto` | 41 KB |
+| `xv-acuarela-peonias.webp` | `xv-acuarela-peonias` | 84 KB |
+| `baby-nubes-acuarela.webp` | `baby-nubes-acuarela` | 18 KB |
+| `xv-noche-estrellada.webp` | `xv-noche-estrellada` | 63 KB |
+| `fiesta-papel-picado.webp` | `cumpleanos-fiesta-mexicana` | 70 KB |
+
+Son imágenes: **no se recolorean**. Lo medido al montarlas en las plantillas nuevas está en
+`docs/auditoria-2026-10/18-validacion-de-diseno.md` (sección 9).

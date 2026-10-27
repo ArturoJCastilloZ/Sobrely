@@ -27,6 +27,11 @@ export type DireccionArte = {
   /** Clave estable. El archivo depende de `tipo` — ver `rutaArte`. */
   clave: string;
   /**
+   * `ia` = ilustración generada por el dueño con ChatGPT o Gemini a partir de los prompts de
+   * `docs/auditoria-2026-10/17-prompts-de-arte.md`, recortada al lienzo y guardada en WebP en
+   * `public/arte/ia/`. Es una imagen: NO se recolorea (la paleta de la demo y del asistente la
+   * quita). Procedencia y prompt en `PROCEDENCIA.md`.
+   *
    * `svg` = dibujado a mano aquí. `foto` = fotografía de Pexels o Unsplash
    * DESCARGADA y auto-hospedada en `public/arte/foto/`.
    *
@@ -35,7 +40,7 @@ export type DireccionArte = {
    * rompe la regla de cero phone-home. La descarga es de una vez, como una
    * dependencia. Procedencia y autoria en `public/arte/PROCEDENCIA.md`.
    */
-  tipo: "svg" | "foto";
+  tipo: "svg" | "foto" | "ia";
   /** Nombre para el panel de tema, cuando se exponga al usuario. */
   nombre: string;
   /** Tipos de evento para los que el arte es idiomático. */
@@ -808,12 +813,58 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0,
   },
+  // ——— Ilustraciones de ChatGPT/Gemini (piloto del 2026-10-26) ———
+  // Cinco piezas con el centro vacío por diseño (medido: desviación < 2 en el 60 % × 45 % central).
+  // `overlay: 0`: el contraste lo da la composición, y se mide con
+  // `verificar-contraste-en-vivo.mts` sobre la plantilla montada, no sobre el archivo.
+  {
+    clave: "boda-acuarela-eucalipto",
+    tipo: "ia",
+    nombre: "Acuarela de eucalipto",
+    eventos: ["Boda"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "xv-acuarela-peonias",
+    tipo: "ia",
+    nombre: "Peonías en acuarela",
+    eventos: ["XV años"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "baby-nubes-acuarela",
+    tipo: "ia",
+    nombre: "Nubes y luna",
+    eventos: ["Baby shower"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
+  {
+    clave: "xv-noche-estrellada",
+    tipo: "ia",
+    nombre: "Noche de gala",
+    eventos: ["XV años"],
+    polaridad: "claro",
+    overlay: 0,
+  },
+  {
+    clave: "fiesta-papel-picado",
+    tipo: "ia",
+    nombre: "Papel picado y cempasúchil",
+    eventos: ["Cumpleaños"],
+    polaridad: "oscuro",
+    overlay: 0,
+  },
 ] as const;
 
 /** Ruta pública de un arte, según sea SVG dibujado o fotografía. */
 export function rutaArte(clave: string): string {
   const a = buscarArte(clave);
-  return a?.tipo === "foto" ? `/arte/foto/${clave}.jpg` : `/arte/${clave}.svg`;
+  if (a?.tipo === "foto") return `/arte/foto/${clave}.jpg`;
+  if (a?.tipo === "ia") return `/arte/ia/${clave}.webp`;
+  return `/arte/${clave}.svg`;
 }
 
 export function buscarArte(clave: string): DireccionArte | undefined {

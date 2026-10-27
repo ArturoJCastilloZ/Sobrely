@@ -195,3 +195,28 @@ The papel picado must use abstract cut-out patterns only (flowers, diamonds, sca
 | 5 Acento mexicano | `cumpleanos-papel-picado` y celebraciones | Colores neón; figuras con letras o calaveras |
 
 Cuando tengas las piezas, pásamelas y las evalúo con `verificar-contraste-en-vivo.mts`, `auditar-adorno-bajo-texto.mts` y el peso del archivo antes de conectarlas a una plantilla.
+
+---
+
+## Ronda 2: lo que se midió con las cinco primeras (cambia el bloque de composición)
+
+Las cinco imágenes del piloto salieron bien como imagen (centro limpio, sin texto ni caras), pero **montadas en una invitación en un teléfono de 390 × 844 px chocan con el texto**. La causa es que el fondo se pinta fijo a la pantalla mientras las secciones pasan por encima: la portada, que está arriba, siempre cae justo debajo de la franja superior del arte, y cada sección que llega al borde inferior cae sobre la franja inferior. Medido: el título de la portada queda sobre el adorno en 4 de 5 piezas (entre 14 % y 26 % de píxeles-borde bajo el texto; un fondo liso da cerca de 0 %), y una etiqueta del formulario sobre los cempasúchil da 2.31:1 de contraste (AA pide 4.5).
+
+La regla nueva es más estricta: **el adorno vive en los bordes laterales y en las esquinas, nunca en una franja ancha arriba o abajo.** Para regenerar, en los cinco prompts sustituye el bloque `COMPOSITION` por este (ChatGPT):
+
+```
+COMPOSITION (strict, the image will be used as a FIXED background behind scrolling text):
+- Decoration only in two slim vertical strips hugging the left and right edges (the outer 11% of the width, nothing in the outermost 3%) and in the four corners, where it may extend inward at most 14% of the width and 10% of the height.
+- NO full-width band across the top and NO full-width band across the bottom. The top and the bottom edges must be empty between the corners.
+- The central area must be completely EMPTY from top to bottom: the middle 74% of the width and the full height between the corner pieces show only the plain background color or a very subtle paper texture. Text can land anywhere in it as the user scrolls.
+- Low contrast overall: no very dark or very bright spots, soft colors, nothing larger than a few pixels that contrasts strongly with the background.
+- Clean edges. No frame drawn as a rectangle, no border line crossing the middle.
+```
+
+Y en Gemini:
+
+```
+Composition, strictly: the image will be used as a FIXED background behind scrolling text. Decoration only in two slim vertical strips on the left and right edges (the outer 11% of the width, nothing in the outermost 3%) and in the four corners, where it may extend inward at most 14% of the width and 10% of the height. No full-width band across the top and none across the bottom: the top and bottom edges must be empty between the corners. The central area must be completely empty from top to bottom, the middle 74% of the width, with only the plain background color or a very subtle paper texture. Keep contrast low, soft colors, no strong accents anywhere near the center. No rectangular frame, no line crossing the middle.
+```
+
+**Qué se espera:** un marco discreto de esquinas y bordes, no un ramo grande arriba. Pierde dramatismo y gana legibilidad. En la **pieza 5** (papel picado) el banderín de arriba ya no cabe como franja ancha: pídelo como dos banderines cortos colgando de las esquinas superiores, o como cempasúchil solo en las esquinas inferiores; es la pieza que más cambia. En la **pieza 4** (noche) pide además «no nebulosa ni brillos en el tercio inferior central».

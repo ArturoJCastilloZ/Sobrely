@@ -32,6 +32,7 @@ const D: EstiloClave = "divertido";
 export const ESTILO_POR_SLUG: Readonly<Record<string, EstiloClave>> = {
   // Baby shower
   "baby-nube-de-algodon": N,
+  "baby-nubes-acuarela": N,
   "baby-punto-y-flor": N,
   "baby-shower": D,
   "baby-shower-animalitos": D,
@@ -50,6 +51,7 @@ export const ESTILO_POR_SLUG: Readonly<Record<string, EstiloClave>> = {
   "revelacion-coral": D,
   "revelacion-dos-sobres": R,
   // Boda
+  "boda-acuarela-eucalipto": N,
   "boda-botanica": N,
   "boda-carta-romantica": R,
   "boda-cinematografica": E,
@@ -77,6 +79,7 @@ export const ESTILO_POR_SLUG: Readonly<Record<string, EstiloClave>> = {
   "evento-corporativo": M,
   // Cumpleaños
   "cumpleanos-adulto": M,
+  "cumpleanos-fiesta-mexicana": D,
   "cumpleanos-arco": D,
   "cumpleanos-con-video": M,
   "cumpleanos-dinosaurios": D,
@@ -89,6 +92,7 @@ export const ESTILO_POR_SLUG: Readonly<Record<string, EstiloClave>> = {
   "cumpleanos-sencillo": M,
   "cumpleanos-superheroes": D,
   // XV años
+  "xv-acuarela-peonias": R,
   "xv-anos": R,
   "xv-clasicos-elegantes": E,
   "xv-con-salon": E,
@@ -98,6 +102,7 @@ export const ESTILO_POR_SLUG: Readonly<Record<string, EstiloClave>> = {
   "xv-glam-moderno": M,
   "xv-manuscrita": R,
   "xv-noche-estelar": E,
+  "xv-noche-estrellada": E,
   "xv-produccion-completa": E,
   "xv-seda": R,
   "xv-sencillos": R,
