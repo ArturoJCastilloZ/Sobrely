@@ -862,8 +862,8 @@ export const ARTE: readonly DireccionArte[] = [
     overlay: 0,
   },
   {
-    clave: "baby-nubes-acuarela",
-    tipo: "ia",
+    clave: "baby-nubes-luna-arte",
+    tipo: "svg",
     nombre: "Nubes y luna",
     eventos: ["Baby shower"],
     polaridad: "oscuro",
@@ -878,8 +878,8 @@ export const ARTE: readonly DireccionArte[] = [
     overlay: 0,
   },
   {
-    clave: "fiesta-papel-picado",
-    tipo: "ia",
+    clave: "fiesta-papel-picado-arte",
+    tipo: "svg",
     nombre: "Papel picado y cempasúchil",
     eventos: ["Cumpleaños"],
     polaridad: "oscuro",

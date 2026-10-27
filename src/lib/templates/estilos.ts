@@ -32,7 +32,7 @@ const D: EstiloClave = "divertido";
 export const ESTILO_POR_SLUG: Readonly<Record<string, EstiloClave>> = {
   // Baby shower
   "baby-nube-de-algodon": N,
-  "baby-nubes-acuarela": N,
+  "baby-nubes-luna": N,
   "baby-punto-y-flor": N,
   "baby-shower": D,
   "baby-shower-animalitos": D,

@@ -96,7 +96,7 @@ Hechos en la rama `plan/90-dias`, sin fusionar.
 
 ## 9. Las cinco ilustraciones de ChatGPT/Gemini, montadas y medidas (26 oct 2026)
 
-Se montaron como **cinco plantillas nuevas** (no reemplazos), clonadas de otras con su mismo texto de ejemplo: `boda-acuarela-eucalipto`, `xv-acuarela-peonias`, `baby-nubes-acuarela`, `xv-noche-estrellada` y `cumpleanos-fiesta-mexicana`. La migración `0067` las inserta (idempotente, sin cambiar el esquema); **está aplicada en la base local y NO en producción**. Si no convencen, se desactivan con `is_active = false`. Registradas en `src/lib/theme/arte.ts` con un tipo nuevo (`ia`, `/arte/ia/*.webp`) y en `public/arte/PROCEDENCIA.md`.
+Se montaron como **cinco plantillas nuevas** (no reemplazos), clonadas de otras con su mismo texto de ejemplo: `boda-acuarela-eucalipto`, `xv-acuarela-peonias`, `baby-nubes-luna`, `xv-noche-estrellada` y `cumpleanos-fiesta-mexicana`. La migración `0067` las inserta (idempotente, sin cambiar el esquema); **está aplicada en la base local y NO en producción**. Si no convencen, se desactivan con `is_active = false`. Registradas en `src/lib/theme/arte.ts` con un tipo nuevo (`ia`, `/arte/ia/*.webp`) y en `public/arte/PROCEDENCIA.md`.
 
 **Como imagen:** las cinco cumplen. Centro vacío (desviación < 2 en el 60 % × 45 % central, 0 % de bordes), sin texto, caras ni marcas (revisadas a ojo) y de 18 a 86 KB (techo de 90 KB) después de recortar a 7:15 y pasar a WebP.
 
@@ -116,7 +116,7 @@ Se montaron como **cinco plantillas nuevas** (no reemplazos), clonadas de otras 
 
 **Miniaturas del catálogo:** se ven recortadas (la miniatura es 3:4 y solo muestra la franja central del arte), así que casi no se nota el arte en la galería; en el teléfono sí. Es el mismo recorte que ya documenta `PROCEDENCIA.md`. Para que el catálogo las venda hará falta una miniatura capturada a 390 × 844.
 
-**Decisión tuya:** (a) regenerar las 5 con la ronda 2 y volver a medir; (b) quedarte con `baby-nubes-acuarela` y `boda-acuarela-eucalipto`, que son legibles hoy; (c) descartar. Recomiendo (a) para las cinco.
+**Decisión tuya:** (a) regenerar las 5 con la ronda 2 y volver a medir; (b) quedarte con `baby-nubes-luna` y `boda-acuarela-eucalipto`, que son legibles hoy; (c) descartar. Recomiendo (a) para las cinco.
 
 ## 10. Puntos 4 y 5 del plan, y la imagen de la ronda 2 (26 oct 2026)
 
@@ -181,3 +181,7 @@ Quedan registradas en `src/lib/theme/arte.ts` (polaridad `claro`, velo 0) y en `
 - adorno bajo el texto: 0 en `xv-noche-azul` y `corporativo-negro-acento`; en `boda-bosque-champan`, 1 sospecha de 4.8 % en «Jardín Las Flores» solo a 320 px (una hoja roza la primera letra en la pantalla más angosta). Una primera versión tenía las ramitas pegadas al texto alineado a la izquierda; se corrigió en la misma sesión.
 
 **Nota de gusto, para que la mires:** a ojo se ven sobrias y de buen nivel, pero son adornos geométricos hechos a código, no ilustraciones; si quieres un acabado de acuarela o foil, es lo que se pide con los prompts de [17](17-prompts-de-arte.md). No se añadieron prompts para estas tres porque no hicieron falta imágenes.
+
+## 13. Nubes y papel picado rehechos como SVG (2026-10-26)
+
+Las versiones IA de `baby-nubes-luna` (antes `baby-nubes-acuarela`) y `cumpleanos-fiesta-mexicana` chocaban con el texto en móvil, así que se dibujaron como SVG con el centro libre: `baby-nubes-luna-arte.svg` (4 KB) y `fiesta-papel-picado-arte.svg` (25 KB). Primera versión del papel picado: la guirnalda llegaba a y≈84 y rozaba el título (12.9 % de borde a 390 px); se redujo a y≈58 y las flores de abajo se recortaron contra la esquina. Medido tras el arreglo en 320 y 390 px: adorno bajo el texto 0 y 0, contraste AA sin textos por debajo, choque de texto 0 en nubes y 4 en fiesta mexicana (los mismos 4 que la plantilla de origen `cumpleanos-sencillo`, heredados, no del arte). Peonías y noche de gala siguen pendientes de regenerar con la ronda 2 del doc 17.

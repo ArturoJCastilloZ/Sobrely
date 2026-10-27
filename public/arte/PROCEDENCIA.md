@@ -370,9 +370,9 @@ vacío medido (desviación < 2 en el 60 % × 45 % central, 0 % de bordes).
 |---|---|---|
 | `boda-acuarela-eucalipto.webp` | `boda-acuarela-eucalipto` | 41 KB |
 | `xv-acuarela-peonias.webp` | `xv-acuarela-peonias` | 84 KB |
-| `baby-nubes-acuarela.webp` | `baby-nubes-acuarela` | 18 KB |
 | `xv-noche-estrellada.webp` | `xv-noche-estrellada` | 63 KB |
-| `fiesta-papel-picado.webp` | `cumpleanos-fiesta-mexicana` | 70 KB |
 
-Son imágenes: **no se recolorean**. Lo medido al montarlas en las plantillas nuevas está en
+Nubes y luna (`baby-nubes-luna-arte.svg`, 4 KB) y papel picado (`fiesta-papel-picado-arte.svg`, 24 KB) se rehicieron como SVG dibujado a mano (sin procedencia externa) porque las versiones IA chocaban con el texto en móvil; sirven a `baby-nubes-luna` y `cumpleanos-fiesta-mexicana`.
+
+Las tres WebP de la tabla son imágenes: **no se recolorean**. Lo medido al montarlas en las plantillas nuevas está en
 `docs/auditoria-2026-10/18-validacion-de-diseno.md` (sección 9).
