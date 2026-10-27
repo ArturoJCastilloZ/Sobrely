@@ -331,7 +331,7 @@ export const THEME_PACKS: Record<string, ThemePack> = {
     isPremium: true,
     theme: {
       colors: {
-        primary: "#a97c50",
+        primary: "#946840",
         secondary: "#d9c3a5",
         background: "#fdf9f3",
         text: "#4a3a2c",

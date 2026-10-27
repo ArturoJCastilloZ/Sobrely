@@ -11,11 +11,11 @@
   <rect width="420" height="900" fill="#f9fafb"/>
   <rect width="420" height="900" fill="url(#halo)"/>
   <rect width="420" height="900" filter="url(#papel)" opacity="0.05"/>
-  <rect x="26" y="120" width="368" height="660" fill="none" stroke="#1f2937" stroke-opacity="0.3" stroke-width="0.9"/>
-  <rect x="31" y="125" width="358" height="650" fill="none" stroke="#1f2937" stroke-opacity="0.1" stroke-width="0.5"/>
+  <rect x="26" y="24" width="368" height="756" fill="none" stroke="#1f2937" stroke-opacity="0.3" stroke-width="0.9"/>
+  <rect x="31" y="29" width="358" height="746" fill="none" stroke="#1f2937" stroke-opacity="0.1" stroke-width="0.5"/>
   <!-- Cumpleanos ADULTO: la fiesta se sugiere, no se grita. Grises de la propia
        paleta y UN acento de laton; el confeti multicolor venia de otra paleta. -->
-  <g stroke-opacity="0.72">
+  <g stroke-opacity="0.72" transform="translate(0 110)">
     <g stroke="#9ca3af"><use href="#cinta" transform="translate(74 238) rotate(-11)"/></g>
     <g stroke="#1f2937" stroke-opacity="0.42"><use href="#cinta" transform="translate(126 224) rotate(13) scale(0.82)"/></g>
     <g stroke="#b08d57"><use href="#cinta" transform="translate(300 236) rotate(-15) scale(0.88)"/></g>
@@ -23,7 +23,7 @@
     <g stroke="#b08d57"><use href="#cinta" transform="translate(196 214) rotate(-6) scale(0.7)"/></g>
     <g stroke="#9ca3af"><use href="#cinta" transform="translate(244 236) rotate(17) scale(0.64)"/></g>
   </g>
-  <g>
+  <g transform="translate(0 110)">
     <rect x="96" y="180" width="7" height="11" rx="1.6" fill="#9ca3af" transform="rotate(24 99 185)"/>
     <circle cx="164" cy="176" r="3.2" fill="#b08d57" opacity="0.75"/>
     <rect x="228" y="180" width="6.5" height="10" rx="1.6" fill="#1f2937" opacity="0.34" transform="rotate(-30 231 185)"/>

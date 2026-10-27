@@ -117,3 +117,25 @@ Se montaron como **cinco plantillas nuevas** (no reemplazos), clonadas de otras 
 **Miniaturas del catálogo:** se ven recortadas (la miniatura es 3:4 y solo muestra la franja central del arte), así que casi no se nota el arte en la galería; en el teléfono sí. Es el mismo recorte que ya documenta `PROCEDENCIA.md`. Para que el catálogo las venda hará falta una miniatura capturada a 390 × 844.
 
 **Decisión tuya:** (a) regenerar las 5 con la ronda 2 y volver a medir; (b) quedarte con `baby-nubes-acuarela` y `boda-acuarela-eucalipto`, que son legibles hoy; (c) descartar. Recomiendo (a) para las cinco.
+
+## 10. Puntos 4 y 5 del plan, y la imagen de la ronda 2 (26 oct 2026)
+
+Hechos en la rama `plan/90-dias`, sin fusionar. Datos en la migración `0068` (aplicada en la base local, **no** en producción).
+
+**Corrección sobre el punto 2 (mía).** Al dar por buena la línea «fecha · lugar» solo comprobé que no pisara otros textos; no volví a correr la medición de adorno bajo el texto. Al correrla ahora, la línea nueva había hecho que **23 plantillas** (antes 10) tuvieran texto sobre el adorno: con nombres largos la fecha baja sobre el arte en 9 plantillas, y en la muestra en 3. Se arregló dándole a la fecha la misma placa que ya lleva la etiqueta de la portada (`--inv-bg`): sobre una sección plana es invisible y solo se ve donde hay arte detrás. El costo visual es una cápsula clara detrás de la fecha, parecida a la de la etiqueta.
+
+**Punto 4, los 5 choques de adorno.** Medidos de nuevo con `auditar-adorno-bajo-texto.mts` (70 plantillas, 3 anchos, muestra y nombres de 60 caracteres):
+- `corporativo-sencillo`: se quitó la greca superior central, que cruzaba el subtítulo y el botón, y la inferior baja a y = 860; el marco empieza más arriba. En la muestra ya no hay sospechas; solo queda una en el peor caso a 320 px.
+- `boda-de-lujo`: se quitó la rama superior central y la inferior baja a y = 820. Muestra limpia en los tres anchos; queda una sospecha en el peor caso a 320 px (4.6 %).
+- `cumpleanos-adulto`: el marco empieza arriba del título y las serpentinas y el confeti bajan 110 px. Quedan dos sospechas a 375 px, una de ellas ya existía.
+- `corporativo-taller`: con la placa de la fecha ya no hay sospechas en la muestra; queda una a 7.5 % en el peor caso a 320 px. Mover las franjas de la cuadrícula no la cambió, así que no es de las franjas y no se tocó el arte.
+- **Qué cuesta:** la greca superior de `corporativo-sencillo` y la rama superior de `boda-de-lujo` desaparecen; en esas dos portadas era el adorno central. Cualquier adorno central cae, al hacer scroll, detrás de algún texto, porque el fondo va fijo a la pantalla.
+- **Contraste:** `revelacion-dos-sobres` pasó de 3.77–4.02 a AA subiendo el velo de su portada a 0.65 (en la 0068); `baby-shower-animalitos` pasó de 4.45 a AA oscureciendo el primario del pack `baby-animalitos` de `#a97c50` a `#946840` (en `theme-packs.ts`; la prueba del conteo de packs pasó de 11/9 a 10/10 porque ese pack ya cumple sin corrección). Medido: ninguna de las 70 plantillas queda bajo AA en las 3 superficies.
+
+**Punto 5, script solo para el nombre (más acotado de lo que decía el plan).** El plan hablaba de ~16 plantillas con cuerpo en script, y salió de la lectura de miniaturas. Medido en los datos de las 65, **solo 2 tienen el cuerpo en script** (`boda-carta-romantica` y `xv-manuscrita`); otras 12 traen el titular en script pero el cuerpo en serif o sans, que es lo correcto. La 0068 les pone un par tipográfico (titulares manuscritos, cuerpo en Lora). Comprobado a 375 px: el párrafo y la etiqueta se leen. Lo de «16 px o más» para todo el cuerpo no se hizo: solo lo afirmaba un revisor y no está medido.
+
+**Imagen de la ronda 2.** La de eucalipto (crema con dorado, adorno solo en bordes y esquinas) cumple lo que se pidió: el centro del 74 % × 80 % está vacío (0.12 % de bordes), pesa 14 KB, y montada **no tiene ni una sospecha de adorno bajo el texto** en ningún ancho ni en el peor caso, ni problemas de contraste. Sustituye a la de la ronda 1 en `boda-acuarela-eucalipto`, con el tema pasado a crema y acento dorado (0068). Las otras cuatro piezas de la ronda 1 siguen con sus choques (peonías, noche de gala, papel picado, y el roce de la luna en nubes) hasta que se regeneren con el bloque de composición de la ronda 2.
+
+**Pendiente de mirar:** `corporativo-junta-resultados` quedó con una sospecha de 9.2 % a 320 px en «Confirma tu asistencia» que apareció con la línea de fecha y que no se arregló.
+
+Se regeneraron las 70 miniaturas (`REVISION_MINIATURAS` = `202610270045`).

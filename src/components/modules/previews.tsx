@@ -676,8 +676,17 @@ function HeroPreviewBase({
         {infoEvento && (
           <p
             data-bloque="info"
-            className="text-sm font-medium @2xl/inv:text-lg @4xl/inv:text-xl"
-            style={{ color: sobreFoto ? "rgba(255,255,255,.95)" : "inherit" }}
+            className={cn(
+              "text-sm font-medium @2xl/inv:text-lg @4xl/inv:text-xl",
+              // La misma PLACA que lleva el epígrafe (ver abajo): sobre una sección plana es invisible y
+              // solo se ve donde hay arte detrás, que es donde la fecha chocaba (medido: con nombres
+              // largos la línea baja sobre el adorno en 9 plantillas). Sobre foto no se pone.
+              !sobreFoto && "rounded-xl px-3 py-0.5",
+            )}
+            style={{
+              color: sobreFoto ? "rgba(255,255,255,.95)" : "inherit",
+              ...(sobreFoto ? {} : { backgroundColor: "var(--inv-bg)" }),
+            }}
           >
             {infoEvento}
           </p>

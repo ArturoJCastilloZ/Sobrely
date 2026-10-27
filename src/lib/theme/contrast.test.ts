@@ -93,7 +93,7 @@ describe("deriveCta", () => {
     }
   });
 
-  it("los 11 packs que fallaban ahora pasan, y los 9 que pasaban no se tocan", () => {
+  it("los 10 packs que fallan con un botón blanco ahora pasan, y los 10 que ya pasaban no se tocan", () => {
     let corregidos = 0;
     let intactos = 0;
     for (const pack of Object.values(THEME_PACKS)) {
@@ -107,8 +107,10 @@ describe("deriveCta", () => {
         expect(cta.bg, `${pack.key} no debía cambiar`).toBe(primary);
       }
     }
-    expect(corregidos).toBe(11);
-    expect(intactos).toBe(9);
+    // Eran 11 y 9. `baby-animalitos` pasó de primario #a97c50 a #946840 el 26 oct 2026 (su «12:00»
+    // del programa medía 4.45 contra 4.5): ya cumple AA con el botón blanco sin corrección.
+    expect(corregidos).toBe(10);
+    expect(intactos).toBe(10);
   });
 
   it("el umbral cae dentro de la banda estable medida (0.20–0.30)", () => {
