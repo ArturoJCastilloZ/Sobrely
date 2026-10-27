@@ -160,3 +160,24 @@ A simple vista, el encuadre aguanta (el pastel, los anillos, el cáliz, los glob
 - **Aplicar el arco a las plantillas apaisadas:** exigiría recortarles el 25 a 50 % de la foto, que es justo lo que las pruebas de encuadre de las fases anteriores evitaron.
 
 **Decisión tuya:** (a) dejarlo con las 6; (b) pasarme fotos verticales o cuadradas para sumar más plantillas; (c) un arco con un marco fino alrededor de la foto, para que la cúpula luzca más. Mi recomendación: (a) ahora, y (b) cuando tengas las fotos.
+
+## 12. Punto 7 del plan: familia de noche (26 oct 2026)
+
+Hecho en la rama `plan/90-dias`, sin fusionar. La migración `0070` está aplicada en la base local, **no** en producción.
+
+**Qué se hizo.** Tres plantillas **nuevas** y oscuras, clonadas de otras (mismos módulos y mismo texto de ejemplo) con tema oscuro y un fondo dibujado en SVG, sin imágenes de ChatGPT ni de bancos:
+
+| Plantilla | Tema | Fondo (`public/arte/`) | Peso |
+|---|---|---|---|
+| XV años «Noche de gala» (`xv-noche-azul`) | Azul medianoche, plata y dorado | `xv-noche-azul-arte.svg`: estrellas y una luna dorada en las franjas laterales y las esquinas | 5.9 KB |
+| Boda «Bosque y champán» (`boda-bosque-champan`) | Verde bosque con ramitas en champán y salvia | `boda-bosque-champan-arte.svg`: ramitas en las franjas laterales y las esquinas | 2.6 KB |
+| Corporativo «Negro con acento» (`corporativo-negro-acento`) | Negro con un solo acento ámbar | `corporativo-negro-arte.svg`: reglas con marcas en los bordes y cuatro cuadros ámbar en las esquinas | 7.9 KB |
+
+Quedan registradas en `src/lib/theme/arte.ts` (polaridad `claro`, velo 0) y en `estilos.ts`. Se diseñaron con la regla que se aprendió con las ilustraciones: el adorno solo en los bordes y las esquinas, centro vacío de arriba abajo, porque el fondo va fijo a la pantalla y el texto pasa por encima.
+
+**Medido**, a 320, 375 y 1200 px, con la muestra y con nombres de 60 caracteres:
+- contraste: ninguna bajo AA en las tres superficies;
+- choque de texto (sin contar la cuenta atrás): 0;
+- adorno bajo el texto: 0 en `xv-noche-azul` y `corporativo-negro-acento`; en `boda-bosque-champan`, 1 sospecha de 4.8 % en «Jardín Las Flores» solo a 320 px (una hoja roza la primera letra en la pantalla más angosta). Una primera versión tenía las ramitas pegadas al texto alineado a la izquierda; se corrigió en la misma sesión.
+
+**Nota de gusto, para que la mires:** a ojo se ven sobrias y de buen nivel, pero son adornos geométricos hechos a código, no ilustraciones; si quieres un acabado de acuarela o foil, es lo que se pide con los prompts de [17](17-prompts-de-arte.md). No se añadieron prompts para estas tres porque no hicieron falta imágenes.

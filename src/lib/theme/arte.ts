@@ -813,6 +813,34 @@ export const ARTE: readonly DireccionArte[] = [
     polaridad: "oscuro",
     overlay: 0,
   },
+  // ——— Familia de noche (punto 7 del plan de validación de diseño, 2026-10-26) ———
+  // Tres fondos OSCUROS dibujados aquí, sin imágenes: el adorno vive en las franjas laterales y
+  // en las esquinas, y el centro queda vacío de arriba abajo (el fondo va fijo a la pantalla y el
+  // texto pasa por encima). Texto claro (`claro`), `overlay: 0`.
+  {
+    clave: "xv-noche-azul-arte",
+    tipo: "svg",
+    nombre: "Noche de gala",
+    eventos: ["XV años"],
+    polaridad: "claro",
+    overlay: 0,
+  },
+  {
+    clave: "boda-bosque-champan-arte",
+    tipo: "svg",
+    nombre: "Bosque y champán",
+    eventos: ["Boda"],
+    polaridad: "claro",
+    overlay: 0,
+  },
+  {
+    clave: "corporativo-negro-arte",
+    tipo: "svg",
+    nombre: "Negro con acento",
+    eventos: ["Corporativo"],
+    polaridad: "claro",
+    overlay: 0,
+  },
   // ——— Ilustraciones de ChatGPT/Gemini (piloto del 2026-10-26) ———
   // Cinco piezas con el centro vacío por diseño (medido: desviación < 2 en el 60 % × 45 % central).
   // `overlay: 0`: el contraste lo da la composición, y se mide con

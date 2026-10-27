@@ -52,6 +52,7 @@ export const ESTILO_POR_SLUG: Readonly<Record<string, EstiloClave>> = {
   "revelacion-dos-sobres": R,
   // Boda
   "boda-acuarela-eucalipto": N,
+  "boda-bosque-champan": E,
   "boda-botanica": N,
   "boda-carta-romantica": R,
   "boda-cinematografica": E,
@@ -67,6 +68,7 @@ export const ESTILO_POR_SLUG: Readonly<Record<string, EstiloClave>> = {
   "boda-terracota": N,
   // Corporativo
   "corporativo-cena-fin-de-ano": E,
+  "corporativo-negro-acento": M,
   "corporativo-completo": M,
   "corporativo-con-sede": M,
   "corporativo-conferencia-agenda": M,
@@ -102,6 +104,7 @@ export const ESTILO_POR_SLUG: Readonly<Record<string, EstiloClave>> = {
   "xv-glam-moderno": M,
   "xv-manuscrita": R,
   "xv-noche-estelar": E,
+  "xv-noche-azul": E,
   "xv-noche-estrellada": E,
   "xv-produccion-completa": E,
   "xv-seda": R,
