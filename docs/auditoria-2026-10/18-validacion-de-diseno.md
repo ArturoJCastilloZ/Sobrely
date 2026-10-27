@@ -93,3 +93,27 @@ Hechos en la rama `plan/90-dias`, sin fusionar.
 **Punto 3, nombre de tema con frase de ambiente (no se hizo, y esta es la razón).** El plan lo daba por faltante, pero lo había inferido de miniaturas. Al mirar el código, cada tarjeta del catálogo **ya muestra un nombre y una descripción** (`tpl.name` y `tpl.description` en `template-marketplace.tsx`), y la base ya trae nombres de tema en muchas («Noche estelar», «Seda carmesí», «Laurel clásico», «Nube de algodón»). Lo que sí es cierto es que los nombres son una mezcla de temáticos y genéricos («Boda elegante», «Cumpleaños moderno»), pero renombrar los genéricos les quitaría las palabras que la gente busca («Boda en la playa»). Reescribir 65 frases sin una necesidad medida no vale el riesgo; lo dejo como decisión tuya: si quieres que las descripciones suenen a ambiente en vez de a ficha técnica, se escriben en una pasada aparte y las apruebas antes.
 
 **Qué no se verificó:** red lenta y lector de pantalla; el comportamiento del enlace en un teléfono real (en Chrome de escritorio con el viewport a 375 px sí); y cómo se ve la línea de fecha y lugar con textos largos del anfitrión en las 65 (se probó con nombres largos de festejados, no con un lugar de 160 caracteres).
+
+## 9. Las cinco ilustraciones de ChatGPT/Gemini, montadas y medidas (26 oct 2026)
+
+Se montaron como **cinco plantillas nuevas** (no reemplazos), clonadas de otras con su mismo texto de ejemplo: `boda-acuarela-eucalipto`, `xv-acuarela-peonias`, `baby-nubes-acuarela`, `xv-noche-estrellada` y `cumpleanos-fiesta-mexicana`. La migración `0067` las inserta (idempotente, sin cambiar el esquema); **está aplicada en la base local y NO en producción**. Si no convencen, se desactivan con `is_active = false`. Registradas en `src/lib/theme/arte.ts` con un tipo nuevo (`ia`, `/arte/ia/*.webp`) y en `public/arte/PROCEDENCIA.md`.
+
+**Como imagen:** las cinco cumplen. Centro vacío (desviación < 2 en el 60 % × 45 % central, 0 % de bordes), sin texto, caras ni marcas (revisadas a ojo) y de 18 a 86 KB (techo de 90 KB) después de recortar a 7:15 y pasar a WebP.
+
+**Montadas, en un teléfono de 390 × 844 px** (el arte se ve completo): las cinco se ven **mucho más ricas** que las planas actuales; en escritorio (1200 px) ninguna tiene choques. En el teléfono:
+
+| Pieza | Choque medido | Qué se ve |
+|---|---|---|
+| Peonías (XV) | Título 26 %, subtítulo 21 %, «Mi sesión de fotos» 17 % de píxeles-borde bajo el texto | El ramo de arriba toca el título |
+| Papel picado | Título 24 %, subtítulo 13 %; **contraste 2.31:1** en la etiqueta «Nombre *» del formulario (AA pide 4.5; con un velo de 0.35 pasaría, pero apaga el arte) | El banderín tapa el título; los cempasúchil quedan detrás del formulario |
+| Eucalipto (boda) | Título 15 %, «Ceremonia y recepción» 4 a 6 % | Las hojas quedan detrás del título pero se lee |
+| Noche de gala | «Mis fotos» 29 a 34 % | La nebulosa y las ramas doradas de abajo quedan detrás de esa sección |
+| Nubes y luna (baby) | «Baby shower» 6 %, «Faltan» 4 % | La luna roza el título; es la que mejor sale |
+
+(Referencia: un fondo liso da cerca de 0 %; las plantillas actuales con adorno bajo el texto, ya reportadas en la sección B de `15`, andan entre 5 % y 49 %.)
+
+**Por qué chocan, y no es un defecto de las imágenes:** el fondo se pinta fijo a la pantalla mientras las secciones pasan por encima. La portada, arriba, cae siempre bajo la franja superior del arte, y toda sección que llega al borde inferior cae sobre la franja inferior. La especificación del piloto (centro vacío del 60 % × 45 %) era insuficiente. **La ronda 2 de prompts en [17](17-prompts-de-arte.md)** pide el adorno solo en bordes laterales y esquinas, con el centro vacío de arriba abajo.
+
+**Miniaturas del catálogo:** se ven recortadas (la miniatura es 3:4 y solo muestra la franja central del arte), así que casi no se nota el arte en la galería; en el teléfono sí. Es el mismo recorte que ya documenta `PROCEDENCIA.md`. Para que el catálogo las venda hará falta una miniatura capturada a 390 × 844.
+
+**Decisión tuya:** (a) regenerar las 5 con la ronda 2 y volver a medir; (b) quedarte con `baby-nubes-acuarela` y `boda-acuarela-eucalipto`, que son legibles hoy; (c) descartar. Recomiendo (a) para las cinco.
