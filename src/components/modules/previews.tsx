@@ -615,16 +615,18 @@ function HeroPreviewBase({
       )}
       {fotoContenida && conFoto && (
         <div
-          className={
+          className={cn(
             config.variant === "split"
               ? // `order-2` en móvil: el título va PRIMERO cuando la portada
                 // apila. Sin esto la foto ocupa 560 px a 420 de ancho con
                 // proporción 3/4 —exactamente el alto del recorte de la
                 // miniatura— y la plantilla se anunciaba en el catálogo con una
                 // foto y CERO texto. Medido, y visto en la hoja de contacto.
-                "relative order-2 w-full overflow-hidden rounded-lg @2xl/inv:order-1 @2xl/inv:w-1/2"
-              : "relative order-2 w-full max-w-md overflow-hidden rounded-lg"
-          }
+                "relative order-2 w-full overflow-hidden @2xl/inv:order-1 @2xl/inv:w-1/2"
+              : "relative order-2 w-full max-w-md overflow-hidden",
+            // Arco: máscara de las dos esquinas de arriba (`imageShape`); la de siempre, esquinas suaves.
+            config.imageShape === "arch" ? "rounded-t-full rounded-b-lg" : "rounded-lg",
+          )}
           style={{
             // `auto` = el valor de siempre por variante. Cualquier otro lo pone
             // la plantilla, para que la caja coincida con la fuente y no se

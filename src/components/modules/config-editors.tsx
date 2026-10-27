@@ -230,6 +230,23 @@ function ComposicionDePortada({
         </p>
       ) : null}
 
+      {enFigura && imageUrl ? (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="foto-en-arco">Foto en arco</Label>
+            <Switch
+              id="foto-en-arco"
+              checked={config.imageShape === "arch"}
+              onCheckedChange={(v) => onChange({ imageShape: v ? "arch" : "rect" })}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            El arco redondea las dos esquinas de arriba. Queda mejor con una foto cuadrada o vertical;
+            con una apaisada la cúpula sale ovalada.
+          </p>
+        </div>
+      ) : null}
+
       {/* El interruptor va SEPARADO del combo, no como una sexta opción: el
           diseño elegido se mantiene y esto sólo permite empujar los textos
           encima. Es el mismo control que llevan las 11 secciones.

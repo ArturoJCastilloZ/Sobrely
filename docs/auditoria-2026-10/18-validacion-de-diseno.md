@@ -139,3 +139,24 @@ Hechos en la rama `plan/90-dias`, sin fusionar. Datos en la migración `0068` (a
 **Pendiente de mirar:** `corporativo-junta-resultados` quedó con una sospecha de 9.2 % a 320 px en «Confirma tu asistencia» que apareció con la línea de fecha y que no se arregló.
 
 Se regeneraron las 70 miniaturas (`REVISION_MINIATURAS` = `202610270045`).
+
+## 11. Punto 6 del plan: marco arqueado (26 oct 2026)
+
+Hecho en la rama `plan/90-dias`, sin fusionar. La migración `0069` está aplicada en la base local, **no** en producción.
+
+**Qué se construyó.** Una opción nueva de la portada, `imageShape` (`rect` por defecto, o `arch`), que redondea las dos esquinas de arriba de la foto contenida (`split` y `editorial`). Es una máscara, no un cambio de proporción: el encuadre queda como esté. En el editor, un interruptor «Foto en arco» aparece cuando la portada tiene foto en figura; avisa que queda mejor con foto cuadrada o vertical. Con el valor por omisión ninguna invitación guardada se mueve (cuatro pruebas nuevas: defecto, `split` y `editorial`, valor desconocido, sin foto).
+
+**A cuántas plantillas se aplicó: 6, no ~30.** La estimación de ~30 del plan suponía poner una foto de una persona dentro del arco. Con las fotos que tenemos, solo 6 plantillas tienen foto cuadrada (`imageRatio` 1/1), que es donde la máscara solo quita esquinas y la cúpula sale circular: `bautizo-cera-blanca`, `boda-marco-nuestro`, `boda-papel-y-lino`, `comunion-cinta`, `revelacion-coral` y `xv-corona`. Las otras 9 con foto contenida son apaisadas (3/2 o 4/3): con ellas la cúpula saldría ovalada y la proporción ya se había calibrado para no recortar la foto, así que no se tocaron.
+
+**Medido en esas 6**, a 320, 375 y 1200 px, con la muestra y con nombres de 60 caracteres:
+- adorno bajo el texto: **0** sospechas en las 6;
+- choque de texto (sin contar la cuenta atrás): **0**;
+- contraste: ninguna bajo AA en las tres superficies.
+A simple vista, el encuadre aguanta (el pastel, los anillos, el cáliz, los globos y la tiara no pierden su sujeto). Se regeneraron las 6 miniaturas (`REVISION_MINIATURAS` = `202610270114`).
+
+**Lo que no se hizo, y por qué.**
+- **Foto de una persona en el arco** (lo que hace la competencia): no tenemos fotos de personas con permiso. `PROCEDENCIA.md` descarta caras identificables por licencia. Si quieres este efecto hacen falta fotos tuyas o con consentimiento por escrito, o imágenes generadas sin caras reconocibles.
+- **Portada fotográfica a sangre en `boda-destino`, `boda-en-la-playa` y las demás:** requiere fotos nuevas (descargas con tu autorización y una revisión de contraste con velo). La variante `centered` con foto a sangre ya existe y funciona.
+- **Aplicar el arco a las plantillas apaisadas:** exigiría recortarles el 25 a 50 % de la foto, que es justo lo que las pruebas de encuadre de las fases anteriores evitaron.
+
+**Decisión tuya:** (a) dejarlo con las 6; (b) pasarme fotos verticales o cuadradas para sumar más plantillas; (c) un arco con un marco fino alrededor de la foto, para que la cúpula luzca más. Mi recomendación: (a) ahora, y (b) cuando tengas las fotos.

@@ -699,6 +699,14 @@ export const heroConfigSchema = z.object({
    */
   imageRatio: z.enum(["auto", ...MEDIA_RATIOS]).default("auto"),
   /**
+   * Forma de la foto contenida de `split` y `editorial`: rectángulo con esquinas suaves (la de
+   * siempre) o arco. El arco es una MÁSCARA, no un recorte de proporción: quita las dos esquinas
+   * de arriba y deja el encuadre como esté, así que solo conviene con fotos cuadradas o más altas
+   * que anchas (con una apaisada la cúpula sale elíptica). Defecto `rect`: ninguna invitación
+   * guardada se mueve.
+   */
+  imageShape: z.enum(["rect", "arch"]).default("rect"),
+  /**
    * Interruptor del movimiento libre. Va SEPARADO de `variant` a propósito:
    * el diseño elegido se mantiene y esto sólo permite empujar los textos
    * encima. Meterlo como una sexta variante habría obligado a elegir entre
