@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { RsvpConfig, TextStyle } from "@/lib/modules/types";
 import { FONT_STACKS } from "@/lib/theme/theme";
 import {
@@ -54,6 +54,10 @@ export function PublicRsvpForm({
   const [count, setCount] = useState(1);
   const [answers, setAnswers] = useState<RsvpAnswers>({});
   const [error, setError] = useState<string | null>(null);
+  /** Qué campo causó el error, para marcarlo (`aria-invalid`) y llevarle el foco. */
+  const [campoConError, setCampoConError] = useState<"nombre" | "asistencia" | null>(null);
+  const nombreRef = useRef<HTMLInputElement>(null);
+  const primeraOpcionRef = useRef<HTMLButtonElement>(null);
   const [done, setDone] = useState(false);
   const [closed, setClosed] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -68,7 +72,9 @@ export function PublicRsvpForm({
   // app-token border that vanishes on a tinted background).
   const fieldSurface =
     "bg-[var(--inv-card)] dark:bg-[var(--inv-card)] border-[color-mix(in_srgb,var(--inv-text)_30%,transparent)]";
-  const inputCls = `@4xl/inv:h-11 @4xl/inv:text-base ${fieldSurface}`;
+  // 44 px también en teléfono: el `Input` base mide 32 px y el alto de 44 solo entraba desde `@4xl`
+  // (medido a 375 px en 3 plantillas). Es el campo que más falla una persona mayor.
+  const inputCls = `h-11 @4xl/inv:text-base ${fieldSurface}`;
   const formVariant = config.variant ?? "classic";
   const formClass = {
     classic: "",
@@ -146,12 +152,17 @@ export function PublicRsvpForm({
     const guestEmail = String(data.get("guestEmail") ?? "").trim();
     const message = String(data.get("message") ?? "").trim();
 
+    setCampoConError(null);
     if (!guestName) {
       setError("Escribe tu nombre.");
+      setCampoConError("nombre");
+      nombreRef.current?.focus();
       return;
     }
     if (!status) {
       setError("Selecciona si asistirás.");
+      setCampoConError("asistencia");
+      primeraOpcionRef.current?.focus();
       return;
     }
 
@@ -201,7 +212,7 @@ export function PublicRsvpForm({
       </div>
 
       {done ? (
-        <div style={{
+        <div role="status" style={{
           color: "var(--inv-success)",
           backgroundColor: "color-mix(in srgb, var(--inv-success) 10%, transparent)",
         }}
@@ -225,8 +236,12 @@ export function PublicRsvpForm({
             <Input
               id="guestName"
               name="guestName"
+              ref={nombreRef}
               required
               maxLength={120}
+              autoComplete="name"
+              aria-invalid={campoConError === "nombre" ? true : undefined}
+              aria-describedby={campoConError === "nombre" ? "rsvp-error" : undefined}
               className={`${inputCls} ${fieldVariantClass} ${configuredFieldClass}`}
             />
           </div>
@@ -239,6 +254,8 @@ export function PublicRsvpForm({
               id="guestEmail"
               name="guestEmail"
               type="email"
+              inputMode="email"
+              autoComplete="email"
               placeholder="tu@correo.com"
               className={`${inputCls} ${fieldVariantClass} ${configuredFieldClass}`}
             />
@@ -247,9 +264,10 @@ export function PublicRsvpForm({
           <div className="space-y-1.5">
             <Label className={labelCls}>¿Asistirás? *</Label>
             <div className="grid grid-cols-3 gap-2">
-              {ATTENDANCE_STATUSES.map((s) => (
+              {ATTENDANCE_STATUSES.map((s, i) => (
                 <button
                   key={s}
+                  ref={i === 0 ? primeraOpcionRef : undefined}
                   type="button"
                   onClick={() => setStatus(s)}
                   style={
@@ -284,6 +302,7 @@ export function PublicRsvpForm({
                 id="guestCount"
                 name="guestCount"
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={MAX_GUEST_COUNT}
                 value={count}
@@ -322,7 +341,7 @@ export function PublicRsvpForm({
           </div>
 
           {error && (
-            <p role="alert" className="text-sm text-destructive @4xl/inv:text-base">
+            <p id="rsvp-error" role="alert" className="text-sm text-destructive @4xl/inv:text-base">
               {error}
             </p>
           )}

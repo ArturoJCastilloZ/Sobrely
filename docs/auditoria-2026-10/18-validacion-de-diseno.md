@@ -77,3 +77,19 @@ Mi recomendación: 1, 3 y 4 ya (pequeños, de bajo riesgo y de alto efecto), des
 ## 7. Imágenes en ChatGPT o Gemini
 
 Sí hacen falta para las familias nuevas de noche y para el acento mexicano, y como piloto de las plantillas planas. Los prompts completos, en dos versiones (ChatGPT y Gemini), están en [17](17-prompts-de-arte.md). **No** hacen falta para los puntos 1 a 6 del plan, que son de código.
+
+## 8. Avance (26 oct 2026): puntos 1 a 3 del plan
+
+Hechos en la rama `plan/90-dias`, sin fusionar.
+
+**Punto 1, arreglos del invitado (hecho).**
+- La etiqueta de la portada es ahora un enlace a una ancla de la misma página. Las que invitan a decir que sí («Acompáñanos», «Te espero», «Confirmar», «Regístrate»…) bajan al formulario de confirmación; las que empiezan con «Ver» («Ver detalles», «Ver todo», «Ver el video»…) bajan a la sección que sigue. Probado con las 27 etiquetas distintas que traen hoy las plantillas (`destino-cta.ts`). Las anclas son divs de altura cero, así que no mueven el diseño. En el editor y en la vista previa privada sigue siendo un rótulo.
+- El área de toque de la etiqueta mide 44 px de alto sin cambiar el aspecto de la placa (se amplía con un pseudoelemento). Medido a 375 px: dentro de ±12 px de la placa sigue siendo el enlace; a 24 px ya no.
+- Los campos del formulario de confirmación pasan de 32 a **44 px** en teléfono (también los selectores y botones de las preguntas del anfitrión); el nombre lleva `autocomplete="name"`, el correo `autocomplete="email"` y teclado de correo, el número `inputMode="numeric"`. Un error de nombre o de asistencia marca el campo (`aria-invalid`), lo enlaza al mensaje y le lleva el foco; el mensaje de éxito lleva `role="status"`.
+- Verificado en el navegador a 375 px en 4 plantillas (`boda-jardin`, `xv-noche-estelar`, `cumpleanos-moderno`, `corporativo-sencillo`): enlace presente, ancla existente, el clic baja a la sección, campos de 44 px, sin desborde horizontal.
+
+**Punto 2, fecha y lugar en la portada (hecho).** Una línea bajo el subtítulo, «12 de junio de 2027 · Jardín Las Flores», que sale de la fecha del evento y del nombre del lugar del módulo de ubicación (`info-evento.ts`); no hay campo nuevo que llenar. La fecha se formatea en la zona de México central, así que el día no se corre. También aparece en la vista del editor, para que se vea lo mismo que verá el invitado. Se regeneraron las 65 miniaturas del catálogo (`REVISION_MINIATURAS` pasó a `202610270007`) para que lo que se ve ahí siga siendo lo que se recibe. Regresión: el script de choques de texto, en las 65 plantillas, a 4 anchos y con nombres de 60 caracteres, da los mismos resultados que antes (cero desbordes, recortes y textos pisados), y la hoja de portadas se revisó a ojo.
+
+**Punto 3, nombre de tema con frase de ambiente (no se hizo, y esta es la razón).** El plan lo daba por faltante, pero lo había inferido de miniaturas. Al mirar el código, cada tarjeta del catálogo **ya muestra un nombre y una descripción** (`tpl.name` y `tpl.description` en `template-marketplace.tsx`), y la base ya trae nombres de tema en muchas («Noche estelar», «Seda carmesí», «Laurel clásico», «Nube de algodón»). Lo que sí es cierto es que los nombres son una mezcla de temáticos y genéricos («Boda elegante», «Cumpleaños moderno»), pero renombrar los genéricos les quitaría las palabras que la gente busca («Boda en la playa»). Reescribir 65 frases sin una necesidad medida no vale el riesgo; lo dejo como decisión tuya: si quieres que las descripciones suenen a ambiente en vez de a ficha técnica, se escriben en una pasada aparte y las apruebas antes.
+
+**Qué no se verificó:** red lenta y lector de pantalla; el comportamiento del enlace en un teléfono real (en Chrome de escritorio con el viewport a 375 px sí); y cómo se ve la línea de fecha y lugar con textos largos del anfitrión en las 65 (se probó con nombres largos de festejados, no con un lugar de 160 caracteres).

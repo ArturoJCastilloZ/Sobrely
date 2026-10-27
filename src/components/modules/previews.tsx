@@ -564,9 +564,15 @@ function estiloDeTexto(style: TextStyle, colorBase: string): React.CSSProperties
 function HeroPreviewBase({
   config,
   animate = false,
+  ctaHref,
+  infoEvento,
 }: {
   config: HeroConfig;
   animate?: boolean;
+  /** `#ancla` a la que lleva la etiqueta; sin él (editor, vista previa) sigue siendo un rótulo. */
+  ctaHref?: string;
+  /** «12 de junio de 2027 · Hacienda Los Laureles», derivada de la fecha y la ubicación. */
+  infoEvento?: string;
 }) {
   const title = config.title || "Nuestra celebración";
 
@@ -667,6 +673,15 @@ function HeroPreviewBase({
             {config.subtitle}
           </p>
         )}
+        {infoEvento && (
+          <p
+            data-bloque="info"
+            className="text-sm font-medium @2xl/inv:text-lg @4xl/inv:text-xl"
+            style={{ color: sobreFoto ? "rgba(255,255,255,.95)" : "inherit" }}
+          >
+            {infoEvento}
+          </p>
+        )}
         {config.ctaLabel && (
           <div
             data-bloque="cta"
@@ -684,8 +699,17 @@ function HeroPreviewBase({
               className="h-px w-8 @2xl/inv:w-12 @4xl/inv:w-16"
               style={{ backgroundColor: "currentColor", opacity: 0.5 }}
             />
-            <span
-              className="rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-[0.3em] @2xl/inv:px-3 @2xl/inv:text-sm @4xl/inv:text-base"
+            {(() => {
+              const Etiqueta = ctaHref ? "a" : "span";
+              return (
+            <Etiqueta
+              {...(ctaHref ? { href: ctaHref } : {})}
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-[0.3em] @2xl/inv:px-3 @2xl/inv:text-sm @4xl/inv:text-base",
+                // Enlace: el área de toque crece a 44 px de alto sin cambiar el aspecto de la placa.
+                ctaHref &&
+                  "relative after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-4",
+              )}
               style={
                 // La PLACA del epigrafe, y se auto-oculta.
                 //
@@ -712,7 +736,9 @@ function HeroPreviewBase({
               }
             >
               {config.ctaLabel}
-            </span>
+            </Etiqueta>
+              );
+            })()}
             <span
               aria-hidden
               className="h-px w-8 @2xl/inv:w-12 @4xl/inv:w-16"

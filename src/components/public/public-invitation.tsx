@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import type {
   PublicInvitation,
   GuestForInvitation,
@@ -14,6 +15,8 @@ import {
 } from "@/lib/modules/types";
 import { SignatureWall } from "@/components/modules/signature-wall";
 import { parseTheme } from "@/lib/theme/theme";
+import { ANCLA_CONFIRMAR, ANCLA_SIGUIENTE, destinoDeCta } from "@/lib/invitations/destino-cta";
+import { infoDeEvento } from "@/lib/invitations/info-evento";
 import { brandingForPlanCode } from "@/lib/billing/branding";
 import { ThemeScope } from "@/components/theme/theme-scope";
 import { StickerLayer } from "@/components/theme/sticker-layer";
@@ -66,6 +69,13 @@ export function PublicInvitationView({
     location: eventLocation,
   };
 
+  // La etiqueta de la portada lleva a una ancla de esta misma página (ver `destino-cta.ts`).
+  // En la vista previa privada no: ahí la invitación solo se mira.
+  const indiceHero = modules.findIndex((m) => m.module_type === "hero");
+  const indiceRsvp = modules.findIndex((m) => m.module_type === "rsvp");
+  const indiceSiguiente = indiceHero >= 0 && indiceHero + 1 < modules.length ? indiceHero + 1 : -1;
+  const infoEvento = infoDeEvento(invitation.event_date, modules);
+
   return (
     <ThemeScope
       theme={theme}
@@ -91,8 +101,26 @@ export function PublicInvitationView({
             readModuleAnimationOverride(m.config),
             theme.animations,
           );
+          const etiquetaPortada =
+            m.module_type === "hero" && typeof m.config.ctaLabel === "string" ? m.config.ctaLabel : "";
+          const destino = etiquetaPortada ? destinoDeCta(etiquetaPortada) : null;
+          const ctaHref = vistaPrevia
+            ? undefined
+            : destino === "confirmar" && indiceRsvp >= 0
+              ? `#${ANCLA_CONFIRMAR}`
+              : (destino === "confirmar" || destino === "siguiente") && indiceSiguiente >= 0
+                ? `#${ANCLA_SIGUIENTE}`
+                : undefined;
           return (
-            <AnimatedModule key={m.id} animation={animation} index={i}>
+            <Fragment key={m.id}>
+              {/* Anclas de altura cero: no mueven el diseño. `scroll-mt` deja un respiro arriba. */}
+              {i === indiceRsvp && (
+                <div id={ANCLA_CONFIRMAR} aria-hidden className="h-0 scroll-mt-4" />
+              )}
+              {i === indiceSiguiente && (
+                <div id={ANCLA_SIGUIENTE} aria-hidden className="h-0 scroll-mt-4" />
+              )}
+            <AnimatedModule animation={animation} index={i}>
               {/* Los módulos INTERACTIVOS se despachan aquí y no en
                   `ModulePreview`: necesitan el id de la invitación y hablan
                   con el servidor. `ModulePreview` es la vista estática que
@@ -125,9 +153,12 @@ export function PublicInvitationView({
                   config={m.config}
                   animate={animation.enabled}
                   eventDate={invitation.event_date ?? ""}
+                  ctaHref={ctaHref}
+                  infoEvento={infoEvento}
                 />
               )}
             </AnimatedModule>
+            </Fragment>
           );
         })}
 

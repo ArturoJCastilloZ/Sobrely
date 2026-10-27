@@ -25,6 +25,7 @@ import {
   readModuleAnimationOverride,
 } from "@/lib/animation/schema";
 import { useReplayDeAnimacion } from "@/lib/animation/replay";
+import { infoDeEvento } from "@/lib/invitations/info-evento";
 
 export function PreviewPane({
   modules,
@@ -45,6 +46,8 @@ export function PreviewPane({
   onTexto?: (moduloId: string, campo: string, valor: string) => void;
 }) {
   const visible = modules.filter((m) => m.is_visible);
+  // La línea «fecha · lugar» de la portada: la misma que verá el invitado.
+  const infoEvento = infoDeEvento(eventDate, visible);
 
   // Sólo se engancha si ALGÚN módulo visible tiene el interruptor encendido:
   // así el resto del editor no paga ni un manejador de puntero cuando nadie
@@ -434,6 +437,7 @@ export function PreviewPane({
                       config={m.config}
                       animate={animation.enabled}
                       eventDate={eventDate}
+                      infoEvento={infoEvento}
                       editorHint
                     />
                   </AnimatedModule>

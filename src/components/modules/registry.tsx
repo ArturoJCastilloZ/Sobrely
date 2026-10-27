@@ -104,6 +104,10 @@ export type ModulePreviewProps = {
   interactive?: boolean;
   editorHint?: boolean;
   eventDate?: string;
+  /** Solo la portada: a dónde lleva su etiqueta (`#ancla`); sin él, es un rótulo. */
+  ctaHref?: string;
+  /** Solo la portada: la línea «fecha · lugar» ya formateada. */
+  infoEvento?: string;
 };
 
 export type ModuleEntry = {
@@ -121,7 +125,9 @@ export const MODULE_REGISTRY: Record<ModuleType, ModuleEntry> = {
   hero: {
     Icon: SparklesIcon,
     Editor: ({ config, onChange, ctx }) => <HeroEditor config={config} onChange={onChange} ctx={ctx} />,
-    Preview: ({ config, animate }) => <HeroPreview config={config as never} animate={animate} />,
+    Preview: ({ config, animate, ctaHref, infoEvento }) => (
+      <HeroPreview config={config as never} animate={animate} ctaHref={ctaHref} infoEvento={infoEvento} />
+    ),
   },
   welcome: {
     Icon: MailOpenIcon,

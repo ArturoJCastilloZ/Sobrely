@@ -56,7 +56,7 @@ export function RsvpQuestionFields({
                     type="button"
                     onClick={() => set(q.id, opt.v)}
                     aria-pressed={values[q.id] === opt.v}
-                    className={`flex-1 rounded-md border px-3 py-2 text-sm transition ${
+                    className={`min-h-11 flex-1 rounded-md border px-3 py-2 text-sm transition ${
                       values[q.id] === opt.v
                         ? "border-current font-medium"
                         : "opacity-70"
@@ -71,7 +71,7 @@ export function RsvpQuestionFields({
                 id={id}
                 value={typeof values[q.id] === "string" ? (values[q.id] as string) : ""}
                 onChange={(e) => set(q.id, e.target.value)}
-                className={`h-9 w-full rounded-md border px-2 text-sm ${inputClassName}`}
+                className={`h-11 w-full rounded-md border px-2 text-sm ${inputClassName}`}
               >
                 <option value="">Elige una opción</option>
                 {q.options.map((o) => (
