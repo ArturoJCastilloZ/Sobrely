@@ -66,7 +66,7 @@ export function aPlantillaPublica(
   };
 }
 
-const COLUMNAS =
+export const COLUMNAS =
   "id, slug, name, description, event_type, preview_image_url, modules_config, theme_config";
 
 export async function cargarGaleriaPublica(

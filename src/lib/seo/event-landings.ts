@@ -82,7 +82,7 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
       },
       {
         title: "Cuenta regresiva y música",
-        body: "Genera expectativa con una cuenta regresiva y ambienta la invitación con tu canción.",
+        body: "Genera expectativa con una cuenta regresiva y, desde el plan Celebración, ambienta la invitación con tu canción.",
       },
       {
         title: "Control de invitados",
@@ -96,7 +96,7 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
       },
       {
         q: "¿Puedo poner música y cuenta regresiva?",
-        a: "Sí, la invitación incluye módulos de música y cuenta regresiva, además de galería, itinerario y código de vestimenta.",
+        a: "Sí. La cuenta regresiva viene en todos los planes; la música, la galería, el itinerario y el código de vestimenta, desde el plan Celebración.",
       },
       {
         q: "¿Cuánto cuesta?",
@@ -224,6 +224,16 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
 };
 
 export const EVENT_LANDING_LIST = Object.values(EVENT_LANDINGS);
+
+/**
+ * «Boda», «XV años», «Eventos corporativos»: el `eyebrow` sin el prefijo, para
+ * pastillas donde el contexto ya dice «invitaciones por tipo de evento» (el
+ * texto completo es largo para una pastilla a 375 px).
+ */
+export function etiquetaCortaDeLanding(l: EventLanding): string {
+  const corta = l.eyebrow.replace(/^Invitaciones digitales para /, "");
+  return corta.charAt(0).toUpperCase() + corta.slice(1);
+}
 
 /**
  * Tipo de evento (`templates.event_type`) de cada landing. Lo usa el embudo para
