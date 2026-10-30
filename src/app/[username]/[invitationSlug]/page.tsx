@@ -2,25 +2,16 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { PublicInvitation } from "@/lib/invitations/public-types";
 import { PublicInvitationView } from "@/components/public/public-invitation";
 import { InvitacionCaducada } from "@/components/public/invitacion-caducada";
 import { brandingForPlanCode } from "@/lib/billing/branding";
+import { cargarInvitacionPublica as loadInvitation } from "@/lib/invitations/cargar-publica";
+import {
+  metadatosDeInvitacion,
+  metadatosGenericos,
+} from "@/lib/seo/compartir-invitacion";
 
 type Params = { username: string; invitationSlug: string };
-
-/** Cached so generateMetadata and the page share a single DB round-trip. */
-const loadInvitation = cache(
-  async (username: string, slug: string): Promise<PublicInvitation | null> => {
-    const supabase = await createClient();
-    const { data, error } = await supabase.rpc("get_public_invitation", {
-      p_username: username,
-      p_slug: slug,
-    });
-    if (error || !data) return null;
-    return data as PublicInvitation;
-  },
-);
 
 /**
  * ¿Existe la invitación y sólo le caducó el acceso, o de verdad no existe?
@@ -63,14 +54,13 @@ export async function generateMetadata({
         estado === "caducada"
           ? "Invitación caducada"
           : "Invitación no encontrada",
+      // La tarjeta al compartir no dice cuál de los dos casos es.
+      ...metadatosGenericos(),
       robots: { index: false, follow: false },
     };
   }
 
   const title = invitation.title || "Invitación";
-  const description = invitation.event_type
-    ? `${invitation.event_type} · Te invitamos`
-    : "Estás invitado";
 
   // Sin marca: el título va absoluto para no heredar "· Sobrely" del template
   // del layout. Es la misma promesa del pie, en la pestaña del invitado.
@@ -78,17 +68,12 @@ export async function generateMetadata({
 
   return {
     title: branding === "none" ? { absolute: title } : title,
-    description,
-    openGraph: {
-      title,
-      description,
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-    },
+    // Tarjeta del evento (título, tipo, fecha) con su imagen generada en
+    // `opengraph-image.tsx`. La ruta es la canónica de la invitación.
+    ...metadatosDeInvitacion(
+      invitation,
+      `/${encodeURIComponent(invitation.owner_username)}/${encodeURIComponent(invitation.slug)}`,
+    ),
     // Los datos del evento (anfitrion, fecha, direccion, confirmados) no tienen
     // por que acabar en un buscador: mismo criterio que /g/[token] y /r/[token].
     robots: { index: false, follow: false },

@@ -16,30 +16,57 @@ const IMAGEN_SOCIAL = {
   alt: "Sobrely — Invitaciones digitales dinámicas",
 };
 
+export type ImagenSocial = {
+  url: string;
+  width?: number;
+  height?: number;
+  alt: string;
+};
+
 export function metadatosSociales(datos: {
   titulo: string;
   descripcion: string;
   ruta: string;
   tipo?: "website" | "article";
   publicadoEn?: string;
+  /**
+   * Imagen propia de la página (p. ej. la miniatura de una plantilla). Por
+   * omisión, la genérica de Sobrely. `"del-segmento"` NO declara imagen: la
+   * pone el `opengraph-image.tsx` de la ruta, que Next solo adjunta cuando
+   * `openGraph.images` no está definido (`mergeStaticMetadata` en
+   * `next/dist/lib/metadata/resolve-metadata.js`). En Twitter tampoco se
+   * declara: X usa `og:image` cuando falta `twitter:image`.
+   */
+  imagen?: ImagenSocial | "del-segmento";
+  /** Sin `og:site_name` «Sobrely»: invitaciones de planes sin marca. */
+  sinMarca?: boolean;
 }): Pick<Metadata, "openGraph" | "twitter"> {
-  const { titulo, descripcion, ruta, tipo = "website", publicadoEn } = datos;
+  const {
+    titulo,
+    descripcion,
+    ruta,
+    tipo = "website",
+    publicadoEn,
+    imagen = IMAGEN_SOCIAL,
+    sinMarca = false,
+  } = datos;
+  const delSegmento = imagen === "del-segmento";
   return {
     openGraph: {
       type: tipo,
-      siteName: "Sobrely",
+      ...(sinMarca ? {} : { siteName: "Sobrely" }),
       locale: "es_MX",
       url: ruta,
       title: titulo,
       description: descripcion,
-      images: [IMAGEN_SOCIAL],
+      ...(delSegmento ? {} : { images: [imagen] }),
       ...(tipo === "article" && publicadoEn ? { publishedTime: publicadoEn } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title: titulo,
       description: descripcion,
-      images: [IMAGEN_SOCIAL.url],
+      ...(delSegmento ? {} : { images: [imagen.url] }),
     },
   };
 }

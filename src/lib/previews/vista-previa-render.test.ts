@@ -58,7 +58,11 @@ describe("PublicInvitationView · vistaPrevia", () => {
 
   it("los demás módulos se pintan IGUAL con o sin el prop: la vista previa muestra lo que verían los invitados", () => {
     const inv = invitacion(["hero", "welcome", "countdown"]);
-    expect(html(inv, true)).toBe(html(inv, false));
+    // Única diferencia: en la vista previa el pie de marca no es enlace
+    // (`pie-de-marca.tsx`). Se ve igual; se compara todo lo de antes del pie.
+    const sinPie = (h: string) => h.slice(0, h.indexOf("<footer"));
+    expect(sinPie(html(inv, true))).toBe(sinPie(html(inv, false)));
+    expect(html(inv, true)).toContain("Hecho con ");
   });
 
   it("`vistaPrevia: false` explícito equivale a no pasarlo (la página pública no cambia)", () => {

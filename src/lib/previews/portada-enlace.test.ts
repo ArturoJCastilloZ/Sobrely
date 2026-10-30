@@ -58,7 +58,9 @@ describe("etiqueta de la portada", () => {
 
   it("si la portada es lo único, sigue siendo un rótulo (no hay a dónde ir)", () => {
     const h = html(invitacion("Acompáñanos", ["hero"]));
-    expect(h).not.toContain("<a ");
+    // Solo la portada: el pie de marca (plan `free`) sí es un enlace, aparte.
+    const portada = h.slice(0, h.indexOf("<footer"));
+    expect(portada).not.toContain("<a ");
     expect(h).toContain("Acompáñanos");
   });
 
