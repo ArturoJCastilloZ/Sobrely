@@ -23,6 +23,21 @@ import { describe, expect, it } from "vitest";
  * "use client" se marca. Los `import type` y `type X` no cuentan: se borran al
  * compilar. Si alguna vez hace falta algo así, el valor se mueve a un módulo
  * compartido sin directiva (como `src/lib/invitations/estado.ts`).
+ *
+ * Alcance y límites (lo que esta guarda NO ve):
+ * - Solo barre `src/app`. Un archivo de servidor fuera de ahí (p. ej. en
+ *   `src/lib` o un componente de servidor en `src/components`) que importe de
+ *   un módulo cliente no se revisa.
+ * - Es una heurística de NOMBRE: un PascalCase se da por componente aunque sea
+ *   una constante o una clase, y un componente en camelCase se marcaría.
+ * - Los imports POR DEFECTO (`import algo from "./cliente"`) no se revisan:
+ *   se tratan como componente, porque no se puede saber qué exporta el default
+ *   sin ejecutar el módulo.
+ * - Solo sigue rutas relativas y `@/`; los paquetes de `node_modules` y los
+ *   re-exports en cadena (un barril sin directiva que reexporta de un módulo
+ *   cliente) quedan fuera.
+ * - Lee el texto, no el AST: un import dentro de un comentario o una cadena
+ *   también cuenta.
  */
 
 const SRC = fileURLToPath(new URL("../", import.meta.url));
@@ -54,7 +69,10 @@ function resolver(desde: string, spec: string): string | null {
   return null;
 }
 
-const IMPORT = /import\s+(type\s+)?([\s\S]*?)\s+from\s+["']([^"']+)["']/g;
+// La cláusula no puede contener comillas ni `;`: si pudiera, el `*?` perezoso
+// arrancaba en un import de efecto (`import "./x.css";`), cruzaba hasta el
+// siguiente `from` y se tragaba un `import type` como si fuera de valor.
+const IMPORT = /import\s+(type\s+)?([^"';]*?)\s+from\s+["']([^"']+)["']/g;
 const ES_COMPONENTE = /^[A-Z][a-z0-9]/;
 
 /** Nombres de valor no-componente que `codigo` importa desde módulos cliente. */
@@ -97,6 +115,16 @@ import { InvitationCard, type InvitationSummary } from "@/components/dashboard/i
       "AVISO_DE_CADUCADA from @/components/dashboard/invitation-card",
       "ETIQUETA_DE_ESTADO from @/components/dashboard/invitation-card",
       "estadoDeInvitacion from @/components/dashboard/invitation-card",
+    ]);
+  });
+
+  it("un `import type` tras un import de efecto no se marca (ni se traga el siguiente import)", () => {
+    const codigo = `import "./globals.css";
+import type { estadoDeInvitacion } from "@/components/dashboard/invitation-card";
+import { ETIQUETA_DE_ESTADO } from "@/components/dashboard/invitation-card";`;
+    const cliente = (s: string) => s.endsWith("invitation-card");
+    expect(importsDeClienteNoComponente(codigo, cliente)).toEqual([
+      "ETIQUETA_DE_ESTADO from @/components/dashboard/invitation-card",
     ]);
   });
 
