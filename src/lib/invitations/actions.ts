@@ -16,6 +16,7 @@ import { defaultConfigFor, type ModuleType } from "@/lib/modules/types";
 import { saveEditorSchema, type SaveEditorInput } from "@/lib/invitations/schemas";
 import {
   canPublishInvitation,
+  canUseGuestManagement,
   getInvitationEntitlement,
   isOwnerComped,
   planDePagoRequeridoParaInvitacion,
@@ -45,7 +46,6 @@ export async function createInvitation(
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const rsvpMode = mode === "guest_list" ? "guest_list" : "open";
   const slug = `invitacion-${randomSuffix()}`;
 
   const { data: invitation, error } = await supabase
@@ -56,13 +56,33 @@ export async function createInvitation(
       slug,
       status: "draft",
       is_published: false,
-      rsvp_mode: rsvpMode,
+      // Nace SIEMPRE en confirmación abierta: la lista de invitados es solo de
+      // Premium y el plan efectivo se resuelve por invitación, así que hace
+      // falta el id para saber si aplica (comp de admin). Ver abajo.
+      rsvp_mode: "open",
     })
     .select("id")
     .single();
 
   if (error || !invitation) {
     throw new Error(error?.message ?? "No se pudo crear la invitación.");
+  }
+
+  // Lista de invitados: solo si el plan efectivo la incluye (Premium o comp
+  // de admin). Un borrador nuevo sin comp es Free, así que se queda en
+  // confirmación abierta y el editor ofrece mejorar a Premium.
+  let rsvpMode: "open" | "guest_list" = "open";
+  if (mode === "guest_list" && (await canUseGuestManagement(supabase, invitation.id))) {
+    const { data: modoFilas, error: errModo } = await supabase
+      .from("invitations")
+      .update({ rsvp_mode: "guest_list" })
+      .eq("id", invitation.id)
+      .select("id");
+    // Si no se aplicó, la invitación sigue en confirmación abierta (estado
+    // válido) y NO se siembra el RSVP de lista: lo que se crea coincide con
+    // lo que quedó en la BD.
+    const sinCambio = Boolean(errModo) || !modoFilas || modoFilas.length === 0;
+    if (!sinCambio) rsvpMode = "guest_list";
   }
 
   // Seed a default Hero module so the preview isn't empty.

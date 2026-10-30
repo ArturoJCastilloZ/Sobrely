@@ -19,6 +19,8 @@ import { isThemePackPremium } from "@/lib/theme/theme-packs";
  *   - arte PROPIO (subido por el usuario) exige `custom_art`. El arte que sirve
  *     la app —el de las plantillas— no cuenta (`esArteDeLaApp`), y quien llama
  *     decide qué es arte propio.
+ *   - el modo lista de invitados (link único y QR por invitado) exige
+ *     `guest_management`, que solo trae Premium.
  *
  * Solo planes de pago por evento: sin demo (Fase 3), el plan Free no publica,
  * así que «el más barato que cubre los módulos» no puede ser Free aunque sus
@@ -31,6 +33,11 @@ export type ContenidoPublicable = {
   themePack?: string;
   /** Fondo, stickers, decoración o imagen de sección SUBIDOS por el usuario. */
   usaArtePropio: boolean;
+  /**
+   * `rsvp_mode = 'guest_list'`. Opcional porque la galería de plantillas no
+   * tiene modo de confirmación: ausente cuenta como confirmación abierta.
+   */
+  usaListaDeInvitados?: boolean;
 };
 
 export function planCubreContenido(plan: Plan, c: ContenidoPublicable): boolean {
@@ -39,6 +46,9 @@ export function planCubreContenido(plan: Plan, c: ContenidoPublicable): boolean 
     return false;
   }
   if (c.usaArtePropio && !plan.features.includes("custom_art")) return false;
+  if (c.usaListaDeInvitados && !plan.features.includes("guest_management")) {
+    return false;
+  }
   return true;
 }
 

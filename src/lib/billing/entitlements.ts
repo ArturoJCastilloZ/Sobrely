@@ -175,8 +175,11 @@ export function canCreateInvitation(): boolean {
 
 /**
  * ¿La invitación puede usar el modo "lista de invitados" (invitados nominales
- * con link/QR)? Feature Premium `guest_management`, gateada por el plan
- * EFECTIVO de la invitación (no el del usuario). Server-side.
+ * con link/QR)? Feature `guest_management`, solo de Premium (o comp de admin),
+ * gateada por el plan EFECTIVO de la invitación (no el del usuario). En
+ * borrador el plan efectivo es Free: hay que contratar Premium para esa
+ * invitación antes de armar la lista. Server-side; lo llaman las server
+ * actions de `src/lib/guests/actions.ts` y las páginas del gestor.
  */
 export async function canUseGuestManagement(
   supabase: AnyClient,
@@ -221,7 +224,7 @@ export async function leerContenidoPublicable(
 
   const { data: inv } = await supabase
     .from("invitations")
-    .select("theme_config")
+    .select("theme_config, rsvp_mode")
     .eq("id", invitationId)
     .maybeSingle();
   const parsedTheme = parseTheme(inv?.theme_config);
@@ -257,6 +260,7 @@ export async function leerContenidoPublicable(
     modulosVisibles: visible,
     themePack: parsedTheme.themePack,
     usaArtePropio: usesCustomArt,
+    usaListaDeInvitados: inv?.rsvp_mode === "guest_list",
   };
 }
 
@@ -298,6 +302,7 @@ export async function canPublishInvitation(
     modulosVisibles: visible,
     themePack: themePackKey,
     usaArtePropio: usesCustomArt,
+    usaListaDeInvitados: usesGuestList,
   } = await leerContenidoPublicable(supabase, invitationId);
 
   const premiumModulesUsed = visible.filter((m) => !planAllowsModule(plan, m));
@@ -310,11 +315,19 @@ export async function canPublishInvitation(
 
   const customArtGated = usesCustomArt && !planHasFeature(plan, "custom_art");
 
-  // El modo lista de invitados NO gatea la publicación: está disponible en
-  // todos los planes. El límite es el número de invitados (plan.maxGuests),
-  // que se aplica al crear/editar la lista (ver src/lib/guests/actions.ts).
+  // Modo lista de invitados (link único y QR): solo Premium. Las server
+  // actions de `src/lib/guests/actions.ts` ya impiden activarlo sin el plan;
+  // esto cubre lo que llegue por otro camino (una invitación en ese modo
+  // desde antes del cambio, o un plan que vence y se vuelve a publicar).
+  const guestListGated =
+    Boolean(usesGuestList) && !planHasFeature(plan, "guest_management");
 
-  if (premiumModulesUsed.length === 0 && !themePackGated && !customArtGated) {
+  if (
+    premiumModulesUsed.length === 0 &&
+    !themePackGated &&
+    !customArtGated &&
+    !guestListGated
+  ) {
     return { allowed: true, effectivePlanCode: plan.code, premiumModulesUsed: [] };
   }
 
@@ -328,10 +341,14 @@ export async function canPublishInvitation(
   const requiredForArt = customArtGated
     ? minimalPlanForFeature("custom_art")
     : undefined;
+  const requiredForGuestList = guestListGated
+    ? minimalPlanForFeature("guest_management")
+    : undefined;
   const candidates = [
     requiredForModules,
     requiredForTheme,
     requiredForArt,
+    requiredForGuestList,
   ].filter((p): p is Plan => Boolean(p));
   const required =
     candidates.length > 0
@@ -342,6 +359,7 @@ export async function canPublishInvitation(
   if (premiumModulesUsed.length > 0) reasonParts.push("módulos");
   if (themePackGated) reasonParts.push("una temática");
   if (customArtGated) reasonParts.push("arte propio");
+  if (guestListGated) reasonParts.push("la lista de invitados");
   const what = reasonParts.join(" y ");
 
   return {
