@@ -235,6 +235,13 @@ describe("datosParaCompartir: lista blanca", () => {
     expect(d.titulo.endsWith("…")).toBe(true);
   });
 
+  it("recorta el tipo de evento (texto libre en la base) a 40", () => {
+    const d = datosParaCompartir(invitacion({ event_type: "y".repeat(300) }));
+    expect(d.tipoEvento!.length).toBeLessThanOrEqual(40);
+    expect(d.tipoEvento!.endsWith("…")).toBe(true);
+    expect(datosParaCompartir(invitacion({ event_type: "Boda" })).tipoEvento).toBe("Boda");
+  });
+
   it("marca según el plan: esencial/sin plan sí, celebración/premium no", () => {
     expect(datosParaCompartir(invitacion({ plan_code: "esencial" })).conMarca).toBe(true);
     expect(datosParaCompartir(invitacion({ plan_code: null })).conMarca).toBe(true);

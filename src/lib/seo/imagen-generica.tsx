@@ -6,8 +6,15 @@ import { FAMILIA_OG, type FuenteOG } from "@/lib/seo/fuentes-og";
  * `app/opengraph-image.tsx`, porque las invitaciones que no se pueden servir
  * la devuelven también (`imagenDeInvitacion(null)`) y deben recibir las mismas
  * fuentes. Sin `fuentes`, Satori usa su fuente por defecto (ver `fuentes-og`).
+ *
+ * `headers` se pasa tal cual a `ImageResponse`: la de la raíz no manda nada y
+ * se queda con la caché por defecto de next/og (su contenido es fijo); las rutas de
+ * invitación mandan la suya (ver `CACHE_OG_DE_INVITACION`).
  */
-export function imagenGenerica(fuentes?: FuenteOG[]): ImageResponse {
+export function imagenGenerica(
+  fuentes?: FuenteOG[],
+  headers?: Record<string, string>,
+): ImageResponse {
   return new ImageResponse(
     (
       <div
@@ -44,6 +51,11 @@ export function imagenGenerica(fuentes?: FuenteOG[]): ImageResponse {
         </div>
       </div>
     ),
-    { width: 1200, height: 630, ...(fuentes ? { fonts: fuentes } : {}) },
+    {
+      width: 1200,
+      height: 630,
+      ...(fuentes ? { fonts: fuentes } : {}),
+      ...(headers ? { headers } : {}),
+    },
   );
 }

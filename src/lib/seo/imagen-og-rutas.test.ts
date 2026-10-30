@@ -68,6 +68,9 @@ const INVITADO = {
 };
 
 const token = (t: string) => ({ params: Promise.resolve({ token: t }) });
+/** Mismo formato que `access_token`: `encode(gen_random_bytes(24), 'hex')`. */
+const T1 = "a1".repeat(24);
+const NADIE = "0f".repeat(24);
 
 beforeEach(() => {
   db.publica.mockReset();
@@ -81,7 +84,7 @@ describe("/g/[token]/opengraph-image", () => {
     const bundle = { invitation: invitacion(), guest: INVITADO };
     db.invitado.mockResolvedValue(bundle);
     db.estado.mockResolvedValue("vigente");
-    await imagenDeInvitado(token("t1"));
+    await imagenDeInvitado(token(T1));
     expect(pintar).toHaveBeenCalledTimes(1);
     const recibido = pintar.mock.calls[0][0];
     expect(recibido).toEqual(datosParaCompartir(bundle.invitation));
@@ -91,7 +94,7 @@ describe("/g/[token]/opengraph-image", () => {
 
   it("token desconocido (null) → genérica", async () => {
     db.invitado.mockResolvedValue(null);
-    await imagenDeInvitado(token("nadie"));
+    await imagenDeInvitado(token(NADIE));
     expect(pintar).toHaveBeenCalledWith(null);
     expect(db.estado).not.toHaveBeenCalled();
   });
@@ -99,8 +102,22 @@ describe("/g/[token]/opengraph-image", () => {
   it("invitación caducada → genérica", async () => {
     db.invitado.mockResolvedValue({ invitation: invitacion(), guest: INVITADO });
     db.estado.mockResolvedValue("caducada");
-    await imagenDeInvitado(token("t1"));
+    await imagenDeInvitado(token(T1));
     expect(pintar).toHaveBeenCalledWith(null);
+  });
+
+  it.each([
+    ["corto", "t1"],
+    ["47 hex", "a".repeat(47)],
+    ["49 hex", "a".repeat(49)],
+    ["mayúsculas", "A1".repeat(24)],
+    ["no hex", "g".repeat(48)],
+    ["inyección", `${"a".repeat(46)}'%`],
+  ])("token con formato inválido (%s) → genérica SIN consultar la base", async (_, t) => {
+    await imagenDeInvitado(token(t));
+    expect(pintar).toHaveBeenCalledWith(null);
+    expect(db.invitado).not.toHaveBeenCalled();
+    expect(db.estado).not.toHaveBeenCalled();
   });
 });
 
@@ -117,5 +134,28 @@ describe("/<usuario>/<slug>/opengraph-image", () => {
     db.publica.mockResolvedValue(null);
     await imagenPublica(ruta);
     expect(pintar).toHaveBeenCalledWith(null);
+  });
+
+  it.each([
+    ["usuario con barra", "ana/x", "boda"],
+    ["usuario con espacio", "ana luis", "boda"],
+    ["usuario de 101", "a".repeat(101), "boda"],
+    ["usuario vacío", "", "boda"],
+    ["slug con mayúsculas", "ana", "Boda"],
+    ["slug con punto", "ana", "boda.png"],
+    ["slug de 61", "ana", "b".repeat(61)],
+    ["slug vacío", "ana", ""],
+  ])("formato inválido (%s) → genérica SIN consultar la base", async (_, u, s) => {
+    await imagenPublica({ params: Promise.resolve({ username: u, invitationSlug: s }) });
+    expect(pintar).toHaveBeenCalledWith(null);
+    expect(db.publica).not.toHaveBeenCalled();
+  });
+
+  it("formatos que genera la app (usuario del trigger, slug `invitacion-xxxxxx`) sí consultan", async () => {
+    db.publica.mockResolvedValue(invitacion());
+    await imagenPublica({
+      params: Promise.resolve({ username: "Ana_Luis-3f9a0c", invitationSlug: "invitacion-k2j9x0" }),
+    });
+    expect(db.publica).toHaveBeenCalledTimes(1);
   });
 });
