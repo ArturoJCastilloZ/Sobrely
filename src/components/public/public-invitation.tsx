@@ -19,6 +19,7 @@ import { ANCLA_CONFIRMAR, ANCLA_SIGUIENTE, destinoDeCta } from "@/lib/invitation
 import { infoDeEvento } from "@/lib/invitations/info-evento";
 import { brandingForPlanCode } from "@/lib/billing/branding";
 import { ThemeScope } from "@/components/theme/theme-scope";
+import { PieDeMarca } from "@/components/public/pie-de-marca";
 import { StickerLayer } from "@/components/theme/sticker-layer";
 import { AnimatedModule } from "@/components/animation/animated-module";
 import { DecorationLayer } from "@/components/animation/decoration-layer";
@@ -162,18 +163,7 @@ export function PublicInvitationView({
           );
         })}
 
-        {branding !== "none" && (
-          <footer
-            className={
-              branding === "full"
-                ? "px-6 py-8 text-center text-xs opacity-60 @2xl/inv:text-sm @4xl/inv:py-12 @4xl/inv:text-base"
-                : "px-6 py-6 text-center text-[10px] opacity-35 @2xl/inv:text-xs"
-            }
-          >
-            {branding === "full" ? "Hecho con " : ""}
-            Sobre<span style={{ color: "var(--inv-primary)" }}>ly</span>
-          </footer>
-        )}
+        <PieDeMarca branding={branding} enlazar={!vistaPrevia} />
       </div>
     </ThemeScope>
   );
