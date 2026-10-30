@@ -107,7 +107,7 @@ function EsquemaQr() {
 }
 
 const VENTAJAS = [
-  "Cada invitado recibe su pase con código QR.",
+  "Con Premium, cada invitado recibe su pase con código QR.",
   "Confirmaciones de asistencia en un solo panel.",
   "Ves cuántas personas asistirán.",
 ] as const;
