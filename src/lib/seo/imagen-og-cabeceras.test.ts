@@ -18,10 +18,10 @@ const DATOS: DatosParaCompartir = {
 };
 
 describe("cache-control de las imágenes OG", () => {
-  it("el valor elegido no es inmutable y revalida", () => {
-    expect(CACHE_OG_DE_INVITACION).toBe(
-      "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
-    );
+  it("el valor elegido no es inmutable, no cachea en la CDN y revalida", () => {
+    expect(CACHE_OG_DE_INVITACION).toBe("public, max-age=0, must-revalidate");
+    expect(CACHE_OG_DE_INVITACION).not.toContain("immutable");
+    expect(CACHE_OG_DE_INVITACION).not.toContain("s-maxage");
   });
 
   it("invitación con datos → caché corta explícita, sin `immutable`", async () => {
@@ -34,9 +34,9 @@ describe("cache-control de las imágenes OG", () => {
     expect(r.headers.get("cache-control")).toBe(CACHE_OG_DE_INVITACION);
   });
 
-  it("la genérica de la raíz (contenido fijo) no se toca: valor por defecto de next/og", () => {
+  it("la genérica de la raíz (contenido fijo) queda con el valor por defecto de next/og, nunca inmutable", () => {
     const r = imagenGenerica(undefined);
-    expect(r.headers.get("cache-control")).not.toBe(CACHE_OG_DE_INVITACION);
+    expect(r.headers.get("cache-control")).not.toContain("immutable");
     expect(r.headers.get("cache-control")).not.toContain("s-maxage");
   });
 });

@@ -11,14 +11,13 @@ export const TAMANO_OG = { width: 1200, height: 630 };
  * por defecto de la librería: `next/og` hoy pone `public, max-age=0,
  * must-revalidate` (`next/dist/server/og/image-response.js`), pero el
  * `@vercel/og` que envuelve pone `immutable` y un año, y esta tarjeta cambia
- * (despublicar, caducar, editar título o fecha). Navegador: revalida siempre
- * (`max-age=0`). CDN: una hora fresca, que es lo que puede tardar en verse un
- * cambio, y un día sirviendo la vieja mientras revalida; ahorra repetir la RPC
- * y el render por cada vista del mismo enlace. WhatsApp/Facebook guardan su
- * propia copia, así que más corto no ganaría frescura.
+ * (despublicar, caducar, editar título o fecha). Sin caché en la CDN: una
+ * invitación despublicada deja de mostrar su tarjeta de inmediato en los enlaces
+ * que se compartan después. El abuso con URLs inventadas no llega a la RPC ni al
+ * render: lo corta `formato-publico.ts`. WhatsApp/Facebook guardan su propia
+ * copia y eso queda fuera de nuestro control.
  */
-export const CACHE_OG_DE_INVITACION =
-  "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400";
+export const CACHE_OG_DE_INVITACION = "public, max-age=0, must-revalidate";
 const CABECERAS_OG = { "cache-control": CACHE_OG_DE_INVITACION };
 
 function tamanoDeTitulo(titulo: string): number {
