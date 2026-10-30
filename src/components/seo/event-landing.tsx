@@ -12,7 +12,7 @@ import {
 import { RegistrarVisita } from "@/components/analytics/registrar-visita";
 import { billingPitch } from "@/lib/billing/value-prop";
 import { PlantillasDeEvento } from "@/components/seo/plantillas-de-evento";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/publico";
 import {
   cargarPlantillasDeEvento,
   hrefPlantillasDeEvento,
@@ -48,7 +48,11 @@ export async function EventLandingPage({ data }: { data: EventLanding }) {
   */
   const hrefDisenos = eventType ? hrefPlantillasDeEvento(eventType) : "/plantillas";
   const plantillas = eventType
-    ? await cargarPlantillasDeEvento(await createClient(), {
+    ? // Cliente anónimo SIN cookies: con el de servidor la landing dejaba de
+      // ser estática. La vigencia de lo que se pinta (incluido el precio de
+      // oferta, calculado con la hora del render) la da el `revalidate` de
+      // cada página.
+      await cargarPlantillasDeEvento(createPublicClient(), {
         eventType,
         nombreEvento: data.eventName,
       })
