@@ -38,3 +38,46 @@ export const cargarInvitacionDeInvitado = cache(
     return data as GuestInvitationBundle;
   },
 );
+
+/** `vigente | caducada | inexistente`, según la RPC de la migración `0054`. */
+export type EstadoPublico = "vigente" | "caducada" | "inexistente";
+
+/**
+ * ¿Existe la invitación y sólo le caducó el acceso, o de verdad no existe?
+ *
+ * Hace falta porque `get_public_invitation` devuelve `null` en los DOS casos, y
+ * porque `get_guest_invitation` (0012) NO filtra `is_entitlement_active`: en
+ * `/g/<token>` es la única forma de saber si la invitación sigue vigente.
+ *
+ * DEGRADA A LO SEGURO a propósito: si la RPC no existe (migración `0054` sin
+ * aplicar) o falla, devuelve `"inexistente"`. En la página pública eso es el
+ * 404 de siempre; en la tarjeta de `/g` es la genérica.
+ */
+export const cargarEstadoPublico = cache(
+  async (username: string, slug: string): Promise<EstadoPublico> => {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc(
+      "estado_publico_de_invitacion",
+      { p_username: username, p_slug: slug },
+    );
+    if (error) return "inexistente";
+    return data === "vigente" || data === "caducada" ? data : "inexistente";
+  },
+);
+
+/**
+ * El bundle de `/g/<token>` solo si su invitación está VIGENTE; si no, `null`.
+ *
+ * Para la tarjeta al compartir (metadata e imagen OG): una invitación caducada
+ * tiene que dar la genérica de Sobrely, igual que un token desconocido, porque
+ * la RPC del invitado la devuelve aunque el entitlement haya vencido.
+ */
+export async function cargarInvitacionDeInvitadoParaCompartir(
+  token: string,
+): Promise<GuestInvitationBundle | null> {
+  const bundle = await cargarInvitacionDeInvitado(token);
+  if (!bundle) return null;
+  const { owner_username, slug } = bundle.invitation;
+  const estado = await cargarEstadoPublico(owner_username, slug);
+  return estado === "vigente" ? bundle : null;
+}

@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PublicInvitationView } from "@/components/public/public-invitation";
 import { brandingForPlanCode } from "@/lib/billing/branding";
-import { cargarInvitacionDeInvitado as loadGuest } from "@/lib/invitations/cargar-publica";
+import {
+  cargarInvitacionDeInvitado as loadGuest,
+  cargarInvitacionDeInvitadoParaCompartir as loadGuestParaCompartir,
+} from "@/lib/invitations/cargar-publica";
 import {
   metadatosDeInvitacion,
   metadatosGenericos,
@@ -32,9 +35,18 @@ export async function generateMetadata({
   // compartir es la del evento: `metadatosDeInvitacion` no lo recibe.
   const composed = `${title} · ${bundle.guest.name}`;
   const branding = brandingForPlanCode(bundle.invitation.plan_code);
+  // `get_guest_invitation` no filtra el entitlement: una invitación caducada
+  // llega aquí igual. Su tarjeta es la genérica, indistinguible de un token
+  // desconocido (misma regla que `opengraph-image.tsx`).
+  const compartible = await loadGuestParaCompartir(token);
   return {
     title: branding === "none" ? { absolute: composed } : composed,
-    ...metadatosDeInvitacion(bundle.invitation, `/g/${encodeURIComponent(token)}`),
+    ...(compartible
+      ? metadatosDeInvitacion(
+          compartible.invitation,
+          `/g/${encodeURIComponent(token)}`,
+        )
+      : metadatosGenericos()),
     // Página personalizada por invitado: no indexar.
     robots: { index: false, follow: false },
   };

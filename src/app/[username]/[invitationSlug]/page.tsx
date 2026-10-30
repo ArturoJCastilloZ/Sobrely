@@ -1,41 +1,18 @@
-import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { PublicInvitationView } from "@/components/public/public-invitation";
 import { InvitacionCaducada } from "@/components/public/invitacion-caducada";
 import { brandingForPlanCode } from "@/lib/billing/branding";
-import { cargarInvitacionPublica as loadInvitation } from "@/lib/invitations/cargar-publica";
+import {
+  cargarEstadoPublico as loadEstado,
+  cargarInvitacionPublica as loadInvitation,
+} from "@/lib/invitations/cargar-publica";
 import {
   metadatosDeInvitacion,
   metadatosGenericos,
 } from "@/lib/seo/compartir-invitacion";
 
 type Params = { username: string; invitationSlug: string };
-
-/**
- * ¿Existe la invitación y sólo le caducó el acceso, o de verdad no existe?
- *
- * Hace falta porque `get_public_invitation` devuelve `null` en los DOS casos, y
- * el invitado se merece mensajes distintos: uno le dice qué hacer y el otro le
- * dice que se equivocó cuando no se equivocó.
- *
- * DEGRADA A LA CONDUCTA DE HOY a propósito: la función vive en la migración
- * `0054`, que el dev aplica a mano. Mientras no esté aplicada la RPC no existe,
- * la llamada da error y esto devuelve `"inexistente"` — o sea el 404 de
- * siempre. Nada se rompe por desplegar el código antes que la migración.
- */
-const loadEstado = cache(
-  async (username: string, slug: string): Promise<string> => {
-    const supabase = await createClient();
-    const { data, error } = await supabase.rpc(
-      "estado_publico_de_invitacion",
-      { p_username: username, p_slug: slug },
-    );
-    if (error || typeof data !== "string") return "inexistente";
-    return data;
-  },
-);
 
 export async function generateMetadata({
   params,

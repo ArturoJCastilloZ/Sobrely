@@ -15,15 +15,26 @@ import type {
 const cargar = vi.hoisted(() => ({
   publica: vi.fn<(u: string, s: string) => Promise<PublicInvitation | null>>(),
   invitado: vi.fn<(t: string) => Promise<GuestInvitationBundle | null>>(),
-  estado: vi.fn<() => Promise<{ data: unknown; error: unknown }>>(),
+  estado: vi.fn<
+    (fn: string, a: Record<string, string>) => Promise<{ data: unknown; error: unknown }>
+  >(),
 }));
 
-vi.mock("@/lib/invitations/cargar-publica", () => ({
-  cargarInvitacionPublica: cargar.publica,
-  cargarInvitacionDeInvitado: cargar.invitado,
-}));
+// Se sustituye solo el cliente: los cargadores de `cargar-publica` corren de
+// verdad, incluido el filtro de vigencia de `/g` (la RPC del invitado no lo
+// aplica, ver 0012).
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ rpc: cargar.estado }),
+  createClient: async () => ({
+    rpc: async (fn: string, a: Record<string, string>) => {
+      if (fn === "get_public_invitation") {
+        return { data: await cargar.publica(a.p_username, a.p_slug), error: null };
+      }
+      if (fn === "get_guest_invitation") {
+        return { data: await cargar.invitado(a.p_token), error: null };
+      }
+      return cargar.estado(fn, a);
+    },
+  }),
 }));
 vi.mock("@/components/public/public-invitation", () => ({
   PublicInvitationView: () => null,
@@ -86,6 +97,8 @@ beforeEach(() => {
   cargar.publica.mockReset();
   cargar.invitado.mockReset();
   cargar.estado.mockReset();
+  // Por defecto la invitación está vigente; los casos de caducidad lo cambian.
+  cargar.estado.mockResolvedValue({ data: "vigente", error: null });
 });
 
 describe("/g/[token]: tarjeta del enlace personal", () => {
@@ -131,6 +144,30 @@ describe("/g/[token]: tarjeta del enlace personal", () => {
     });
     expect(JSON.stringify(m.openGraph)).not.toContain("no-existe");
     expect(m.robots).toEqual({ index: false, follow: false });
+  });
+
+  it("invitación CADUCADA → genérica, idéntica a la de un token inválido", async () => {
+    // `get_guest_invitation` la devuelve aunque el entitlement venció.
+    cargar.invitado.mockResolvedValue({ invitation: invitacion(), guest: INVITADO });
+    cargar.estado.mockResolvedValue({ data: "caducada", error: null });
+    const caducada = await metadataDeInvitado(params({ token: TOKEN }));
+    expect(cargar.estado).toHaveBeenCalledWith("estado_publico_de_invitacion", {
+      p_username: "ana",
+      p_slug: "boda-ana-luis",
+    });
+
+    cargar.invitado.mockResolvedValue(null);
+    const invalido = await metadataDeInvitado(params({ token: TOKEN }));
+    expect(caducada.openGraph).toEqual(invalido.openGraph);
+    expect(caducada.twitter).toEqual(invalido.twitter);
+    expect(tarjeta(caducada)).not.toContain("Boda de Ana y Luis");
+  });
+
+  it("si el estado no se puede leer (RPC con error) → genérica", async () => {
+    cargar.invitado.mockResolvedValue({ invitation: invitacion(), guest: INVITADO });
+    cargar.estado.mockResolvedValue({ data: null, error: { message: "no existe" } });
+    const m = await metadataDeInvitado(params({ token: TOKEN }));
+    expect(m.openGraph).toMatchObject({ title: SITE_TITLE, url: "/" });
   });
 
   it("plan sin marca: sin og:site_name «Sobrely»", async () => {
