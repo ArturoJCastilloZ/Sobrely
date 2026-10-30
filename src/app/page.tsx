@@ -20,16 +20,18 @@ export const metadata: Metadata = {
   title: {
     absolute: "Invitaciones digitales para boda, XV años y más — Sobrely",
   },
-  // 151 caracteres: Google trunca cerca de 155 y la anterior medía 210, así que
+  // 142 caracteres: Google trunca cerca de 155 y la anterior medía 210, así que
   // se cortaba en resultados. Abre con el QR porque es la consulta que más
-  // impresiones trae según Search Console, y es lo que nos diferencia.
+  // impresiones trae según Search Console, y es lo que nos diferencia. El QR es
+  // del plan Premium (`guest_management` en plans.ts): lo dice para no prometer
+  // de más.
   description:
-    "Invitaciones digitales con pase QR y control de acceso en la entrada. Confirmación de asistencia en un panel. Para bodas, XV años y eventos de empresa.",
+    "Invitaciones digitales con pase QR y control de acceso (plan Premium). Confirmación de asistencia en un panel. Para bodas, XV años y empresas.",
   alternates: { canonical: "/" },
   ...metadatosSociales({
     titulo: "Invitaciones digitales para boda, XV años y más — Sobrely",
     descripcion:
-      "Invitaciones digitales con pase QR y control de acceso en la entrada. Confirmación de asistencia en un panel. Para bodas, XV años y eventos de empresa.",
+      "Invitaciones digitales con pase QR y control de acceso (plan Premium). Confirmación de asistencia en un panel. Para bodas, XV años y empresas.",
     ruta: "/",
   }),
 };
@@ -54,7 +56,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "¿Puedo saber quién confirmó su asistencia?",
-    a: "Sí. Recibes las confirmaciones en tu panel y ves cuántas personas asistirán. Con la lista de invitados también puedes darle a cada invitado un pase con código QR para el control de acceso en la entrada.",
+    a: "Sí. Recibes las confirmaciones en tu panel y ves cuántas personas asistirán. Con la lista de invitados del plan Premium también puedes darle a cada invitado un pase con código QR para el control de acceso en la entrada.",
   },
 ];
 
@@ -215,7 +217,7 @@ export default async function Home() {
           </h1>
           <p className="max-w-xl text-balance text-muted-foreground">
             Elige un diseño, personalízalo y compártelo con un enlace. Tus invitados
-            confirman su asistencia y entran con un pase QR.
+            confirman su asistencia y, con el plan Premium, entran con un pase QR.
           </p>
           {/*
             UN solo botón dominante. Sin sesión va a la GALERÍA (elegir una plantilla abre el

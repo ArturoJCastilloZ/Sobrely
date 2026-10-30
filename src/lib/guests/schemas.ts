@@ -10,14 +10,17 @@ export const MAX_GUEST_ALLOTMENT = 20;
  * si zod lo deja pasar, Postgres también. Vacío se guarda como `null`, no como
  * cadena vacía — "sin teléfono" es ausencia, no un valor.
  */
-export const guestPhoneField = z
-  .string()
-  .trim()
-  .max(25, "Teléfono demasiado largo.")
-  .regex(/^\+?[0-9()\-\s]{7,25}$/, "Teléfono no válido.")
-  .or(z.literal(""))
-  .optional()
-  .transform((v) => (v ? v : null));
+export const guestPhoneField = z.preprocess(
+  // El gestor manda `null` cuando el campo queda vacío; `undefined`, `""` y
+  // solo espacios significan lo mismo. Todo eso se normaliza a `null` antes de
+  // validar la forma.
+  (v) => (typeof v === "string" ? v.trim() || null : (v ?? null)),
+  z
+    .string()
+    .max(25, "Teléfono demasiado largo.")
+    .regex(/^\+?[0-9()\-\s]{7,25}$/, "Teléfono no válido.")
+    .nullable(),
+);
 
 /** Alta/edición de un invitado nominal (lado dueño). */
 export const guestUpsertSchema = z.object({
@@ -44,10 +47,32 @@ export const guestEditSchema = z.object({
 
 export type GuestEditInput = z.infer<typeof guestEditSchema>;
 
+/** Máximo de invitados (líneas) que entran en un solo pegado masivo. */
+export const MAX_GUESTS_PER_BULK = 500;
+
+/**
+ * Tope de caracteres del pegado: una línea válida mide como mucho 120 de
+ * nombre + «, 20» y el salto, así que 500 líneas caben con holgura. Corta
+ * antes de partir el texto un cuerpo gigante enviado a mano.
+ */
+const MAX_BULK_CHARS = MAX_GUESTS_PER_BULK * 130;
+
+const MENSAJE_LOTE_GRANDE = `Pega hasta ${MAX_GUESTS_PER_BULK} invitados a la vez. Divide la lista y agrega el resto en otro pegado.`;
+
 /** Alta masiva: una línea por invitado, "Nombre, cupo" (cupo opcional = 1). */
 export const guestBulkSchema = z.object({
   invitationId: z.string().uuid(),
-  raw: z.string().trim().min(1, "Pega al menos un invitado."),
+  raw: z
+    .string()
+    .trim()
+    .min(1, "Pega al menos un invitado.")
+    .max(MAX_BULK_CHARS, MENSAJE_LOTE_GRANDE)
+    .refine(
+      (raw) =>
+        raw.split("\n").filter((linea) => linea.trim()).length <=
+        MAX_GUESTS_PER_BULK,
+      MENSAJE_LOTE_GRANDE,
+    ),
 });
 
 export type GuestBulkInput = z.infer<typeof guestBulkSchema>;

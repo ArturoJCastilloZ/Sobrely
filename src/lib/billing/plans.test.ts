@@ -17,18 +17,39 @@ import type { PlanCode } from "@/lib/billing/types";
 
 const DAY = 24 * 60 * 60 * 1000;
 
-describe("guest_management (lista de invitados, todos los planes)", () => {
-  it("todos los planes incluyen guest_management (se diferencia por maxGuests)", () => {
+describe("guest_management (lista de invitados con link y QR) es solo Premium", () => {
+  // Decisión del dueño del 2026-10-30, «Solo Premium». Antes estaba en los
+  // cuatro planes y se diferenciaba por `maxGuests`. El gate server-side se
+  // prueba ejecutado en `src/lib/guests/lista-premium.test.ts`.
+  it("Premium la incluye; Celebración, Esencial y Free no", () => {
     expect(planHasFeature(getPlan("premium")!, "guest_management")).toBe(true);
     expect(planHasFeature(getPlan("celebracion")!, "guest_management")).toBe(
-      true,
+      false,
     );
-    expect(planHasFeature(getPlan("esencial")!, "guest_management")).toBe(true);
-    expect(planHasFeature(getPlan("free")!, "guest_management")).toBe(true);
+    expect(planHasFeature(getPlan("esencial")!, "guest_management")).toBe(false);
+    expect(planHasFeature(getPlan("free")!, "guest_management")).toBe(false);
   });
 
-  it("el plan mínimo que la ofrece es Free (está en todos)", () => {
-    expect(minimalPlanForFeature("guest_management")?.code).toBe("free");
+  it("el plan mínimo que la ofrece es Premium", () => {
+    expect(minimalPlanForFeature("guest_management")?.code).toBe("premium");
+  });
+
+  it("la tabla comparativa de /pricing la marca solo en Premium", () => {
+    const fila = COMPARISON_ROWS.find(
+      (r) => r.label === featureLabel("guest_management"),
+    )!;
+    const porPlan = Object.fromEntries(
+      (["free", "esencial", "celebracion", "premium"] as PlanCode[]).map((c) => [
+        c,
+        fila.value(getPlan(c)!),
+      ]),
+    );
+    expect(porPlan).toEqual({
+      free: "—",
+      esencial: "—",
+      celebracion: "—",
+      premium: "✓",
+    });
   });
 });
 

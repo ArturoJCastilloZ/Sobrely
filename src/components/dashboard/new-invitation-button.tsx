@@ -10,7 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FeatureBadge } from "@/components/billing/feature-badge";
 import { createInvitation } from "@/lib/invitations/actions";
+import { PLAN_LISTA_DE_INVITADOS } from "@/lib/guests/premium";
 
 export function NewInvitationButton() {
   const [pending, startTransition] = useTransition();
@@ -60,10 +62,13 @@ export function NewInvitationButton() {
           onClick={() => create("guest_list")}
           className="flex flex-col items-start gap-0.5"
         >
-          <span className="font-medium">Lista de invitados</span>
+          <span className="flex items-center gap-2 font-medium">
+            Lista de invitados
+            <FeatureBadge feature="guest_management" />
+          </span>
           <span className="text-xs text-muted-foreground">
-            Invitados nominales, cada uno con su enlace y cupo. Agrega el RSVP
-            automáticamente.
+            Invitados nominales con su enlace y pase QR. La armas gratis;
+            para publicarla necesitas el plan {PLAN_LISTA_DE_INVITADOS}.
           </span>
         </DropdownMenuItem>
       </DropdownMenuContent>

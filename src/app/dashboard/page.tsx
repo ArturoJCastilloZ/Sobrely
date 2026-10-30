@@ -101,7 +101,7 @@ export default async function DashboardPage() {
         <EmptyState
           icon={<MailPlusIcon />}
           title="Aún no tienes invitaciones"
-          description="Elige una plantilla, personalízala y compártela con un enlace único por invitado. Puedes crear todos los borradores que quieras gratis."
+          description="Elige una plantilla, personalízala y compártela con un enlace; con el plan Premium, uno único por invitado con pase QR. Puedes crear todos los borradores que quieras gratis."
           action={
             <div className="flex flex-wrap items-center justify-center gap-2">
               <NewInvitationButton />

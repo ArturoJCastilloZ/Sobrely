@@ -11,8 +11,10 @@ import {
   AVISO_DE_CADUCADA,
   ETIQUETA_DE_ESTADO,
   estadoDeInvitacion,
-} from "@/components/dashboard/invitation-card";
+} from "@/lib/invitations/estado";
 import { GuestManager } from "@/components/dashboard/guest-manager";
+import { ListaInvitadosPremium } from "@/components/dashboard/lista-invitados-premium";
+import { canManageGuestList } from "@/lib/billing/entitlements";
 import { FunnelKpis } from "@/components/dashboard/funnel-kpis";
 import { ResponseBreakdown } from "@/components/dashboard/response-breakdown";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
@@ -70,6 +72,12 @@ export default async function InvitationDashboardPage({
   if (!invitation) notFound();
 
   const isGuestList = invitation.rsvp_mode === "guest_list";
+  // La lista de invitados se arma gratis en borrador y se cobra Premium al
+  // publicar. Publicada sin Premium ve el aviso con el camino a mejorar, no el
+  // gestor; las server actions la rechazan igual (`canManageGuestList`).
+  const puedeUsarLista = isGuestList
+    ? await canManageGuestList(supabase, invitation.id)
+    : false;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -265,7 +273,9 @@ export default async function InvitationDashboardPage({
       <ConfirmationsChart outcomes={outcomes} now={now} />
 
       <section id="invitados" className="scroll-mt-6">
-        {isGuestList ? (
+        {isGuestList && !puedeUsarLista ? (
+          <ListaInvitadosPremium invitationId={invitation.id} />
+        ) : isGuestList ? (
           <GuestManager
             invitationId={invitation.id}
             siteUrl={siteUrl}

@@ -31,7 +31,7 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
     eventName: "boda",
     metaTitle: "Invitaciones digitales para boda | Sobrely",
     metaDescription:
-      "Crea invitaciones digitales para boda: elegantes, personalizables y con confirmación de asistencia. Comparte por WhatsApp y controla el acceso con QR. Empieza gratis.",
+      "Crea invitaciones digitales para boda: elegantes, personalizables y con confirmación de asistencia. Comparte por WhatsApp y, con Premium, controla el acceso con QR. Empieza gratis.",
     eyebrow: "Invitaciones digitales para boda",
     h1: "Invitaciones digitales para tu boda",
     intro:
@@ -47,7 +47,7 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
       },
       {
         title: "Lista de invitados con QR",
-        body: "Da a cada invitado su pase con código QR y controla el acceso en la entrada el día del evento.",
+        body: "Con el plan Premium, da a cada invitado su pase con código QR y controla el acceso en la entrada el día del evento.",
       },
     ],
     faqs: [
@@ -57,7 +57,7 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
       },
       {
         q: "¿Puedo saber quién confirmó a mi boda?",
-        a: "Sí. Cada confirmación llega a tu panel y ves el total de asistentes. Con la lista de invitados asignas lugares por persona y controlas el acceso con QR.",
+        a: "Sí. Cada confirmación llega a tu panel y ves el total de asistentes. Con la lista de invitados del plan Premium asignas lugares por persona y controlas el acceso con QR.",
       },
       {
         q: "¿Cuánto cuesta una invitación digital de boda?",
@@ -70,7 +70,7 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
     eventName: "XV años",
     metaTitle: "Invitaciones digitales para XV años | Sobrely",
     metaDescription:
-      "Invitaciones digitales para XV años originales y personalizables, con cuenta regresiva, música y confirmación de asistencia. Comparte el enlace y controla el acceso con QR.",
+      "Invitaciones digitales para XV años originales y personalizables, con cuenta regresiva, música y confirmación de asistencia. Comparte el enlace y, con Premium, controla el acceso con QR.",
     eyebrow: "Invitaciones digitales para XV años",
     h1: "Invitaciones digitales para XV años",
     intro:
@@ -86,7 +86,7 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
       },
       {
         title: "Control de invitados",
-        body: "Asigna lugares por invitado, comparte su enlace único y registra su ingreso con QR en la entrada.",
+        body: "Con el plan Premium, asigna lugares por invitado, comparte su enlace único y registra su ingreso con QR en la entrada.",
       },
     ],
     faqs: [
@@ -187,11 +187,11 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
     eventName: "evento corporativo",
     metaTitle: "Invitaciones digitales para eventos corporativos | Sobrely",
     metaDescription:
-      "Invitaciones digitales para eventos corporativos: profesionales, con registro de asistentes, lista de invitados y control de acceso por QR. Empieza gratis.",
+      "Invitaciones digitales para eventos corporativos: profesionales, con registro de asistentes, lista de invitados y acceso por QR en Premium. Empieza gratis.",
     eyebrow: "Invitaciones digitales para eventos corporativos",
     h1: "Invitaciones digitales para eventos corporativos",
     intro:
-      "Convoca a tu evento corporativo con una invitación digital profesional: agenda, ubicación, confirmación de asistencia y lista de invitados con pase QR para el registro en la entrada.",
+      "Convoca a tu evento corporativo con una invitación digital profesional: agenda, ubicación, confirmación de asistencia y, con el plan Premium, lista de invitados con pase QR para el registro en la entrada.",
     benefits: [
       {
         title: "Imagen profesional",
@@ -199,7 +199,7 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
       },
       {
         title: "Registro y control de acceso",
-        body: "Asigna un pase con QR a cada asistente y registra su ingreso en la entrada con el escáner.",
+        body: "Con el plan Premium, asigna un pase con QR a cada asistente y registra su ingreso en la entrada con el escáner.",
       },
       {
         title: "Confirmaciones centralizadas",
@@ -209,11 +209,11 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
     faqs: [
       {
         q: "¿Sirve para conferencias y eventos de empresa?",
-        a: "Sí. Puedes crear una lista de invitados, dar a cada uno su enlace y pase con QR, y controlar el acceso en la entrada.",
+        a: "Sí. Con el plan Premium puedes crear una lista de invitados, dar a cada uno su enlace y pase con QR, y controlar el acceso en la entrada.",
       },
       {
         q: "¿Puedo controlar el acceso con QR?",
-        a: "Sí. Cada invitado recibe un pase con código QR y desde tu panel escaneas o marcas su ingreso.",
+        a: "Sí, con el plan Premium. Cada invitado recibe un pase con código QR y desde tu panel escaneas o marcas su ingreso.",
       },
       {
         q: "¿Cuánto cuesta?",

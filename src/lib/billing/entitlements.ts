@@ -175,8 +175,12 @@ export function canCreateInvitation(): boolean {
 
 /**
  * ¿La invitación puede usar el modo "lista de invitados" (invitados nominales
- * con link/QR)? Feature Premium `guest_management`, gateada por el plan
- * EFECTIVO de la invitación (no el del usuario). Server-side.
+ * con link/QR)? Feature `guest_management`, solo de Premium (o comp de admin),
+ * gateada por el plan EFECTIVO de la invitación (no el del usuario).
+ *
+ * Es el gate ESTRICTO: lo que solo tiene sentido con la invitación publicada
+ * (el ingreso con QR en la puerta) y lo que la publica. Para ARMAR la lista
+ * en borrador ver `canManageGuestList`.
  */
 export async function canUseGuestManagement(
   supabase: AnyClient,
@@ -184,6 +188,33 @@ export async function canUseGuestManagement(
 ): Promise<boolean> {
   const plan = await getInvitationEffectivePlan(supabase, invitationId);
   return planHasFeature(plan, "guest_management");
+}
+
+/**
+ * ¿Se puede ARMAR la lista de invitados (activar el modo, agregar, importar,
+ * editar, marcar enviado o recordado)? Sí si el plan efectivo la incluye
+ * (Premium o comp) O si la invitación NO está publicada.
+ *
+ * Decisión del dueño del 2026-10-30, «Sí, Premium al publicar»: un borrador
+ * arma su lista gratis, como arma su arte propio (`custom_art` se cobra en
+ * `canPublishInvitation`, no al subirlo), y Premium se cobra al publicar
+ * (`canPublishInvitation` + `planDePagoRequerido`). En borrador la lista no
+ * entrega nada: `respond_guest` solo opera sobre invitaciones publicadas.
+ *
+ * Publicada sin Premium (Esencial o Celebración ya pagados) se rechaza.
+ * Fail-closed: si no se puede leer la invitación, no hay permiso.
+ */
+export async function canManageGuestList(
+  supabase: AnyClient,
+  invitationId: string,
+): Promise<boolean> {
+  if (await canUseGuestManagement(supabase, invitationId)) return true;
+  const { data } = await supabase
+    .from("invitations")
+    .select("is_published")
+    .eq("id", invitationId)
+    .maybeSingle();
+  return data?.is_published === false;
 }
 
 export interface PublishCheck {
@@ -195,6 +226,8 @@ export interface PublishCheck {
   premiumThemePackUsed?: string;
   /** Plan más barato que desbloquearía todo lo usado (CTA de upgrade). */
   requiredPlanCode?: PlanCode;
+  /** Usa la lista de invitados (`guest_list`) y el plan efectivo no la incluye. */
+  listaDeInvitadosSinPlan?: boolean;
   reason?: string;
 }
 
@@ -221,7 +254,7 @@ export async function leerContenidoPublicable(
 
   const { data: inv } = await supabase
     .from("invitations")
-    .select("theme_config")
+    .select("theme_config, rsvp_mode")
     .eq("id", invitationId)
     .maybeSingle();
   const parsedTheme = parseTheme(inv?.theme_config);
@@ -257,6 +290,7 @@ export async function leerContenidoPublicable(
     modulosVisibles: visible,
     themePack: parsedTheme.themePack,
     usaArtePropio: usesCustomArt,
+    usaListaDeInvitados: inv?.rsvp_mode === "guest_list",
   };
 }
 
@@ -298,6 +332,7 @@ export async function canPublishInvitation(
     modulosVisibles: visible,
     themePack: themePackKey,
     usaArtePropio: usesCustomArt,
+    usaListaDeInvitados: usesGuestList,
   } = await leerContenidoPublicable(supabase, invitationId);
 
   const premiumModulesUsed = visible.filter((m) => !planAllowsModule(plan, m));
@@ -310,11 +345,18 @@ export async function canPublishInvitation(
 
   const customArtGated = usesCustomArt && !planHasFeature(plan, "custom_art");
 
-  // El modo lista de invitados NO gatea la publicación: está disponible en
-  // todos los planes. El límite es el número de invitados (plan.maxGuests),
-  // que se aplica al crear/editar la lista (ver src/lib/guests/actions.ts).
+  // Modo lista de invitados (link único y QR): solo Premium. El borrador la
+  // arma gratis (`canManageGuestList`); este es el gate que cobra Premium al
+  // PUBLICAR, igual que `custom_art`.
+  const guestListGated =
+    Boolean(usesGuestList) && !planHasFeature(plan, "guest_management");
 
-  if (premiumModulesUsed.length === 0 && !themePackGated && !customArtGated) {
+  if (
+    premiumModulesUsed.length === 0 &&
+    !themePackGated &&
+    !customArtGated &&
+    !guestListGated
+  ) {
     return { allowed: true, effectivePlanCode: plan.code, premiumModulesUsed: [] };
   }
 
@@ -328,10 +370,14 @@ export async function canPublishInvitation(
   const requiredForArt = customArtGated
     ? minimalPlanForFeature("custom_art")
     : undefined;
+  const requiredForGuestList = guestListGated
+    ? minimalPlanForFeature("guest_management")
+    : undefined;
   const candidates = [
     requiredForModules,
     requiredForTheme,
     requiredForArt,
+    requiredForGuestList,
   ].filter((p): p is Plan => Boolean(p));
   const required =
     candidates.length > 0
@@ -342,6 +388,7 @@ export async function canPublishInvitation(
   if (premiumModulesUsed.length > 0) reasonParts.push("módulos");
   if (themePackGated) reasonParts.push("una temática");
   if (customArtGated) reasonParts.push("arte propio");
+  if (guestListGated) reasonParts.push("la lista de invitados");
   const what = reasonParts.join(" y ");
 
   return {
@@ -350,6 +397,7 @@ export async function canPublishInvitation(
     premiumModulesUsed,
     premiumThemePackUsed,
     requiredPlanCode: required?.code,
+    listaDeInvitadosSinPlan: guestListGated,
     reason: required
       ? `Tu invitación usa ${what} que requieren el plan ${required.name}.`
       : `Tu invitación usa ${what} no disponibles en ningún plan activo.`,

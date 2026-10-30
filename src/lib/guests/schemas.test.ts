@@ -3,6 +3,8 @@ import {
   parseBulkGuests,
   extractTokenFromScan,
   MAX_GUEST_ALLOTMENT,
+  guestUpsertSchema,
+  guestEditSchema,
 } from "@/lib/guests/schemas";
 
 describe("extractTokenFromScan", () => {
@@ -59,5 +61,37 @@ describe("parseBulkGuests", () => {
 
   it("descarta filas sin nombre", () => {
     expect(parseBulkGuests(", 3")).toEqual([]);
+  });
+});
+
+/**
+ * El gestor envía `phone: phone.trim() || null` al agregar y al editar. "Sin
+ * teléfono" llega entonces como `null`, `""` o `undefined`, y los tres deben
+ * guardarse igual: como `null` en la columna `phone`.
+ */
+describe("teléfono opcional del invitado", () => {
+  const invitationId = "11111111-1111-4111-8111-111111111111";
+  const id = "22222222-2222-4222-8222-222222222222";
+
+  it.each([null, "", "   ", undefined])("alta sin teléfono (%j) → phone null", (phone) => {
+    const r = guestUpsertSchema.safeParse({ invitationId, name: "Ana", maxGuests: 1, phone });
+    expect(r.success).toBe(true);
+    expect(r.success && r.data.phone).toBeNull();
+  });
+
+  it.each([null, "", "   ", undefined])("edición sin teléfono (%j) → phone null", (phone) => {
+    const r = guestEditSchema.safeParse({ id, name: "Ana", maxGuests: 1, phone });
+    expect(r.success).toBe(true);
+    expect(r.success && r.data.phone).toBeNull();
+  });
+
+  it("alta con teléfono lo conserva recortado", () => {
+    const r = guestUpsertSchema.safeParse({ invitationId, name: "Ana", phone: " +52 55 1234 5678 " });
+    expect(r.success && r.data.phone).toBe("+52 55 1234 5678");
+  });
+
+  it("rechaza un teléfono mal formado", () => {
+    const r = guestUpsertSchema.safeParse({ invitationId, name: "Ana", phone: "abc" });
+    expect(r.success).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ import {
   ETIQUETA_DE_ESTADO,
   estadoDeInvitacion,
   type EstadoDeInvitacion,
-} from "@/components/dashboard/invitation-card";
+} from "@/lib/invitations/estado";
 
 /**
  * El panel del anfitrión tiene que decir la VERDAD: una invitación con

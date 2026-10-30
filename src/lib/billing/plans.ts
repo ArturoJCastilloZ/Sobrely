@@ -67,7 +67,7 @@ export const PLANS: readonly Plan[] = [
     maxGuests: 25,
     maxStorageMb: 50,
     allowedModules: FREE_MODULES,
-    features: ["guest_management"],
+    features: [],
     comingSoon: [],
     branding: "full",
     isRecommended: false,
@@ -98,7 +98,7 @@ export const PLANS: readonly Plan[] = [
     maxGuests: 100,
     maxStorageMb: 200,
     allowedModules: ESENCIAL_MODULES,
-    features: ["csv_export", "guest_management"],
+    features: ["csv_export"],
     comingSoon: [],
     branding: "reduced",
     isRecommended: false,
@@ -135,7 +135,6 @@ export const PLANS: readonly Plan[] = [
       "csv_export",
       "advanced_personalization",
       "custom_art",
-      "guest_management",
     ],
     comingSoon: ["basic_analytics"],
     branding: "none",
@@ -175,6 +174,9 @@ export const PLANS: readonly Plan[] = [
       "csv_export",
       "advanced_personalization",
       "custom_art",
+      // La lista de invitados nominales con link único y QR de acceso es SOLO
+      // de Premium por decisión del dueño (2026-10-30, «Solo Premium»). Antes
+      // estaba en los cuatro planes y se diferenciaba por `maxGuests`.
       "guest_management",
       "priority_support",
       "visual_review",

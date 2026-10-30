@@ -91,3 +91,24 @@ describe("planCubreContenido", () => {
     expect(planCubreContenido(getPlan("esencial")!, con({ modulosVisibles: ["video"] }))).toBe(false);
   });
 });
+
+describe("la lista de invitados (link y QR) exige Premium para publicarse", () => {
+  it("con lista de invitados, el plan de pago requerido es Premium", () => {
+    expect(planDePagoRequerido({ ...base, usaListaDeInvitados: true })?.code).toBe(
+      "premium",
+    );
+  });
+
+  it("Celebración no cubre la lista; Premium sí", () => {
+    const c = { ...base, usaListaDeInvitados: true };
+    expect(planCubreContenido(getPlan("celebracion")!, c)).toBe(false);
+    expect(planCubreContenido(getPlan("premium")!, c)).toBe(true);
+  });
+
+  it("control: sin lista (o sin el campo, como la galería) no sube de Esencial", () => {
+    expect(planDePagoRequerido(base)?.code).toBe("esencial");
+    expect(planDePagoRequerido({ ...base, usaListaDeInvitados: false })?.code).toBe(
+      "esencial",
+    );
+  });
+});

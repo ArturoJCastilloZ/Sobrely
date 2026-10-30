@@ -18,8 +18,15 @@ import {
   canPublishInvitation,
   getInvitationEntitlement,
   isOwnerComped,
-  planDePagoRequeridoParaInvitacion,
+  leerContenidoPublicable,
 } from "@/lib/billing/entitlements";
+import { planDePagoRequerido } from "@/lib/billing/plan-requerido";
+import {
+  getPlan,
+  minimalPlanForFeature,
+  planHasFeature,
+} from "@/lib/billing/plans";
+import { ERROR_PUBLICAR_LISTA_REQUIERE_PREMIUM } from "@/lib/guests/premium";
 import { decidirPublicacion } from "@/lib/billing/decision-publicacion";
 import { templateToDocument } from "@/lib/invitations/template-render";
 import type { PlanCode } from "@/lib/billing/types";
@@ -56,6 +63,10 @@ export async function createInvitation(
       slug,
       status: "draft",
       is_published: false,
+      // Nace en el modo pedido, también la lista de invitados: es un
+      // BORRADOR y el borrador la arma gratis (`canManageGuestList`); Premium
+      // se cobra al publicar (`canPublishInvitation`). Decisión del dueño del
+      // 2026-10-30, «Sí, Premium al publicar».
       rsvp_mode: rsvpMode,
     })
     .select("id")
@@ -264,6 +275,11 @@ export type SetPublishedResult =
       needsUpgrade?: boolean;
       /** El que publica es un invitado: hay que pedirle que cree su cuenta primero. */
       needsAccount?: boolean;
+      /**
+       * El cobro lo pide la LISTA de invitados (modo `guest_list` sin un plan
+       * que la incluya): el diálogo lo dice en vez de hablar de «módulos».
+       */
+      porListaDeInvitados?: boolean;
     };
 
 /**
@@ -344,9 +360,15 @@ export async function setPublished(
   const gate = tieneCobertura
     ? await canPublishInvitation(supabase, invitationId)
     : null;
-  const planDePago = tieneCobertura
-    ? undefined
-    : await planDePagoRequeridoParaInvitacion(supabase, invitationId);
+  const contenido = tieneCobertura
+    ? null
+    : await leerContenidoPublicable(supabase, invitationId);
+  const planDePago = contenido ? planDePagoRequerido(contenido) : undefined;
+  // ¿La lista de invitados es (parte de) lo que se cobra? Con cobertura lo
+  // dice el gate; sin ella, usarla basta: ningún plan sin Premium la cubre.
+  const porListaDeInvitados = gate
+    ? gate.listaDeInvitadosSinPlan === true
+    : contenido?.usaListaDeInvitados === true;
 
   const decision = decidirPublicacion({
     tieneComp: comped,
@@ -362,17 +384,31 @@ export async function setPublished(
       requiredPlan: decision.planRequerido,
       needsPayment: true,
       needsUpgrade: true,
+      porListaDeInvitados,
     };
   }
   if (decision.tipo === "sin_plan_disponible") {
     return { ok: false, error: decision.mensaje };
   }
 
+  // Si el plan efectivo NO incluye la lista, el gate solo dejó publicar porque
+  // leyó `rsvp_mode = 'open'`: ese es el modo validado, y se exige en la MISMA
+  // escritura. Entre el gate y el update otra pestaña puede activar la lista
+  // (en borrador está permitido); sin este filtro quedaba publicada con
+  // Esencial o Celebración en modo lista. `decision.tipo === "publicar"`
+  // implica gate, así que `gate` existe aquí.
+  const planEfectivo = gate ? getPlan(gate.effectivePlanCode) : undefined;
+  const exigeConfirmacionAbierta =
+    !planEfectivo || !planHasFeature(planEfectivo, "guest_management");
+  const modosValidados = exigeConfirmacionAbierta
+    ? ["open"]
+    : ["open", "guest_list"];
   const { data: filas, error } = await supabase
     .from("invitations")
     .update({ is_published: true, status: "published" })
     .eq("id", invitationId)
     .eq("user_id", user.id)
+    .in("rsvp_mode", modosValidados)
     .select("id");
   if (error) {
     await registrarError("publicar", `no se pudo publicar: ${error.message}`, {
@@ -382,6 +418,18 @@ export async function setPublished(
     return { ok: false, error: error.message };
   }
   if (!filas || filas.length === 0) {
+    // La propiedad ya se comprobó arriba: con el filtro de modo, 0 filas es
+    // que la lista se activó entre el gate y la escritura.
+    if (exigeConfirmacionAbierta) {
+      return {
+        ok: false,
+        error: ERROR_PUBLICAR_LISTA_REQUIERE_PREMIUM,
+        requiredPlan: minimalPlanForFeature("guest_management")?.code ?? "premium",
+        needsPayment: true,
+        needsUpgrade: true,
+        porListaDeInvitados: true,
+      };
+    }
     return { ok: false, error: "No tienes acceso a esta invitación." };
   }
 

@@ -107,7 +107,7 @@ function EsquemaQr() {
 }
 
 const VENTAJAS = [
-  "Cada invitado recibe su pase con código QR.",
+  "Con Premium, cada invitado recibe su pase con código QR.",
   "Confirmaciones de asistencia en un solo panel.",
   "Ves cuántas personas asistirán.",
 ] as const;
@@ -127,8 +127,8 @@ export function PaseQr() {
           Controla la entrada con un pase QR
         </h2>
         <p className="mt-3 max-w-lg text-muted-foreground">
-          Con la lista de invitados, cada persona lleva su pase en el celular y tú lo revisas en la
-          puerta, sin listas de papel.
+          Con la lista de invitados del plan Premium, cada persona lleva su pase en el celular y tú
+          lo revisas en la puerta, sin listas de papel.
         </p>
         <ul className="mt-6 space-y-2.5">
           {VENTAJAS.map((v) => (
