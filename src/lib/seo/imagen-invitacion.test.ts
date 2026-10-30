@@ -19,7 +19,7 @@ vi.mock("next/og", () => ({
 }));
 
 const { imagenDeInvitacion } = await import("./imagen-invitacion");
-const { cargarFuentesOG, ARCHIVOS_FUENTE_OG, FAMILIA_OG } = await import("./fuentes-og");
+const { cargarFuentesOG, fuentesOG, ARCHIVOS_FUENTE_OG, FAMILIA_OG } = await import("./fuentes-og");
 
 const DATOS: DatosParaCompartir = {
   titulo: "Valeria y Mateo",
@@ -78,8 +78,16 @@ describe("cargarFuentesOG", () => {
     await expect(cargarFuentesOG(lectorDe(dir))).resolves.toBeUndefined();
   });
 
-  it("hoy el repo no los trae → undefined, sin romper la imagen", async () => {
-    await expect(cargarFuentesOG()).resolves.toBeUndefined();
+  it("el repo los trae: fuentesOG() → Playfair Display 400 y 700, en WOFF 1.0", async () => {
+    const fuentes = await fuentesOG();
+    expect(fuentes?.map((f) => [f.name, f.weight, f.style])).toEqual([
+      [FAMILIA_OG, 400, "normal"],
+      [FAMILIA_OG, 700, "normal"],
+    ]);
+    // Firma `wOFF` (WOFF 1.0): la que acepta el opentype.js de Satori.
+    for (const f of fuentes ?? []) {
+      expect(Buffer.from(f.data as Buffer).subarray(0, 4).toString("latin1")).toBe("wOFF");
+    }
   });
 
   it("con regular y negrita → dos fuentes de la familia, 400 y 700", async () => {

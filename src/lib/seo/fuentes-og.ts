@@ -12,14 +12,15 @@ import type { ImageResponse } from "next/og";
  * irregular entre palabras («Valeria␣␣y Mateo», «diciembre␣␣de»). Con una
  * fuente estática propia los espacios salen parejos y el título en negrita.
  *
- * QUÉ FALTA (defecto documentado). La fuente prevista es Playfair Display
- * (OFL 1.1; es la `--font-display` de la marca), en TTF ESTÁTICO regular y
- * negrita — Satori no lee WOFF2 ni instancia fuentes variables, así que los
- * `.woff2` variables que `next/font` deja en `.next/` no sirven. Hoy el repo no
- * trae ningún TTF/OTF utilizable y bajarlo requiere permiso del dueño. Hasta
- * que se añadan en `src/assets/fonts/` (con su `OFL.txt`), `cargarFuentesOG`
- * devuelve `undefined` y la imagen sale con la fuente por defecto, como antes.
- * Añadir los archivos basta: no hay que tocar código.
+ * FUENTE. Playfair Display (SIL OFL 1.1, `src/assets/fonts/OFL.txt`; es la
+ * `--font-display` de la marca), instancias ESTÁTICAS regular y negrita del
+ * subconjunto latin de Google Fonts, en WOFF 1.0. Satori lee TTF, OTF y WOFF
+ * 1.0 —el opentype.js que trae `next/og` acepta la firma `wOFF`
+ * (node_modules/next/dist/compiled/@vercel/og/index.node.js, `parseWOFFTableEntries`)—
+ * pero no WOFF2 ni instancia fuentes variables: los `.woff2` variables que
+ * `next/font` deja en `.next/` no sirven. Si faltan los archivos,
+ * `cargarFuentesOG` devuelve `undefined` y la imagen sale con la fuente por
+ * defecto.
  *
  * Patrón de lectura: `readFile(join(process.cwd(), …))`, como la guía de
  * `opengraph-image` (node_modules/next/dist/docs/01-app/03-api-reference/
@@ -34,8 +35,8 @@ export const FAMILIA_OG = "Playfair Display";
 
 /** Archivos esperados en `src/assets/fonts/` (con su `OFL.txt`). */
 export const ARCHIVOS_FUENTE_OG = [
-  "PlayfairDisplay-Regular.ttf",
-  "PlayfairDisplay-Bold.ttf",
+  "PlayfairDisplay-Regular.woff",
+  "PlayfairDisplay-Bold.woff",
 ] as const;
 
 type Lector = () => Promise<readonly [Buffer, Buffer]>;
@@ -47,8 +48,8 @@ type Lector = () => Promise<readonly [Buffer, Buffer]>;
 */
 const leerDelRepo: Lector = () =>
   Promise.all([
-    readFile(join(process.cwd(), "src/assets/fonts/PlayfairDisplay-Regular.ttf")),
-    readFile(join(process.cwd(), "src/assets/fonts/PlayfairDisplay-Bold.ttf")),
+    readFile(join(process.cwd(), "src/assets/fonts/PlayfairDisplay-Regular.woff")),
+    readFile(join(process.cwd(), "src/assets/fonts/PlayfairDisplay-Bold.woff")),
   ]);
 
 /**
