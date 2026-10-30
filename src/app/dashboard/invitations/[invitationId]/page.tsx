@@ -11,7 +11,7 @@ import {
   AVISO_DE_CADUCADA,
   ETIQUETA_DE_ESTADO,
   estadoDeInvitacion,
-} from "@/components/dashboard/invitation-card";
+} from "@/lib/invitations/estado";
 import { GuestManager } from "@/components/dashboard/guest-manager";
 import { FunnelKpis } from "@/components/dashboard/funnel-kpis";
 import { ResponseBreakdown } from "@/components/dashboard/response-breakdown";
