@@ -226,6 +226,16 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
 export const EVENT_LANDING_LIST = Object.values(EVENT_LANDINGS);
 
 /**
+ * «Boda», «XV años», «Eventos corporativos»: el `eyebrow` sin el prefijo, para
+ * pastillas donde el contexto ya dice «invitaciones por tipo de evento» (el
+ * texto completo es largo para una pastilla a 375 px).
+ */
+export function etiquetaCortaDeLanding(l: EventLanding): string {
+  const corta = l.eyebrow.replace(/^Invitaciones digitales para /, "");
+  return corta.charAt(0).toUpperCase() + corta.slice(1);
+}
+
+/**
  * Tipo de evento (`templates.event_type`) de cada landing. Lo usa el embudo para
  * contar la intención por evento (`view_category`).
  */

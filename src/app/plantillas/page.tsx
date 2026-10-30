@@ -11,6 +11,7 @@ import { estiloDeLaUrl, precioDeLaUrl, topesDePrecio } from "@/lib/templates/mar
 import { metadatosSociales } from "@/lib/seo/social";
 import { COLECCIONES, hrefColeccion } from "@/lib/templates/colecciones";
 import { RegistrarVisita } from "@/components/analytics/registrar-visita";
+import { EVENT_LANDING_LIST, etiquetaCortaDeLanding } from "@/lib/seo/event-landings";
 
 /**
  * Galería PÚBLICA de plantillas: la puerta de entrada del embudo. Cualquiera la
@@ -161,6 +162,26 @@ export default async function PlantillasPage({
             soloFavoritosInicial={false}
           />
         )}
+        {/*
+          Enlaces a las landings por evento: son las páginas que posicionan
+          «invitación digital <evento>» y sin esto ninguna página del catálogo
+          las enlazaba (auditoría SEO, hallazgo 3).
+        */}
+        <nav aria-label="Invitaciones por tipo de evento" className="mt-10">
+          <p className="mb-2 text-sm font-medium">Invitaciones por tipo de evento</p>
+          <ul className="flex flex-wrap gap-2">
+            {EVENT_LANDING_LIST.map((l) => (
+              <li key={l.slug}>
+                <Link
+                  href={`/${l.slug}`}
+                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-sm hover:bg-muted"
+                >
+                  {etiquetaCortaDeLanding(l)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
         <p className="mt-8 text-sm text-muted-foreground">
           ¿Qué incluye cada plan?{" "}
           <Link href="/pricing" className="font-medium text-foreground underline underline-offset-4">

@@ -4,9 +4,19 @@ import { Button } from "@/components/ui/button";
 import { LogoLockup } from "@/components/brand/logo-lockup";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LocalLine } from "@/components/seo/local-line";
-import { TIPO_DE_EVENTO_POR_SLUG, type EventLanding } from "@/lib/seo/event-landings";
+import {
+  EVENT_LANDING_LIST,
+  TIPO_DE_EVENTO_POR_SLUG,
+  type EventLanding,
+} from "@/lib/seo/event-landings";
 import { RegistrarVisita } from "@/components/analytics/registrar-visita";
 import { billingPitch } from "@/lib/billing/value-prop";
+import { PlantillasDeEvento } from "@/components/seo/plantillas-de-evento";
+import { createClient } from "@/lib/supabase/server";
+import {
+  cargarPlantillasDeEvento,
+  hrefPlantillasDeEvento,
+} from "@/lib/templates/plantillas-de-evento";
 
 const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -27,8 +37,22 @@ const STEPS: { title: string; body: string }[] = [
   },
 ];
 
-export function EventLandingPage({ data }: { data: EventLanding }) {
+export async function EventLandingPage({ data }: { data: EventLanding }) {
   const url = `${SITE_URL}/${data.slug}`;
+  const eventType = TIPO_DE_EVENTO_POR_SLUG[data.slug];
+  /*
+    El CTA principal lleva al catálogo YA filtrado por el evento: ver diseños es
+    gratis y es lo que busca quien llega por «invitación digital <evento>»; el
+    registro se pide al elegir una plantilla (FUNNEL_PLAN.md). Sin tipo mapeado,
+    el catálogo entero.
+  */
+  const hrefDisenos = eventType ? hrefPlantillasDeEvento(eventType) : "/plantillas";
+  const plantillas = eventType
+    ? await cargarPlantillasDeEvento(await createClient(), {
+        eventType,
+        nombreEvento: data.eventName,
+      })
+    : [];
 
   const faqLd = {
     "@context": "https://schema.org",
@@ -51,9 +75,7 @@ export function EventLandingPage({ data }: { data: EventLanding }) {
 
   return (
     <main className="flex flex-1 flex-col">
-      {TIPO_DE_EVENTO_POR_SLUG[data.slug] && (
-        <RegistrarVisita evento="view_category" valor={TIPO_DE_EVENTO_POR_SLUG[data.slug]} />
-      )}
+      {eventType && <RegistrarVisita evento="view_category" valor={eventType} />}
       <JsonLd data={[faqLd, breadcrumbLd]} />
 
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-5">
@@ -86,12 +108,12 @@ export function EventLandingPage({ data }: { data: EventLanding }) {
         <p className="max-w-xl text-balance text-muted-foreground">{data.intro}</p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button
-            render={<Link href="/register" />}
+            render={<Link href={hrefDisenos} />}
             nativeButton={false}
             size="lg"
             className="bg-brand-gold text-brand-ink hover:bg-brand-gold-deep hover:text-white"
           >
-            Empieza gratis
+            Ver diseños de {data.eventName}
           </Button>
           <Button
             render={<Link href="/pricing" />}
@@ -104,6 +126,35 @@ export function EventLandingPage({ data }: { data: EventLanding }) {
         </div>
         <p className="text-sm text-muted-foreground">{billingPitch().micro}</p>
       </section>
+
+      {plantillas.length > 0 && (
+        <section
+          aria-labelledby="disenos-de-evento"
+          className="mx-auto w-full max-w-5xl px-4 py-8"
+        >
+          <h2
+            id="disenos-de-evento"
+            className="text-center font-display text-2xl font-bold tracking-tight sm:text-3xl"
+          >
+            Diseños de invitación para {data.eventName}
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
+            Abre cualquiera para verla completa y editarla gratis. El precio es
+            lo que cuesta publicarla tal como viene.
+          </p>
+          <div className="mt-8">
+            <PlantillasDeEvento plantillas={plantillas} />
+          </div>
+          <p className="mt-6 text-center">
+            <Link
+              href={hrefDisenos}
+              className="inline-flex min-h-11 items-center font-medium underline underline-offset-4"
+            >
+              Ver todos los diseños de {data.eventName}
+            </Link>
+          </p>
+        </section>
+      )}
 
       <section className="mx-auto grid w-full max-w-4xl gap-6 px-4 py-8 sm:grid-cols-3">
         {data.benefits.map((b) => (
@@ -154,17 +205,28 @@ export function EventLandingPage({ data }: { data: EventLanding }) {
         </p>
         <div className="mt-6">
           <Button
-            render={<Link href="/register" />}
+            render={<Link href={hrefDisenos} />}
             nativeButton={false}
             size="lg"
             className="bg-brand-gold text-brand-ink hover:bg-brand-gold-deep hover:text-white"
           >
-            Empieza gratis
+            Elegir un diseño
           </Button>
         </div>
       </section>
 
       <footer className="mx-auto w-full max-w-5xl px-4 py-6 text-center text-xs text-muted-foreground">
+        <nav aria-label="Invitaciones por evento" className="mb-3">
+          <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+            {EVENT_LANDING_LIST.filter((l) => l.slug !== data.slug).map((l) => (
+              <li key={l.slug}>
+                <Link href={`/${l.slug}`} className="hover:text-foreground">
+                  {l.eyebrow}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
           <Link href="/pricing" className="hover:text-foreground">
             Precios
