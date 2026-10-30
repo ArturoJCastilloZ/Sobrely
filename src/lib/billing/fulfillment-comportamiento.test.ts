@@ -21,9 +21,12 @@ vi.mock("server-only", () => ({}));
 
 /** `canPublishInvitation` tiene su propia lógica y sus propias pruebas: aquí se
  *  dobla para que el sujeto sea el FLUJO y no el gate. */
-const permitirPublicar = { valor: true };
+const permitirPublicar = { valor: true, plan: "esencial" };
 vi.mock("@/lib/billing/entitlements", () => ({
-  canPublishInvitation: async () => ({ allowed: permitirPublicar.valor }),
+  canPublishInvitation: async () => ({
+    allowed: permitirPublicar.valor,
+    effectivePlanCode: permitirPublicar.plan,
+  }),
 }));
 
 type Resp = { data: unknown; error: unknown };
@@ -31,6 +34,8 @@ type Resp = { data: unknown; error: unknown };
 let respuestas: Record<string, Resp>;
 /** Toda operación que el flujo ejecuta, en orden. Es lo que se afirma. */
 let registro: string[];
+/** Filtros `.in(columna, valores)` por `tabla:verbo`, para afirmar el modo. */
+let filtrosIn: Record<string, [string, unknown[]][]>;
 
 /**
  * Doble de PostgREST, fiel en lo que decide los desenlaces de este módulo:
@@ -45,6 +50,10 @@ function hacerAdmin() {
     const api: Record<string, unknown> = {
       select: () => api,
       eq: () => api,
+      in: (col: string, vals: unknown[]) => {
+        (filtrosIn[`${tabla}:${verbo}`] ??= []).push([col, vals]);
+        return api;
+      },
       maybeSingle: () => resolver(),
       then: (res: (v: Resp) => unknown, rej?: (e: unknown) => unknown) =>
         Promise.resolve(resolver()).then(res, rej),
@@ -107,10 +116,12 @@ function escenario(over: Record<string, Resp> = {}) {
     ...over,
   };
   registro = [];
+  filtrosIn = {};
 }
 
 beforeEach(() => {
   permitirPublicar.valor = true;
+  permitirPublicar.plan = "esencial";
   escenario();
 });
 
@@ -260,6 +271,23 @@ describe("la auto-publicación no puede mentir", () => {
     });
     expect(r.ok).toBe(true);
     expect(r.published).toBe(false);
+  });
+
+  it("sin la lista en el plan, solo publica si sigue en confirmación abierta", async () => {
+    // TOCTOU: el gate leyó `rsvp_mode = 'open'`; si otra pestaña activó la
+    // lista entre el gate y el update, el filtro deja 0 filas y no se publica
+    // con Esencial en modo lista.
+    escenario(conPublishOnPaid);
+    await aplicar({ orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved" });
+    expect(filtrosIn["invitations:update"]).toEqual([["rsvp_mode", ["open"]]]);
+  });
+
+  it("con Premium, publica también en modo lista", async () => {
+    permitirPublicar.plan = "premium";
+    escenario(conPublishOnPaid);
+    const r = await aplicar({ orderId: "ord-1", paymentId: "pay-1", mpStatus: "approved" });
+    expect(filtrosIn["invitations:update"]).toEqual([["rsvp_mode", ["open", "guest_list"]]]);
+    expect(r.published).toBe(true);
   });
 
   it("y si el gate de plan no lo permite, no se publica ni se pretende", async () => {
