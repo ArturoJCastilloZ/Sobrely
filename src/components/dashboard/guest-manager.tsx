@@ -257,7 +257,10 @@ export function GuestManager({
   return (
     <div className="space-y-6">
       {acceso?.estado === "borrador" && (
-        <AvisoListaEnBorrador mejorarHref={acceso.mejorarHref} />
+        <AvisoListaEnBorrador
+          mejorarHref={acceso.mejorarHref}
+          planPagado={acceso.planPagado}
+        />
       )}
       {/* Perseguir a los que faltan. Va ARRIBA de la lista porque es la acción
           del día cuando el evento ya se envió; administrar la lista viene

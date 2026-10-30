@@ -226,6 +226,8 @@ export interface PublishCheck {
   premiumThemePackUsed?: string;
   /** Plan más barato que desbloquearía todo lo usado (CTA de upgrade). */
   requiredPlanCode?: PlanCode;
+  /** Usa la lista de invitados (`guest_list`) y el plan efectivo no la incluye. */
+  listaDeInvitadosSinPlan?: boolean;
   reason?: string;
 }
 
@@ -395,6 +397,7 @@ export async function canPublishInvitation(
     premiumModulesUsed,
     premiumThemePackUsed,
     requiredPlanCode: required?.code,
+    listaDeInvitadosSinPlan: guestListGated,
     reason: required
       ? `Tu invitación usa ${what} que requieren el plan ${required.name}.`
       : `Tu invitación usa ${what} no disponibles en ningún plan activo.`,

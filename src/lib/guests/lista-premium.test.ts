@@ -26,6 +26,14 @@ type Escena = {
   publicada?: boolean;
   /** La invitación no se puede leer (RLS o no existe). */
   sinInvitacion?: boolean;
+  /**
+   * Estado de la fila AL ESCRIBIR, si cambió después de que la acción la leyó:
+   * otra pestaña publicó o activó la lista en medio (TOCTOU). Un update con
+   * `.eq()` sobre esa columna afecta 0 filas si ya no coincide.
+   */
+  alEscribir?: { publicada?: boolean; rsvpMode?: "open" | "guest_list" };
+  /** Suma de `max_guests` que ya hay en la lista (una sola fila). */
+  lugaresUsados?: number;
 };
 
 let escena: Escena = { plan: null };
@@ -43,8 +51,24 @@ function clienteFalso() {
     },
     from(tabla: string) {
       let operacion = "select";
+      /** Filtros de la escritura: columna y valores admitidos (`eq` = uno). */
+      const filtros: [string, unknown[]][] = [];
       const resultado = () => {
         if (operacion !== "select") {
+          if (tabla === "invitations" && operacion === "update") {
+            const fila = {
+              is_published:
+                escena.alEscribir?.publicada ?? escena.publicada ?? false,
+              rsvp_mode:
+                escena.alEscribir?.rsvpMode ?? escena.rsvpMode ?? "open",
+            };
+            const coincide = filtros.every(([col, vals]) =>
+              col in fila
+                ? vals.includes(fila[col as keyof typeof fila])
+                : true,
+            );
+            if (!coincide) return { data: [], error: null };
+          }
           return { data: [{ id: "fila1" }], error: null };
         }
         if (tabla === "invitation_entitlements") {
@@ -76,7 +100,7 @@ function clienteFalso() {
               id: "g1",
               invitation_id: "inv1",
               name: "Ana",
-              max_guests: 2,
+              max_guests: escena.lugaresUsados ?? 2,
               checked_in_at: null,
               invited_at: null,
               reminder_count: 0,
@@ -93,7 +117,14 @@ function clienteFalso() {
       };
       const cadena: Record<string, unknown> = {
         select: () => cadena,
-        eq: () => cadena,
+        eq: (col: string, val: unknown) => {
+          filtros.push([col, [val]]);
+          return cadena;
+        },
+        in: (col: string, vals: unknown[]) => {
+          filtros.push([col, vals]);
+          return cadena;
+        },
         order: () => cadena,
         insert: () => {
           operacion = "insert";
@@ -132,6 +163,9 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => clienteFalso(),
 }));
+// `setPublished` revalida rutas y registra errores: fuera de Next no aplica.
+vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
+vi.mock("@/lib/errores/registrar", () => ({ registrarError: async () => {} }));
 
 const { canUseGuestManagement, canManageGuestList, canPublishInvitation } =
   await import("@/lib/billing/entitlements");
@@ -151,9 +185,14 @@ const {
   deleteGuest,
   accesoALista,
 } = await import("@/lib/guests/actions");
-const { enlaceMejorarParaLista, ERROR_LISTA_REQUIERE_PREMIUM } = await import(
-  "@/lib/guests/premium"
-);
+const {
+  enlaceMejorarParaLista,
+  ERROR_LISTA_REQUIERE_PREMIUM,
+  ERROR_PUBLICAR_LISTA_REQUIERE_PREMIUM,
+  TOPE_LISTA_EN_BORRADOR,
+} = await import("@/lib/guests/premium");
+const { setPublished } = await import("@/lib/invitations/actions");
+const { MAX_GUESTS_PER_BULK } = await import("@/lib/guests/schemas");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const cliente = () => clienteFalso() as any;
@@ -380,7 +419,28 @@ describe("accesoALista: lo que el gestor explica", () => {
     expect(await accesoALista("inv1")).toEqual({
       estado: "borrador",
       mejorarHref: "/billing/checkout?plan=premium&invitation=inv1",
+      planPagado: null,
     });
+  });
+
+  it.each([
+    ["esencial", "Esencial"],
+    ["celebracion", "Celebración"],
+  ] as const)(
+    "borrador con %s ya pagado → borrador, y dice qué plan tiene (el aviso sale también)",
+    async (plan, nombre) => {
+      escena = { plan, publicada: false };
+      expect(await accesoALista("inv1")).toEqual({
+        estado: "borrador",
+        mejorarHref: "/billing/checkout?plan=premium&invitation=inv1",
+        planPagado: nombre,
+      });
+    },
+  );
+
+  it("un entitlement Free (demo vieja) no cuenta como plan pagado", async () => {
+    escena = { plan: "free", publicada: false };
+    expect((await accesoALista("inv1"))?.planPagado).toBeNull();
   });
 
   it("publicada con Esencial → bloqueada", async () => {
@@ -398,3 +458,195 @@ describe("accesoALista: lo que el gestor explica", () => {
 function inv() {
   return "00000000-0000-4000-8000-000000000001";
 }
+
+describe("TOCTOU: publicar y activar la lista a la vez (dos pestañas)", () => {
+  it("setRsvpMode(guest_list) sin Premium: si se publicó en medio, rechaza y no queda en lista", async () => {
+    // La acción lee borrador; al escribir ya está publicada.
+    escena = {
+      plan: "esencial",
+      rsvpMode: "open",
+      publicada: false,
+      alEscribir: { publicada: true },
+    };
+    const r = await setRsvpMode("inv1", "guest_list");
+    expect(r).toEqual({
+      ok: false,
+      error: ERROR_LISTA_REQUIERE_PREMIUM,
+      mejorarHref: enlaceMejorarParaLista("inv1"),
+    });
+  });
+
+  it("control: setRsvpMode(guest_list) sin Premium en borrador que sigue en borrador, pasa", async () => {
+    escena = { plan: "esencial", rsvpMode: "open", publicada: false };
+    expect(await setRsvpMode("inv1", "guest_list")).toEqual({ ok: true });
+  });
+
+  it("setRsvpMode(guest_list) con Premium no depende de estar en borrador", async () => {
+    escena = {
+      plan: "premium",
+      rsvpMode: "open",
+      publicada: false,
+      alEscribir: { publicada: true },
+    };
+    expect(await setRsvpMode("inv1", "guest_list")).toEqual({ ok: true });
+  });
+
+  it("setPublished sin guest_management: si la lista se activó en medio, rechaza con Premium", async () => {
+    // El gate lee 'open' y deja publicar con Celebración; al escribir ya es
+    // 'guest_list'.
+    escena = {
+      plan: "celebracion",
+      rsvpMode: "open",
+      publicada: false,
+      alEscribir: { rsvpMode: "guest_list" },
+    };
+    const r = await setPublished("inv1", true);
+    expect(r).toEqual({
+      ok: false,
+      error: ERROR_PUBLICAR_LISTA_REQUIERE_PREMIUM,
+      requiredPlan: "premium",
+      needsPayment: true,
+      needsUpgrade: true,
+      porListaDeInvitados: true,
+    });
+  });
+
+  it("control: setPublished con Celebración en confirmación abierta que no cambió, publica", async () => {
+    escena = { plan: "celebracion", rsvpMode: "open", publicada: false };
+    expect(await setPublished("inv1", true)).toEqual({
+      ok: true,
+      is_published: true,
+    });
+  });
+
+  it("setPublished con Premium publica aunque el modo cambie a lista en medio", async () => {
+    escena = {
+      plan: "premium",
+      rsvpMode: "open",
+      publicada: false,
+      alEscribir: { rsvpMode: "guest_list" },
+    };
+    expect((await setPublished("inv1", true)).ok).toBe(true);
+  });
+});
+
+describe("el cobro por la lista se nombra al publicar", () => {
+  it("con Celebración y lista: pide Premium y marca que el motivo es la lista", async () => {
+    escena = { plan: "celebracion", rsvpMode: "guest_list", publicada: false };
+    const r = await setPublished("inv1", true);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.requiredPlan).toBe("premium");
+    expect(r.porListaDeInvitados).toBe(true);
+  });
+
+  it("sin plan y con lista: el checkout es Premium y el motivo es la lista", async () => {
+    escena = { plan: null, rsvpMode: "guest_list", publicada: false };
+    const r = await setPublished("inv1", true);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.requiredPlan).toBe("premium");
+    expect(r.porListaDeInvitados).toBe(true);
+  });
+
+  it("sin plan y en confirmación abierta: cobra, pero NO por la lista", async () => {
+    escena = { plan: null, rsvpMode: "open", publicada: false };
+    const r = await setPublished("inv1", true);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.porListaDeInvitados).toBe(false);
+  });
+});
+
+describe("tope duro de la lista en borrador gratis", () => {
+  it("el tope es razonable y menor que «ilimitado»", () => {
+    expect(TOPE_LISTA_EN_BORRADOR).toBe(500);
+  });
+
+  it.each([null, "esencial"] as const)(
+    "plan %s: pasarse del tope rechaza con mensaje claro y no escribe",
+    async (plan) => {
+      escena = {
+        plan,
+        rsvpMode: "guest_list",
+        publicada: false,
+        lugaresUsados: TOPE_LISTA_EN_BORRADOR - 1,
+      };
+      const r = await addGuest({
+        invitationId: inv(),
+        name: "Ana",
+        maxGuests: 2,
+        phone: "",
+      });
+      expect(r.ok).toBe(false);
+      if (r.ok) return;
+      expect(r.error).toContain(`hasta ${TOPE_LISTA_EN_BORRADOR} invitados`);
+      expect(r.error).toContain("Premium");
+      expect(escrituras).toEqual([]);
+    },
+  );
+
+  it("justo en el tope, pasa", async () => {
+    escena = {
+      plan: null,
+      rsvpMode: "guest_list",
+      publicada: false,
+      lugaresUsados: TOPE_LISTA_EN_BORRADOR - 1,
+    };
+    const r = await addGuest({
+      invitationId: inv(),
+      name: "Ana",
+      maxGuests: 1,
+      phone: "",
+    });
+    expect(r).toEqual({ ok: true });
+  });
+
+  it("con Premium no hay tope", async () => {
+    escena = {
+      plan: "premium",
+      rsvpMode: "guest_list",
+      publicada: true,
+      lugaresUsados: 10_000,
+    };
+    const r = await addGuest({
+      invitationId: inv(),
+      name: "Ana",
+      maxGuests: 20,
+      phone: "",
+    });
+    expect(r).toEqual({ ok: true });
+  });
+
+  it("el alta masiva tope tambien por borrador (suma del lote)", async () => {
+    escena = {
+      plan: null,
+      rsvpMode: "guest_list",
+      publicada: false,
+      lugaresUsados: TOPE_LISTA_EN_BORRADOR - 3,
+    };
+    const r = await addGuestsBulk({ invitationId: inv(), raw: "Ana, 2\nLuis, 2" });
+    expect(r.ok).toBe(false);
+    expect(escrituras).toEqual([]);
+  });
+
+  it("el pegado masivo admite como mucho MAX_GUESTS_PER_BULK líneas", async () => {
+    escena = { plan: "premium", rsvpMode: "guest_list", publicada: false };
+    const lineas = (n: number) =>
+      Array.from({ length: n }, (_, i) => `Invitado ${i}`).join("\n");
+    const r = await addGuestsBulk({
+      invitationId: inv(),
+      raw: lineas(MAX_GUESTS_PER_BULK + 1),
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toContain(`hasta ${MAX_GUESTS_PER_BULK} invitados`);
+    expect(escrituras).toEqual([]);
+
+    const ok = await addGuestsBulk({
+      invitationId: inv(),
+      raw: lineas(MAX_GUESTS_PER_BULK),
+    });
+    expect(ok).toEqual({ ok: true });
+  });
+});

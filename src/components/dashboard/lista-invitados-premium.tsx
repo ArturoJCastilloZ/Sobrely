@@ -54,28 +54,52 @@ export function ListaInvitadosPremium({
  * Aviso del gestor en BORRADOR sin Premium: la lista se arma gratis y Premium
  * se cobra al publicar (decisión del dueño del 2026-10-30, «Sí, Premium al
  * publicar»). No bloquea nada; da el checkout de ESA invitación.
+ *
+ * Sale en TODO borrador cuyo plan efectivo no incluye la lista, también si ya
+ * pagó otro plan (`planPagado`): ese usuario es el que más se sorprendería al
+ * publicar, porque cree que ya pagó. A él se le dice que su plan no incluye la
+ * lista y que puede volver a confirmación abierta para publicar con él.
  */
 export function AvisoListaEnBorrador({
   mejorarHref,
+  planPagado,
 }: {
   mejorarHref: string;
+  planPagado: string | null;
 }) {
   return (
     <div
       role="status"
       className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs"
     >
-      <p className="font-medium">Puedes armar tu lista gratis</p>
-      <p className="mt-0.5 text-muted-foreground">
-        Agrega e importa a tus invitados sin pagar. Para publicar con lista de
-        invitados, con enlace único y pase QR para cada uno, necesitas el plan{" "}
-        {PLAN_LISTA_DE_INVITADOS}.
-      </p>
+      {planPagado ? (
+        <>
+          <p className="font-medium">
+            Tu plan {planPagado} no incluye la lista de invitados
+          </p>
+          <p className="mt-0.5 text-muted-foreground">
+            Puedes seguir armándola sin pagar más, pero publicar con lista de
+            invitados, con enlace único y pase QR para cada uno, requiere el
+            plan {PLAN_LISTA_DE_INVITADOS}. Si prefieres publicar con tu plan{" "}
+            {planPagado}, vuelve a «Confirmación abierta» en los ajustes del
+            editor.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="font-medium">Puedes armar tu lista gratis</p>
+          <p className="mt-0.5 text-muted-foreground">
+            Agrega e importa a tus invitados sin pagar. Para publicar con lista
+            de invitados, con enlace único y pase QR para cada uno, necesitas el
+            plan {PLAN_LISTA_DE_INVITADOS}.
+          </p>
+        </>
+      )}
       <Link
         href={mejorarHref}
         className={cn(buttonVariants({ size: "sm" }), "mt-2")}
       >
-        Ver {PLAN_LISTA_DE_INVITADOS}
+        {planPagado ? "Mejorar a" : "Ver"} {PLAN_LISTA_DE_INVITADOS}
       </Link>
     </div>
   );

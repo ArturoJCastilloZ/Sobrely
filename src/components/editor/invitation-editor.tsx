@@ -7,6 +7,7 @@ import { CheckCircle2Icon, CircleAlertIcon } from "lucide-react";
 
 import type { EditorInvitation, EditorModule } from "@/lib/invitations/editor-types";
 import { saveEditor, setPublished } from "@/lib/invitations/actions";
+import { PLAN_LISTA_DE_INVITADOS } from "@/lib/guests/premium";
 import { getPublishPreflight } from "@/lib/invitations/publish-preflight";
 import type { PortadaBase } from "@/lib/analytics/borrador-completo";
 import { trackEditorFunnelEvent } from "@/lib/editor/funnel-analytics";
@@ -159,6 +160,9 @@ export function InvitationEditor({
   const [isPublishing, startPublishing] = useTransition();
   // Plan requerido cuando la publicación se bloquea por usar módulos ⭐ premium.
   const [upgradePlan, setUpgradePlan] = useState<PlanCode | null>(null);
+  // El servidor dice si el cobro lo pide la lista de invitados: el diálogo lo
+  // nombra en vez de hablar de «módulos».
+  const [cobroPorLista, setCobroPorLista] = useState(false);
   const [cuentaOpen, setCuentaOpen] = useState(false);
   const [preflightOpen, setPreflightOpen] = useState(false);
   /**
@@ -362,6 +366,7 @@ export function InvitationEditor({
         // Bloqueo por plan → abre el CTA de mejora en vez de solo un toast.
         // C1: needsPayment es la señal autoritativa del servidor; no se infieren planes en cliente.
         if (res.needsPayment && res.requiredPlan) {
+          setCobroPorLista(res.porListaDeInvitados === true);
           setUpgradePlan(res.requiredPlan);
           return;
         }
@@ -478,14 +483,29 @@ export function InvitationEditor({
         >
           <Card className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <CardHeader>
-              <CardTitle>Publicar esta invitación requiere un plan de pago</CardTitle>
+              <CardTitle>
+                {cobroPorLista
+                  ? `Publicar con lista de invitados requiere el plan ${PLAN_LISTA_DE_INVITADOS}`
+                  : "Publicar esta invitación requiere un plan de pago"}
+              </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              <p className="text-sm text-muted-foreground">
-                Tu invitación usa módulos que requieren un plan de pago para publicarse.
-                El precio exacto se muestra en el siguiente paso.
-                Tus módulos se conservan sin importar lo que elijas aquí.
-              </p>
+              {cobroPorLista ? (
+                <p className="text-sm text-muted-foreground">
+                  Tu invitación usa la lista de invitados, con enlace único y
+                  pase QR para cada uno, que es del plan {PLAN_LISTA_DE_INVITADOS}.
+                  El precio exacto se muestra en el siguiente paso. Si
+                  prefieres otro plan, vuelve a «Confirmación abierta» en
+                  Ajustes: así publicar no requiere {PLAN_LISTA_DE_INVITADOS}, y
+                  tus invitados se conservan.
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Tu invitación usa módulos que requieren un plan de pago para publicarse.
+                  El precio exacto se muestra en el siguiente paso.
+                  Tus módulos se conservan sin importar lo que elijas aquí.
+                </p>
+              )}
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => setUpgradePlan(null)}>
                   Ahora no

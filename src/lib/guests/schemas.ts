@@ -47,10 +47,32 @@ export const guestEditSchema = z.object({
 
 export type GuestEditInput = z.infer<typeof guestEditSchema>;
 
+/** Máximo de invitados (líneas) que entran en un solo pegado masivo. */
+export const MAX_GUESTS_PER_BULK = 500;
+
+/**
+ * Tope de caracteres del pegado: una línea válida mide como mucho 120 de
+ * nombre + «, 20» y el salto, así que 500 líneas caben con holgura. Corta
+ * antes de partir el texto un cuerpo gigante enviado a mano.
+ */
+const MAX_BULK_CHARS = MAX_GUESTS_PER_BULK * 130;
+
+const MENSAJE_LOTE_GRANDE = `Pega hasta ${MAX_GUESTS_PER_BULK} invitados a la vez. Divide la lista y agrega el resto en otro pegado.`;
+
 /** Alta masiva: una línea por invitado, "Nombre, cupo" (cupo opcional = 1). */
 export const guestBulkSchema = z.object({
   invitationId: z.string().uuid(),
-  raw: z.string().trim().min(1, "Pega al menos un invitado."),
+  raw: z
+    .string()
+    .trim()
+    .min(1, "Pega al menos un invitado.")
+    .max(MAX_BULK_CHARS, MENSAJE_LOTE_GRANDE)
+    .refine(
+      (raw) =>
+        raw.split("\n").filter((linea) => linea.trim()).length <=
+        MAX_GUESTS_PER_BULK,
+      MENSAJE_LOTE_GRANDE,
+    ),
 });
 
 export type GuestBulkInput = z.infer<typeof guestBulkSchema>;
