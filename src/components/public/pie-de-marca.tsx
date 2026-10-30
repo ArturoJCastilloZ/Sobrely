@@ -18,7 +18,7 @@ export function enlaceDeMarca(base: string = SITE_URL): string {
 /**
  * Pie de marca de la invitación pública. Lo que muestra cada plan lo decide
  * `branding` (`plans.ts`): `full` «Hecho con Sobrely», `reduced` solo
- * «Sobrely», más chico y tenue, y `none` nada. Este componente no cambia esa
+ * «Sobrely», más chico, y `none` nada. Este componente no cambia esa
  * promesa: solo convierte la marca, donde ya se ve, en un enlace.
  *
  * - `rel="noreferrer"`: la invitación vive en el mismo dominio y el enlace de
@@ -27,6 +27,10 @@ export function enlaceDeMarca(base: string = SITE_URL): string {
  * - Pestaña nueva: el invitado no pierde la invitación que estaba viendo.
  * - La opacidad va en el texto, no en el `<footer>`, para que el anillo de
  *   foco se vea entero; al enfocar o pasar el puntero la marca sube a opaca.
+ *   No baja de 0.80 en ningún plan: es lo mínimo que da 4.5:1 (WCAG 1.4.3)
+ *   sobre las 22 paletas medidas (peor caso `kawaii`, 4.66:1). Antes, 0.35 en
+ *   `reduced` (≤ 2.1:1) y 0.60 en `full` (3.2–4.0:1 en las claras).
+ * - El `sr-only` avisa de la pestaña nueva a quien no la ve abrirse.
  * - En la vista previa privada no hay enlace: ahí la invitación solo se mira,
  *   y los clics del propio anfitrión ensuciarían la atribución.
  */
@@ -45,7 +49,7 @@ export function PieDeMarca({
       Sobre<span style={{ color: "var(--inv-primary)" }}>ly</span>
     </>
   );
-  const opacidad = completo ? "opacity-60" : "opacity-35";
+  const opacidad = "opacity-80";
   return (
     <footer
       className={
@@ -62,6 +66,7 @@ export function PieDeMarca({
           className={`${opacidad} -my-1 inline-block rounded-sm px-2 py-1 transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current`}
         >
           {contenido}
+          <span className="sr-only"> (se abre en otra pestaña)</span>
         </a>
       ) : (
         <span className={opacidad}>{contenido}</span>

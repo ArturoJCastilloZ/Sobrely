@@ -19,12 +19,37 @@ describe("PieDeMarca", () => {
     expect(html).toContain('target="_blank"');
   });
 
-  it("plan reducido: solo «Sobrely», tenue, también enlazado", () => {
+  it("plan reducido: solo «Sobrely», más chico, también enlazado", () => {
     const html = pie("reduced");
     expect(html).not.toContain("Hecho con");
-    expect(html).toContain("opacity-35");
+    expect(html).toContain("text-[10px]");
     expect(html).toContain("<a ");
   });
+
+  /*
+    4.5:1 (WCAG 1.4.3) del texto del enlace sobre el fondo de la invitación.
+    Medido con las 22 paletas (20 theme packs + claro/oscuro por defecto): el
+    peor caso, `kawaii` (#5a4a52 sobre #fff7fb), pide opacidad ≥ 0.79; con 0.80
+    da 4.66:1. Con la de antes (0.35) ninguna pasaba de 2.1:1.
+  */
+  it.each(["full", "reduced"] as const)(
+    "%s: el enlace no baja de opacity-80 (4.5:1 en todas las paletas)",
+    (branding) => {
+      const clase = /<a [^>]*class="([^"]*)"/.exec(pie(branding))?.[1] ?? "";
+      const opacidades = [...clase.matchAll(/(?:^|\s)opacity-(\d+)/g)].map((m) => Number(m[1]));
+      expect(opacidades.length).toBeGreaterThan(0);
+      expect(Math.min(...opacidades)).toBeGreaterThanOrEqual(80);
+    },
+  );
+
+  it.each(["full", "reduced"] as const)(
+    "%s: avisa al lector de pantalla de que abre otra pestaña",
+    (branding) => {
+      expect(pie(branding)).toMatch(
+        /<a [^>]*>.*<span class="sr-only"> \(se abre en otra pestaña\)<\/span><\/a>/,
+      );
+    },
+  );
 
   it("plan sin marca: no hay pie ni enlace", () => {
     expect(pie("none")).toBe("");
