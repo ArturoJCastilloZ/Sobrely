@@ -82,7 +82,7 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
       },
       {
         title: "Cuenta regresiva y música",
-        body: "Genera expectativa con una cuenta regresiva y ambienta la invitación con tu canción.",
+        body: "Genera expectativa con una cuenta regresiva y, desde el plan Celebración, ambienta la invitación con tu canción.",
       },
       {
         title: "Control de invitados",
@@ -96,7 +96,7 @@ export const EVENT_LANDINGS: Record<string, EventLanding> = {
       },
       {
         q: "¿Puedo poner música y cuenta regresiva?",
-        a: "Sí, la invitación incluye módulos de música y cuenta regresiva, además de galería, itinerario y código de vestimenta.",
+        a: "Sí. La cuenta regresiva viene en todos los planes; la música, la galería, el itinerario y el código de vestimenta, desde el plan Celebración.",
       },
       {
         q: "¿Cuánto cuesta?",
