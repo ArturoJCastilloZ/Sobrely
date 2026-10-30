@@ -13,6 +13,7 @@ import { AutoUsarPlantilla } from "@/components/templates/auto-usar-plantilla";
 import { ResumenDeFicha } from "@/components/templates/resumen-ficha";
 import PlantillaPage from "@/app/plantilla/[slug]/page";
 import { RegistrarVisita } from "@/components/analytics/registrar-visita";
+import { metadatosDeFicha } from "@/lib/seo/ficha-plantilla";
 
 /**
  * Vista de VENTA de una plantilla: la invitación completa, tal como la verá un
@@ -36,10 +37,8 @@ export async function generateMetadata({
   const { slug } = await params;
   const supabase = await createClient();
   const tpl = await cargarPlantillaPublica(supabase, slug);
-  return {
-    title: tpl ? `${tpl.name} · Plantilla` : "Plantilla",
-    robots: { index: false, follow: true },
-  };
+  if (!tpl) return { title: "Plantilla", robots: { index: false, follow: true } };
+  return metadatosDeFicha(tpl);
 }
 
 export default async function VistaDePlantillaPage({
