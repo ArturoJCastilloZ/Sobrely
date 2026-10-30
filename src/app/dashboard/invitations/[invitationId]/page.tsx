@@ -13,6 +13,8 @@ import {
   estadoDeInvitacion,
 } from "@/components/dashboard/invitation-card";
 import { GuestManager } from "@/components/dashboard/guest-manager";
+import { ListaInvitadosPremium } from "@/components/dashboard/lista-invitados-premium";
+import { canUseGuestManagement } from "@/lib/billing/entitlements";
 import { FunnelKpis } from "@/components/dashboard/funnel-kpis";
 import { ResponseBreakdown } from "@/components/dashboard/response-breakdown";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
@@ -70,6 +72,12 @@ export default async function InvitationDashboardPage({
   if (!invitation) notFound();
 
   const isGuestList = invitation.rsvp_mode === "guest_list";
+  // La lista de invitados es solo de Premium. Una invitación en ese modo sin el
+  // plan (de antes del cambio) ve el aviso con el camino a mejorar, no el
+  // gestor; las server actions la rechazan igual.
+  const puedeUsarLista = isGuestList
+    ? await canUseGuestManagement(supabase, invitation.id)
+    : false;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -265,7 +273,9 @@ export default async function InvitationDashboardPage({
       <ConfirmationsChart outcomes={outcomes} now={now} />
 
       <section id="invitados" className="scroll-mt-6">
-        {isGuestList ? (
+        {isGuestList && !puedeUsarLista ? (
+          <ListaInvitadosPremium invitationId={invitation.id} />
+        ) : isGuestList ? (
           <GuestManager
             invitationId={invitation.id}
             siteUrl={siteUrl}

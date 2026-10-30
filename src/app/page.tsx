@@ -54,7 +54,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "¿Puedo saber quién confirmó su asistencia?",
-    a: "Sí. Recibes las confirmaciones en tu panel y ves cuántas personas asistirán. Con la lista de invitados también puedes darle a cada invitado un pase con código QR para el control de acceso en la entrada.",
+    a: "Sí. Recibes las confirmaciones en tu panel y ves cuántas personas asistirán. Con la lista de invitados del plan Premium también puedes darle a cada invitado un pase con código QR para el control de acceso en la entrada.",
   },
 ];
 
