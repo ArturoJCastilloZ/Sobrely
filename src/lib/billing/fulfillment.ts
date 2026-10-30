@@ -2,7 +2,7 @@ import { registrarEvento } from "@/lib/analytics/embudo";
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getPlan, resolveExpiry } from "@/lib/billing/plans";
+import { getPlan, planHasFeature, resolveExpiry } from "@/lib/billing/plans";
 import { canPublishInvitation } from "@/lib/billing/entitlements";
 import { decidirEntitlement } from "@/lib/billing/no-degradar-entitlement";
 import {
@@ -442,10 +442,23 @@ export async function applyMercadoPagoPayment(params: {
       // y se quedo vivo justo aqui: el camino donde el cliente PAGO desde el
       // boton «Publicar». Un flag que miente impide enterarse de que alguien
       // pago por publicar y su invitacion sigue en borrador.
+      //
+      // Y el modo se exige en la MISMA escritura, como en `setPublished`: el
+      // gate solo dejó publicar sin la lista en el plan porque leyó
+      // `rsvp_mode = 'open'`, y entre el gate y el update otra pestaña puede
+      // activar la lista (en borrador está permitido). Sin este filtro quedaba
+      // publicada con Esencial o Celebración en modo lista. 0 filas aquí es
+      // eso: se queda en borrador y `published` lo dice.
+      const planEfectivo = getPlan(check.effectivePlanCode);
+      const modosValidados =
+        planEfectivo && planHasFeature(planEfectivo, "guest_management")
+          ? ["open", "guest_list"]
+          : ["open"];
       const { data: publicadas, error: pubErr } = await admin
         .from("invitations")
         .update({ is_published: true, status: "published" })
         .eq("id", order.invitation_id)
+        .in("rsvp_mode", modosValidados)
         .select("id");
       published = !pubErr && (publicadas?.length ?? 0) > 0;
       if (!published) {
