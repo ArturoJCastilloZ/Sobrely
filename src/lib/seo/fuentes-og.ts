@@ -17,7 +17,7 @@ import type { ImageResponse } from "next/og";
  * negrita — Satori no lee WOFF2 ni instancia fuentes variables, así que los
  * `.woff2` variables que `next/font` deja en `.next/` no sirven. Hoy el repo no
  * trae ningún TTF/OTF utilizable y bajarlo requiere permiso del dueño. Hasta
- * que se añadan en `DIR_FUENTES_OG` (con su `OFL.txt`), `cargarFuentesOG`
+ * que se añadan en `src/assets/fonts/` (con su `OFL.txt`), `cargarFuentesOG`
  * devuelve `undefined` y la imagen sale con la fuente por defecto, como antes.
  * Añadir los archivos basta: no hay que tocar código.
  *
@@ -32,30 +32,40 @@ export type FuenteOG = NonNullable<OpcionesDeImagen["fonts"]>[number];
 
 export const FAMILIA_OG = "Playfair Display";
 
+/** Archivos esperados en `src/assets/fonts/` (con su `OFL.txt`). */
 export const ARCHIVOS_FUENTE_OG = [
-  { archivo: "PlayfairDisplay-Regular.ttf", weight: 400 },
-  { archivo: "PlayfairDisplay-Bold.ttf", weight: 700 },
+  "PlayfairDisplay-Regular.ttf",
+  "PlayfairDisplay-Bold.ttf",
 ] as const;
 
-export const DIR_FUENTES_OG = join(process.cwd(), "src/assets/fonts");
+type Lector = () => Promise<readonly [Buffer, Buffer]>;
+
+/*
+  Rutas LITERALES a propósito: con una ruta armada en tiempo de ejecución
+  (`join(dir, archivo)`) Turbopack no sabe qué leer y traza el proyecto entero
+  al servidor (aviso «Dynamic filesystem access» en `pnpm build`).
+*/
+const leerDelRepo: Lector = () =>
+  Promise.all([
+    readFile(join(process.cwd(), "src/assets/fonts/PlayfairDisplay-Regular.ttf")),
+    readFile(join(process.cwd(), "src/assets/fonts/PlayfairDisplay-Bold.ttf")),
+  ]);
 
 /**
- * Lee regular y negrita de `dir`. Si falta alguna devuelve `undefined` (fuente
+ * Regular (400) y negrita (700). Si falta alguna devuelve `undefined` (fuente
  * por defecto): una imagen OG con la fuente de siempre es mejor que un 500 al
- * compartir. Un error que NO sea «no existe» se registra.
+ * compartir. Un error que NO sea «no existe» se registra. `leer` solo se
+ * sustituye en tests.
  */
 export async function cargarFuentesOG(
-  dir: string = DIR_FUENTES_OG,
+  leer: Lector = leerDelRepo,
 ): Promise<FuenteOG[] | undefined> {
   try {
-    return await Promise.all(
-      ARCHIVOS_FUENTE_OG.map(async ({ archivo, weight }) => ({
-        name: FAMILIA_OG,
-        data: await readFile(join(dir, archivo)),
-        weight,
-        style: "normal" as const,
-      })),
-    );
+    const [regular, negrita] = await leer();
+    return [
+      { name: FAMILIA_OG, data: regular, weight: 400, style: "normal" },
+      { name: FAMILIA_OG, data: negrita, weight: 700, style: "normal" },
+    ];
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code !== "ENOENT") {
       console.error("imagen OG: no se pudieron leer las fuentes", e);

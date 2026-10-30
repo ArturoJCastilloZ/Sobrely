@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -66,18 +66,27 @@ describe("cargarFuentesOG", () => {
   afterAll(async () => {
     await Promise.all(dirs.map((d) => rm(d, { recursive: true, force: true })));
   });
+  const lectorDe = (dir: string) => async () =>
+    [
+      await readFile(join(dir, ARCHIVOS_FUENTE_OG[0])),
+      await readFile(join(dir, ARCHIVOS_FUENTE_OG[1])),
+    ] as const;
 
-  it("carpeta sin los archivos → undefined (defecto documentado)", async () => {
+  it("sin los archivos → undefined (defecto documentado)", async () => {
     const dir = await mkdtemp(join(tmpdir(), "og-fuentes-"));
     dirs.push(dir);
-    await expect(cargarFuentesOG(dir)).resolves.toBeUndefined();
+    await expect(cargarFuentesOG(lectorDe(dir))).resolves.toBeUndefined();
+  });
+
+  it("hoy el repo no los trae → undefined, sin romper la imagen", async () => {
+    await expect(cargarFuentesOG()).resolves.toBeUndefined();
   });
 
   it("con regular y negrita → dos fuentes de la familia, 400 y 700", async () => {
     const dir = await mkdtemp(join(tmpdir(), "og-fuentes-"));
     dirs.push(dir);
-    for (const f of ARCHIVOS_FUENTE_OG) await writeFile(join(dir, f.archivo), "x");
-    const fuentes = await cargarFuentesOG(dir);
+    for (const f of ARCHIVOS_FUENTE_OG) await writeFile(join(dir, f), "x");
+    const fuentes = await cargarFuentesOG(lectorDe(dir));
     expect(fuentes?.map((f) => [f.name, f.weight, f.style])).toEqual([
       [FAMILIA_OG, 400, "normal"],
       [FAMILIA_OG, 700, "normal"],
