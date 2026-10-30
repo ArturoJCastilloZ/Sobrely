@@ -176,10 +176,11 @@ export function canCreateInvitation(): boolean {
 /**
  * ¿La invitación puede usar el modo "lista de invitados" (invitados nominales
  * con link/QR)? Feature `guest_management`, solo de Premium (o comp de admin),
- * gateada por el plan EFECTIVO de la invitación (no el del usuario). En
- * borrador el plan efectivo es Free: hay que contratar Premium para esa
- * invitación antes de armar la lista. Server-side; lo llaman las server
- * actions de `src/lib/guests/actions.ts` y las páginas del gestor.
+ * gateada por el plan EFECTIVO de la invitación (no el del usuario).
+ *
+ * Es el gate ESTRICTO: lo que solo tiene sentido con la invitación publicada
+ * (el ingreso con QR en la puerta) y lo que la publica. Para ARMAR la lista
+ * en borrador ver `canManageGuestList`.
  */
 export async function canUseGuestManagement(
   supabase: AnyClient,
@@ -187,6 +188,33 @@ export async function canUseGuestManagement(
 ): Promise<boolean> {
   const plan = await getInvitationEffectivePlan(supabase, invitationId);
   return planHasFeature(plan, "guest_management");
+}
+
+/**
+ * ¿Se puede ARMAR la lista de invitados (activar el modo, agregar, importar,
+ * editar, marcar enviado o recordado)? Sí si el plan efectivo la incluye
+ * (Premium o comp) O si la invitación NO está publicada.
+ *
+ * Decisión del dueño del 2026-10-30, «Sí, Premium al publicar»: un borrador
+ * arma su lista gratis, como arma su arte propio (`custom_art` se cobra en
+ * `canPublishInvitation`, no al subirlo), y Premium se cobra al publicar
+ * (`canPublishInvitation` + `planDePagoRequerido`). En borrador la lista no
+ * entrega nada: `respond_guest` solo opera sobre invitaciones publicadas.
+ *
+ * Publicada sin Premium (Esencial o Celebración ya pagados) se rechaza.
+ * Fail-closed: si no se puede leer la invitación, no hay permiso.
+ */
+export async function canManageGuestList(
+  supabase: AnyClient,
+  invitationId: string,
+): Promise<boolean> {
+  if (await canUseGuestManagement(supabase, invitationId)) return true;
+  const { data } = await supabase
+    .from("invitations")
+    .select("is_published")
+    .eq("id", invitationId)
+    .maybeSingle();
+  return data?.is_published === false;
 }
 
 export interface PublishCheck {
@@ -315,10 +343,9 @@ export async function canPublishInvitation(
 
   const customArtGated = usesCustomArt && !planHasFeature(plan, "custom_art");
 
-  // Modo lista de invitados (link único y QR): solo Premium. Las server
-  // actions de `src/lib/guests/actions.ts` ya impiden activarlo sin el plan;
-  // esto cubre lo que llegue por otro camino (una invitación en ese modo
-  // desde antes del cambio, o un plan que vence y se vuelve a publicar).
+  // Modo lista de invitados (link único y QR): solo Premium. El borrador la
+  // arma gratis (`canManageGuestList`); este es el gate que cobra Premium al
+  // PUBLICAR, igual que `custom_art`.
   const guestListGated =
     Boolean(usesGuestList) && !planHasFeature(plan, "guest_management");
 

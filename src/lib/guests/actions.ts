@@ -4,9 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeRsvpAnswers } from "@/lib/rsvp/sanitize-server";
 import {
+  canManageGuestList,
   canUseGuestManagement,
   getInvitationEffectivePlan,
 } from "@/lib/billing/entitlements";
+import { minimalPlanForFeature, planHasFeature } from "@/lib/billing/plans";
 import {
   ERROR_LISTA_REQUIERE_PREMIUM,
   enlaceMejorarParaLista,
@@ -35,20 +37,8 @@ export type GuestActionFailure = {
 
 export type GuestActionResult = { ok: true } | GuestActionFailure;
 
-/**
- * Gate server-side de la lista de invitados (link único y QR): solo Premium,
- * por el plan EFECTIVO de la invitación (`canUseGuestManagement`). Devuelve el
- * rechazo listo para responder, o `null` si la invitación puede usarla.
- *
- * Lo llaman TODAS las acciones que crean o mueven valor de la lista (activar el
- * modo, alta, edición, envío, recordatorio, ingreso). Borrar un invitado y
- * volver a confirmación abierta quedan libres: son la salida, no el uso.
- */
-async function rechazoPorPlan(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  invitationId: string,
-): Promise<GuestActionFailure | null> {
-  if (await canUseGuestManagement(supabase, invitationId)) return null;
+/** Rechazo por plan listo para responder: mensaje y checkout de Premium. */
+function rechazoListaPremium(invitationId: string): GuestActionFailure {
   return {
     ok: false,
     error: ERROR_LISTA_REQUIERE_PREMIUM,
@@ -57,16 +47,49 @@ async function rechazoPorPlan(
 }
 
 /**
- * Cupo total de invitados de la invitación = `maxGuests` de su plan EFECTIVO.
- * Como la lista es solo de Premium, hoy es ilimitado (`null`); se conserva por
- * si la feature vuelve a un plan con tope.
+ * Gate server-side para ARMAR la lista (activar el modo, alta, alta masiva,
+ * edición, envío, recordatorio): `canManageGuestList`, o sea Premium (o comp)
+ * O invitación sin publicar. Decisión del dueño del 2026-10-30, «Sí, Premium
+ * al publicar»: el borrador la arma gratis y Premium se cobra al publicar.
+ * Publicada sin Premium se rechaza. Devuelve el rechazo o `null`.
+ *
+ * Borrar un invitado y volver a confirmación abierta quedan libres: son la
+ * salida, no el uso.
+ */
+async function rechazoAlArmarLista(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  invitationId: string,
+): Promise<GuestActionFailure | null> {
+  if (await canManageGuestList(supabase, invitationId)) return null;
+  return rechazoListaPremium(invitationId);
+}
+
+/**
+ * Gate ESTRICTO del ingreso en la puerta (QR y manual): solo Premium (o comp),
+ * por el plan EFECTIVO de la invitación. El ingreso solo existe con la
+ * invitación publicada, que en modo lista ya exige Premium.
+ */
+async function rechazoPorPlan(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  invitationId: string,
+): Promise<GuestActionFailure | null> {
+  if (await canUseGuestManagement(supabase, invitationId)) return null;
+  return rechazoListaPremium(invitationId);
+}
+
+/**
+ * Cupo total de invitados que se pueden ARMAR en la lista. Con un plan que
+ * incluye la lista, su `maxGuests`. Sin él (borrador gratis) se arma para el
+ * plan que se cobrará al publicar (Premium, hoy ilimitado: `null`), no con el
+ * tope de Free, que dejaría la lista a medias antes de poder pagarla.
  */
 async function planGuestCap(
   supabase: Awaited<ReturnType<typeof createClient>>,
   invitationId: string,
 ): Promise<number | null> {
   const plan = await getInvitationEffectivePlan(supabase, invitationId);
-  return plan.maxGuests;
+  if (planHasFeature(plan, "guest_management")) return plan.maxGuests;
+  return minimalPlanForFeature("guest_management")?.maxGuests ?? null;
 }
 
 /** Verifica que el usuario sea dueño de la invitación (RLS + defensa explícita). */
@@ -146,6 +169,34 @@ export async function listGuests(
   return (data ?? []) as GuestListRow[];
 }
 
+/**
+ * Qué puede hacer la invitación con su lista, para que el gestor lo explique:
+ * - `premium`: el plan efectivo la incluye (Premium o comp); todo disponible.
+ * - `borrador`: sin Premium y sin publicar; se arma gratis, publicar pide Premium.
+ * - `bloqueada`: publicada sin Premium; el servidor rechaza armarla.
+ * `null` si no es del usuario. Solo informa: el gate real está en cada acción.
+ */
+export type AccesoALista = {
+  estado: "premium" | "borrador" | "bloqueada";
+  mejorarHref: string;
+};
+
+export async function accesoALista(
+  invitationId: string,
+): Promise<AccesoALista | null> {
+  const supabase = await createClient();
+  const owner = await assertOwner(supabase, invitationId);
+  if (!owner) return null;
+  const mejorarHref = enlaceMejorarParaLista(invitationId);
+  if (await canUseGuestManagement(supabase, invitationId)) {
+    return { estado: "premium", mejorarHref };
+  }
+  const estado = (await canManageGuestList(supabase, invitationId))
+    ? "borrador"
+    : "bloqueada";
+  return { estado, mejorarHref };
+}
+
 /** Cambia el modo RSVP de una invitación ('open' | 'guest_list'). */
 export async function setRsvpMode(
   invitationId: string,
@@ -158,9 +209,10 @@ export async function setRsvpMode(
   const owner = await assertOwner(supabase, invitationId);
   if (!owner) return { ok: false, error: "No autorizado." };
 
-  // Activar la lista exige Premium; volver a confirmación abierta, no.
+  // Activar la lista: Premium o borrador (se cobra al publicar). Volver a
+  // confirmación abierta es libre.
   if (mode === "guest_list") {
-    const rechazo = await rechazoPorPlan(supabase, invitationId);
+    const rechazo = await rechazoAlArmarLista(supabase, invitationId);
     if (rechazo) return rechazo;
   }
 
@@ -189,7 +241,7 @@ export async function addGuest(
   const supabase = await createClient();
   const owner = await assertOwner(supabase, v.invitationId);
   if (!owner) return { ok: false, error: "No autorizado." };
-  const rechazo = await rechazoPorPlan(supabase, v.invitationId);
+  const rechazo = await rechazoAlArmarLista(supabase, v.invitationId);
   if (rechazo) return rechazo;
 
   const cap = await planGuestCap(supabase, v.invitationId);
@@ -224,7 +276,7 @@ export async function addGuestsBulk(
   const supabase = await createClient();
   const owner = await assertOwner(supabase, v.invitationId);
   if (!owner) return { ok: false, error: "No autorizado." };
-  const rechazo = await rechazoPorPlan(supabase, v.invitationId);
+  const rechazo = await rechazoAlArmarLista(supabase, v.invitationId);
   if (rechazo) return rechazo;
 
   const rows = parseBulkGuests(v.raw);
@@ -279,7 +331,7 @@ export async function editGuest(
     .eq("id", v.id)
     .maybeSingle();
   if (!guest) return { ok: false, error: "Invitado no encontrado." };
-  const rechazo = await rechazoPorPlan(supabase, guest.invitation_id as string);
+  const rechazo = await rechazoAlArmarLista(supabase, guest.invitation_id as string);
   if (rechazo) return rechazo;
 
   const cap = await planGuestCap(supabase, guest.invitation_id as string);
@@ -334,7 +386,7 @@ export async function setGuestInvited(
     .eq("id", id)
     .maybeSingle();
   if (!guest) return { ok: false, error: "Invitado no encontrado." };
-  const rechazo = await rechazoPorPlan(supabase, guest.invitation_id as string);
+  const rechazo = await rechazoAlArmarLista(supabase, guest.invitation_id as string);
   if (rechazo) return rechazo;
 
   const yaMarcado = guest.invited_at !== null;
@@ -385,7 +437,7 @@ export async function markGuestReminded(
     .eq("id", id)
     .maybeSingle();
   if (!guest) return { ok: false, error: "Invitado no encontrado." };
-  const rechazo = await rechazoPorPlan(supabase, guest.invitation_id as string);
+  const rechazo = await rechazoAlArmarLista(supabase, guest.invitation_id as string);
   if (rechazo) return rechazo;
 
   const actual = (guest.reminder_count as number) ?? 0;
