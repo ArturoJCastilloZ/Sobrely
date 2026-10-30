@@ -9,8 +9,9 @@ import type { PlanCode } from "@/lib/billing/types";
  * visibles de la plantilla, y el tope de invitados, la vigencia y la marca del
  * plan que `precioParaPublicarPlantilla` dice que hace falta. Nada de esto se
  * escribe a mano, así que la ficha no puede prometer algo que `plans.ts` no
- * cumple. A propósito NO dice nada del pase QR hasta que se decida en qué plan
- * va (`docs/auditoria-2026-10/01` §5).
+ * cumple. No menciona el pase QR: ya se decidió que es solo del plan Premium
+ * (`guest_management` en plans.ts, 2026-10-30) y la ficha no lo promete en
+ * ningún plan, así que no hay nada que corregir aquí.
  */
 export type ResumenFicha = {
   /** Etiquetas de los módulos visibles, en el orden de la plantilla. */

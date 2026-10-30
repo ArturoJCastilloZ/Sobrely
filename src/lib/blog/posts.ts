@@ -57,7 +57,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: "h2", text: "3. Decide cómo van a confirmar tus invitados" },
       {
         type: "p",
-        text: "Tienes dos opciones. La confirmación abierta usa un solo enlace público donde cualquiera confirma. La lista de invitados te permite registrar a cada persona con su cupo y darle un enlace único con pase QR para el control de acceso en la entrada.",
+        text: "Tienes dos opciones. La confirmación abierta usa un solo enlace público donde cualquiera confirma. La lista de invitados, del plan Premium, te permite registrar a cada persona con su cupo y darle un enlace único con pase QR para el control de acceso en la entrada.",
       },
       { type: "h2", text: "4. Publica y comparte" },
       {
@@ -67,7 +67,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: "h2", text: "5. Da seguimiento a las confirmaciones" },
       {
         type: "p",
-        text: "Revisa tu panel para ver quién confirmó, enviar recordatorios a quienes faltan y, el día del evento, registrar el ingreso con el código QR de cada invitado.",
+        text: "Revisa tu panel para ver quién confirmó, enviar recordatorios a quienes faltan y, si usas la lista de invitados del plan Premium, registrar el día del evento el ingreso con el código QR de cada invitado.",
       },
     ],
   },
@@ -162,7 +162,7 @@ export const BLOG_POSTS: BlogPost[] = [
     body: [
       {
         type: "p",
-        text: "Si quieres saber exactamente quién entra a tu evento y evitar colados, el control de acceso con códigos QR es la forma más simple de lograrlo. Así funciona.",
+        text: "Si quieres saber exactamente quién entra a tu evento y evitar colados, el control de acceso con códigos QR es la forma más simple de lograrlo. En Sobrely es parte del plan Premium. Así funciona.",
       },
       { type: "h2", text: "1. Crea tu lista de invitados" },
       {
