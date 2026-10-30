@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
-import OpengraphImage from "@/app/opengraph-image";
+import { FAMILIA_OG, fuentesOG, type FuenteOG } from "@/lib/seo/fuentes-og";
+import { imagenGenerica } from "@/lib/seo/imagen-generica";
 import type { DatosParaCompartir } from "@/lib/seo/compartir-invitacion";
 
 /** Tamaño recomendado por Facebook/WhatsApp para `summary_large_image`. */
@@ -20,9 +21,17 @@ function tamanoDeTitulo(titulo: string): number {
  * marca «sobrely.com» va en la esquina solo si el plan muestra marca.
  *
  * Los colores vienen validados como hex por `themeSchema` (`parseTheme`).
+ *
+ * `opciones.fuentes` sustituye a las de `fuentesOG()` (tests, o forzar la
+ * fuente por defecto con `{ fuentes: undefined }`). Sin `opciones`, se leen las
+ * del repo; si no están, Satori usa su fuente por defecto.
  */
-export function imagenDeInvitacion(d: DatosParaCompartir | null): ImageResponse {
-  if (!d) return OpengraphImage();
+export async function imagenDeInvitacion(
+  d: DatosParaCompartir | null,
+  opciones?: { fuentes?: FuenteOG[] },
+): Promise<ImageResponse> {
+  const fuentes = opciones ? opciones.fuentes : await fuentesOG();
+  if (!d) return imagenGenerica(fuentes);
   const { fondo, texto, primario } = d.colores;
   return new ImageResponse(
     (
@@ -33,7 +42,7 @@ export function imagenDeInvitacion(d: DatosParaCompartir | null): ImageResponse 
           display: "flex",
           background: fondo,
           color: texto,
-          fontFamily: "serif",
+          fontFamily: fuentes ? FAMILIA_OG : "serif",
           padding: 36,
         }}
       >
@@ -108,6 +117,6 @@ export function imagenDeInvitacion(d: DatosParaCompartir | null): ImageResponse 
         </div>
       </div>
     ),
-    { ...TAMANO_OG },
+    { ...TAMANO_OG, ...(fuentes ? { fonts: fuentes } : {}) },
   );
 }

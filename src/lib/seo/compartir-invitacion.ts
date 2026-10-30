@@ -42,6 +42,24 @@ function recortar(texto: string, max: number): string {
   return texto.length > max ? `${texto.slice(0, max - 1).trimEnd()}…` : texto;
 }
 
+/**
+ * Paleta de respaldo de la tarjeta: la de la marca (tokens `--color-brand-ink`,
+ * `--color-brand-cream` y `--color-brand-gold` de `globals.css`). Solo cuando la
+ * invitación no trae colores propios: sin ella la tarjeta caía al blanco y gris
+ * por defecto del tema, que no dice nada. Dorado sobre negro mate: 8.4:1.
+ */
+export const COLORES_DE_MARCA: DatosParaCompartir["colores"] = {
+  fondo: "#111827",
+  texto: "#f5eedb",
+  primario: "#d4af37",
+};
+
+function tieneColoresPropios(themeConfig: unknown): boolean {
+  if (typeof themeConfig !== "object" || themeConfig === null) return false;
+  const colores = (themeConfig as { colors?: unknown }).colors;
+  return typeof colores === "object" && colores !== null;
+}
+
 export function datosParaCompartir(inv: PublicInvitation): DatosParaCompartir {
   const tema = parseTheme(inv.theme_config);
   const t = inv.event_date ? new Date(inv.event_date) : null;
@@ -50,11 +68,13 @@ export function datosParaCompartir(inv: PublicInvitation): DatosParaCompartir {
     titulo: recortar(inv.title?.trim() || "Invitación", MAX_TITULO),
     tipoEvento: tipo ? tipo : null,
     fecha: t && !Number.isNaN(t.getTime()) ? FECHA.format(t) : null,
-    colores: {
-      fondo: tema.colors.background,
-      texto: tema.colors.text,
-      primario: tema.colors.primary,
-    },
+    colores: tieneColoresPropios(inv.theme_config)
+      ? {
+          fondo: tema.colors.background,
+          texto: tema.colors.text,
+          primario: tema.colors.primary,
+        }
+      : { ...COLORES_DE_MARCA },
     conMarca: brandingForPlanCode(inv.plan_code) !== "none",
   };
 }

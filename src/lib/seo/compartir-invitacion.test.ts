@@ -214,6 +214,16 @@ describe("datosParaCompartir: lista blanca", () => {
     expect(d.colores).toEqual({ fondo: "#fffaf0", texto: "#222222", primario: "#aa3355" });
   });
 
+  it("sin colores propios → paleta de marca (negro mate, crema, dorado)", () => {
+    for (const theme_config of [null, {}, { colors: null }, { font: "serif" }]) {
+      expect(datosParaCompartir(invitacion({ theme_config })).colores).toEqual({
+        fondo: "#111827",
+        texto: "#f5eedb",
+        primario: "#d4af37",
+      });
+    }
+  });
+
   it("sin fecha ni tipo no inventa nada; título vacío → «Invitación»", () => {
     const d = datosParaCompartir(invitacion({ title: "  ", event_type: null, event_date: null }));
     expect(d).toMatchObject({ titulo: "Invitación", tipoEvento: null, fecha: null });
