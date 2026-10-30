@@ -7,10 +7,11 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Lo que ve quien entra al gestor de invitados (o al escáner de ingreso) sin
- * el plan que incluye la lista: qué es, de qué plan es y el checkout de ESA
- * invitación para mejorarla. Sustituye al gestor; el servidor rechaza igual
- * cada acción (`src/lib/guests/actions.ts`), esto solo lo explica.
+ * Lo que ve quien entra al escáner de ingreso sin Premium, o al gestor de
+ * invitados con la invitación PUBLICADA sin Premium: qué es, de qué plan es y
+ * el checkout de ESA invitación para mejorarla. Sustituye a la herramienta; el
+ * servidor rechaza igual cada acción (`src/lib/guests/actions.ts`), esto solo
+ * lo explica. En borrador el gestor no se bloquea: ver `AvisoListaEnBorrador`.
  */
 export function ListaInvitadosPremium({
   invitationId,
@@ -45,6 +46,37 @@ export function ListaInvitadosPremium({
           Ir al editor
         </Link>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Aviso del gestor en BORRADOR sin Premium: la lista se arma gratis y Premium
+ * se cobra al publicar (decisión del dueño del 2026-10-30, «Sí, Premium al
+ * publicar»). No bloquea nada; da el checkout de ESA invitación.
+ */
+export function AvisoListaEnBorrador({
+  mejorarHref,
+}: {
+  mejorarHref: string;
+}) {
+  return (
+    <div
+      role="status"
+      className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs"
+    >
+      <p className="font-medium">Puedes armar tu lista gratis</p>
+      <p className="mt-0.5 text-muted-foreground">
+        Agrega e importa a tus invitados sin pagar. Para publicar con lista de
+        invitados, con enlace único y pase QR para cada uno, necesitas el plan{" "}
+        {PLAN_LISTA_DE_INVITADOS}.
+      </p>
+      <Link
+        href={mejorarHref}
+        className={cn(buttonVariants({ size: "sm" }), "mt-2")}
+      >
+        Ver {PLAN_LISTA_DE_INVITADOS}
+      </Link>
     </div>
   );
 }

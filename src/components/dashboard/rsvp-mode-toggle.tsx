@@ -36,8 +36,9 @@ export function RsvpModeToggle({
     startTransition(async () => {
       const res = await setRsvpMode(invitationId, next);
       if (!res.ok) {
-        // Rechazo por PLAN: no es un error, es una mejora posible. Se explica
-        // en línea con su camino de compra en vez de un toast que se va.
+        // Rechazo por PLAN (solo con la invitación publicada sin Premium; el
+        // borrador la arma gratis): es una mejora posible. Se explica en
+        // línea con su camino de compra en vez de un toast que se va.
         if (res.mejorarHref) {
           setMejorarHref(res.mejorarHref);
           return;
@@ -62,7 +63,8 @@ export function RsvpModeToggle({
       <p className="text-sm font-medium">Modo de confirmación</p>
       <p className="mt-0.5 text-xs text-muted-foreground">
         Elige cómo confirman tus invitados. La lista de invitados, con link
-        único y pase QR para cada uno, es del plan {PLAN_LISTA_DE_INVITADOS}.
+        único y pase QR para cada uno, puedes armarla gratis; para publicar con
+        lista de invitados necesitas el plan {PLAN_LISTA_DE_INVITADOS}.
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <Option
@@ -90,8 +92,9 @@ export function RsvpModeToggle({
             La lista de invitados es del plan {PLAN_LISTA_DE_INVITADOS}
           </p>
           <p className="mt-0.5 text-muted-foreground">
-            Mejora el plan de esta invitación para dar a cada invitado su
-            enlace y su pase QR, y registrar su ingreso en la entrada.
+            Esta invitación ya está publicada. Mejora su plan para dar a cada
+            invitado su enlace y su pase QR, y registrar su ingreso en la
+            entrada.
           </p>
           <Link
             href={mejorarHref}

@@ -11,8 +11,14 @@ import {
   setGuestCheckIn,
   setGuestInvited,
   listGuests,
+  accesoALista,
+  type AccesoALista,
   type GuestListRow,
 } from "@/lib/guests/actions";
+import {
+  AvisoListaEnBorrador,
+  ListaInvitadosPremium,
+} from "@/components/dashboard/lista-invitados-premium";
 import { MAX_GUEST_ALLOTMENT } from "@/lib/guests/schemas";
 import { whatsappInviteUrl } from "@/lib/guests/whatsapp";
 import { ReminderPanel } from "@/components/dashboard/reminder-panel";
@@ -56,9 +62,17 @@ export function GuestManager({
   const [bulk, setBulk] = useState("");
   const [showBulk, setShowBulk] = useState(false);
 
+  // Qué permite el plan: en borrador se arma gratis (aviso), publicada sin
+  // Premium se bloquea. Solo informa; el servidor gatea cada acción.
+  const [acceso, setAcceso] = useState<AccesoALista | null>(null);
+
   const reload = useCallback(async () => {
-    const rows = await listGuests(invitationId);
+    const [rows, permiso] = await Promise.all([
+      listGuests(invitationId),
+      accesoALista(invitationId),
+    ]);
     setGuests(rows);
+    setAcceso(permiso);
     setLoading(false);
   }, [invitationId]);
 
@@ -236,8 +250,15 @@ export function GuestManager({
   const checkedInCount = guests.filter((g) => g.checked_in_at).length;
   const invitedCount = guests.filter((g) => g.invited_at).length;
 
+  if (acceso?.estado === "bloqueada") {
+    return <ListaInvitadosPremium invitationId={invitationId} />;
+  }
+
   return (
     <div className="space-y-6">
+      {acceso?.estado === "borrador" && (
+        <AvisoListaEnBorrador mejorarHref={acceso.mejorarHref} />
+      )}
       {/* Perseguir a los que faltan. Va ARRIBA de la lista porque es la acción
           del día cuando el evento ya se envió; administrar la lista viene
           antes en el tiempo, pero después en la frecuencia de uso. */}

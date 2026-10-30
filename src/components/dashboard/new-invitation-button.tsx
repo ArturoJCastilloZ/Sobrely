@@ -67,9 +67,8 @@ export function NewInvitationButton() {
             <FeatureBadge feature="guest_management" />
           </span>
           <span className="text-xs text-muted-foreground">
-            Invitados nominales con su enlace y pase QR. Es del plan{" "}
-            {PLAN_LISTA_DE_INVITADOS}: sin él, la invitación nace con
-            confirmación abierta y la cambias al mejorar el plan.
+            Invitados nominales con su enlace y pase QR. La armas gratis;
+            para publicarla necesitas el plan {PLAN_LISTA_DE_INVITADOS}.
           </span>
         </DropdownMenuItem>
       </DropdownMenuContent>

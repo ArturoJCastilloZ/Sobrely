@@ -14,7 +14,7 @@ import {
 } from "@/components/dashboard/invitation-card";
 import { GuestManager } from "@/components/dashboard/guest-manager";
 import { ListaInvitadosPremium } from "@/components/dashboard/lista-invitados-premium";
-import { canUseGuestManagement } from "@/lib/billing/entitlements";
+import { canManageGuestList } from "@/lib/billing/entitlements";
 import { FunnelKpis } from "@/components/dashboard/funnel-kpis";
 import { ResponseBreakdown } from "@/components/dashboard/response-breakdown";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
@@ -72,11 +72,11 @@ export default async function InvitationDashboardPage({
   if (!invitation) notFound();
 
   const isGuestList = invitation.rsvp_mode === "guest_list";
-  // La lista de invitados es solo de Premium. Una invitación en ese modo sin el
-  // plan (de antes del cambio) ve el aviso con el camino a mejorar, no el
-  // gestor; las server actions la rechazan igual.
+  // La lista de invitados se arma gratis en borrador y se cobra Premium al
+  // publicar. Publicada sin Premium ve el aviso con el camino a mejorar, no el
+  // gestor; las server actions la rechazan igual (`canManageGuestList`).
   const puedeUsarLista = isGuestList
-    ? await canUseGuestManagement(supabase, invitation.id)
+    ? await canManageGuestList(supabase, invitation.id)
     : false;
 
   const { data: profile } = await supabase
