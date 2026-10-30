@@ -10,14 +10,17 @@ export const MAX_GUEST_ALLOTMENT = 20;
  * si zod lo deja pasar, Postgres también. Vacío se guarda como `null`, no como
  * cadena vacía — "sin teléfono" es ausencia, no un valor.
  */
-export const guestPhoneField = z
-  .string()
-  .trim()
-  .max(25, "Teléfono demasiado largo.")
-  .regex(/^\+?[0-9()\-\s]{7,25}$/, "Teléfono no válido.")
-  .or(z.literal(""))
-  .optional()
-  .transform((v) => (v ? v : null));
+export const guestPhoneField = z.preprocess(
+  // El gestor manda `null` cuando el campo queda vacío; `undefined`, `""` y
+  // solo espacios significan lo mismo. Todo eso se normaliza a `null` antes de
+  // validar la forma.
+  (v) => (typeof v === "string" ? v.trim() || null : (v ?? null)),
+  z
+    .string()
+    .max(25, "Teléfono demasiado largo.")
+    .regex(/^\+?[0-9()\-\s]{7,25}$/, "Teléfono no válido.")
+    .nullable(),
+);
 
 /** Alta/edición de un invitado nominal (lado dueño). */
 export const guestUpsertSchema = z.object({
