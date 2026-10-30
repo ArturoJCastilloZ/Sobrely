@@ -38,6 +38,9 @@ const FECHA = new Intl.DateTimeFormat("es-MX", {
 /** Longitud máxima del título en la tarjeta: los buscadores cortan en ~60-90. */
 const MAX_TITULO = 90;
 
+/** El tipo de evento es texto libre en la base (`event_type`); el editor lo topa en 40. */
+const MAX_TIPO_EVENTO = 40;
+
 function recortar(texto: string, max: number): string {
   return texto.length > max ? `${texto.slice(0, max - 1).trimEnd()}…` : texto;
 }
@@ -66,7 +69,7 @@ export function datosParaCompartir(inv: PublicInvitation): DatosParaCompartir {
   const tipo = inv.event_type?.trim();
   return {
     titulo: recortar(inv.title?.trim() || "Invitación", MAX_TITULO),
-    tipoEvento: tipo ? tipo : null,
+    tipoEvento: tipo ? recortar(tipo, MAX_TIPO_EVENTO) : null,
     fecha: t && !Number.isNaN(t.getTime()) ? FECHA.format(t) : null,
     colores: tieneColoresPropios(inv.theme_config)
       ? {
